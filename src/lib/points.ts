@@ -68,7 +68,7 @@ export async function checkUnseenAwards() {
 export type Rank = { key: "coal" | "copper" | "silver" | "gold" | "diamond" | "royal"; label: { en: string; ar: string }; min: number; color: string };
 
 export const RANKS: Rank[] = [
-  { key: "coal",    label: { en: "Coal",    ar: "فحم" },    min: 100,  color: "#6b7280" },
+  { key: "coal",    label: { en: "Coal",    ar: "فحم" },    min: 0,    color: "#6b7280" },
   { key: "copper",  label: { en: "Copper",  ar: "نحاس" },   min: 500,  color: "#b87333" },
   { key: "silver",  label: { en: "Silver",  ar: "فضي" },    min: 1000, color: "#94a3b8" },
   { key: "gold",    label: { en: "Gold",    ar: "ذهبي" },   min: 1500, color: "#f59e0b" },
