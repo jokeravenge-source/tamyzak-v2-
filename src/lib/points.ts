@@ -68,12 +68,12 @@ export async function checkUnseenAwards() {
 export type Rank = { key: "coal" | "copper" | "silver" | "gold" | "diamond" | "royal"; label: { en: string; ar: string }; min: number; color: string };
 
 export const RANKS: Rank[] = [
-  { key: "coal",    label: { en: "Coal",    ar: "فحم" },    min: 0,   color: "#6b7280" },
-  { key: "copper",  label: { en: "Copper",  ar: "نحاس" },   min: 100, color: "#b87333" },
-  { key: "silver",  label: { en: "Silver",  ar: "فضي" },    min: 200, color: "#94a3b8" },
-  { key: "gold",    label: { en: "Gold",    ar: "ذهبي" },   min: 300, color: "#f59e0b" },
-  { key: "diamond", label: { en: "Diamond", ar: "ماسي" },   min: 400, color: "#22d3ee" },
-  { key: "royal",   label: { en: "Royal",   ar: "ملكي" },   min: 500, color: "#a78bfa" },
+  { key: "coal",    label: { en: "Coal",    ar: "فحم" },    min: 0,    color: "#6b7280" },
+  { key: "copper",  label: { en: "Copper",  ar: "نحاس" },   min: 500,  color: "#b87333" },
+  { key: "silver",  label: { en: "Silver",  ar: "فضي" },    min: 1000, color: "#94a3b8" },
+  { key: "gold",    label: { en: "Gold",    ar: "ذهبي" },   min: 1500, color: "#f59e0b" },
+  { key: "diamond", label: { en: "Diamond", ar: "ماسي" },   min: 2000, color: "#22d3ee" },
+  { key: "royal",   label: { en: "Royal",   ar: "ملكي" },   min: 5000, color: "#a78bfa" },
 ];
 
 export function rankFor(points: number): Rank {
