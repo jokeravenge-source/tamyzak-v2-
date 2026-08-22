@@ -2,32 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
 import treeLottie from "@/assets/tree_growth.lottie?url";
+import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 
 const KEY = "streak_state_v1";
 const FULL_DAYS = 20;
 
 type StreakState = { days: number; lastDate: string; celebrated?: boolean };
 
-// Use LOCAL date (not UTC) so the streak doesn't appear to reset at UTC midnight
-// for users in other timezones.
-const fmt = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
-const today = () => fmt(new Date());
-const yesterday = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return fmt(d);
-};
-const daysBetween = (a: string, b: string) => {
-  const da = new Date(a + "T00:00:00");
-  const db = new Date(b + "T00:00:00");
-  return Math.round((db.getTime() - da.getTime()) / 86400000);
-};
-
+// The server stores the account's streak, so it survives deployments, browser
+// storage cleanup, and moves between the Lovable and custom-domain addresses.
 function useStreak() {
   const [state, setState] = useState<StreakState>(() => {
     try {
@@ -38,34 +21,40 @@ function useStreak() {
   });
 
   useEffect(() => {
-    setState((prev) => {
-      const t = today();
-      if (prev.lastDate === t) return prev;
-      let days: number;
-      if (!prev.lastDate) {
-        days = 1;
-      } else {
-        const diff = daysBetween(prev.lastDate, t);
-        if (diff <= 0) {
-          // Clock skew / timezone change — keep existing streak, just refresh date.
-          days = Math.max(prev.days, 1);
-        } else if (diff === 1) {
-          days = prev.days + 1;
-        } else {
-          // Missed one or more days — streak broken.
-          days = 1;
-        }
-      }
-      const next = { days, lastDate: t, celebrated: prev.celebrated && days >= FULL_DAYS };
-      localStorage.setItem(KEY, JSON.stringify(next));
-      return next;
-    });
+    let active = true;
+
+    const refresh = async () => {
+      // Safe to call repeatedly: the server awards a daily login only once.
+      await ensureDailyLogin();
+      const progress = await fetchProgress();
+      if (!active) return;
+
+      setState((prev) => {
+        // Keep an existing local value only when the remote account has not yet
+        // recorded a streak (for example, while an older account is migrating).
+        const days = progress.current_streak > 0 ? progress.current_streak : prev.days;
+        const next = {
+          days,
+          lastDate: progress.last_active_date ?? prev.lastDate,
+          celebrated: prev.celebrated && days >= FULL_DAYS,
+        };
+        try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+        return next;
+      });
+    };
+
+    void refresh();
+    window.addEventListener("app:progress-updated", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("app:progress-updated", refresh);
+    };
   }, []);
 
   const markCelebrated = () => {
     setState((p) => {
       const n = { ...p, celebrated: true };
-      localStorage.setItem(KEY, JSON.stringify(n));
+      try { localStorage.setItem(KEY, JSON.stringify(n)); } catch {}
       return n;
     });
   };
