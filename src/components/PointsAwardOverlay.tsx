@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trophy, Sparkles, Star } from "lucide-react";
+import { Trophy, Sparkles, Star, X } from "lucide-react";
 import { POINT_VALUES, type PointSource, checkUnseenAwards } from "@/lib/points";
 
 const COPY: Record<PointSource, { en: string; ar: string }> = {
@@ -47,7 +47,16 @@ const PointsAwardOverlay = ({ language }: { language: "en" | "ar" }) => {
           className="fixed inset-0 z-[100] pointer-events-none px-3 flex items-center justify-center"
           dir={isAr ? "rtl" : "ltr"}
         >
-          <div className="relative w-[min(400px,calc(100vw-1.5rem))] overflow-hidden rounded-[28px] border border-primary/40 bg-gradient-to-br from-primary/25 via-background/90 to-accent/25 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_25px_70px_-10px_hsl(var(--primary)/0.55)]">
+          <div className="relative w-[min(400px,calc(100vw-1.5rem))] overflow-hidden rounded-[28px] border border-primary/40 bg-gradient-to-br from-primary/25 via-background/90 to-accent/25 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_25px_70px_-10px_hsl(var(--primary)/0.55)] pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => setQueue((q) => q.slice(1))}
+              aria-label={isAr ? "إغلاق" : "Close"}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full border border-white/15 bg-background/40 text-muted-foreground hover:bg-background/70 hover:text-foreground transition flex items-center justify-center"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             {/* Glow orbs */}
             <div className="pointer-events-none absolute -top-16 -right-10 w-40 h-40 rounded-full bg-primary/30 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-accent/25 blur-3xl" />
