@@ -88,6 +88,7 @@ import ParentFollow from "./pages/ParentFollow";
 import OAuthConsent from "./pages/OAuthConsent";
 import ResetPassword from "./pages/ResetPassword";
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
+import InstallAppPrompt from "./components/InstallAppPrompt";
 import { PremiumWelcomeOverlay } from "./components/PremiumWelcomeOverlay";
 import SearchFAB from "./components/SearchFAB";
 import ExcellenceCompanion from "./components/ExcellenceCompanion";
@@ -635,6 +636,7 @@ const App = () => {
         onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
       />
       <PaymentTestModeBanner />
+      <InstallAppPrompt />
       {language && <PremiumWelcomeOverlay language={language} />}
       {authed && language && channelVerified && onboarded && (
         <NewFeatureAnnouncement language={language} />
