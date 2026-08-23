@@ -44,22 +44,45 @@ export default function ParentFollow({ token }: { token: string }) {
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
-    const { data: d, error } = await supabase.functions.invoke("parent-follow-view", { body: { token, code: c } });
-    if (error) { setErr(error.message); return null; }
-    if ((d as any)?.error) {
-      if ((d as any).error === "code_required") {
-        sessionStorage.removeItem(`pf_code_${token}`);
-        setUnlocked(false);
-        setErr("Incorrect access code. Ask the student for the 6-digit code shown in their app.");
+    // Use raw fetch: functions.invoke swallows the response body on non-2xx,
+    // which hid the real reason (wrong code / revoked link) from parents.
+    try {
+      const url = `${SUPABASE_URL}/functions/v1/parent-follow-view`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ token, code: c }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok || (d as any)?.error) {
+        const reason = (d as any)?.error ?? `http_${res.status}`;
+        if (reason === "code_required" || res.status === 401) {
+          sessionStorage.removeItem(`pf_code_${token}`);
+          setUnlocked(false);
+          setErr("Incorrect access code. Ask the student for the 6-digit code shown in their app.");
+        } else if (reason === "invalid_or_revoked" || res.status === 404) {
+          setErr("invalid_or_revoked");
+        } else if (res.status === 429) {
+          setErr("Too many attempts. Please wait a minute and try again.");
+          setUnlocked(false);
+        } else {
+          setErr(String(reason));
+        }
         return null;
       }
-      setErr((d as any).error);
+      setData(d as Snapshot);
+      setErr(null);
+      return d as Snapshot;
+    } catch (e: any) {
+      setErr("Network error. Check your connection and try again.");
       return null;
     }
-    setData(d as Snapshot);
-    setErr(null);
-    return d as Snapshot;
   };
+
 
   useEffect(() => {
     if (!unlocked) return;
