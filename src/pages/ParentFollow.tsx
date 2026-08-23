@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 
 type Snapshot = {
   student_name: string;
@@ -44,22 +47,45 @@ export default function ParentFollow({ token }: { token: string }) {
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
-    const { data: d, error } = await supabase.functions.invoke("parent-follow-view", { body: { token, code: c } });
-    if (error) { setErr(error.message); return null; }
-    if ((d as any)?.error) {
-      if ((d as any).error === "code_required") {
-        sessionStorage.removeItem(`pf_code_${token}`);
-        setUnlocked(false);
-        setErr("Incorrect access code. Ask the student for the 6-digit code shown in their app.");
+    // Use raw fetch: functions.invoke swallows the response body on non-2xx,
+    // which hid the real reason (wrong code / revoked link) from parents.
+    try {
+      const url = `${SUPABASE_URL}/functions/v1/parent-follow-view`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ token, code: c }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok || (d as any)?.error) {
+        const reason = (d as any)?.error ?? `http_${res.status}`;
+        if (reason === "code_required" || res.status === 401) {
+          sessionStorage.removeItem(`pf_code_${token}`);
+          setUnlocked(false);
+          setErr("Incorrect access code. Ask the student for the 6-digit code shown in their app.");
+        } else if (reason === "invalid_or_revoked" || res.status === 404) {
+          setErr("invalid_or_revoked");
+        } else if (res.status === 429) {
+          setErr("Too many attempts. Please wait a minute and try again.");
+          setUnlocked(false);
+        } else {
+          setErr(String(reason));
+        }
         return null;
       }
-      setErr((d as any).error);
+      setData(d as Snapshot);
+      setErr(null);
+      return d as Snapshot;
+    } catch (e: any) {
+      setErr("Network error. Check your connection and try again.");
       return null;
     }
-    setData(d as Snapshot);
-    setErr(null);
-    return d as Snapshot;
   };
+
 
   useEffect(() => {
     if (!unlocked) return;
@@ -144,15 +170,24 @@ export default function ParentFollow({ token }: { token: string }) {
       </main>
     );
 
-  if (err || !data)
+  if (!data)
     return (
       <main className={`${PARCHMENT} flex items-center justify-center p-6`} style={FONT_STYLE}>
-        <div className="max-w-md text-center border border-border bg-card text-card-foreground p-8 clip-facet">
-          <h1 className="text-2xl font-bold mb-2 tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
-          <p className="text-muted-foreground text-sm">This follow-up link is invalid or has been revoked by the student.</p>
+        <div className="max-w-md text-center border border-border bg-card text-card-foreground p-8 clip-facet space-y-3">
+          <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
+          <p className="text-muted-foreground text-sm">
+            {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
+          </p>
+          <button
+            onClick={() => { sessionStorage.removeItem(`pf_code_${token}`); setErr(null); setUnlocked(false); }}
+            className="h-10 px-5 border border-border text-xs uppercase tracking-[0.16em] font-semibold hover:bg-muted"
+          >
+            Try another code
+          </button>
         </div>
       </main>
     );
+
 
   const max = Math.max(1, ...data.last_7_days.map((d) => d.minutes));
   const r = data.last_report;
