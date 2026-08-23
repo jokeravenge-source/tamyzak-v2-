@@ -229,6 +229,7 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
       </footer>
       <SubjectAgent subject={subject} language={language} />
     </main>
+    </>
   );
 };
 
