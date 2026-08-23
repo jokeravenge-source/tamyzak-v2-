@@ -107,11 +107,18 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
               <X className="h-4 w-4" />
             </button>
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-              <Sparkles className="h-7 w-7 text-primary" />
+              {current.kind === "fix" ? (
+                <Wrench className="h-7 w-7 text-primary" />
+              ) : (
+                <Sparkles className="h-7 w-7 text-primary" />
+              )}
             </div>
             <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-              {isAr ? "ميزة جديدة" : "New feature"}
+              {current.kind === "fix"
+                ? (isAr ? "تم الإصلاح" : "Fixed")
+                : (isAr ? "ميزة جديدة" : "New feature")}
             </p>
+
             <h2 className="mt-2 text-2xl font-bold gradient-text">
               {isAr ? current.titleAr : current.titleEn}
             </h2>
