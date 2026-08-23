@@ -106,6 +106,11 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
   const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
+    void markAllAdminNotesSeen();
+  }, []);
+
+  useEffect(() => {
+
     (async () => {
       const [nbRes, nRes] = await Promise.all([
         (supabase as any)
