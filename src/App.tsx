@@ -7,7 +7,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Chapters = lazy(() => import("./pages/Chapters.tsx"));
 import NotFound from "./pages/NotFound.tsx";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
 import Subjects, { SUBJECT_STORAGE_KEY, type AppSubject } from "./pages/Subjects";
