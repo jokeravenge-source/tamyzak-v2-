@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, X, Loader2, AlertTriangle, CalendarClock,
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { fetchAllMistakes, resolveMistake, type Mistake } from "@/lib/mistakes";
+import { markMistakesOpened, liftMistakesPunishment } from "@/components/MistakesPunishment";
 
 const SOURCE_LABELS: Record<string, { ar: string; en: string }> = {
   mcq_bank: { ar: "بنك الأسئلة", en: "MCQ Bank" },
