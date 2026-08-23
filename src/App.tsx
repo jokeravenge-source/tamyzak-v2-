@@ -588,6 +588,8 @@ const App = () => {
   const [onboarded, setOnboarded] = useState<boolean>(() => isOnboardingDone());
   // Only ever show onboarding once per account (checked against the server flag).
   const [onboardChecked, setOnboardChecked] = useState<boolean>(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+
   useEffect(() => {
     let alive = true;
     if (!authed) { setOnboardChecked(false); return; }
