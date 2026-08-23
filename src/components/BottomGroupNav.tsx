@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -20,6 +21,7 @@ type NavItem = {
   Icon: React.ComponentType<{ className?: string }>;
   subject?: string; // when set, opens SubjectsHub focused on this subject
   url?: string; // external link (opens in new tab)
+  imageUrl?: string; // when set, shows an image thumbnail instead of the icon
 };
 
 type NavGroup = {
@@ -72,7 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
     titleEn: "Organizations", titleAr: "منظماتنا",
     items: [
       { key: "orgTamayzak", labelEn: "Tamayzak", labelAr: "تميزك", Icon: Sparkles, url: "https://tamyazak.site" },
-      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "سادس دهوك", Icon: GraduationCap, url: "https://t.me/a6th_dhs" },
+      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "6th DHS", Icon: GraduationCap, url: "https://t.me/a6th_dhs", imageUrl: org6thDhsLogo.url },
       { key: "orgMafatih", labelEn: "Keys to Success", labelAr: "مفاتيح النجاح", Icon: BookOpen, url: "https://t.me/sad6ths" },
       { key: "orgMasarak", labelEn: "Masarak", labelAr: "مسارك", Icon: Compass, url: "https://rfx.pythonanywhere.com/" },
       { key: "orgSamar", labelEn: "Samar", labelAr: "سمر", Icon: Moon, url: "https://samar.lol" },
@@ -304,8 +306,12 @@ const BottomGroupNav = ({
                           : "border-border bg-card/70 hover:border-primary/60"
                       }`}
                     >
-                      <span className="w-10 h-10 rounded-xl bg-primary/15 inline-flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-primary" />
+                      <span className="w-10 h-10 rounded-xl bg-primary/15 inline-flex items-center justify-center overflow-hidden">
+                        {it.imageUrl ? (
+                          <img src={it.imageUrl} alt={it.labelEn} className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon className="w-5 h-5 text-primary" />
+                        )}
                       </span>
                       <span className="text-sm font-semibold text-foreground mt-3">
                         {language === "ar" ? it.labelAr : it.labelEn}
