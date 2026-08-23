@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, X, Loader2, HelpCircle, Trophy, Frown, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, Loader2, HelpCircle, Trophy, Frown, RotateCcw, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
@@ -55,19 +55,25 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const [submitting, setSubmitting] = useState(false);
   const [delta, setDelta] = useState(0);
   const [score, setScore] = useState({ right: 0, wrong: 0 });
+  const [dueQuestionIds, setDueQuestionIds] = useState<string[]>([]);
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("mcq_banks")
-        .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation")
-        .eq("language", lang)
-        .order("subject", { ascending: true })
-        .order("chapter", { ascending: true })
-        .order("sort_order", { ascending: true })
-        .limit(2000);
+      const [{ data }, dueResult] = await Promise.all([
+        supabase
+          .from("mcq_banks")
+          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation")
+          .eq("language", lang)
+          .order("subject", { ascending: true })
+          .order("chapter", { ascending: true })
+          .order("sort_order", { ascending: true })
+          .limit(2000),
+        (supabase as any).rpc("get_due_mcq_bank_reviews"),
+      ]);
       setRows((data ?? []) as Row[]);
+      setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();
   }, [lang]);
@@ -89,9 +95,13 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     return [...map.values()].sort((a, b) => a.chapter - b.chapter);
   }, [rows, subject]);
 
+  const dueRows = useMemo(
+    () => rows.filter((r) => dueQuestionIds.includes(r.id)),
+    [rows, dueQuestionIds],
+  );
   const quiz = useMemo(
-    () => rows.filter((r) => r.subject === subject && r.chapter === chapter),
-    [rows, subject, chapter],
+    () => reviewing ? dueRows : rows.filter((r) => r.subject === subject && r.chapter === chapter),
+    [rows, subject, chapter, reviewing, dueRows],
   );
   const current = quiz[index];
   const choices = useMemo(
@@ -155,15 +165,33 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }
 
   // ---- Subject picker ----
-  if (!subject) {
+  if (!subject && !reviewing) {
     return (
       <main className="min-h-screen px-4 py-8 pb-28" dir={isAr ? "rtl" : "ltr"}>
         {header(isAr ? "بنك الأسئلة" : "MCQ Bank", onBack)}
         <p className="text-sm text-muted-foreground mb-6">
           {isAr
-            ? "اختر المادة، أجب بشكل صحيح لتربح 5 نقاط، والإجابة الخاطئة تخصم 5 نقاط."
-            : "Pick a subject. A correct answer earns 5 points, a wrong one costs 5 points."}
+            ? "اربح 5 نقاط عند الإجابة الصحيحة من المحاولة الأولى. الأسئلة التي تخطئ فيها ستعود للمراجعة بعد 4 أيام."
+            : "Earn 5 points for a first-attempt correct answer. Missed questions return for review after 4 days."}
         </p>
+        {dueRows.length > 0 && (
+          <button
+            type="button"
+            onClick={() => { setReviewing(true); setIndex(0); resetQ(); setScore({ right: 0, wrong: 0 }); }}
+            className="w-full max-w-4xl mb-5 flex items-center justify-between rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-start hover:border-amber-400 transition-colors"
+          >
+            <span className="flex items-center gap-3">
+              <CalendarClock className="w-5 h-5 text-amber-400" />
+              <span>
+                <span className="block font-semibold">{isAr ? "أسئلة للمراجعة" : "Questions to review"}</span>
+                <span className="block text-xs text-muted-foreground mt-1">
+                  {isAr ? "أسئلة أخطأت فيها وأصبحت جاهزة للمراجعة الآن" : "Questions you missed that are ready to review now"}
+                </span>
+              </span>
+            </span>
+            <span className="rounded-full bg-amber-400/20 px-3 py-1 text-sm font-bold text-amber-300">{dueRows.length}</span>
+          </button>
+        )}
         {subjects.length === 0 ? (
           <p className="text-muted-foreground">{isAr ? "لا توجد أسئلة بعد." : "No questions yet."}</p>
         ) : (
@@ -190,7 +218,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }
 
   // ---- Chapter picker ----
-  if (chapter === null) {
+  if (chapter === null && !reviewing) {
     return (
       <main className="min-h-screen px-4 py-8 pb-28" dir={isAr ? "rtl" : "ltr"}>
         {header(subjectLabel(subject, isAr), () => setSubject(null))}
@@ -218,7 +246,16 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
 
   return (
     <main className="min-h-screen px-4 py-8 pb-28" dir={isAr ? "rtl" : "ltr"}>
-      {header(`${subjectLabel(subject, isAr)} · ${isAr ? `الفصل ${chapter}` : `Chapter ${chapter}`}`, () => { setChapter(null); resetQ(); })}
+      {header(
+        reviewing
+          ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
+          : `${subjectLabel(subject!, isAr)} · ${isAr ? `الفصل ${chapter}` : `Chapter ${chapter}`}`,
+        () => {
+          if (reviewing) setReviewing(false);
+          else setChapter(null);
+          resetQ();
+        },
+      )}
 
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
@@ -316,8 +353,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                         <Button onClick={restart} variant="secondary">
                           <RotateCcw className="w-4 h-4 me-1" />{isAr ? "إعادة" : "Restart"}
                         </Button>
-                        <Button onClick={() => { setChapter(null); resetQ(); }}>
-                          {isAr ? "فصل آخر" : "Another chapter"}
+                        <Button onClick={() => { setReviewing(false); setChapter(null); resetQ(); }}>
+                          {reviewing ? (isAr ? "العودة للبنك" : "Back to bank") : (isAr ? "فصل آخر" : "Another chapter")}
                         </Button>
                       </>
                     )}
