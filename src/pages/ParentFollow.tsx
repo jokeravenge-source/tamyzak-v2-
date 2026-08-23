@@ -170,15 +170,24 @@ export default function ParentFollow({ token }: { token: string }) {
       </main>
     );
 
-  if (err || !data)
+  if (!data)
     return (
       <main className={`${PARCHMENT} flex items-center justify-center p-6`} style={FONT_STYLE}>
-        <div className="max-w-md text-center border border-border bg-card text-card-foreground p-8 clip-facet">
-          <h1 className="text-2xl font-bold mb-2 tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
-          <p className="text-muted-foreground text-sm">This follow-up link is invalid or has been revoked by the student.</p>
+        <div className="max-w-md text-center border border-border bg-card text-card-foreground p-8 clip-facet space-y-3">
+          <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
+          <p className="text-muted-foreground text-sm">
+            {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
+          </p>
+          <button
+            onClick={() => { sessionStorage.removeItem(`pf_code_${token}`); setErr(null); setUnlocked(false); }}
+            className="h-10 px-5 border border-border text-xs uppercase tracking-[0.16em] font-semibold hover:bg-muted"
+          >
+            Try another code
+          </button>
         </div>
       </main>
     );
+
 
   const max = Math.max(1, ...data.last_7_days.map((d) => d.minutes));
   const r = data.last_report;
