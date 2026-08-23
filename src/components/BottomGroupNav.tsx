@@ -20,6 +20,7 @@ type NavItem = {
   Icon: React.ComponentType<{ className?: string }>;
   subject?: string; // when set, opens SubjectsHub focused on this subject
   url?: string; // external link (opens in new tab)
+  imageUrl?: string; // when set, shows an image thumbnail instead of the icon
 };
 
 type NavGroup = {
@@ -72,7 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
     titleEn: "Organizations", titleAr: "منظماتنا",
     items: [
       { key: "orgTamayzak", labelEn: "Tamayzak", labelAr: "تميزك", Icon: Sparkles, url: "https://tamyazak.site" },
-      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "سادس دهوك", Icon: GraduationCap, url: "https://t.me/a6th_dhs" },
+      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "6th DHS", Icon: GraduationCap, url: "https://t.me/a6th_dhs", imageUrl: org6thDhsLogo },
       { key: "orgMafatih", labelEn: "Keys to Success", labelAr: "مفاتيح النجاح", Icon: BookOpen, url: "https://t.me/sad6ths" },
       { key: "orgMasarak", labelEn: "Masarak", labelAr: "مسارك", Icon: Compass, url: "https://rfx.pythonanywhere.com/" },
       { key: "orgSamar", labelEn: "Samar", labelAr: "سمر", Icon: Moon, url: "https://samar.lol" },
