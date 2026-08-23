@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -305,8 +306,12 @@ const BottomGroupNav = ({
                           : "border-border bg-card/70 hover:border-primary/60"
                       }`}
                     >
-                      <span className="w-10 h-10 rounded-xl bg-primary/15 inline-flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-primary" />
+                      <span className="w-10 h-10 rounded-xl bg-primary/15 inline-flex items-center justify-center overflow-hidden">
+                        {it.imageUrl ? (
+                          <img src={it.imageUrl} alt={it.labelEn} className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon className="w-5 h-5 text-primary" />
+                        )}
                       </span>
                       <span className="text-sm font-semibold text-foreground mt-3">
                         {language === "ar" ? it.labelAr : it.labelEn}
