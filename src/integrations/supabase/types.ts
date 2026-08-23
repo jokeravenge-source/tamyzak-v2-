@@ -1250,6 +1250,44 @@ export type Database = {
         }
         Relationships: []
       }
+      mcq_bank_review_attempts: {
+        Row: {
+          attempt_count: number
+          first_attempt_at: string
+          last_answer_correct: boolean
+          last_attempt_at: string
+          next_review_at: string | null
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          first_attempt_at?: string
+          last_answer_correct?: boolean
+          last_attempt_at?: string
+          next_review_at?: string | null
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          first_attempt_at?: string
+          last_answer_correct?: boolean
+          last_attempt_at?: string
+          next_review_at?: string | null
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcq_bank_review_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "mcq_banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcq_banks: {
         Row: {
           answer_index: number
@@ -1336,6 +1374,69 @@ export type Database = {
           subject?: string
           topic_key?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      my_mistakes: {
+        Row: {
+          chapter: string | null
+          choices: Json
+          correct_answer: string | null
+          created_at: string
+          explanation: string | null
+          id: string
+          language: string | null
+          next_review_at: string
+          question: string
+          ref_id: string | null
+          resolved: boolean
+          source: string
+          subject: string | null
+          times_redone: number
+          times_wrong: number
+          updated_at: string
+          user_answer: string | null
+          user_id: string
+        }
+        Insert: {
+          chapter?: string | null
+          choices?: Json
+          correct_answer?: string | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          language?: string | null
+          next_review_at?: string
+          question: string
+          ref_id?: string | null
+          resolved?: boolean
+          source: string
+          subject?: string | null
+          times_redone?: number
+          times_wrong?: number
+          updated_at?: string
+          user_answer?: string | null
+          user_id: string
+        }
+        Update: {
+          chapter?: string | null
+          choices?: Json
+          correct_answer?: string | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          language?: string | null
+          next_review_at?: string
+          question?: string
+          ref_id?: string | null
+          resolved?: boolean
+          source?: string
+          subject?: string | null
+          times_redone?: number
+          times_wrong?: number
+          updated_at?: string
+          user_answer?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2765,6 +2866,12 @@ export type Database = {
         Returns: boolean
       }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
+      get_due_mcq_bank_reviews: {
+        Args: never
+        Returns: {
+          question_id: string
+        }[]
+      }
       get_exam_answer_path: { Args: { _exam_id: string }; Returns: string }
       get_my_referral_code: { Args: never; Returns: string }
       has_active_premium: {
@@ -2806,11 +2913,30 @@ export type Database = {
         }[]
       }
       public_student_profile: { Args: { _user_id: string }; Returns: Json }
+      record_mistake: {
+        Args: {
+          _chapter?: string
+          _choices?: Json
+          _correct_answer?: string
+          _explanation?: string
+          _language?: string
+          _question: string
+          _ref_id?: string
+          _source: string
+          _subject?: string
+          _user_answer?: string
+        }
+        Returns: string
+      }
       redeem_premium_with_points: {
         Args: { _environment?: string }
         Returns: Json
       }
       redeem_referral: { Args: { _code: string }; Returns: Json }
+      resolve_mistake: {
+        Args: { _correct: boolean; _id: string }
+        Returns: undefined
+      }
       set_site_visits: { Args: { _count: number }; Returns: number }
     }
     Enums: {
