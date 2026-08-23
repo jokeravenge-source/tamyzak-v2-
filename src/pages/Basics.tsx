@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
-  ArrowRight, ArrowLeft, Layers, BookMarked, FileText, GraduationCap, Microscope,
+  ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
   LogOut, Bell, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
   Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
   Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette,
 } from "lucide-react";
+import { dueMistakesCount } from "@/lib/mistakes";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,6 +190,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
       { key: "summaries", labelEn: "Summaries", labelAr: "الملخصات", Icon: FileText },
       { key: "mcq", labelEn: "MCQ Generator", labelAr: "مولّد الأسئلة", Icon: HelpCircle },
       { key: "mcqBank", labelEn: "MCQ Bank", labelAr: "بنك الأسئلة", Icon: Layers },
+      { key: "mistakes", labelEn: "My Mistakes", labelAr: "أخطائي", Icon: AlertTriangle },
       { key: "mindmap", labelEn: "Mind Map", labelAr: "الخريطة الذهنية", Icon: Network },
       { key: "videoNotes", labelEn: "Video Notes", labelAr: "ملاحظات الفيديو", Icon: Headphones },
       { key: "textToVideo", labelEn: "Text → Video", labelAr: "نص إلى فيديو", Icon: Video },
@@ -244,6 +246,7 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
 // Study tools grid (bottom section)
 const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "mcqBank",    Icon: Layers },
+  { key: "mistakes",   Icon: AlertTriangle },
   { key: "videoNotes", Icon: Headphones },
   { key: "youtube",    Icon: Youtube },
   { key: "canvas",     Icon: Palette },
@@ -261,6 +264,7 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
   companion: Sparkles,
   mcq: HelpCircle,
   mcqBank: Layers,
+  mistakes: AlertTriangle,
   report: Sparkles,
   summaries: FileText,
   todo: ListChecks,
@@ -274,7 +278,8 @@ const FEATURED_COPY = {
     todo: { title: "To-Do List", subtitle: "Plan tasks and celebrate when you finish." },
     missions: { title: "Al-Fahrast", subtitle: "Chapter topics tracked per subject." },
     mcq: { title: "MCQ Generator", subtitle: "Get multiple-choice questions from any file." },
-    mcqBank: { title: "MCQ Bank", subtitle: "Solve real MCQs by subject: +5 points right, -5 wrong." },
+    mcqBank: { title: "MCQ Bank", subtitle: "Solve real MCQs by subject. Points only on your first-ever try." },
+    mistakes: { title: "My Mistakes", subtitle: "Everything you got wrong, back for review every 3 days." },
     youtube: { title: "YouTube Player", subtitle: "Watch any YouTube video inside the app." },
     videoNotes: { title: "Video to Notes", subtitle: "Turn a YouTube lecture into AI study notes." },
     canvas: { title: "Canvas", subtitle: "Sketch and diagram your ideas freely." },
@@ -290,7 +295,8 @@ const FEATURED_COPY = {
     todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },
     missions: { title: "الفهرست", subtitle: "مواضيع الفصول لكل مادة." },
     mcq: { title: "مولّد الأسئلة", subtitle: "احصل على اختيارات من متعدد من أي ملف." },
-    mcqBank: { title: "بنك الأسئلة", subtitle: "حل أسئلة حسب المادة: +5 نقاط للصحيح و-5 للخطأ." },
+    mcqBank: { title: "بنك الأسئلة", subtitle: "حل أسئلة حسب المادة. النقاط لأول محاولة فقط." },
+    mistakes: { title: "أخطائي", subtitle: "كل ما أخطأت فيه يعود للمراجعة كل 3 أيام." },
     youtube: { title: "مشغّل يوتيوب", subtitle: "شاهد أي فيديو يوتيوب داخل التطبيق." },
     videoNotes: { title: "من الفيديو إلى ملاحظات", subtitle: "حوّل محاضرة يوتيوب إلى ملاحظات بالذكاء." },
     canvas: { title: "اللوحة", subtitle: "ارسم ونظّم أفكارك بحرية." },
@@ -694,6 +700,13 @@ const Basics = ({
     </>
   );
 
+  const [dueMistakes, setDueMistakes] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    dueMistakesCount().then((n) => { if (alive) setDueMistakes(n); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
@@ -900,6 +913,29 @@ const Basics = ({
               <GiftMcqButton language={language} />
             </div>
           </header>
+
+          {dueMistakes > 0 && (
+            <button
+              type="button"
+              onClick={() => onNav("mistakes")}
+              className="w-full mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-start hover:border-amber-400 transition-colors"
+            >
+              <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-bold text-foreground">
+                  {language === "ar" ? "حان وقت مراجعة أخطائك" : "Time to review your mistakes"}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {language === "ar"
+                    ? `لديك ${dueMistakes} سؤال أخطأت فيه — أعد حله الآن.`
+                    : `${dueMistakes} question(s) you got wrong — redo them now.`}
+                </span>
+              </span>
+              <span className="ms-auto shrink-0 rounded-full bg-amber-400/20 px-3 py-1 text-sm font-bold text-amber-500">{dueMistakes}</span>
+            </button>
+          )}
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
           <section className="mb-6">

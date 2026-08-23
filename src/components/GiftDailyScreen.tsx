@@ -3,6 +3,7 @@ import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { awardPoints } from "@/lib/points";
+import { recordMistake } from "@/lib/mistakes";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { Check, X, Sparkles, Loader2, ArrowLeft, ArrowRight, Gift, CalendarClock } from "lucide-react";
@@ -178,8 +179,20 @@ export default function GiftDailyScreen({ language, onClose }: { language: AppLa
     if (ok) {
       celebrate();
       await awardPoints("mcq", `gift-${todayKey()}`);
-    } else if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate?.([60, 40, 60]);
+    } else {
+      void recordMistake({
+        source: "daily_gift",
+        question: question.q,
+        subject: question.subject,
+        chapter: String(question.chapter),
+        language: isAr ? "ar" : "en",
+        choices: question.choices,
+        correctAnswer: question.choices[question.answer],
+        userAnswer: question.choices[i],
+      });
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate?.([60, 40, 60]);
+      }
     }
   };
 

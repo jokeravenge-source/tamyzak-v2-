@@ -5,6 +5,7 @@ import {
   Trash2, Play, ChevronRight, Medal, CalendarClock, Lock, Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { recordMistake } from "@/lib/mistakes";
 import { toast } from "sonner";
 import { extractStudyMaterial } from "@/lib/fileText";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -585,7 +586,20 @@ const ChallengeRunner = ({
     const elapsed = Math.min(perQ * 1000, Date.now() - startRef.current);
     setTotalMs((t) => t + elapsed);
     setPicked(i);
-    if (i === questions[index].answer_index) setCorrect((c) => c + 1);
+    const cq = questions[index];
+    if (i === cq.answer_index) {
+      setCorrect((c) => c + 1);
+    } else {
+      void recordMistake({
+        source: "challenge",
+        refId: cq.id,
+        question: cq.question,
+        choices: (cq.choices as unknown[]).map(String),
+        correctAnswer: String((cq.choices as unknown[])[cq.answer_index] ?? ""),
+        userAnswer: String((cq.choices as unknown[])[i] ?? ""),
+        explanation: cq.explanation ?? null,
+      });
+    }
   };
 
   const saveAttempt = async (finalCorrect: number, finalMs: number) => {

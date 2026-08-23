@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { showAward } from "@/lib/points";
+import { recordMistake } from "@/lib/mistakes";
 
 type Row = {
   id: string;
@@ -123,13 +124,27 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     const res = (data ?? null) as null | {
       correct: boolean; answer_index: number; explanation: string | null; points: number;
     };
+    const saveMistake = (correctIdx: number) => {
+      void recordMistake({
+        source: "mcq_bank",
+        refId: current.id,
+        question: current.question,
+        subject: current.subject,
+        chapter: String(current.chapter),
+        language: lang,
+        choices,
+        correctAnswer: choices[correctIdx],
+        userAnswer: choices[choice],
+        explanation: current.explanation,
+      });
+    };
     if (error || !res) {
       // fall back to local check so the user still gets feedback
       const ok = choice === current.answer_index;
       setAnswerIndex(current.answer_index);
       setExplanation(current.explanation);
       setScore((s) => ({ right: s.right + (ok ? 1 : 0), wrong: s.wrong + (ok ? 0 : 1) }));
-      if (ok) celebrate();
+      if (ok) celebrate(); else saveMistake(current.answer_index);
       return;
     }
     setAnswerIndex(res.answer_index);
@@ -139,10 +154,11 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     if (res.correct) {
       celebrate();
       if (res.points > 0) showAward("mcq", res.points);
-    } else if (navigator.vibrate) {
-      navigator.vibrate([40, 60, 40]);
+    } else {
+      saveMistake(res.answer_index);
+      if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
     }
-  }, [current, picked, submitting]);
+  }, [current, picked, submitting, choices, lang]);
 
   const next = () => { resetQ(); setIndex((i) => Math.min(i + 1, quiz.length - 1)); };
   const restart = () => { resetQ(); setIndex(0); setScore({ right: 0, wrong: 0 }); };

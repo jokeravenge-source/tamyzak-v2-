@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { awardPoints } from "@/lib/points";
+import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
 
@@ -137,7 +138,19 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   const submitAnswer = () => {
     if (selected === null) return;
     const q = questions[current];
-    if (selected === q.answer_index) setScore((s) => s + 1);
+    if (selected === q.answer_index) {
+      setScore((s) => s + 1);
+    } else {
+      void recordMistake({
+        source: "mcq_generator",
+        question: q.question,
+        language,
+        choices: q.choices,
+        correctAnswer: q.choices[q.answer_index],
+        userAnswer: q.choices[selected],
+        explanation: q.explanation,
+      });
+    }
     setRevealed(true);
   };
 
