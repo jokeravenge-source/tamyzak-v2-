@@ -7,6 +7,7 @@ import {
   Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
   Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette,
 } from "lucide-react";
+import { dueMistakesCount } from "@/lib/mistakes";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -699,6 +700,13 @@ const Basics = ({
     </>
   );
 
+  const [dueMistakes, setDueMistakes] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    dueMistakesCount().then((n) => { if (alive) setDueMistakes(n); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
@@ -905,6 +913,29 @@ const Basics = ({
               <GiftMcqButton language={language} />
             </div>
           </header>
+
+          {dueMistakes > 0 && (
+            <button
+              type="button"
+              onClick={() => onNav("mistakes")}
+              className="w-full mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-start hover:border-amber-400 transition-colors"
+            >
+              <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-bold text-foreground">
+                  {language === "ar" ? "حان وقت مراجعة أخطائك" : "Time to review your mistakes"}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {language === "ar"
+                    ? `لديك ${dueMistakes} سؤال أخطأت فيه — أعد حله الآن.`
+                    : `${dueMistakes} question(s) you got wrong — redo them now.`}
+                </span>
+              </span>
+              <span className="ms-auto shrink-0 rounded-full bg-amber-400/20 px-3 py-1 text-sm font-bold text-amber-500">{dueMistakes}</span>
+            </button>
+          )}
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
           <section className="mb-6">
