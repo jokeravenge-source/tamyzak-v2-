@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import ExcellenceCompanion from "@/components/ExcellenceCompanion";
 import ProgressStats from "@/components/ProgressStats";
-import { useSubscription } from "@/hooks/useSubscription";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 const T = {
