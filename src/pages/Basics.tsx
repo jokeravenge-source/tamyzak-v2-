@@ -240,6 +240,8 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
   { key: "mcqBank",     Icon: Layers,     tintBg: "bg-sky-50",     tintText: "text-sky-600" },
   { key: "missions",    Icon: Target,     tintBg: "bg-amber-50",   tintText: "text-amber-600" },
   { key: "summaries",   Icon: FileText,   tintBg: "bg-violet-50",  tintText: "text-violet-600" },
+  { key: "adminNotes",  Icon: BookOpen,   tintBg: "bg-rose-50",    tintText: "text-rose-600" },
+  { key: "notes",       Icon: NotebookPen, tintBg: "bg-teal-50",   tintText: "text-teal-600" },
   { key: "sessions",    Icon: GraduationCap, tintBg: "bg-emerald-50", tintText: "text-emerald-600" },
 ];
 
