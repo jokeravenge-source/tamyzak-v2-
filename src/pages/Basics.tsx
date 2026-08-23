@@ -1134,7 +1134,7 @@ const Basics = ({
                     </div>
 
                     <div className="absolute inset-x-0 bottom-0 p-3.5 z-10">
-                      <h3 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h2>
+                      <h3 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h3>
                       {n.body && (
                         <p className="text-xs text-primary-foreground/85 mt-0.5 whitespace-pre-wrap line-clamp-2 leading-relaxed drop-shadow">
                           {n.body}
