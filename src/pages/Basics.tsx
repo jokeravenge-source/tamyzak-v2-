@@ -638,11 +638,14 @@ const Basics = ({
     .map((k) => ({ key: k as MainMenuChoice, Icon: TOOL_ICONS[k as MainMenuChoice]! }));
   const displayedTools = (() => {
     const base = recentTools.length > 0 ? recentTools : STUDY_TOOLS.slice(0, 4);
-    const withBank = base.some((t) => t.key === "mcqBank")
-      ? base
-      : [{ key: "mcqBank" as MainMenuChoice, Icon: Layers }, ...base];
-    return withBank.slice(0, 4);
+    const pinned: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
+      { key: "mcqBank" as MainMenuChoice, Icon: Layers },
+      { key: "adminNotes" as MainMenuChoice, Icon: BookOpen },
+      { key: "notes" as MainMenuChoice, Icon: NotebookPen },
+    ].filter((p) => !base.some((t) => t.key === p.key));
+    return [...pinned, ...base].slice(0, 6);
   })();
+
   const displayedToolsHeader = recentTools.length > 0
     ? { en: "Recently used", ar: "المستخدمة مؤخراً" }[language]
     : toolsHeader;
