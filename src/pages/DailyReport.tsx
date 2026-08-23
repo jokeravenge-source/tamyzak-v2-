@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag, Crown } from "lucide-react";
+import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -66,7 +66,6 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
   useFeatureUsed("reports");
   const t = T[language];
   const ar = language === "ar";
-  const { isPremium, loading: subLoading } = useSubscription();
   const [report, setReport] = useState<Report | null>(null);
   const [meta, setMeta] = useState<{ days_to_exam: number | null; daily_target_minutes: number } | null>(null);
   const [loading, setLoading] = useState(true);
