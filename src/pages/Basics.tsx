@@ -1204,6 +1204,7 @@ const Basics = ({
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
                 if (!meta) return null;
+                const showNotesDot = it.key === "adminNotes" && unseenNotes > 0;
                 return (
                   <motion.button
                     key={it.key}
@@ -1211,8 +1212,16 @@ const Basics = ({
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     whileHover={{ y: -3 }}
                     onClick={() => navigate(it.key)}
-                    className={`group ${isRTL ? "text-right" : "text-left"} bg-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all`}
+                    className={`group relative ${isRTL ? "text-right" : "text-left"} bg-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all`}
                   >
+                    {showNotesDot && (
+                      <span
+                        aria-label={language === "ar" ? "ملاحظات جديدة" : "New notes"}
+                        className="absolute top-2 end-2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold"
+                      >
+                        {unseenNotes > 9 ? "9+" : unseenNotes}
+                      </span>
+                    )}
                     <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center mb-2 sm:mb-3 text-primary group-hover:scale-110 transition-transform">
                       <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
@@ -1221,6 +1230,7 @@ const Basics = ({
                   </motion.button>
                 );
               })}
+
             </motion.div>
           </section>
 
