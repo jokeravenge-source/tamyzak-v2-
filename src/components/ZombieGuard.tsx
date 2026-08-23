@@ -18,6 +18,14 @@ export const clearRedoAndZombie = () => {
 
 export const isZombieActive = () => localStorage.getItem(ZOMBIE_KEY) === "1";
 
+/** Force zombie mode on (used by the mistakes punishment). */
+export const activateZombie = () => {
+  localStorage.setItem(ZOMBIE_KEY, "1");
+  document.documentElement.classList.add("zombie-mode");
+  applyTheme("zombie" as any);
+  window.dispatchEvent(new Event("app:zombie-changed"));
+};
+
 const evaluate = () => {
   if (localStorage.getItem(ZOMBIE_KEY) === "1") {
     document.documentElement.classList.add("zombie-mode");
