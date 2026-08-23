@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { markAllAdminNotesSeen } from "@/lib/unseenAdminNotes";
+
 import type { AppLanguage } from "@/components/LanguageGate";
 import {
   AdminNoteRenderer,
