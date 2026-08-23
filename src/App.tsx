@@ -645,9 +645,24 @@ const App = () => {
       <PaymentTestModeBanner />
       <InstallAppPrompt />
       {language && <PremiumWelcomeOverlay language={language} />}
-      {authed && language && channelVerified && onboarded && (
+      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+        <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
+      )}
+      {guideOpen && language && (
+        <div className="fixed inset-0 z-[92] overflow-y-auto bg-background">
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>}>
+            <GuideChat
+              language={language}
+              onBack={() => setGuideOpen(false)}
+              onOpenTool={(key) => { setGuideOpen(false); chooseMenu(key as MenuChoice); }}
+            />
+          </Suspense>
+        </div>
+      )}
+      {authed && language && channelVerified && onboarded && !guideOpen && (
         <NewFeatureAnnouncement language={language} />
       )}
+
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
       )}
