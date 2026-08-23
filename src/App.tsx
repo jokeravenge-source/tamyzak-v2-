@@ -32,6 +32,7 @@ const AccountCenter = lazy(() => import("./pages/AccountCenter"));
 const Essay = lazy(() => import("./pages/Essay"));
 const VideoNotes = lazy(() => import("./pages/VideoNotes"));
 import ZombieGuard from "./components/ZombieGuard";
+import MistakesPunishment from "./components/MistakesPunishment";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import Basics, { type BasicsChoice } from "./pages/Basics";
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -641,6 +642,9 @@ const App = () => {
       {language && <PremiumWelcomeOverlay language={language} />}
       {authed && language && channelVerified && onboarded && (
         <NewFeatureAnnouncement language={language} />
+      )}
+      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+        <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />

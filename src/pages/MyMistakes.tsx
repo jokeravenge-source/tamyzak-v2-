@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Check, X, Loader2, AlertTriangle, CalendarClock,
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { fetchAllMistakes, resolveMistake, type Mistake } from "@/lib/mistakes";
+import { markMistakesOpened, liftMistakesPunishment } from "@/components/MistakesPunishment";
 
 const SOURCE_LABELS: Record<string, { ar: string; en: string }> = {
   mcq_bank: { ar: "بنك الأسئلة", en: "MCQ Bank" },
@@ -33,11 +34,14 @@ export default function MyMistakes({ language, onBack }: { language: AppLanguage
 
   const load = useCallback(async () => {
     setLoading(true);
-    setItems(await fetchAllMistakes());
+    const list = await fetchAllMistakes();
+    setItems(list);
+    const stillDue = list.some((m) => !m.resolved && new Date(m.next_review_at).getTime() <= Date.now());
+    if (!stillDue) liftMistakesPunishment();
     setLoading(false);
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { markMistakesOpened(); void load(); }, [load]);
 
   const now = Date.now();
   const due = useMemo(
