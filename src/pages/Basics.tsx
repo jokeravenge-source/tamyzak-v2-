@@ -710,11 +710,14 @@ const Basics = ({
   );
 
   const [dueMistakes, setDueMistakes] = useState(0);
+  const [unseenNotes, setUnseenNotes] = useState(0);
   useEffect(() => {
     let alive = true;
     dueMistakesCount().then((n) => { if (alive) setDueMistakes(n); }).catch(() => {});
+    unseenAdminNotesCount().then((n) => { if (alive) setUnseenNotes(n); }).catch(() => {});
     return () => { alive = false; };
   }, []);
+
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
