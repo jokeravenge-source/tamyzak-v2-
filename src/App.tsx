@@ -7,7 +7,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Chapters = lazy(() => import("./pages/Chapters.tsx"));
 import NotFound from "./pages/NotFound.tsx";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
 import Subjects, { SUBJECT_STORAGE_KEY, type AppSubject } from "./pages/Subjects";
@@ -45,6 +45,9 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 import PointsAwardOverlay from "./components/PointsAwardOverlay";
 import FeatureUnlockCelebration from "./components/FeatureUnlockCelebration";
 import NewFeatureAnnouncement from "./components/NewFeatureAnnouncement";
+import UsageIntroGate from "./components/UsageIntroGate";
+const GuideChat = lazy(() => import("./pages/GuideChat"));
+
 import FeatureUnlocks from "./pages/FeatureUnlocks";
 import { ensureDailyLogin, fetchUnlockedKeys, isGatedMenu, type FeatureKey } from "@/lib/unlocks";
 const TodoList = lazy(() => import("./pages/TodoList"));
@@ -585,6 +588,8 @@ const App = () => {
   const [onboarded, setOnboarded] = useState<boolean>(() => isOnboardingDone());
   // Only ever show onboarding once per account (checked against the server flag).
   const [onboardChecked, setOnboardChecked] = useState<boolean>(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+
   useEffect(() => {
     let alive = true;
     if (!authed) { setOnboardChecked(false); return; }
@@ -640,9 +645,24 @@ const App = () => {
       <PaymentTestModeBanner />
       <InstallAppPrompt />
       {language && <PremiumWelcomeOverlay language={language} />}
-      {authed && language && channelVerified && onboarded && (
+      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+        <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
+      )}
+      {guideOpen && language && (
+        <div className="fixed inset-0 z-[92] overflow-y-auto bg-background">
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>}>
+            <GuideChat
+              language={language}
+              onBack={() => setGuideOpen(false)}
+              onOpenTool={(key) => { setGuideOpen(false); chooseMenu(key as MenuChoice); }}
+            />
+          </Suspense>
+        </div>
+      )}
+      {authed && language && channelVerified && onboarded && !guideOpen && (
         <NewFeatureAnnouncement language={language} />
       )}
+
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
       )}

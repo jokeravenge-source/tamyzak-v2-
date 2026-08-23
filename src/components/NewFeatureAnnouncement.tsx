@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, Wrench, X } from "lucide-react";
 
 export type FeatureAnnouncement = {
   /** Unique id — bump it to re-show a card. */
   id: string;
+  /** "feature" for something new, "fix" for a resolved issue. */
+  kind?: "feature" | "fix";
   titleAr: string;
   titleEn: string;
   descAr: string;
@@ -12,10 +14,26 @@ export type FeatureAnnouncement = {
 };
 
 /**
- * Add one entry here every time a new feature ships.
+ * Add one entry here every time a new feature ships or a bug is fixed.
  * Each card is shown once per user (tracked in localStorage by `id`).
  */
 export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
+  {
+    id: "guide-chat-2026-08",
+    kind: "feature",
+    titleAr: "مرشد التطبيق الذكي",
+    titleEn: "Smart app guide",
+    descAr: "لا تعرف من أين تبدأ؟ أخبر المرشد بما تريد إنجازه وسينقلك مباشرة إلى الأداة المناسبة.",
+    descEn: "Not sure where to start? Tell the guide what you want to do and it takes you straight to the right tool.",
+  },
+  {
+    id: "notes-unread-dot-2026-08",
+    kind: "feature",
+    titleAr: "تنبيه الملاحظات الجديدة",
+    titleEn: "New notes indicator",
+    descAr: "تظهر نقطة حمراء على بطاقة الملاحظات عندما تكون هناك ملاحظات لم تقرأها بعد.",
+    descEn: "A red dot appears on the notes card whenever there are notes you haven't opened yet.",
+  },
   {
     id: "join-tamayzak-2026-08",
     titleAr: "انضم الى تميزك",
@@ -31,6 +49,7 @@ export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
     descEn: "No points needed anymore — use Canvas and Notes for free.",
   },
 ];
+
 
 const KEY = "seen_feature_announcements_v1";
 
@@ -88,11 +107,18 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
               <X className="h-4 w-4" />
             </button>
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-              <Sparkles className="h-7 w-7 text-primary" />
+              {current.kind === "fix" ? (
+                <Wrench className="h-7 w-7 text-primary" />
+              ) : (
+                <Sparkles className="h-7 w-7 text-primary" />
+              )}
             </div>
             <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-              {isAr ? "ميزة جديدة" : "New feature"}
+              {current.kind === "fix"
+                ? (isAr ? "تم الإصلاح" : "Fixed")
+                : (isAr ? "ميزة جديدة" : "New feature")}
             </p>
+
             <h2 className="mt-2 text-2xl font-bold gradient-text">
               {isAr ? current.titleAr : current.titleEn}
             </h2>
