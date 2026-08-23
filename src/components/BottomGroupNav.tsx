@@ -74,7 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
     titleEn: "Organizations", titleAr: "منظماتنا",
     items: [
       { key: "orgTamayzak", labelEn: "Tamayzak", labelAr: "تميزك", Icon: Sparkles, url: "https://tamyazak.site" },
-      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "6th DHS", Icon: GraduationCap, url: "https://t.me/a6th_dhs", imageUrl: org6thDhsLogo },
+      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "6th DHS", Icon: GraduationCap, url: "https://t.me/a6th_dhs", imageUrl: org6thDhsLogo.url },
       { key: "orgMafatih", labelEn: "Keys to Success", labelAr: "مفاتيح النجاح", Icon: BookOpen, url: "https://t.me/sad6ths" },
       { key: "orgMasarak", labelEn: "Masarak", labelAr: "مسارك", Icon: Compass, url: "https://rfx.pythonanywhere.com/" },
       { key: "orgSamar", labelEn: "Samar", labelAr: "سمر", Icon: Moon, url: "https://samar.lol" },
