@@ -644,6 +644,9 @@ const App = () => {
         <NewFeatureAnnouncement language={language} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+        <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
+      )}
+      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
