@@ -8,6 +8,8 @@ import {
   Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
+import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
+
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
