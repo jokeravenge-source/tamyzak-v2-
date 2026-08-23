@@ -51,6 +51,7 @@ const News = lazy(() => import("./pages/News"));
 const Premium = lazy(() => import("./pages/Premium"));
 const MinisterialBank = lazy(() => import("./pages/MinisterialBank"));
 const McqBank = lazy(() => import("./pages/McqBank"));
+const MyMistakes = lazy(() => import("./pages/MyMistakes"));
 const MindMap = lazy(() => import("./pages/MindMap"));
 const IslamicSurahs = lazy(() => import("./pages/IslamicSurahs"));
 const HadithChecker = lazy(() => import("./pages/HadithChecker"));
@@ -468,7 +469,7 @@ const App = () => {
   const [englishCategory, setEnglishCategory] = useState<EnglishCategory | null>(
     () => (typeof window !== "undefined" ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null) : null)
   );
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.startsWith("/teachers")) {
@@ -735,6 +736,8 @@ const App = () => {
         <News language={language} onBack={backToBasics} />
       ) : menuChoice === "mcqBank" ? (
         <McqBank language={language} onBack={backToBasics} />
+      ) : menuChoice === "mistakes" ? (
+        <MyMistakes language={language} onBack={backToBasics} />
       ) : menuChoice === "ministerialBank" ? (
         <MinisterialBank language={language} onBack={backToBasics} />
       ) : menuChoice === "mindmap" ? (
