@@ -7,7 +7,7 @@ import {
   Sparkles, GraduationCap, ListChecks, Trophy, Newspaper, Lightbulb,
   UserCog, Crown,
   Home, Palette, GraduationCap as CoursesIcon, Users2, Lock,
-  Menu as MenuIcon, MessageCircle, LineChart,
+  Menu as MenuIcon, MessageCircle, LineChart, Compass, Moon,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -19,6 +19,7 @@ type NavItem = {
   labelAr: string;
   Icon: React.ComponentType<{ className?: string }>;
   subject?: string; // when set, opens SubjectsHub focused on this subject
+  url?: string; // external link (opens in new tab)
 };
 
 type NavGroup = {
@@ -68,9 +69,14 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    titleEn: "Notes", titleAr: "الملاحظات",
-    items: [],
-    directKey: "adminNotes",
+    titleEn: "Organizations", titleAr: "منظماتنا",
+    items: [
+      { key: "orgTamayzak", labelEn: "Tamayzak", labelAr: "تميزك", Icon: Sparkles, url: "https://tamyazak.site" },
+      { key: "org6thDhs", labelEn: "6th DHS", labelAr: "سادس دهوك", Icon: GraduationCap, url: "https://t.me/a6th_dhs" },
+      { key: "orgMafatih", labelEn: "Keys to Success", labelAr: "مفاتيح النجاح", Icon: BookOpen, url: "https://t.me/sad6ths" },
+      { key: "orgMasarak", labelEn: "Masarak", labelAr: "مسارك", Icon: Compass, url: "https://rfx.pythonanywhere.com/" },
+      { key: "orgSamar", labelEn: "Samar", labelAr: "سمر", Icon: Moon, url: "https://samar.lol" },
+    ],
   },
   {
     titleEn: "Menu", titleAr: "القائمة",
@@ -87,7 +93,7 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Study: Layers,
   Home: Home,
   Community: Users,
-  Notes: NotebookPen,
+  Organizations: Network,
   Menu: MenuIcon,
 };
 
@@ -117,6 +123,11 @@ const BottomGroupNav = ({
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
 
   const handleItem = (it: NavItem) => {
+    if (it.url) {
+      setSheetGroup(null);
+      window.open(it.url, "_blank", "noopener,noreferrer");
+      return;
+    }
     if ((it.key as string) === "support") {
       setSheetGroup(null);
       window.open("https://t.me/ias404", "_blank", "noopener,noreferrer");
