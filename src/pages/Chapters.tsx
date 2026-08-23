@@ -6,6 +6,7 @@ import { SUBJECT_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subje
 import SubjectAgent from "@/components/SubjectAgent";
 import { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "@/pages/EnglishCategory";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
+import SeoHead from "@/components/SeoHead";
 
 
 const physicsChapters = [
@@ -121,6 +122,14 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   };
 
   return (
+    <>
+    <SeoHead
+      path="/"
+      title={language === "ar" ? "تميزك — فصول ومواد السادس العلمي" : "Tamayzak — Sixth Scientific chapters and subjects"}
+      description={language === "ar"
+        ? "اختر مادتك وفصلك في تميزك: فلاش كاردات، ملخصات، أسئلة وزارية ومتابعة تقدم لطلاب السادس العلمي في العراق."
+        : "Pick your subject and chapter on Tamayzak: flashcards, notes, ministerial questions and progress tracking for Iraq's Sixth Scientific students."}
+    />
     <main className="min-h-screen px-4 py-12 md:py-20 pb-48 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
