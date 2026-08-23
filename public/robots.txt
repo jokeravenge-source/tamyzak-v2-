@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://tamyzak.lovable.app/sitemap.xml
+Sitemap: https://tamyazak.site/sitemap.xml

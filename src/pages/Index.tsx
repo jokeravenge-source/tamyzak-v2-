@@ -10,6 +10,7 @@ import { setRedoRequired, clearRedoAndZombie } from "@/components/ZombieGuard";
 import { awardPoints } from "@/lib/points";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
+import SeoHead from "@/components/SeoHead";
 import { flashcards } from "@/data/flashcards";
 import { flashcardsCh1Ar } from "@/data/flashcardsCh1Ar";
 import { flashcardsCh2Ar } from "@/data/flashcardsCh2Ar";
@@ -95,6 +96,11 @@ const decks: Record<string, { title: string; eyebrow: string; cards: typeof flas
   "6": { title: "Flashcards", eyebrow: "Ch 06 · Modern Physics", cards: flashcardsCh6 },
   "7": { title: "Flashcards", eyebrow: "Ch 07 · Solid State Electronics", cards: flashcardsCh7 },
   "8": { title: "Flashcards", eyebrow: "Ch 08 · Atomic Spectra and Laser", cards: flashcardsCh8 },
+};
+
+const SUBJECT_LABEL: Record<string, Record<string, string>> = {
+  ar: { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", revision: "المراجعة" },
+  en: { physics: "Physics", chemistry: "Chemistry", biology: "Biology", english: "English", french: "French", arabic: "Arabic", islamic: "Islamic", revision: "Revision" },
 };
 
 const copy = {
@@ -691,8 +697,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">{text.chapters}</span>
         </Link>
+        <SeoHead
+          path={chapter ? `/flashcards/${chapter}` : "/flashcards"}
+          title={`${deck.title}${SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""} | ${language === "ar" ? "فلاش كاردات تميزك" : "Tamayzak flashcards"}`}
+          description={language === "ar"
+            ? `فلاش كاردات ${deck.title} لطلاب السادس العلمي في العراق مع مراجعة متباعدة ومتابعة تقدم على منصة تميزك.`
+            : `${deck.title} flashcards for Iraq's Sixth Scientific students, with spaced repetition and progress tracking on Tamayzak.`}
+        />
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
-        <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
         <p className="text-muted-foreground">
           {loading
             ? language === "ar" ? "جارٍ التحميل..." : "Loading..."
@@ -726,8 +739,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       </Link>
 
       <header className="text-center z-10 animate-fade-up">
+        <SeoHead
+          path={chapter ? `/flashcards/${chapter}` : "/flashcards"}
+          title={`${deck.title}${SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""} | ${language === "ar" ? "فلاش كاردات تميزك" : "Tamayzak flashcards"}`}
+          description={language === "ar"
+            ? `فلاش كاردات ${deck.title} لطلاب السادس العلمي في العراق مع مراجعة متباعدة ومتابعة تقدم على منصة تميزك.`
+            : `${deck.title} flashcards for Iraq's Sixth Scientific students, with spaced repetition and progress tracking on Tamayzak.`}
+        />
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
-        <h1 className="text-4xl md:text-5xl font-bold gradient-text">{deck.title}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold gradient-text">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
         <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-secondary/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
           <span className="text-foreground">
             {(language === "ar"
