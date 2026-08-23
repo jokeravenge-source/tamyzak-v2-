@@ -251,6 +251,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
   { key: "youtube",    Icon: Youtube },
   { key: "canvas",     Icon: Palette },
   { key: "notes",      Icon: NotebookPen },
+  { key: "adminNotes", Icon: BookOpen },
   { key: "companion",  Icon: Sparkles },
   { key: "mcq",        Icon: HelpCircle },
 ];
@@ -261,6 +262,7 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
   youtube: Youtube,
   canvas: Palette,
   notes: NotebookPen,
+  adminNotes: BookOpen,
   companion: Sparkles,
   mcq: HelpCircle,
   mcqBank: Layers,
