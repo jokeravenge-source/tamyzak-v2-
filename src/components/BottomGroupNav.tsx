@@ -7,7 +7,7 @@ import {
   Sparkles, GraduationCap, ListChecks, Trophy, Newspaper, Lightbulb,
   UserCog, Crown,
   Home, Palette, GraduationCap as CoursesIcon, Users2, Lock,
-  Menu as MenuIcon, MessageCircle, LineChart,
+  Menu as MenuIcon, MessageCircle, LineChart, Compass, Moon,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -93,7 +93,7 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Study: Layers,
   Home: Home,
   Community: Users,
-  Notes: NotebookPen,
+  Organizations: Network,
   Menu: MenuIcon,
 };
 
@@ -123,6 +123,11 @@ const BottomGroupNav = ({
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
 
   const handleItem = (it: NavItem) => {
+    if (it.url) {
+      setSheetGroup(null);
+      window.open(it.url, "_blank", "noopener,noreferrer");
+      return;
+    }
     if ((it.key as string) === "support") {
       setSheetGroup(null);
       window.open("https://t.me/ias404", "_blank", "noopener,noreferrer");
