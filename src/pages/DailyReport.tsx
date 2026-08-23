@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag, Crown } from "lucide-react";
+import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import ExcellenceCompanion from "@/components/ExcellenceCompanion";
 import ProgressStats from "@/components/ProgressStats";
-import { useSubscription } from "@/hooks/useSubscription";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 const T = {
@@ -66,7 +65,6 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
   useFeatureUsed("reports");
   const t = T[language];
   const ar = language === "ar";
-  const { isPremium, loading: subLoading } = useSubscription();
   const [report, setReport] = useState<Report | null>(null);
   const [meta, setMeta] = useState<{ days_to_exam: number | null; daily_target_minutes: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -300,25 +298,8 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
 
             {/* Parent link */}
             <Panel icon={Share2} title={t.parent} subtitle={t.parentDesc}>
-              {subLoading ? (
-                <div className="h-10 w-40 bg-foreground/5 animate-pulse" />
-              ) : !isPremium ? (
-                <div className="border border-amber-400/40 bg-amber-500/5 p-4">
-                  <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-amber-500 font-semibold mb-2">
-                    <Crown className="w-3.5 h-3.5" />{t.premiumOnly}
-                  </div>
-                  <p className="text-sm text-foreground/90 mb-3">{t.premiumDesc}</p>
-                  {onNav && (
-                    <button
-                      onClick={() => onNav("premium")}
-                      className="h-10 px-5 text-xs font-semibold uppercase tracking-[0.14em] inline-flex items-center gap-2 clip-facet-badge text-white"
-                      style={{ background: "linear-gradient(110deg, #f59e0b, #fbbf24, #f59e0b)" }}
-                    >
-                      <Crown className="w-3.5 h-3.5" />{t.upgrade}
-                    </button>
-                  )}
-                </div>
-              ) : !token ? (
+              {!token ? (
+
                 <button
                   onClick={enableLink}
                   className="h-10 px-5 bg-foreground text-background text-xs font-semibold uppercase tracking-[0.14em] inline-flex items-center gap-2 clip-facet-badge hover:opacity-90"
