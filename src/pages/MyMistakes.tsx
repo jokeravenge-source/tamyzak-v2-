@@ -34,11 +34,14 @@ export default function MyMistakes({ language, onBack }: { language: AppLanguage
 
   const load = useCallback(async () => {
     setLoading(true);
-    setItems(await fetchAllMistakes());
+    const list = await fetchAllMistakes();
+    setItems(list);
+    const stillDue = list.some((m) => !m.resolved && new Date(m.next_review_at).getTime() <= Date.now());
+    if (!stillDue) liftMistakesPunishment();
     setLoading(false);
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { markMistakesOpened(); void load(); }, [load]);
 
   const now = Date.now();
   const due = useMemo(
