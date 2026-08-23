@@ -45,6 +45,9 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 import PointsAwardOverlay from "./components/PointsAwardOverlay";
 import FeatureUnlockCelebration from "./components/FeatureUnlockCelebration";
 import NewFeatureAnnouncement from "./components/NewFeatureAnnouncement";
+import UsageIntroGate from "./components/UsageIntroGate";
+const GuideChat = lazy(() => import("./pages/GuideChat"));
+
 import FeatureUnlocks from "./pages/FeatureUnlocks";
 import { ensureDailyLogin, fetchUnlockedKeys, isGatedMenu, type FeatureKey } from "@/lib/unlocks";
 const TodoList = lazy(() => import("./pages/TodoList"));
