@@ -154,7 +154,7 @@ const Advices = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
         {askName && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur p-4">
             <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-card p-6 space-y-4">
-              <h3 className="text-lg font-semibold">{L.namePrompt}</h3>
+              <h2 className="text-lg font-semibold">{L.namePrompt}</h2>
               <Input placeholder={L.nameLabel} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} maxLength={40} autoFocus />
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setAskName(false)}>{L.cancel}</Button>
@@ -175,7 +175,7 @@ const Advices = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
                 <button className="w-full text-left p-5" onClick={() => { const newOpen = open ? null : tp.id; setOpenId(newOpen); if (newOpen) loadComments(tp.id); }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{tp.title}</h3>
+                      <h2 className="font-semibold text-lg truncate">{tp.title}</h2>
                       <p className="text-xs text-muted-foreground mt-1">{tp.author_name} · {new Date(tp.created_at).toLocaleDateString()}</p>
                       {tp.body && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{tp.body}</p>}
                     </div>

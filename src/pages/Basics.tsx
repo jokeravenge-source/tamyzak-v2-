@@ -824,9 +824,9 @@ const Basics = ({
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                       <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
                     </div>
-                    <h5 className="font-bold text-base mb-1">
+                    <h3 className="font-bold text-base mb-1">
                       {meta?.title ?? (language === "ar" ? it.labelAr : it.labelEn)}
-                    </h5>
+                    </h3>
                     {meta?.subtitle && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{meta.subtitle}</p>
                     )}
@@ -1067,9 +1067,9 @@ const Basics = ({
 
           {/* Core tools */}
           <section className="mb-6">
-            <h4 className="text-base sm:text-lg font-bold text-foreground mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-foreground mb-4">
               {language === "ar" ? "الأساسيات" : "Essentials"}
-            </h4>
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {FEATURED.map((it) => {
                 const Icon = it.Icon;
@@ -1134,7 +1134,7 @@ const Basics = ({
                     </div>
 
                     <div className="absolute inset-x-0 bottom-0 p-3.5 z-10">
-                      <h4 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h4>
+                      <h3 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h2>
                       {n.body && (
                         <p className="text-xs text-primary-foreground/85 mt-0.5 whitespace-pre-wrap line-clamp-2 leading-relaxed drop-shadow">
                           {n.body}
@@ -1173,9 +1173,9 @@ const Basics = ({
           {/* Recently used tools (falls back to the tools menu) */}
           <section className="mb-6">
             <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2">
-              <h4 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <h2 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
                 {displayedToolsHeader}
-              </h4>
+              </h2>
               <button
                 onClick={() => setShowAllTools(true)}
                 className="text-xs sm:text-sm font-semibold text-primary hover:opacity-80 inline-flex items-center gap-1 transition-opacity shrink-0"
@@ -1207,7 +1207,7 @@ const Basics = ({
                     <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center mb-2 sm:mb-3 text-primary group-hover:scale-110 transition-transform">
                       <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <h5 className="font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h5>
+                    <h3 className="font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">{meta.subtitle}</p>
                   </motion.button>
                 );

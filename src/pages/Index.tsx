@@ -692,7 +692,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           <span className="hidden sm:inline">{text.chapters}</span>
         </Link>
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
-        <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}{SUBJECT_LABEL[language][subject] ? ` — ${SUBJECT_LABEL[language][subject]}` : ""}</h1>
         <p className="text-muted-foreground">
           {loading
             ? language === "ar" ? "جارٍ التحميل..." : "Loading..."
@@ -727,7 +727,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       <header className="text-center z-10 animate-fade-up">
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
-        <h1 className="text-4xl md:text-5xl font-bold gradient-text">{deck.title}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold gradient-text">{deck.title}{SUBJECT_LABEL[language][subject] ? ` — ${SUBJECT_LABEL[language][subject]}` : ""}</h1>
         <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-secondary/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
           <span className="text-foreground">
             {(language === "ar"

@@ -100,7 +100,7 @@ const More = ({
                 <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
               </div>
               <div className="relative z-10 mt-6">
-                <h3 className="text-2xl font-semibold mb-1 text-foreground">{meta.title}</h3>
+                <h2 className="text-2xl font-semibold mb-1 text-foreground">{meta.title}</h2>
                 <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
               </div>
             </motion.button>
