@@ -1,0 +1,200 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { requireAdmin } from "../_shared/auth.ts";
+
+/**
+ * Mints a short-lived OAuth2 access token for the Firebase service account so
+ * we can call the FCM HTTP v1 API. The JWT is signed with RS256 using Web Crypto.
+ */
+async function getFcmAccessToken(sa: {
+  client_email: string;
+  private_key: string;
+  project_id: string;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+
+  // Build the JWT header + payload.
+  const header = { alg: "RS256", typ: "JWT", kid: "" };
+  const payload = {
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const enc = new TextEncoder();
+  const toB64Url = (obj: unknown) =>
+    btoa(JSON.stringify(obj))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+
+  const unsigned = `${toB64Url(header)}.${toB64Url(payload)}`;
+
+  // Import the PEM private key for signing.
+  const pemContents = sa.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s+/g, "");
+  const der = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    der,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, enc.encode(unsigned)),
+  );
+  const sigB64 = btoa(String.fromCharCode(...signature))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+  const assertion = `${unsigned}.${sigB64}`;
+
+  // Exchange the assertion for an access token.
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) {
+    throw new Error(`oauth_token_failed: ${JSON.stringify(tokenData)}`);
+  }
+  return tokenData.access_token as string;
+}
+
+async function sendFcm(
+  accessToken: string,
+  projectId: string,
+  token: string,
+  title: string,
+  body: string,
+  link?: string | null,
+): Promise<boolean> {
+  const message: Record<string, unknown> = {
+    token,
+    notification: { title, body },
+    android: { notification: { icon: "app-icon-192", color: "#3B82F6" } },
+    webpush: {
+      notification: {
+        icon: "/app-icon-192.png",
+        badge: "/app-icon-192.png",
+        requireInteraction: false,
+      },
+      fcm_options: { link: link ?? "/" },
+    },
+  };
+
+  const res = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message }),
+    },
+  );
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error(`FCM send failed [${res.status}] for token ${token.slice(0, 16)}…: ${errText.slice(0, 300)}`);
+    return false;
+  }
+  return true;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const json = (b: unknown, s = 200) =>
+    new Response(JSON.stringify(b), {
+      status: s,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  try {
+    const adminAuth = await requireAdmin(req);
+    if (!adminAuth.ok) return json({ error: adminAuth.error }, adminAuth.status);
+
+    const rawSa = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+    if (!rawSa) return json({ error: "FIREBASE_SERVICE_ACCOUNT secret is not set" }, 500);
+
+    let sa: { client_email: string; private_key: string; project_id: string };
+    try {
+      sa = JSON.parse(rawSa);
+    } catch {
+      return json({ error: "FIREBASE_SERVICE_ACCOUNT is not valid JSON" }, 500);
+    }
+    if (!sa.private_key || !sa.client_email || !sa.project_id) {
+      return json({ error: "Service account JSON is missing required fields" }, 400);
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const title = String(body.title ?? "").slice(0, 200).trim();
+    const text = String(body.body ?? "").slice(0, 3500).trim();
+    const link = body.link ? String(body.link).slice(0, 500) : null;
+    const targetUserId = body.target_user_id ? String(body.target_user_id) : null;
+    if (!title && !text) return json({ error: "Title or body is required" }, 400);
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    let tokenQuery = admin.from("push_tokens").select("token");
+    if (targetUserId) tokenQuery = tokenQuery.eq("user_id", targetUserId);
+    const { data: tokenRows, error: tErr } = await tokenQuery;
+    if (tErr) return json({ error: tErr.message }, 500);
+
+    const tokens = (tokenRows ?? []).map((r) => (r as { token: string }).token).filter(Boolean);
+    if (tokens.length === 0) {
+      return json({ sent: 0, failed: 0, total: 0, reason: "no_tokens" });
+    }
+
+    const accessToken = await getFcmAccessToken(sa);
+
+    let sent = 0;
+    let failed = 0;
+    const deadTokens: string[] = [];
+
+    for (const token of tokens) {
+      let ok = false;
+      try {
+        ok = await sendFcm(accessToken, sa.project_id, token, title || "تميزك", text, link);
+      } catch (e) {
+        console.error("FCM send error", e instanceof Error ? e.message : e);
+      }
+      if (ok) {
+        sent++;
+      } else {
+        failed++;
+        // Token is likely invalid/expired — collect for cleanup.
+        deadTokens.push(token);
+      }
+      await new Promise((r) => setTimeout(r, 30));
+    }
+
+    // Clean up invalid tokens so we don't keep retrying them.
+    if (deadTokens.length > 0) {
+      await admin.from("push_tokens").delete().in("token", deadTokens);
+    }
+
+    return json({
+      sent,
+      failed,
+      cleaned: deadTokens.length,
+      total: tokens.length,
+    });
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+  }
+});
