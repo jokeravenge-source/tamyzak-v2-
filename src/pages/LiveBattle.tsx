@@ -177,6 +177,24 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
   };
   useEffect(() => () => cleanup(), []);
 
+  // A challenge sent/accepted from a student profile drops us straight into
+  // the shared room: the challenger hosts, the other player joins.
+  useEffect(() => {
+    const pending = consumePendingBattle();
+    if (!pending) return;
+    setCode(pending.code);
+    setIsHost(pending.host);
+    if (pending.host) {
+      const seed = Number(pending.code) >>> 0;
+      const qs = buildBattleMcqs("physics", 10, seed);
+      setupChannel(pending.code, true, qs);
+    } else {
+      setupChannel(pending.code, false);
+    }
+    setPhase("lobby");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Close the realtime battle channel once the match is over — no reason to
   // keep a subscription open on the results screen.
   useEffect(() => {
