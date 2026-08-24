@@ -17,6 +17,9 @@ createRoot(document.getElementById("root")!).render(
   </HelmetProvider>,
 );
 
+void initFirebase();
+
+
 // PWA: pick the install manifest that matches the phone's language.
 if (typeof window !== "undefined") {
   const isArabic = (navigator.languages?.[0] ?? navigator.language ?? "en")
