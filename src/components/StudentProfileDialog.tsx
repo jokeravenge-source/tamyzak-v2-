@@ -6,7 +6,8 @@ import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterA
 import { Flame, Clock, Trophy, EyeOff, Swords, Loader2, Instagram, Send, Music2, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { newRoomCode, setPendingBattle } from "@/lib/battleInvite";
+import { newRoomCode, setPendingBattle, CHALLENGE_SUBJECTS, CHALLENGE_COUNTS, type ChallengeSubject } from "@/lib/battleInvite";
+import { getChaptersForSubject } from "@/data/subjectChapters";
 
 type Socials = { telegram?: string; instagram?: string; tiktok?: string; facebook?: string };
 
