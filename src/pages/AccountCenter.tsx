@@ -10,6 +10,7 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 
 import { ThemePicker } from "@/components/ThemePicker";
 import { ReferralCard } from "@/components/ReferralCard";
+import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { PremiumBadge } from "@/components/PremiumBadge";
