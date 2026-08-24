@@ -123,7 +123,10 @@ Deno.serve(async (req) => {
 
   try {
     const adminAuth = await requireAdmin(req);
-    if (!adminAuth.ok) return json({ error: adminAuth.error }, adminAuth.status);
+    if (!adminAuth.ok) {
+      console.error("send-push auth rejected:", adminAuth.status, adminAuth.error);
+      return json({ error: adminAuth.error }, adminAuth.status);
+    }
 
     const rawSa = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
     if (!rawSa) return json({ error: "FIREBASE_SERVICE_ACCOUNT secret is not set" }, 500);
@@ -156,6 +159,7 @@ Deno.serve(async (req) => {
     if (tErr) return json({ error: tErr.message }, 500);
 
     const tokens = (tokenRows ?? []).map((r) => (r as { token: string }).token).filter(Boolean);
+    console.log(`send-push: found ${tokens.length} token(s)`);
     if (tokens.length === 0) {
       return json({ sent: 0, failed: 0, total: 0, reason: "no_tokens" });
     }
@@ -188,6 +192,7 @@ Deno.serve(async (req) => {
       await admin.from("push_tokens").delete().in("token", deadTokens);
     }
 
+    console.log(`send-push result: sent=${sent} failed=${failed} total=${tokens.length}`);
     return json({
       sent,
       failed,
@@ -195,6 +200,7 @@ Deno.serve(async (req) => {
       total: tokens.length,
     });
   } catch (e) {
+    console.error("send-push fatal:", e instanceof Error ? e.message : e);
     return json({ error: e instanceof Error ? e.message : String(e) }, 500);
   }
 });
