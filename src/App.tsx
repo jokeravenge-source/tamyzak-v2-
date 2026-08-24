@@ -567,6 +567,13 @@ const App = () => {
       window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
     }
   }, []);
+  // Sending a challenge from a student profile jumps into Live Battle as host.
+  useEffect(() => {
+    const open = () => chooseMenu("liveBattle" as MenuChoice);
+    window.addEventListener("app:open-battle", open);
+    return () => window.removeEventListener("app:open-battle", open);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const handleBasicsSelect = (c: BasicsChoice) => {
     if (c === "biologyDrawings") {
       chooseMenu("biologyDrawings");
