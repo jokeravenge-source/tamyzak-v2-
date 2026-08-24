@@ -20,9 +20,12 @@ type Tool = {
   ar: string;
   Icon: React.ComponentType<{ className?: string }>;
   placeholder?: boolean;
+  /** Hard-locked tool: not openable by anyone (temporarily disabled). */
+  disabled?: boolean;
   descEn?: string;
   descAr?: string;
 };
+
 
 const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.ComponentType<{ className?: string }>; tools: Tool[] }[] = [
   {
