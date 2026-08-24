@@ -49,9 +49,12 @@ Deno.serve(async (req) => {
     const now = new Date();
     const hijri = 1400 + (now.getFullYear() - 1979);
 
-    const systemPrompt = `أنت مُعدّ امتحانات وزارية عراقية للسادس الإعدادي (الفرع العلمي الأحيائي/التطبيقي). مهمتك توليد امتحان وزاري كامل بنفس الأسلوب والصياغة والمستوى الحقيقي للأسئلة الوزارية العراقية الأصلية (2013-2023) لمادة محددة وفصل محدد فقط، دون أي محتوى من فصول أخرى. يجب أن يبدو الامتحان مطابقاً تماماً للورقة الوزارية الرسمية.`;
 
-    const userPrompt = `ولّد امتحاناً وزارياً كاملاً بالمواصفات التالية:
+    const systemPromptAr = `أنت مُعدّ امتحانات وزارية عراقية للسادس الإعدادي (الفرع العلمي الأحيائي/التطبيقي). مهمتك توليد امتحان وزاري كامل بنفس الأسلوب والصياغة والمستوى الحقيقي للأسئلة الوزارية العراقية الأصلية (2013-2023) لمادة محددة وفصل محدد فقط، دون أي محتوى من فصول أخرى. يجب أن يبدو الامتحان مطابقاً تماماً للورقة الوزارية الرسمية.`;
+
+    const systemPromptEn = `You are an Iraqi ministerial exam writer for 6th grade preparatory (scientific branch), writing for students studying the ENGLISH-language curriculum. Produce a complete ministerial-style exam paper entirely in English, matching the style, wording and difficulty of real Iraqi ministerial papers (2013-2023), restricted strictly to one subject and one chapter.`;
+
+    const userPromptAr = `ولّد امتحاناً وزارياً كاملاً بالمواصفات التالية:
 
 - المادة: ${subjAr}
 - الفصل: الفصل ${chapterN}${chapterTitleAr ? ` - ${chapterTitleAr}` : ""}${chapterTitleEn ? ` (${chapterTitleEn})` : ""}
@@ -85,9 +88,49 @@ Deno.serve(async (req) => {
 
 6) بعد ورقة الأسئلة اترك سطراً فاصلاً ثم اكتب "===ANSWERS===" ثم اكتب نموذج إجابة مفصّل لكل سؤال (س1 إلى س6) بجميع فروعه مع خطوات الحل الكاملة للمسائل الحسابية.
 
-7) لا تكتب أي شرح أو مقدمة قبل الترويسة، ولا أي تعليق بعد الإجابات. أخرج المحتوى الخام فقط.
+7) لا تكتب أي شرح أو مقدمة قبل الترويسة، ولا أي تعليق بعد الإجابات. أخرج المحتوى الخام فقط.`;
 
-${!isAr ? "The exam text itself must remain in Arabic (Iraqi ministerial format is Arabic), but you may write English chemical/physics symbols as usual." : ""}`;
+    const userPromptEn = `Generate a complete ministerial-style exam paper, written ENTIRELY IN ENGLISH:
+
+- Subject: ${chapterTitleEn ? subject : subject}
+- Chapter: Chapter ${chapterN}${chapterTitleEn ? ` - ${chapterTitleEn}` : ""}
+- Session: First Session ${now.getFullYear()}
+- Time: Three and a half hours
+
+Strict requirements:
+1) Start with an official header, exactly in this shape:
+   In the name of Allah, the Most Gracious, the Most Merciful
+   Permanent Committee for General Examinations
+   Republic of Iraq - Ministry of Education
+   Study: Preparatory / Scientific
+   Subject: ${subject}
+   First Session ${now.getFullYear()}
+   Time: Three and a half hours
+
+2) Then a note: "Answer five questions only ... (20 marks each)" plus any subject-specific note (e.g. write chemical equations wherever required, draw diagrams where needed).
+
+3) Six questions (Q1 to Q6), each split into parts (a, b, c) with instructions like "Answer two only" or "Answer two branches". Mix the question types:
+   - numerical problems with realistic numbers and real solution steps
+   - definitions
+   - "Give the reason" / explain-why questions
+   - reaction products / equations
+   - fill in the blanks
+   - short theory questions
+   Everything strictly inside the scope of ${chapterTitleEn || `Chapter ${chapterN}`} of ${subject} for 6th preparatory in the Iraqi curriculum.
+
+4) Use ministerial phrasing in English: "Q1:", "a-", "b-", "Give the reason for each of the following", "Answer two of the following", "Calculate", "Define two only", etc. Write formulas and equations in clear plain text (e.g. 2NOCl(g) ⇌ 2NO(g) + Cl2(g)).
+
+5) At the end of the question paper add a line "Useful data:" with any constants needed (log, ln, atomic masses, constants).
+
+6) After the question paper, leave a blank line, then write "===ANSWERS===" then a detailed model answer for every question (Q1 to Q6) and all its parts, with full solution steps for numerical problems.
+
+7) Do not write any explanation or preamble before the header, and no commentary after the answers. Output raw content only.
+
+8) EVERY word of both the exam and the answers must be in English — no Arabic text at all.`;
+
+    const systemPrompt = isAr ? systemPromptAr : systemPromptEn;
+    const userPrompt = isAr ? userPromptAr : userPromptEn;
+
 
     const res = await fetch(AI_URL, {
       method: "POST",
