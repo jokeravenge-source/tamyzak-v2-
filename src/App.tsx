@@ -33,6 +33,7 @@ const Essay = lazy(() => import("./pages/Essay"));
 const VideoNotes = lazy(() => import("./pages/VideoNotes"));
 import ZombieGuard from "./components/ZombieGuard";
 import MistakesPunishment from "./components/MistakesPunishment";
+import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import Basics, { type BasicsChoice } from "./pages/Basics";
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -566,6 +567,13 @@ const App = () => {
       window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
     }
   }, []);
+  // Sending a challenge from a student profile jumps into Live Battle as host.
+  useEffect(() => {
+    const open = () => chooseMenu("liveBattle" as MenuChoice);
+    window.addEventListener("app:open-battle", open);
+    return () => window.removeEventListener("app:open-battle", open);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const handleBasicsSelect = (c: BasicsChoice) => {
     if (c === "biologyDrawings") {
       chooseMenu("biologyDrawings");
@@ -665,6 +673,9 @@ const App = () => {
 
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
+      )}
+      {authed && language && channelVerified && onboarded && (
+        <ChallengeInviteWatcher language={language} onAccept={() => chooseMenu("liveBattle" as MenuChoice)} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />

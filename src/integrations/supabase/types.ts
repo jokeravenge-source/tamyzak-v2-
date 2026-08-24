@@ -312,6 +312,39 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_invites: {
+        Row: {
+          created_at: string
+          from_name: string
+          from_user_id: string
+          id: string
+          room_code: string
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_name?: string
+          from_user_id: string
+          id?: string
+          room_code: string
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_name?: string
+          from_user_id?: string
+          id?: string
+          room_code?: string
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       canvases: {
         Row: {
           client_id: string
@@ -1873,31 +1906,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           character: Json | null
           created_at: string
           display_name: string
           gender: string | null
           id: string
+          show_study_hours: boolean
+          socials: Json
           source: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          bio?: string | null
           character?: Json | null
           created_at?: string
           display_name?: string
           gender?: string | null
           id?: string
+          show_study_hours?: boolean
+          socials?: Json
           source?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          bio?: string | null
           character?: Json | null
           created_at?: string
           display_name?: string
           gender?: string | null
           id?: string
+          show_study_hours?: boolean
+          socials?: Json
           source?: string | null
           updated_at?: string
           user_id?: string
