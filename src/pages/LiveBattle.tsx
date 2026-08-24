@@ -102,6 +102,42 @@ const SUBJECT_OPTIONS: { key: BattleSubject; ar: string; en: string }[] = [
   { key: "islamic",   ar: "إسلامية", en: "Islamic" },
 ];
 
+/** Questions for a profile-to-profile challenge: chosen subject / curriculum / chapter. */
+async function buildChallengeQuestions(
+  subject: BattleSubject,
+  chapter: number,
+  lang: "ar" | "en",
+  count: number,
+  seed: number,
+): Promise<MCQ[]> {
+  let s = seed || 1;
+  const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  try {
+    const { data } = await supabase
+      .from("mcq_banks")
+      .select("question, choices, answer_index")
+      .eq("subject", subject)
+      .eq("chapter", chapter)
+      .eq("language", lang)
+      .limit(300);
+    const rows = (data ?? []).filter((r: any) => Array.isArray(r.choices) && r.choices.length >= 2);
+    if (rows.length >= 3) {
+      const arr = rows.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr.slice(0, Math.max(1, count)).map((r: any) => ({
+        q: r.question as string,
+        choices: (r.choices as string[]).map(String),
+        answer: Number(r.answer_index) || 0,
+        subject,
+      }));
+    }
+  } catch { /* fall through to the offline pool */ }
+  return buildBattleMcqs(subject, count, seed);
+}
+
 export default function LiveBattle({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
   useFeatureUsed("live_battle");
   const t = T(language);
@@ -185,14 +221,19 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
     if (!pending) return;
     setCode(pending.code);
     setIsHost(pending.host);
+    setPhase("lobby");
     if (pending.host) {
       const seed = Number(pending.code) >>> 0;
-      const qs = buildBattleMcqs("physics", 10, seed);
-      setupChannel(pending.code, true, qs);
+      void buildChallengeQuestions(
+        pending.subject ?? "physics",
+        pending.chapter ?? 1,
+        pending.lang ?? (language === "ar" ? "ar" : "en"),
+        pending.count ?? 10,
+        seed,
+      ).then((qs) => setupChannel(pending.code, true, qs));
     } else {
       setupChannel(pending.code, false);
     }
-    setPhase("lobby");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
