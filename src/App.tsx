@@ -668,8 +668,12 @@ const App = () => {
         </div>
       )}
       {authed && language && channelVerified && onboarded && !guideOpen && (
+        <PushPermissionGate language={language} />
+      )}
+      {authed && language && channelVerified && onboarded && !guideOpen && (
         <NewFeatureAnnouncement language={language} />
       )}
+
 
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
