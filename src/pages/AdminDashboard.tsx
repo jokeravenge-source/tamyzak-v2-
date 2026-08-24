@@ -126,6 +126,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [notifForm, setNotifForm] = useState<{ title: string; body: string; link: string; file: File | null; video: File | null }>({ title: "", body: "", link: "", file: null, video: null });
   const [notifBusy, setNotifBusy] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const loadNotifs = async () => {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false });
     setNotifs((data ?? []) as Notif[]);
