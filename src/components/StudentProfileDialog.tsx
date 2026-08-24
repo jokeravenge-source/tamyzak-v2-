@@ -91,6 +91,7 @@ export default function StudentProfileDialog({
       toast.success(t("Challenge sent — get ready!", "تم إرسال التحدي — استعد!"));
       onClose();
       onChallengeAccepted?.();
+      window.dispatchEvent(new Event("app:open-battle"));
     } catch {
       toast.error(t("Could not send the challenge", "تعذّر إرسال التحدي"));
     } finally {
