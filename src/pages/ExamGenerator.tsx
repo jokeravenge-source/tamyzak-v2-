@@ -58,6 +58,10 @@ const copy = {
     sent: "Sent to human grader. They will contact you on Telegram.",
     sendErr: "Could not send. Please try again.",
     invalidTg: "Please enter a valid Telegram username.",
+    curriculum: "Curriculum language",
+    curriculumHint: "The exam and its model answers are written in this language.",
+    curAr: "Arabic curriculum",
+    curEn: "English curriculum",
   },
   ar: {
     badge: "مولّد الامتحانات الذكي",
@@ -99,6 +103,10 @@ const copy = {
     sent: "تم الإرسال إلى المدرّس. سيتواصل معك عبر تيليغرام.",
     sendErr: "تعذّر الإرسال، حاول مرة أخرى.",
     invalidTg: "الرجاء إدخال اسم مستخدم تيليغرام صحيح.",
+    curriculum: "لغة المنهج",
+    curriculumHint: "سيتم توليد الامتحان والإجابات النموذجية بهذه اللغة.",
+    curAr: "المنهج العربي",
+    curEn: "المنهج الإنكليزي",
   },
 } as const;
 
@@ -109,6 +117,8 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
   const t = copy[language];
   const [subject, setSubject] = useState<BankSubject | null>(null);
   const [chapterN, setChapterN] = useState<number | null>(null);
+  // Curriculum language chosen by the student — drives the exam + answers language.
+  const [examLang, setExamLang] = useState<AppLanguage>(language);
   const [examLoading, setExamLoading] = useState(false);
   const [examText, setExamText] = useState("");
   const [examAnswers, setExamAnswers] = useState("");
@@ -142,7 +152,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
     onBack();
   };
 
-  const generateExam = async (subj: BankSubject, n: number) => {
+  const generateExam = async (subj: BankSubject, n: number, lang: AppLanguage = examLang) => {
     setExamLoading(true);
     setExamText("");
     setExamAnswers("");
@@ -158,7 +168,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
           chapterN: n,
           chapterTitleAr: ch?.arTitle ?? "",
           chapterTitleEn: ch?.title ?? "",
-          language,
+          language: lang,
         },
       });
       if (error) throw error;
@@ -208,7 +218,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
           modelAnswers: examAnswers,
           studentText: studentText.trim(),
           studentImages,
-          language,
+          language: examLang,
         },
       });
       if (error) throw error;
@@ -310,7 +320,29 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
           })}
         </section>
       ) : chapterN === null ? (
-        <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
+        <>
+        <section className="max-w-6xl mx-auto mt-12 z-10 relative animate-fade-up">
+          <div className="rounded-3xl p-5 md:p-6 border border-primary/30 bg-secondary/40 backdrop-blur">
+            <h3 className="text-base font-semibold text-foreground">{t.curriculum}</h3>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">{t.curriculumHint}</p>
+            <div className="flex flex-wrap gap-3">
+              {([["ar", t.curAr], ["en", t.curEn]] as const).map(([code, label]) => (
+                <button
+                  key={code}
+                  onClick={() => setExamLang(code as AppLanguage)}
+                  className={`h-10 px-5 rounded-xl text-sm font-semibold border transition-all ${
+                    examLang === code
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-white/10 bg-background/40 text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="max-w-6xl mx-auto mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
           {chapters.map((c, i) => {
             const isAvailable = !c.locked;
             return (
@@ -340,6 +372,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
             );
           })}
         </section>
+        </>
       ) : (
         <section className="max-w-3xl mx-auto mt-12 z-10 relative animate-fade-up">
           {examLoading ? (
@@ -370,17 +403,17 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
                 </button>
               </div>
               <article
-                dir="rtl"
+                dir={examLang === "ar" ? "rtl" : "ltr"}
                 className="rounded-3xl p-8 md:p-10 border border-primary/40 bg-white text-neutral-900 shadow-xl leading-loose whitespace-pre-wrap font-serif text-[15px] md:text-base print:border-0 print:shadow-none print:bg-white print:text-black"
-                style={{ fontFamily: "'Amiri','Scheherazade New','Traditional Arabic',serif" }}
+                style={{ fontFamily: examLang === "ar" ? "'Amiri','Scheherazade New','Traditional Arabic',serif" : "Georgia, 'Times New Roman', serif" }}
               >
                 {examText}
               </article>
               {showAnswers && examAnswers && (
                 <article
-                  dir="rtl"
+                  dir={examLang === "ar" ? "rtl" : "ltr"}
                   className="rounded-3xl p-8 md:p-10 border border-emerald-400/40 bg-emerald-50 text-neutral-900 shadow-xl leading-loose whitespace-pre-wrap font-serif text-[15px] md:text-base"
-                  style={{ fontFamily: "'Amiri','Scheherazade New','Traditional Arabic',serif" }}
+                  style={{ fontFamily: examLang === "ar" ? "'Amiri','Scheherazade New','Traditional Arabic',serif" : "Georgia, 'Times New Roman', serif" }}
                 >
                   <div className="text-emerald-700 font-bold mb-4 text-lg">{t.answersTitle}</div>
                   {examAnswers}
