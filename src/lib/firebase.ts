@@ -33,7 +33,18 @@ export async function initFirebase() {
   } catch {
     /* analytics must never break the app */
   }
+  // If the user already granted permission, make sure the messaging worker is
+  // live and foreground messages surface as real OS notifications.
+  try {
+    if (pushSupported() && Notification.permission === "granted") {
+      await messagingServiceWorker();
+      await onPushMessage();
+    }
+  } catch {
+    /* messaging must never break the app */
+  }
 }
+
 
 /** Log a Firebase Analytics event (no-op when unsupported). */
 export async function logFirebaseEvent(name: string, params: Record<string, unknown> = {}) {
@@ -104,17 +115,40 @@ export async function enablePushNotifications(): Promise<string | null> {
   return token;
 }
 
-/** Subscribe to messages received while the app is in the foreground. */
-export async function onPushMessage(handler: (title: string, body: string) => void) {
+/**
+ * Subscribe to messages received while the app is in the foreground.
+ * Foreground messages are NOT displayed by the browser automatically, so we
+ * show a real OS notification through the messaging service worker as well.
+ */
+let foregroundBound = false;
+export async function onPushMessage(handler?: (title: string, body: string) => void) {
   if (!pushSupported() || !(await messagingSupported())) return;
+  if (foregroundBound && !handler) return;
+  foregroundBound = true;
   try {
     onMessage(getMessaging(getFirebaseApp()), (payload) => {
-      handler(
-        payload.notification?.title ?? "تميزك",
-        payload.notification?.body ?? "",
-      );
+      const title = payload.notification?.title ?? payload.data?.title ?? "تميزك";
+      const body = payload.notification?.body ?? payload.data?.body ?? "";
+      handler?.(title, body);
+      void (async () => {
+        try {
+          const reg =
+            (await navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js")) ??
+            (await messagingServiceWorker());
+          await reg.showNotification(title, {
+            body,
+            icon: "/app-icon-192.png",
+            badge: "/app-icon-192.png",
+            tag: "tamayzak-push",
+            data: { url: payload.data?.url ?? "/" },
+          });
+        } catch {
+          /* ignore */
+        }
+      })();
     });
   } catch {
     /* ignore */
   }
+
 }
