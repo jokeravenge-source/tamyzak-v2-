@@ -126,6 +126,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [notifForm, setNotifForm] = useState<{ title: string; body: string; link: string; file: File | null; video: File | null }>({ title: "", body: "", link: "", file: null, video: null });
   const [notifBusy, setNotifBusy] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const loadNotifs = async () => {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false });
     setNotifs((data ?? []) as Notif[]);
@@ -167,6 +168,25 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
         }
       } catch (e: any) {
         toast.error(`Telegram push failed: ${e?.message ?? e}`);
+      }
+      // Also deliver as a browser push notification (FCM) to all devices
+      // that opted in to notifications.
+      try {
+        setPushBusy(true);
+        const { data: push, error: pushErr } = await supabase.functions.invoke("send-push", {
+          body: { title: notifForm.title, body: notifForm.body, link: link || null },
+        });
+        if (pushErr) throw pushErr;
+        const p = push as { sent?: number; failed?: number; total?: number; reason?: string };
+        if (p.reason === "no_tokens") {
+          toast("No devices registered for push notifications yet.");
+        } else {
+          toast.success(`Push: ${p.sent ?? 0}/${p.total ?? 0} delivered${p.failed ? ` (${p.failed} failed)` : ""}`);
+        }
+      } catch (e: any) {
+        toast.error(`FCM push failed: ${e?.message ?? e}`);
+      } finally {
+        setPushBusy(false);
       }
       setNotifForm({ title: "", body: "", link: "", file: null, video: null });
       loadNotifs();
@@ -749,6 +769,29 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               </label>
               <button onClick={sendNotif} disabled={notifBusy} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm disabled:opacity-60">
                 {notifBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send
+              </button>
+              <button
+                onClick={async () => {
+                  if (!notifForm.title.trim()) return toast.error("Title required");
+                  setPushBusy(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("send-push", {
+                      body: { title: notifForm.title, body: notifForm.body, link: notifForm.link.trim() || null },
+                    });
+                    if (error) throw error;
+                    const r = data as { sent?: number; failed?: number; total?: number; reason?: string };
+                    if (r.reason === "no_tokens") toast("No devices registered for push notifications yet.");
+                    else toast.success(`Push: ${r.sent ?? 0}/${r.total ?? 0} delivered${r.failed ? ` (${r.failed} failed)` : ""}`);
+                  } catch (e: any) {
+                    toast.error(`FCM push failed: ${e?.message ?? e}`);
+                  } finally {
+                    setPushBusy(false);
+                  }
+                }}
+                disabled={pushBusy}
+                className="inline-flex items-center gap-2 px-4 h-10 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 text-sm disabled:opacity-60"
+              >
+                {pushBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />} Push only
               </button>
             </div>
             {notifs.length === 0 ? (
