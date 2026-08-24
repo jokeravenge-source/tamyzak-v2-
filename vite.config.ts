@@ -16,7 +16,7 @@ const CSP_PROD = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: data: https:",
-  "connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://api.spotify.com https://accounts.spotify.com https://storage.googleapis.com https://i.ytimg.com https://www.google.com",
+  "connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://api.spotify.com https://accounts.spotify.com https://storage.googleapis.com https://i.ytimg.com https://www.google.com https://*.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseinstallations.googleapis.com",
   "frame-src 'self' https://www.google.com https://recaptcha.google.com https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://open.spotify.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
