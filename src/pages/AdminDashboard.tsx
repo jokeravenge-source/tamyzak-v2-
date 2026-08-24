@@ -770,6 +770,29 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <button onClick={sendNotif} disabled={notifBusy} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm disabled:opacity-60">
                 {notifBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send
               </button>
+              <button
+                onClick={async () => {
+                  if (!notifForm.title.trim()) return toast.error("Title required");
+                  setPushBusy(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("send-push", {
+                      body: { title: notifForm.title, body: notifForm.body, link: notifForm.link.trim() || null },
+                    });
+                    if (error) throw error;
+                    const r = data as { sent?: number; failed?: number; total?: number; reason?: string };
+                    if (r.reason === "no_tokens") toast("No devices registered for push notifications yet.");
+                    else toast.success(`Push: ${r.sent ?? 0}/${r.total ?? 0} delivered${r.failed ? ` (${r.failed} failed)` : ""}`);
+                  } catch (e: any) {
+                    toast.error(`FCM push failed: ${e?.message ?? e}`);
+                  } finally {
+                    setPushBusy(false);
+                  }
+                }}
+                disabled={pushBusy}
+                className="inline-flex items-center gap-2 px-4 h-10 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 text-sm disabled:opacity-60"
+              >
+                {pushBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />} Push only
+              </button>
             </div>
             {notifs.length === 0 ? (
               <p className="text-center text-muted-foreground py-10">No notifications yet.</p>
