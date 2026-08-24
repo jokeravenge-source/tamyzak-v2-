@@ -667,6 +667,9 @@ const App = () => {
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
       )}
+      {authed && language && channelVerified && onboarded && (
+        <ChallengeInviteWatcher language={language} onAccept={() => chooseMenu("liveBattle" as MenuChoice)} />
+      )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />
       )}
