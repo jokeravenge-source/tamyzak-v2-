@@ -33,7 +33,18 @@ export async function initFirebase() {
   } catch {
     /* analytics must never break the app */
   }
+  // If the user already granted permission, make sure the messaging worker is
+  // live and foreground messages surface as real OS notifications.
+  try {
+    if (pushSupported() && Notification.permission === "granted") {
+      await messagingServiceWorker();
+      await onPushMessage();
+    }
+  } catch {
+    /* messaging must never break the app */
+  }
 }
+
 
 /** Log a Firebase Analytics event (no-op when unsupported). */
 export async function logFirebaseEvent(name: string, params: Record<string, unknown> = {}) {
