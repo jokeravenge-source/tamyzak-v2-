@@ -314,32 +314,44 @@ export type Database = {
       }
       battle_invites: {
         Row: {
+          chapter: number
           created_at: string
           from_name: string
           from_user_id: string
           id: string
+          language: string
+          question_count: number
           room_code: string
           status: string
+          subject: string
           to_user_id: string
           updated_at: string
         }
         Insert: {
+          chapter?: number
           created_at?: string
           from_name?: string
           from_user_id: string
           id?: string
+          language?: string
+          question_count?: number
           room_code: string
           status?: string
+          subject?: string
           to_user_id: string
           updated_at?: string
         }
         Update: {
+          chapter?: number
           created_at?: string
           from_name?: string
           from_user_id?: string
           id?: string
+          language?: string
+          question_count?: number
           room_code?: string
           status?: string
+          subject?: string
           to_user_id?: string
           updated_at?: string
         }

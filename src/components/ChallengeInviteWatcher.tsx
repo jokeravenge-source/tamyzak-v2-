@@ -5,9 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
-import { setPendingBattle } from "@/lib/battleInvite";
+import { setPendingBattle, CHALLENGE_SUBJECTS, type ChallengeSubject } from "@/lib/battleInvite";
 
-type Invite = { id: string; from_name: string; room_code: string; created_at: string };
+type Invite = {
+  id: string;
+  from_name: string;
+  room_code: string;
+  created_at: string;
+  subject: ChallengeSubject;
+  chapter: number;
+  language: "ar" | "en";
+  question_count: number;
+};
 
 const POLL_MS = 25000;
 /** Invites older than this are stale — the challenger is long gone. */
@@ -32,7 +41,7 @@ export default function ChallengeInviteWatcher({
     const since = new Date(Date.now() - MAX_AGE_MS).toISOString();
     const { data } = await supabase
       .from("battle_invites")
-      .select("id, from_name, room_code, created_at")
+      .select("id, from_name, room_code, created_at, subject, chapter, language, question_count")
       .eq("to_user_id", u.user.id)
       .eq("status", "pending")
       .gte("created_at", since)
@@ -67,7 +76,14 @@ export default function ChallengeInviteWatcher({
     const code = invite.room_code;
     setInvite(null);
     if (accepted) {
-      setPendingBattle({ code, host: false });
+      setPendingBattle({
+        code,
+        host: false,
+        subject: invite.subject,
+        chapter: invite.chapter,
+        lang: invite.language,
+        count: invite.question_count,
+      });
       onAccept();
     } else {
       toast.success(t("Challenge declined", "تم رفض التحدي"));
@@ -99,9 +115,28 @@ export default function ChallengeInviteWatcher({
             <h3 className="mt-2 text-xl font-bold text-foreground">
               {isAr ? `${invite.from_name} يتحداك في معركة!` : `${invite.from_name} challenged you to a battle!`}
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("Room code", "رمز الغرفة")}: <span className="font-mono font-bold">{invite.room_code}</span>
-            </p>
+            <div className="mt-3 space-y-1.5 rounded-2xl border border-border bg-card p-3 text-start text-sm">
+              <p className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{t("Subject", "المادة")}</span>
+                <b>{CHALLENGE_SUBJECTS.find((s) => s.key === invite.subject)?.[isAr ? "ar" : "en"] ?? invite.subject}</b>
+              </p>
+              <p className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{t("Curriculum", "المنهج")}</span>
+                <b>{invite.language === "ar" ? t("Arabic", "عربي") : t("English", "إنجليزي")}</b>
+              </p>
+              <p className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{t("Chapter", "الفصل")}</span>
+                <b>{invite.chapter}</b>
+              </p>
+              <p className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{t("Questions", "عدد الأسئلة")}</span>
+                <b>{invite.question_count}</b>
+              </p>
+              <p className="flex justify-between gap-2">
+                <span className="text-muted-foreground">{t("Room code", "رمز الغرفة")}</span>
+                <span className="font-mono font-bold">{invite.room_code}</span>
+              </p>
+            </div>
             <div className="mt-5 flex gap-3">
               <Button onClick={() => respond(true)} disabled={busy} className="flex-1">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="me-1 h-4 w-4" /> {t("Accept", "قبول")}</>}
