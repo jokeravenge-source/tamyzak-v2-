@@ -47,6 +47,8 @@ import PointsAwardOverlay from "./components/PointsAwardOverlay";
 import FeatureUnlockCelebration from "./components/FeatureUnlockCelebration";
 import NewFeatureAnnouncement from "./components/NewFeatureAnnouncement";
 import UsageIntroGate from "./components/UsageIntroGate";
+import PushPermissionGate from "./components/PushPermissionGate";
+
 const GuideChat = lazy(() => import("./pages/GuideChat"));
 
 import FeatureUnlocks from "./pages/FeatureUnlocks";
