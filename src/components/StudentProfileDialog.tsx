@@ -92,9 +92,13 @@ export default function StudentProfileDialog({
         from_name: (myProfile?.display_name || "Student").slice(0, 40),
         room_code: code,
         status: "pending",
+        subject: cSubject,
+        chapter: cChapter,
+        language: cLang,
+        question_count: cCount,
       });
       if (error) throw error;
-      setPendingBattle({ code, host: true });
+      setPendingBattle({ code, host: true, subject: cSubject, chapter: cChapter, lang: cLang, count: cCount });
       toast.success(t("Challenge sent — get ready!", "تم إرسال التحدي — استعد!"));
       onClose();
       onChallengeAccepted?.();
