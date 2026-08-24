@@ -383,6 +383,8 @@ const AccountCenter = ({
           <ThemePicker language={language} variant="inline" />
         </div>
 
+        <ProfileDetailsCard language={language} />
+
         <ReferralCard language={language} />
 
         <TelegramLinkCard language={language} />
