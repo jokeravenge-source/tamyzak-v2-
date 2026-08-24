@@ -169,6 +169,25 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
       } catch (e: any) {
         toast.error(`Telegram push failed: ${e?.message ?? e}`);
       }
+      // Also deliver as a browser push notification (FCM) to all devices
+      // that opted in to notifications.
+      try {
+        setPushBusy(true);
+        const { data: push, error: pushErr } = await supabase.functions.invoke("send-push", {
+          body: { title: notifForm.title, body: notifForm.body, link: link || null },
+        });
+        if (pushErr) throw pushErr;
+        const p = push as { sent?: number; failed?: number; total?: number; reason?: string };
+        if (p.reason === "no_tokens") {
+          toast("No devices registered for push notifications yet.");
+        } else {
+          toast.success(`Push: ${p.sent ?? 0}/${p.total ?? 0} delivered${p.failed ? ` (${p.failed} failed)` : ""}`);
+        }
+      } catch (e: any) {
+        toast.error(`FCM push failed: ${e?.message ?? e}`);
+      } finally {
+        setPushBusy(false);
+      }
       setNotifForm({ title: "", body: "", link: "", file: null, video: null });
       loadNotifs();
     } catch (e: any) {
