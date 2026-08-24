@@ -187,10 +187,78 @@ export default function StudentProfileDialog({
               </div>
             </div>
 
-            {meId && meId !== userId && (
-              <Button onClick={challenge} disabled={challenging} className="w-full">
-                {challenging ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Swords className="me-1 h-4 w-4" /> {t("Challenge to a battle", "تحدَّه في معركة")}</>}
+            {meId && meId !== userId && !setupOpen && (
+              <Button onClick={() => setSetupOpen(true)} className="w-full">
+                <Swords className="me-1 h-4 w-4" /> {t("Challenge to a battle", "تحدَّه في معركة")}
               </Button>
+            )}
+
+            {meId && meId !== userId && setupOpen && (
+              <div className="space-y-3 rounded-xl border border-border bg-card p-3">
+                <div>
+                  <p className="mb-1.5 text-xs font-bold text-muted-foreground">{t("Subject", "المادة")}</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {CHALLENGE_SUBJECTS.map((s) => (
+                      <button
+                        key={s.key}
+                        onClick={() => { setCSubject(s.key); setCChapter(1); }}
+                        className={`rounded-lg border p-2 text-xs font-bold transition ${cSubject === s.key ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}
+                      >
+                        {isAr ? s.ar : s.en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-bold text-muted-foreground">{t("Curriculum", "المنهج")}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(["ar", "en"] as const).map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setCLang(l)}
+                        className={`rounded-lg border p-2 text-xs font-bold transition ${cLang === l ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}
+                      >
+                        {l === "ar" ? t("Arabic", "عربي") : t("English", "إنجليزي")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-bold text-muted-foreground">{t("Chapter", "الفصل")}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {chapters.map((c) => (
+                      <button
+                        key={c.n}
+                        onClick={() => setCChapter(c.n)}
+                        className={`min-w-9 rounded-lg border px-2 py-1.5 text-xs font-bold transition ${cChapter === c.n ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}
+                      >
+                        {c.n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-xs font-bold text-muted-foreground">{t("Questions", "عدد الأسئلة")}</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {CHALLENGE_COUNTS.map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setCCount(n)}
+                        className={`rounded-lg border p-2 text-xs font-bold transition ${cCount === n ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Button onClick={challenge} disabled={challenging} className="w-full">
+                  {challenging ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Swords className="me-1 h-4 w-4" /> {t("Send challenge", "إرسال التحدي")}</>}
+                </Button>
+              </div>
             )}
           </div>
         )}
