@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { buildBattleMcqs, type BattleSubject, type BattleMCQ } from "@/lib/battleMcqBank";
 import { extractStudyMaterial } from "@/lib/fileText";
+import { consumePendingBattle } from "@/lib/battleInvite";
 
 type Subject = BattleSubject;
 type MCQ = BattleMCQ;
