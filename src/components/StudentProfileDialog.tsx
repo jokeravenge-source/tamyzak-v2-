@@ -49,6 +49,12 @@ export default function StudentProfileDialog({
   const [loading, setLoading] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
   const [challenging, setChallenging] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [cSubject, setCSubject] = useState<ChallengeSubject>("physics");
+  const [cChapter, setCChapter] = useState(1);
+  const [cLang, setCLang] = useState<"ar" | "en">(isAr ? "ar" : "en");
+  const [cCount, setCCount] = useState(10);
+  const chapters = getChaptersForSubject(cSubject).filter((c) => !c.locked);
 
   useEffect(() => {
     if (!userId) { setData(null); return; }
