@@ -12,6 +12,8 @@ import { ThemePicker } from "@/components/ThemePicker";
 import { ReferralCard } from "@/components/ReferralCard";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
+import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -389,6 +391,9 @@ const AccountCenter = ({
         <ReferralCard language={language} />
 
         <TelegramLinkCard language={language} />
+
+        <PushNotificationsCard language={language} />
+
 
         <CountdownSettings language={language} />
 
