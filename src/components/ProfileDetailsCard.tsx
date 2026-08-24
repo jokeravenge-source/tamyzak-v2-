@@ -44,10 +44,10 @@ export default function ProfileDetailsCard({ language }: { language: AppLanguage
     return () => { alive = false; };
   }, []);
 
-  const persist = async (patch: Record<string, unknown>) => {
+  const persist = async (patch: { bio?: string | null; socials?: unknown; show_study_hours?: boolean }) => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
-    const { error } = await supabase.from("profiles").update(patch).eq("user_id", u.user.id);
+    const { error } = await supabase.from("profiles").update(patch as never).eq("user_id", u.user.id);
     if (error) throw error;
   };
 
