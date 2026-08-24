@@ -390,6 +390,9 @@ const AccountCenter = ({
 
         <TelegramLinkCard language={language} />
 
+        <PushNotificationsCard language={language} />
+
+
         <CountdownSettings language={language} />
 
         <a
