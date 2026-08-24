@@ -80,16 +80,19 @@ async function sendFcm(
   body: string,
   link?: string | null,
 ): Promise<boolean> {
+  // Data-only message: the service worker always wakes up and displays the
+  // notification itself. A top-level `notification` block relies on the SDK's
+  // auto-display, which silently drops on some browsers/PWA installs.
   const message: Record<string, unknown> = {
     token,
-    notification: { title, body },
-    android: { notification: { icon: "app-icon-192", color: "#3B82F6" } },
+    data: {
+      title: title ?? "",
+      body: body ?? "",
+      url: link ?? "/",
+    },
+    android: { priority: "high" },
     webpush: {
-      notification: {
-        icon: "/app-icon-192.png",
-        badge: "/app-icon-192.png",
-        requireInteraction: false,
-      },
+      headers: { Urgency: "high", TTL: "86400" },
       fcm_options: { link: link ?? "/" },
     },
   };
