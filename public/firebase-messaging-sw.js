@@ -15,15 +15,48 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  const title = (payload.notification && payload.notification.title) || "تميزك";
-  const body = (payload.notification && payload.notification.body) || "";
-  self.registration.showNotification(title, {
-    body,
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
+function show(title, body, url) {
+  return self.registration.showNotification(title || "تميزك", {
+    body: body || "",
     icon: "/app-icon-192.png",
     badge: "/app-icon-192.png",
-    data: { url: (payload.data && payload.data.url) || "/" },
+    tag: "tamayzak-push",
+    renotify: true,
+    data: { url: url || "/" },
   });
+}
+
+// Data-only messages arrive here; we display them ourselves.
+messaging.onBackgroundMessage((payload) => {
+  const d = payload.data || {};
+  const n = payload.notification || {};
+  return show(n.title || d.title, n.body || d.body, d.url);
+});
+
+// Raw fallback: fires even if the FCM SDK handler is skipped, and guarantees
+// the browser always sees a notification for the push it delivered.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = {};
+  }
+  const d = payload.data || {};
+  const n = payload.notification || {};
+  const title = n.title || d.title;
+  const body = n.body || d.body;
+  if (!title && !body) return;
+  event.waitUntil(
+    self.registration.getNotifications({ tag: "tamayzak-push" }).then((existing) => {
+      // The SDK handler may have already displayed this one.
+      if (existing.some((x) => x.title === (title || "تميزك") && x.body === (body || ""))) return;
+      return show(title, body, d.url);
+    }),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

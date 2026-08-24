@@ -72,7 +72,15 @@ export function pushPermission(): NotificationPermission | "unsupported" {
 
 /** Register the dedicated Firebase messaging service worker. */
 async function messagingServiceWorker() {
-  return navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+  const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+  // Pull the newest worker so devices that cached an older version pick up
+  // notification-display fixes without a manual unregister.
+  try {
+    await reg.update();
+  } catch {
+    /* ignore */
+  }
+  return reg;
 }
 
 /**
