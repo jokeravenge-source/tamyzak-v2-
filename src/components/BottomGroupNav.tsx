@@ -210,52 +210,76 @@ const BottomGroupNav = ({
 
         <LayoutGroup id="bgn-group-tabs">
           <div className="flex items-stretch gap-1">
-            {NAV_GROUPS.map((g) => {
-              const Icon = GROUP_ICONS[g.titleEn] ?? Layers;
-              const isActive = activeGroup === g.titleEn;
-              return (
-                <motion.button
-                  key={g.titleEn}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => {
-                    if (g.locked) return;
-                    if (g.url) {
-                      window.open(g.url, "_blank", "noopener,noreferrer");
-                      return;
-                    }
-                    setActiveGroup(g.titleEn);
-                    if (g.directKey) { setSheetGroup(null); onSelect(g.directKey); }
-                    else if (g.items.length === 0) { setSheetGroup(null); onSelect("basics"); }
-                    else setSheetGroup(g.titleEn);
-                  }}
-                  aria-disabled={g.locked || undefined}
-                  className={`relative flex-1 h-12 inline-flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold transition-colors ${
-                    g.locked
-                      ? "text-muted-foreground/50 cursor-not-allowed"
-                      : isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {isActive && !g.locked && (
-                    <motion.span
-                      layoutId="bgn-group-pill"
-                      className="absolute inset-0 rounded-xl bg-primary shadow-[0_6px_20px_hsl(var(--primary)/0.4)]"
-                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <motion.span
-                    animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -1 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                    className="relative z-10"
+            {(() => {
+              const half = Math.ceil(NAV_GROUPS.length / 2);
+              const left = NAV_GROUPS.slice(0, half);
+              const right = NAV_GROUPS.slice(half);
+              const renderGroup = (g: NavGroup) => {
+                const Icon = GROUP_ICONS[g.titleEn] ?? Layers;
+                const isActive = activeGroup === g.titleEn;
+                return (
+                  <motion.button
+                    key={g.titleEn}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => {
+                      if (g.locked) return;
+                      if (g.url) {
+                        window.open(g.url, "_blank", "noopener,noreferrer");
+                        return;
+                      }
+                      setActiveGroup(g.titleEn);
+                      if (g.directKey) { setSheetGroup(null); onSelect(g.directKey); }
+                      else if (g.items.length === 0) { setSheetGroup(null); onSelect("basics"); }
+                      else setSheetGroup(g.titleEn);
+                    }}
+                    aria-disabled={g.locked || undefined}
+                    className={`relative flex-1 h-12 inline-flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold transition-colors ${
+                      g.locked
+                        ? "text-muted-foreground/50 cursor-not-allowed"
+                        : isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
-                    <Icon className="w-4 h-4" />
-                  </motion.span>
-                  <span className="relative z-10 tracking-wide inline-flex items-center gap-1">
-                    {language === "ar" ? g.titleAr : g.titleEn}
-                    {g.locked && <Lock className="w-3 h-3" />}
-                  </span>
-                </motion.button>
+                    {isActive && !g.locked && (
+                      <motion.span
+                        layoutId="bgn-group-pill"
+                        className="absolute inset-0 rounded-xl bg-primary shadow-[0_6px_20px_hsl(var(--primary)/0.4)]"
+                        transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                      />
+                    )}
+                    <motion.span
+                      animate={{ scale: isActive ? 1.1 : 1, y: isActive ? -1 : 0 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                      className="relative z-10"
+                    >
+                      <Icon className="w-4 h-4" />
+                    </motion.span>
+                    <span className="relative z-10 tracking-wide inline-flex items-center gap-1">
+                      {language === "ar" ? g.titleAr : g.titleEn}
+                      {g.locked && <Lock className="w-3 h-3" />}
+                    </span>
+                  </motion.button>
+                );
+              };
+              return (
+                <>
+                  {left.map(renderGroup)}
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.06 }}
+                    onClick={() => onGuide?.()}
+                    aria-label={language === "ar" ? "أرشدني" : "Guide me"}
+                    className="shrink-0 mx-0.5 h-12 w-12 -mt-3 inline-flex flex-col items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_8px_24px_hsl(var(--primary)/0.55)]"
+                  >
+                    <Compass className="w-5 h-5" />
+                    <span className="text-[9px] font-bold tracking-wide mt-0.5">
+                      {language === "ar" ? "أرشدني" : "Guide"}
+                    </span>
+                  </motion.button>
+                  {right.map(renderGroup)}
+                </>
               );
-            })}
+            })()}
           </div>
         </LayoutGroup>
       </motion.nav>
