@@ -1148,6 +1148,48 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_announcements: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          desc_ar: string
+          desc_en: string
+          id: string
+          kind: string
+          sort_order: number
+          title_ar: string
+          title_en: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          desc_ar?: string
+          desc_en?: string
+          id?: string
+          kind?: string
+          sort_order?: number
+          title_ar: string
+          title_en: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          desc_ar?: string
+          desc_en?: string
+          id?: string
+          kind?: string
+          sort_order?: number
+          title_ar?: string
+          title_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feature_unlocks: {
         Row: {
           created_at: string
