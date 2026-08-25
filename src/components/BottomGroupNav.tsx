@@ -100,11 +100,12 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
 };
 
 const BottomGroupNav = ({
-  language, active, onSelect,
+  language, active, onSelect, onGuide,
 }: {
   language: AppLanguage;
   active: MainMenuChoice | null;
   onSelect: (k: MainMenuChoice) => void;
+  onGuide?: () => void;
 }) => {
   const isRTL = language === "ar";
   const initialGroup =
