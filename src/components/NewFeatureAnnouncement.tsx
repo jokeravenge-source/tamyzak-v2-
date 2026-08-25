@@ -15,9 +15,33 @@ export type FeatureAnnouncement = {
 
 /**
  * Add one entry here every time a new feature ships or a bug is fixed.
- * Each card is shown once per user (tracked in localStorage by `id`).
+ * Each card is shown once per visit (tracked in sessionStorage by `id`).
  */
 export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
+  {
+    id: "exam-lang-2026-08b",
+    kind: "feature",
+    titleAr: "امتحان كامل بلغة منهجك",
+    titleEn: "Full exam in your curriculum language",
+    descAr: "عند توليد امتحان وزاري كامل يمكنك اختيار لغة المنهج (عربي/إنكليزي) وسيصدر الامتحان والتصحيح بنفس اللغة.",
+    descEn: "When generating a full ministerial exam you can pick the curriculum language (Arabic/English) — paper and grading follow it.",
+  },
+  {
+    id: "push-notifications-2026-08b",
+    kind: "feature",
+    titleAr: "تنبيهات على جهازك",
+    titleEn: "Device notifications",
+    descAr: "فعّل التنبيهات لتصلك تذكيرات الامتحانات ومراجعة أخطائك والأخبار الجديدة مباشرة على هاتفك.",
+    descEn: "Enable notifications to get exam reminders, mistakes review and news straight on your device.",
+  },
+  {
+    id: "profile-battle-2026-08b",
+    kind: "feature",
+    titleAr: "تحدَّ أصدقاءك من ملفهم الشخصي",
+    titleEn: "Challenge friends from their profile",
+    descAr: "من الجلسات اضغط على أي طالب وتحدّاه: اختر المادة والفصل واللغة وعدد الأسئلة.",
+    descEn: "In Sessions, tap any student and challenge them — choose subject, chapter, language and question count.",
+  },
   {
     id: "guide-chat-2026-08",
     kind: "feature",
@@ -51,11 +75,11 @@ export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
 ];
 
 
-const KEY = "seen_feature_announcements_v1";
+const KEY = "seen_feature_announcements_session";
 
 function readSeen(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]") as string[];
+    return JSON.parse(sessionStorage.getItem(KEY) || "[]") as string[];
   } catch {
     return [];
   }
@@ -74,7 +98,7 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
   const dismiss = () => {
     if (!current) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify([...readSeen(), current.id]));
+      sessionStorage.setItem(KEY, JSON.stringify([...readSeen(), current.id]));
     } catch {
       /* ignore */
     }
