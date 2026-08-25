@@ -1,94 +1,30 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, Wrench, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type FeatureAnnouncement = {
-  /** Unique id — bump it to re-show a card. */
   id: string;
-  /** "feature" for something new, "fix" for a resolved issue. */
-  kind?: "feature" | "fix";
-  titleAr: string;
-  titleEn: string;
-  descAr: string;
-  descEn: string;
+  kind: "feature" | "fix";
+  title_ar: string;
+  title_en: string;
+  desc_ar: string;
+  desc_en: string;
 };
 
 /**
- * Add one entry here every time a new feature ships or a bug is fixed.
- * Each card is shown once per visit (tracked in sessionStorage by `id`).
+ * Announcements are managed by admins in the admin dashboard.
+ * Each announcement is shown ONCE per device (tracked forever by its id),
+ * so users never see the same change repeated day after day.
  */
-export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
-  {
-    id: "exam-lang-2026-08b",
-    kind: "feature",
-    titleAr: "امتحان كامل بلغة منهجك",
-    titleEn: "Full exam in your curriculum language",
-    descAr: "عند توليد امتحان وزاري كامل يمكنك اختيار لغة المنهج (عربي/إنكليزي) وسيصدر الامتحان والتصحيح بنفس اللغة.",
-    descEn: "When generating a full ministerial exam you can pick the curriculum language (Arabic/English) — paper and grading follow it.",
-  },
-  {
-    id: "push-notifications-2026-08b",
-    kind: "feature",
-    titleAr: "تنبيهات على جهازك",
-    titleEn: "Device notifications",
-    descAr: "فعّل التنبيهات لتصلك تذكيرات الامتحانات ومراجعة أخطائك والأخبار الجديدة مباشرة على هاتفك.",
-    descEn: "Enable notifications to get exam reminders, mistakes review and news straight on your device.",
-  },
-  {
-    id: "profile-battle-2026-08b",
-    kind: "feature",
-    titleAr: "تحدَّ أصدقاءك من ملفهم الشخصي",
-    titleEn: "Challenge friends from their profile",
-    descAr: "من الجلسات اضغط على أي طالب وتحدّاه: اختر المادة والفصل واللغة وعدد الأسئلة.",
-    descEn: "In Sessions, tap any student and challenge them — choose subject, chapter, language and question count.",
-  },
-  {
-    id: "guide-chat-2026-08",
-    kind: "feature",
-    titleAr: "مرشد التطبيق الذكي",
-    titleEn: "Smart app guide",
-    descAr: "لا تعرف من أين تبدأ؟ أخبر المرشد بما تريد إنجازه وسينقلك مباشرة إلى الأداة المناسبة.",
-    descEn: "Not sure where to start? Tell the guide what you want to do and it takes you straight to the right tool.",
-  },
-  {
-    id: "notes-unread-dot-2026-08",
-    kind: "feature",
-    titleAr: "تنبيه الملاحظات الجديدة",
-    titleEn: "New notes indicator",
-    descAr: "تظهر نقطة حمراء على بطاقة الملاحظات عندما تكون هناك ملاحظات لم تقرأها بعد.",
-    descEn: "A red dot appears on the notes card whenever there are notes you haven't opened yet.",
-  },
-  {
-    id: "join-tamayzak-2026-08",
-    titleAr: "انضم الى تميزك",
-    titleEn: "Join Tamayzak",
-    descAr: "صار بإمكانك التسجيل معنا مباشرة من التطبيق — املأ اسمك ومعرف تيليجرام واسم مدرّسك وسنتواصل معك.",
-    descEn: "You can now sign up straight from the app — fill in your name, Telegram handle and teacher, and we'll reach out.",
-  },
-  {
-    id: "canvas-notes-free-2026-08",
-    titleAr: "اللوحة والملاحظات مفتوحة للجميع",
-    titleEn: "Canvas & Notes unlocked",
-    descAr: "لم تعد بحاجة إلى نقاط — استخدم اللوحة والملاحظات مجاناً الآن.",
-    descEn: "No points needed anymore — use Canvas and Notes for free.",
-  },
-];
-
-
-/** Per-day key: announcements reappear once every calendar day the site is opened. */
-const KEY = "seen_feature_announcements_day";
-
-function todayStamp(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
+const KEY = "seen_feature_announcement_ids";
 
 function readSeen(): string[] {
   try {
-    const raw = localStorage.getItem(KEY) || "{}";
-    const parsed = JSON.parse(raw) as { day?: string; seen?: string[] };
-    // Reset when the calendar day changes so cards show again the next day.
-    if (parsed.day !== todayStamp()) return [];
-    return parsed.seen || [];
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
   } catch {
     return [];
   }
@@ -96,7 +32,7 @@ function readSeen(): string[] {
 
 function writeSeen(seen: string[]) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ day: todayStamp(), seen }));
+    localStorage.setItem(KEY, JSON.stringify(seen.slice(-300)));
   } catch {
     /* ignore */
   }
@@ -107,8 +43,22 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
   const [queue, setQueue] = useState<FeatureAnnouncement[]>([]);
 
   useEffect(() => {
-    const seen = readSeen();
-    setQueue(FEATURE_ANNOUNCEMENTS.filter((f) => !seen.includes(f.id)));
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("feature_announcements")
+        .select("id, kind, title_ar, title_en, desc_ar, desc_en")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (cancelled || !data) return;
+      const seen = readSeen();
+      setQueue((data as FeatureAnnouncement[]).filter((f) => !seen.includes(f.id)));
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const current = queue[0];
@@ -157,10 +107,10 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
             </p>
 
             <h2 className="mt-2 text-2xl font-bold gradient-text">
-              {isAr ? current.titleAr : current.titleEn}
+              {isAr ? current.title_ar : current.title_en}
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              {isAr ? current.descAr : current.descEn}
+              {isAr ? current.desc_ar : current.desc_en}
             </p>
             <button
               onClick={dismiss}
