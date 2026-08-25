@@ -15,7 +15,7 @@ export type FeatureAnnouncement = {
 
 /**
  * Add one entry here every time a new feature ships or a bug is fixed.
- * Each card is shown once per user (tracked in localStorage by `id`).
+ * Each card is shown once per visit (tracked in sessionStorage by `id`).
  */
 export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
   {
