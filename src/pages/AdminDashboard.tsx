@@ -667,12 +667,20 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <button onClick={() => setTab("bank")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "bank" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
             <BookOpen className="w-4 h-4 inline mr-1.5" />Question Bank
           </button>
+          {isOwner && (
+            <button onClick={() => setTab("announcements")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "announcements" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Sparkles className="w-4 h-4 inline mr-1.5" />Announcements
+            </button>
+          )}
         </div>
 
-        {tab === "points" ? (
+        {tab === "announcements" ? (
+          <AdminAnnouncementsTab />
+        ) : tab === "points" ? (
           <AdminPointsTab />
         ) : tab === "credits" ? (
           <AdminCreditsTab />
+
         ) : tab === "analytics" ? (
           <AdminAnalyticsTab />
 
