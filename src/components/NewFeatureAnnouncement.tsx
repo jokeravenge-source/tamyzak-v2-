@@ -75,13 +75,30 @@ export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
 ];
 
 
-const KEY = "seen_feature_announcements_session";
+/** Per-day key: announcements reappear once every calendar day the site is opened. */
+const KEY = "seen_feature_announcements_day";
+
+function todayStamp(): string {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
 
 function readSeen(): string[] {
   try {
-    return JSON.parse(sessionStorage.getItem(KEY) || "[]") as string[];
+    const raw = localStorage.getItem(KEY) || "{}";
+    const parsed = JSON.parse(raw) as { day?: string; seen?: string[] };
+    // Reset when the calendar day changes so cards show again the next day.
+    if (parsed.day !== todayStamp()) return [];
+    return parsed.seen || [];
   } catch {
     return [];
+  }
+}
+
+function writeSeen(seen: string[]) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ day: todayStamp(), seen }));
+  } catch {
+    /* ignore */
   }
 }
 
@@ -97,11 +114,7 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
   const current = queue[0];
   const dismiss = () => {
     if (!current) return;
-    try {
-      sessionStorage.setItem(KEY, JSON.stringify([...readSeen(), current.id]));
-    } catch {
-      /* ignore */
-    }
+    writeSeen([...readSeen(), current.id]);
     setQueue((q) => q.slice(1));
   };
 
