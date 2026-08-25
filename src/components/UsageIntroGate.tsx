@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Compass } from "lucide-react";
 
-/** Per-visit key: the card is shown again every time the site is opened. */
-const KEY = "usage_intro_answered_session";
+/** Per-day key: the card is shown again once every calendar day the site is opened. */
+const KEY = "usage_intro_answered_day";
+
+function todayStamp(): string {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
 
 export function usageIntroAnswered(): boolean {
   try {
-    return sessionStorage.getItem(KEY) === "1";
+    return localStorage.getItem(KEY) === todayStamp();
   } catch {
     return true;
   }
@@ -29,7 +33,7 @@ const UsageIntroGate = ({
 
   const answer = (knows: boolean) => {
     try {
-      sessionStorage.setItem(KEY, "1");
+      localStorage.setItem(KEY, todayStamp());
     } catch {
       /* ignore */
     }
