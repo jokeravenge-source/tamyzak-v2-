@@ -75,11 +75,11 @@ export const FEATURE_ANNOUNCEMENTS: FeatureAnnouncement[] = [
 ];
 
 
-const KEY = "seen_feature_announcements_v1";
+const KEY = "seen_feature_announcements_session";
 
 function readSeen(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]") as string[];
+    return JSON.parse(sessionStorage.getItem(KEY) || "[]") as string[];
   } catch {
     return [];
   }
@@ -98,7 +98,7 @@ const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
   const dismiss = () => {
     if (!current) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify([...readSeen(), current.id]));
+      sessionStorage.setItem(KEY, JSON.stringify([...readSeen(), current.id]));
     } catch {
       /* ignore */
     }
