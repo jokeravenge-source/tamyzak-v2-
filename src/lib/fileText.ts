@@ -184,7 +184,21 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
   }
 }
 
-export async function extractStudyMaterial(file: File, options: ExtractOptions = {}): Promise<StudyMaterial> {
+/**
+ * Some pickers (Android/iOS cloud providers, Drive, PWA share targets) hand back a
+ * File whose `size` is 0 until the bytes are actually pulled. Re-materialize it into
+ * a real in-memory File so size/reading work everywhere.
+ */
+export async function materializeFile(file: File): Promise<File> {
+  if (file.size > 0) return file;
+  const buffer = await file.arrayBuffer();
+  if (!buffer.byteLength) throw new Error("empty-file");
+  return new File([buffer], file.name, { type: file.type || "application/octet-stream" });
+}
+
+export async function extractStudyMaterial(input: File, options: ExtractOptions = {}): Promise<StudyMaterial> {
+  const file = await materializeFile(input);
+
   const maxChars = options.maxChars ?? DEFAULT_MAX_CHARS;
 
   if (isTextFile(file)) return { text: (await file.slice(0, maxChars * 4).text()).slice(0, maxChars) };

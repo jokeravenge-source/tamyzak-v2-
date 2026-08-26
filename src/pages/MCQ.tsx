@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { type AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { extractStudyMaterial } from "@/lib/fileText";
+import { extractStudyMaterial, materializeFile } from "@/lib/fileText";
 import { awardPoints } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
@@ -41,6 +41,8 @@ const copy = {
     noText: "Could not read text from this file.",
     tooBig: "File too large. Max 100MB.",
     badType: "Unsupported file. Use PDF, DOCX, or TXT.",
+    emptyFile: "This file came through empty (0 bytes). Download it to your device first, then upload it from local storage.",
+
   },
   ar: {
     title: "مولّد الأسئلة",
@@ -67,6 +69,8 @@ const copy = {
     noText: "تعذرت قراءة النص من هذا الملف.",
     tooBig: "الملف كبير جداً. الحد الأقصى 100 ميجابايت.",
     badType: "نوع الملف غير مدعوم. استخدم PDF أو DOCX أو TXT.",
+    emptyFile: "الملف وصل فارغاً (0 بايت). حمّله إلى جهازك أولاً ثم ارفعه من ذاكرة الجهاز.",
+
   },
 } as const;
 
@@ -89,13 +93,18 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   const [score, setScore] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const onFile = (f: File | null) => {
+  const onFile = async (f: File | null) => {
     if (!f) return;
     if (f.size > 100 * 1024 * 1024) { toast.error(t.tooBig); return; }
     const ok = /\.(pdf|docx|txt)$/i.test(f.name) || f.type === "application/pdf" || f.type.startsWith("text/");
     if (!ok) { toast.error(t.badType); return; }
-    setFile(f);
+    try {
+      setFile(await materializeFile(f));
+    } catch {
+      toast.error(t.emptyFile);
+    }
   };
+
 
   const handleGenerate = async () => {
     if (!file) return;
