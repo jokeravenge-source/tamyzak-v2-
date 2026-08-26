@@ -89,13 +89,18 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   const [score, setScore] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const onFile = (f: File | null) => {
+  const onFile = async (f: File | null) => {
     if (!f) return;
     if (f.size > 100 * 1024 * 1024) { toast.error(t.tooBig); return; }
     const ok = /\.(pdf|docx|txt)$/i.test(f.name) || f.type === "application/pdf" || f.type.startsWith("text/");
     if (!ok) { toast.error(t.badType); return; }
-    setFile(f);
+    try {
+      setFile(await materializeFile(f));
+    } catch {
+      toast.error(t.emptyFile);
+    }
   };
+
 
   const handleGenerate = async () => {
     if (!file) return;
