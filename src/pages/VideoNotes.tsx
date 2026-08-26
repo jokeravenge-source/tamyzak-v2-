@@ -276,7 +276,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
       const { data, error } = await supabase.functions.invoke("video-notes", {
         body: { url: url.trim(), language, mode: "flashcards", transcript, count: 15 },
       });
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.failed));
       if ((data as any)?.error) throw new Error((data as any).error);
       const list = ((data as any)?.cards || []) as Card[];
       if (!list.length) throw new Error(t.failed);
@@ -299,7 +299,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
         subject, chapter: String(chapter), language,
         question: c.q, answer: c.a, created_by: u.user.id, approved: false,
       });
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.failed));
       setSavedIdx((s) => new Set(s).add(idx));
       toast.success(t.saved);
     } catch (e: any) {
@@ -319,7 +319,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
         question: c.q, answer: c.a, created_by: u.user!.id, approved: false,
       }));
       const { error } = await supabase.from("custom_flashcards").insert(rows);
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.failed));
       setSavedIdx(new Set(cards.map((_, i) => i)));
       toast.success(t.addedAll(rows.length));
     } catch (e: any) {
@@ -336,7 +336,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
       const { data, error } = await supabase.functions.invoke("generate-mcq", {
         body: { text: transcript || notes, count: 10, language },
       });
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.failed));
       if ((data as any)?.error) throw new Error((data as any).error);
       const qs: MCQItem[] = ((data as any)?.questions || []).filter((q: any) => q?.choices?.length === 4);
       if (!qs.length) throw new Error(t.failed);
