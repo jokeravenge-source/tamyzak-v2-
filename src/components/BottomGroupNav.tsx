@@ -91,7 +91,6 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Study: Layers,
   Home: Home,
   Community: Users,
-  Organizations: Network,
   Menu: MenuIcon,
 };
 
