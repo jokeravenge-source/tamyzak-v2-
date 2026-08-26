@@ -41,6 +41,8 @@ const copy = {
     noText: "Could not read text from this file.",
     tooBig: "File too large. Max 100MB.",
     badType: "Unsupported file. Use PDF, DOCX, or TXT.",
+    emptyFile: "This file came through empty (0 bytes). Download it to your device first, then upload it from local storage.",
+
   },
   ar: {
     title: "مولّد الأسئلة",
