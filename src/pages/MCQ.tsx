@@ -12,6 +12,8 @@ import { awardPoints } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
+import { edgeErrorMessage } from "@/lib/edgeError";
+
 
 const copy = {
   en: {
