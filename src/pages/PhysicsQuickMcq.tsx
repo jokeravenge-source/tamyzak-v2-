@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { physicsChapters } from "@/data/subjectChapters";
 import { awardPoints } from "@/lib/points";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 const copy = {
   en: {

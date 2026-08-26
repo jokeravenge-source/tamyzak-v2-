@@ -9,6 +9,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/subjectChapters";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 const copy = {
   en: {

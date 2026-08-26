@@ -11,6 +11,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { buildBattleMcqs, type BattleSubject, type BattleMCQ } from "@/lib/battleMcqBank";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { consumePendingBattle } from "@/lib/battleInvite";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 type Subject = BattleSubject;
 type MCQ = BattleMCQ;
