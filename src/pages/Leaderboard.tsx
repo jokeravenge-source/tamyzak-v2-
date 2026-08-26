@@ -154,8 +154,11 @@ const Leaderboard = ({
           ) : rows.length === 0 ? (
             <p className="text-center text-muted-foreground py-16">{t("No points yet. Be the first!", "لا توجد نقاط بعد. كن الأول!")}</p>
           ) : (
-            <ol className="space-y-2">
-              {rows.map((r, i) => {
+            (() => {
+              const top = rows.slice(0, 10);
+              const myIndex = rows.findIndex((r) => r.user_id === me);
+              const myRow = myIndex >= 0 && myIndex >= 10 ? rows[myIndex] : null;
+              const renderRow = (r: Row, i: number) => {
                 const rank = rankFor(r.points);
                 const isMe = r.user_id === me;
                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
@@ -188,9 +191,25 @@ const Leaderboard = ({
                     </div>
                   </li>
                 );
-              })}
-            </ol>
+              };
+              return (
+                <>
+                  <ol className="space-y-2">{top.map((r, i) => renderRow(r, i))}</ol>
+                  {myRow && (
+                    <>
+                      <div className="my-3 flex items-center gap-2 text-muted-foreground">
+                        <div className="flex-1 h-px bg-white/10" />
+                        <span className="text-xs">{t("Your place", "مركزك")}</span>
+                        <div className="flex-1 h-px bg-white/10" />
+                      </div>
+                      <ol className="space-y-2">{renderRow(myRow, myIndex)}</ol>
+                    </>
+                  )}
+                </>
+              );
+            })()
           )}
+
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-4">
