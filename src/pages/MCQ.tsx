@@ -120,7 +120,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
         },
       });
       toast.dismiss("gen");
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, "Failed to generate"));
       if (data?.error) throw new Error(data.message || data.error);
       const qs: MCQ[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
       if (!qs.length) throw new Error("No questions returned");
@@ -133,6 +133,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
     } finally {
       setLoading(false);
     }
+
   };
 
   const submitAnswer = () => {
