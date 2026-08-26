@@ -11,6 +11,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { buildBattleMcqs, type BattleSubject, type BattleMCQ } from "@/lib/battleMcqBank";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { consumePendingBattle } from "@/lib/battleInvite";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 type Subject = BattleSubject;
 type MCQ = BattleMCQ;
@@ -384,7 +385,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
         body: { text: material.text, pageImages: material.pageImages, count: qCount, language },
       });
       toast.dismiss("battle-gen");
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.genFailed));
       if (data?.error) throw new Error(data.message || data.error);
       const raw: any[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
       if (!raw.length) throw new Error(t.genFailed);
@@ -509,7 +510,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
         body: { text: material.text, pageImages: material.pageImages, count: qCount, language },
       });
       toast.dismiss("solo-gen");
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, t.genFailed));
       if (data?.error) throw new Error(data.message || data.error);
       const raw: any[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
       if (!raw.length) throw new Error(t.genFailed);

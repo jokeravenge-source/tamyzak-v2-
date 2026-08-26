@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { physicsChapters } from "@/data/subjectChapters";
 import { awardPoints } from "@/lib/points";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 const copy = {
   en: {
@@ -87,7 +88,7 @@ const PhysicsQuickMcq = ({ language, onBack }: { language: AppLanguage; onBack: 
         body: { text: prompt, count, language },
       });
       toast.dismiss("gen");
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, "Failed"));
       if (data?.error) throw new Error(data.message || data.error);
       const qs: MCQ[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
       if (!qs.length) throw new Error(t.noQuestions);
