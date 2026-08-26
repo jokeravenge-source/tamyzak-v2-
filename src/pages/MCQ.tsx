@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { type AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { extractStudyMaterial } from "@/lib/fileText";
+import { extractStudyMaterial, materializeFile } from "@/lib/fileText";
 import { awardPoints } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
