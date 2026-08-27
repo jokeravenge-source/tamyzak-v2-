@@ -277,6 +277,27 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
   missions: Target,
 };
 
+const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: string }>> = {
+  subjectsHub: { card: "border-primary/25 bg-primary/10 hover:bg-primary/15", icon: "bg-primary/15 text-primary" },
+  mcqBank: { card: "border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/15", icon: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
+  missions: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
+  summaries: { card: "border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/15", icon: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
+  adminNotes: { card: "border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/15", icon: "bg-rose-500/15 text-rose-600 dark:text-rose-300" },
+  notes: { card: "border-teal-500/25 bg-teal-500/10 hover:bg-teal-500/15", icon: "bg-teal-500/15 text-teal-600 dark:text-teal-300" },
+  sessions: { card: "border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15", icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
+  mistakes: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
+  videoNotes: { card: "border-fuchsia-500/25 bg-fuchsia-500/10 hover:bg-fuchsia-500/15", icon: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300" },
+  youtube: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
+  canvas: { card: "border-indigo-500/25 bg-indigo-500/10 hover:bg-indigo-500/15", icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" },
+  companion: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
+  mcq: { card: "border-purple-500/25 bg-purple-500/10 hover:bg-purple-500/15", icon: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
+};
+
+const DEFAULT_HOME_TINT = {
+  card: "border-primary/20 bg-primary/5 hover:bg-primary/10",
+  icon: "bg-primary/10 text-primary",
+};
+
 const FEATURED_COPY = {
   en: {
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
@@ -1088,6 +1109,7 @@ const Basics = ({
               {FEATURED.map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
+                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 if (!meta) return null;
                 return (
                   <motion.button
@@ -1095,9 +1117,9 @@ const Basics = ({
                     whileHover={{ y: -3 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate(it.key)}
-                    className={`group ${isRTL ? "text-right" : "text-left"} bg-card border border-border p-4 sm:p-6 rounded-2xl sm:rounded-3xl hover:border-primary/40 hover:shadow-[var(--shadow-card)] transition-all`}
+                    className={`group ${isRTL ? "text-right" : "text-left"} border p-4 sm:p-6 rounded-2xl sm:rounded-3xl hover:shadow-[var(--shadow-card)] transition-all ${tint.card}`}
                   >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform ${tint.icon}`}>
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <h3 className="text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
@@ -1208,6 +1230,7 @@ const Basics = ({
               {displayedTools.map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
+                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 if (!meta) return null;
                 const showNotesDot = it.key === "adminNotes" && unseenNotes > 0;
                 return (
@@ -1217,7 +1240,7 @@ const Basics = ({
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     whileHover={{ y: -3 }}
                     onClick={() => navigate(it.key)}
-                    className={`group relative ${isRTL ? "text-right" : "text-left"} bg-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-border hover:border-primary/40 hover:bg-primary/5 transition-all`}
+                    className={`group relative ${isRTL ? "text-right" : "text-left"} p-3 sm:p-5 rounded-xl sm:rounded-2xl border transition-all ${tint.card}`}
                   >
                     {showNotesDot && (
                       <span
@@ -1227,7 +1250,7 @@ const Basics = ({
                         {unseenNotes > 9 ? "9+" : unseenNotes}
                       </span>
                     )}
-                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center mb-2 sm:mb-3 text-primary group-hover:scale-110 transition-transform">
+                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 group-hover:scale-110 transition-transform ${tint.icon}`}>
                       <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <h3 className="font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
