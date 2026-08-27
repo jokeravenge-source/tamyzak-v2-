@@ -1,19 +1,27 @@
 import { Helmet } from "react-helmet-async";
 import SeoHead from "@/components/SeoHead";
 import { ministerialPhysicsCh1Ar } from "@/data/ministerialPhysicsCh1Ar";
+import { ministerialPhysicsCh2Ar } from "@/data/ministerialPhysicsCh2Ar";
 import { ministerialChemCh1Ar } from "@/data/ministerialChemCh1Ar";
+import { ministerialChemCh3Ar } from "@/data/ministerialChemCh3Ar";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
+import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
 import { ministerialArabicIstifham } from "@/data/ministerialArabicIstifham";
+import { ministerialArabicNida } from "@/data/ministerialArabicNida";
 
 const SITE_URL = "https://tamyazak.site";
 
 const sections = [
-  { id: "physics", title: "الفيزياء — الفصل الأول", items: ministerialPhysicsCh1Ar.slice(0, 8) },
-  { id: "chemistry", title: "الكيمياء — الفصل الأول", items: ministerialChemCh1Ar.slice(0, 8) },
-  { id: "biology", title: "الأحياء — الفصل الأول", items: ministerialBioCh1Ar.slice(0, 8) },
-  { id: "islamic", title: "الإسلامية — الوحدة الأولى", items: ministerialIslamicUnit1.slice(0, 6) },
-  { id: "arabic", title: "اللغة العربية — الاستفهام", items: ministerialArabicIstifham.slice(0, 6) },
+  { id: "physics", title: "الفيزياء — الفصل الأول", items: ministerialPhysicsCh1Ar.slice(0, 12) },
+  { id: "physics2", title: "الفيزياء — الفصل الثاني (الفيزياء الحديثة)", items: ministerialPhysicsCh2Ar.slice(0, 12) },
+  { id: "chemistry", title: "الكيمياء — الفصل الأول", items: ministerialChemCh1Ar.slice(0, 12) },
+  { id: "chemistry3", title: "الكيمياء — الفصل الثالث (الكهروكيمياء)", items: ministerialChemCh3Ar.slice(0, 12) },
+  { id: "biology", title: "الأحياء — الفصل الأول", items: ministerialBioCh1Ar.slice(0, 12) },
+  { id: "islamic", title: "الإسلامية — الوحدة الأولى", items: ministerialIslamicUnit1.slice(0, 10) },
+  { id: "islamic2", title: "الإسلامية — الوحدة الثانية", items: ministerialIslamicUnit2.slice(0, 10) },
+  { id: "arabic", title: "اللغة العربية — الاستفهام", items: ministerialArabicIstifham.slice(0, 10) },
+  { id: "arabic-nida", title: "اللغة العربية — النداء", items: ministerialArabicNida.slice(0, 10) },
 ];
 
 /**
