@@ -195,6 +195,13 @@ const Welcome = () => {
         >
           ابدأ الآن
         </button>
+        <a
+          href="/ministerial-questions"
+          className="mt-3 block text-center text-[14px] font-semibold underline"
+          style={{ color: NAVY_SOFT }}
+        >
+          وزاريات السادس العلمي مع الأجوبة
+        </a>
       </motion.div>
     </main>
   );

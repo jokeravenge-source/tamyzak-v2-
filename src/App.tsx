@@ -90,6 +90,7 @@ const DailyGame = lazy(() => import("./pages/DailyGame"));
 const WhoIsBest = lazy(() => import("./pages/WhoIsBest"));
 const ChallengePage = lazy(() => import("./pages/Challenge"));
 const JoinTamayzak = lazy(() => import("./pages/JoinTamayzak"));
+const MinisterialQuestions = lazy(() => import("./pages/MinisterialQuestions"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
 import ParentFollow from "./pages/ParentFollow";
@@ -207,6 +208,19 @@ const App = () => {
           <Toaster />
           <Sonner />
           <ResetPassword />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Public, crawlable ministerial questions landing page — before any auth gate.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/ministerial-questions") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <MinisterialQuestions />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
