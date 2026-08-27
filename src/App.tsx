@@ -212,6 +212,17 @@ const App = () => {
     );
   }
 
+  // Public, crawlable ministerial questions landing page — before any auth gate.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/ministerial-questions") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <MinisterialQuestions />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   if (typeof window !== "undefined" && window.location.pathname === "/welcome") {
     return (
       <QueryClientProvider client={queryClient}>
