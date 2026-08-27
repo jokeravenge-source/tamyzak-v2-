@@ -218,7 +218,9 @@ const App = () => {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <MinisterialQuestions />
+          <Suspense fallback={null}>
+            <MinisterialQuestions />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
