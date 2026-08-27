@@ -1116,13 +1116,18 @@ const Basics = ({
                     whileHover={{ y: -3 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate(it.key)}
-                    className={`group ${isRTL ? "text-right" : "text-left"} border p-4 sm:p-6 rounded-2xl sm:rounded-3xl hover:shadow-[var(--shadow-card)] transition-all ${tint.card}`}
+                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-[var(--shadow-card)] transition-all ${tint.card}`}
                   >
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform ${tint.icon}`}>
+                    <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
+                    <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
+                    <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-sm ring-1 ring-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform ${tint.icon}`}>
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <h3 className="text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
-                    <p className="text-muted-foreground text-xs sm:text-sm line-clamp-2">{meta.subtitle}</p>
+                    <h3 className="relative pe-7 text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
+                    <p className="relative pe-5 text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2">{meta.subtitle}</p>
+                    <span className={`absolute bottom-3 end-3 inline-flex h-7 w-7 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
+                      <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />
+                    </span>
                   </motion.button>
                 );
               })}
@@ -1239,8 +1244,10 @@ const Basics = ({
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     whileHover={{ y: -3 }}
                     onClick={() => navigate(it.key)}
-                    className={`group relative ${isRTL ? "text-right" : "text-left"} p-3 sm:p-5 rounded-xl sm:rounded-2xl border transition-all ${tint.card}`}
+                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm hover:shadow-md transition-all ${tint.card}`}
                   >
+                    <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
+                    <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
                     {showNotesDot && (
                       <span
                         aria-label={language === "ar" ? "ملاحظات جديدة" : "New notes"}
@@ -1249,11 +1256,14 @@ const Basics = ({
                         {unseenNotes > 9 ? "9+" : unseenNotes}
                       </span>
                     )}
-                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 group-hover:scale-110 transition-transform ${tint.icon}`}>
+                    <div className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 shadow-sm ring-1 ring-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform ${tint.icon}`}>
                       <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <h3 className="font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">{meta.subtitle}</p>
+                    <h3 className="relative pe-6 font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
+                    <p className="relative pe-4 text-[10px] sm:text-xs leading-relaxed text-muted-foreground line-clamp-2">{meta.subtitle}</p>
+                    <span className={`absolute bottom-2.5 end-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full opacity-65 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
+                      <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />
+                    </span>
                   </motion.button>
                 );
               })}
