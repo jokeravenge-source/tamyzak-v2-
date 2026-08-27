@@ -33,6 +33,9 @@ function show(title, body, url) {
 messaging.onBackgroundMessage((payload) => {
   const d = payload.data || {};
   const n = payload.notification || {};
+  // Notification payloads are displayed automatically by FCM. Only render
+  // legacy data-only messages here to avoid duplicate notifications.
+  if (n.title || n.body) return;
   return show(n.title || d.title, n.body || d.body, d.url);
 });
 
@@ -47,6 +50,9 @@ self.addEventListener("push", (event) => {
   }
   const d = payload.data || {};
   const n = payload.notification || {};
+  // FCM handles notification payloads even when the PWA has no open window.
+  // This listener remains as a fallback for older data-only messages.
+  if (n.title || n.body) return;
   const title = n.title || d.title;
   const body = n.body || d.body;
   if (!title && !body) return;
@@ -61,7 +67,8 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/";
+  const notificationData = event.notification.data || {};
+  const url = notificationData.url || notificationData.FCM_MSG?.data?.url || "/";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
