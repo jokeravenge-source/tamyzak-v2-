@@ -404,49 +404,24 @@ const AccountCenter = ({
           </details>
         )}
 
-        <p className="px-1 pt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{ux.preferences}</p>
-
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+        <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+          <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
+            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
               <Palette className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold">{text.theme}</h2>
-          </div>
-          <ThemePicker language={language} variant="inline" />
-        </div>
-
-        <ProfileDetailsCard language={language} />
-
-        <p className="px-1 pt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{ux.services}</p>
-
-        <ReferralCard language={language} />
-
-        <TelegramLinkCard language={language} />
-
-        <PushNotificationsCard language={language} />
-
-
-        <CountdownSettings language={language} />
-
-        <a
-          href="https://t.me/ias404"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 hover:border-primary/40 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-primary" />
+            <h2 className="flex-1 text-lg font-semibold">{ux.preferences}</h2>
+            <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-white/10 p-4 space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-4">
+              <h3 className="text-sm font-semibold">{text.theme}</h3>
+              <ThemePicker language={language} variant="inline" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">{text.support}</h2>
-              <p className="text-sm text-muted-foreground">{text.supportDesc}</p>
-            </div>
-          </div>
-        </a>
 
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-3">
+            <ProfileDetailsCard language={language} />
+            <CountdownSettings language={language} />
+
+            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
               <Settings className="w-5 h-5 text-primary" />
@@ -499,7 +474,41 @@ const AccountCenter = ({
             <LogOut className="w-4 h-4" />
             {text.signOut}
           </button>
-        </div>
+            </div>
+          </div>
+        </details>
+
+        <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+          <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
+            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="flex-1 text-lg font-semibold">{ux.services}</h2>
+            <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-white/10 p-4 space-y-4">
+            <ReferralCard language={language} />
+            <TelegramLinkCard language={language} />
+            <PushNotificationsCard language={language} />
+
+            <a
+              href="https://t.me/ias404"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl border border-white/10 bg-background/30 p-5 hover:border-primary/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">{text.support}</h2>
+                  <p className="text-xs text-muted-foreground mt-1">{text.supportDesc}</p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </details>
       </section>
       
     </main>
