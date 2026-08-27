@@ -91,6 +91,8 @@ const WhoIsBest = lazy(() => import("./pages/WhoIsBest"));
 const ChallengePage = lazy(() => import("./pages/Challenge"));
 const JoinTamayzak = lazy(() => import("./pages/JoinTamayzak"));
 const MinisterialQuestions = lazy(() => import("./pages/MinisterialQuestions"));
+const ToolLanding = lazy(() => import("./pages/ToolLanding"));
+
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
 import ParentFollow from "./pages/ParentFollow";
@@ -225,6 +227,23 @@ const App = () => {
       </QueryClientProvider>
     );
   }
+
+  // Public, crawlable tool landing pages (/tools/flashcards, /tools/mcq, ...).
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/tools/")) {
+    const tool = getPublicTool(window.location.pathname);
+    if (tool) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Suspense fallback={null}>
+              <ToolLanding tool={tool} />
+            </Suspense>
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+  }
+
 
   if (typeof window !== "undefined" && window.location.pathname === "/welcome") {
     return (
