@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe } from "lucide-react";
+import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles } from "lucide-react";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -39,6 +39,25 @@ const t = {
   ar: { title: "مركز الحساب", subtitle: "أدر ملفك الشخصي واسم المستخدم.", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
 } as const;
 
+const uxText = {
+  en: {
+    personalInfo: "Personal information",
+    personalInfoDesc: "Review your email and update the name shown to other students.",
+    customize: "Customize your character",
+    customizeDesc: "Change your character's appearance and accessories.",
+    preferences: "Appearance & preferences",
+    services: "Tools & connected services",
+  },
+  ar: {
+    personalInfo: "المعلومات الشخصية",
+    personalInfoDesc: "راجع بريدك وحدّث الاسم الذي يظهر للطلاب الآخرين.",
+    customize: "تخصيص شخصيتك",
+    customizeDesc: "غيّر مظهر الشخصية وإكسسواراتها.",
+    preferences: "المظهر والتفضيلات",
+    services: "الأدوات والخدمات المرتبطة",
+  },
+} as const;
+
 const HAIR_LABELS: Record<string, { en: string; ar: string }> = {
   short: { en: "Short", ar: "قصير" },
   buzz: { en: "Buzz", ar: "حلاقة" },
@@ -66,6 +85,7 @@ const AccountCenter = ({
   onChangeLanguage?: () => void;
 }) => {
   const text = t[language];
+  const ux = uxText[language];
   const [name, setName] = useState("");
   const [navMode, setNavMode] = useState<NavVisibilityMode>(() => getNavVisibilityMode());
   const [email, setEmail] = useState("");
@@ -209,9 +229,77 @@ const AccountCenter = ({
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
       <section className="relative z-10 max-w-md mx-auto space-y-5 animate-fade-up">
+        <header className="flex items-start gap-3 pb-2">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={text.back}
+            className="mt-1 shrink-0 w-10 h-10 rounded-xl border border-white/10 bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition inline-flex items-center justify-center"
+          >
+            <ArrowLeft className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">{text.title}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{text.subtitle}</p>
+          </div>
+        </header>
+
+        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">{ux.personalInfo}</h2>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{ux.personalInfoDesc}</p>
+            </div>
+          </div>
+
+        {loading ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <form onSubmit={save} className="space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground">{text.email}</label>
+              <input value={email} disabled className="mt-1 w-full h-11 px-3 rounded-xl bg-background/40 border border-white/10 text-sm opacity-70" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">{text.username}</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={40}
+                required
+                disabled={!!pendingRequest}
+                className="mt-1 w-full h-11 px-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm disabled:opacity-60"
+              />
+              {pendingRequest && (
+                <p className="mt-2 text-xs text-amber-300 inline-flex items-center gap-1.5">
+                  <Lock className="w-3 h-3" />
+                  {text.pendingReview}: <span className="font-semibold">{pendingRequest.requested_name}</span>
+                </p>
+              )}
+            </div>
+            <button type="submit" disabled={saving || !name.trim() || !!pendingRequest} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold disabled:opacity-60 inline-flex items-center justify-center gap-2">
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" />{text.saving}</> : <><Save className="w-4 h-4" />{name.trim() && name.trim() !== savedName ? text.requestName : text.save}</>}
+            </button>
+          </form>
+        )}
+        </div>
+
         {!loading && (
-          <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6">
-            <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">{text.character}</p>
+          <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+            <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
+              <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-semibold">{ux.customize}</h2>
+                <p className="text-xs text-muted-foreground mt-1">{ux.customizeDesc}</p>
+              </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-white/10 p-6">
             {gender ? (
               <div className="space-y-5">
                 <div className="flex flex-col items-center gap-4">
@@ -312,47 +400,11 @@ const AccountCenter = ({
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          </details>
         )}
 
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-8">
-        <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-4">
-          <User className="w-7 h-7 text-primary" />
-        </div>
-        <h1 className="text-3xl font-bold gradient-text mb-1">{text.title}</h1>
-        <p className="text-sm text-muted-foreground mb-6">{text.subtitle}</p>
-
-        {loading ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <form onSubmit={save} className="space-y-4">
-            <div>
-              <label className="text-xs text-muted-foreground">{text.email}</label>
-              <input value={email} disabled className="mt-1 w-full h-11 px-3 rounded-xl bg-background/40 border border-white/10 text-sm opacity-70" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">{text.username}</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={40}
-                required
-                disabled={!!pendingRequest}
-                className="mt-1 w-full h-11 px-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm disabled:opacity-60"
-              />
-              {pendingRequest && (
-                <p className="mt-2 text-xs text-amber-300 inline-flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" />
-                  {text.pendingReview}: <span className="font-semibold">{pendingRequest.requested_name}</span>
-                </p>
-              )}
-            </div>
-            <button type="submit" disabled={saving || !name.trim() || !!pendingRequest} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold disabled:opacity-60 inline-flex items-center justify-center gap-2">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" />{text.saving}</> : <><Save className="w-4 h-4" />{name.trim() && name.trim() !== savedName ? text.requestName : text.save}</>}
-            </button>
-          </form>
-        )}
-        </div>
+        <p className="px-1 pt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{ux.preferences}</p>
 
         <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-4">
           <div className="flex items-center gap-3">
@@ -365,6 +417,8 @@ const AccountCenter = ({
         </div>
 
         <ProfileDetailsCard language={language} />
+
+        <p className="px-1 pt-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{ux.services}</p>
 
         <ReferralCard language={language} />
 
