@@ -244,7 +244,6 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
   { key: "summaries",   Icon: FileText,   tintBg: "bg-violet-50",  tintText: "text-violet-600" },
   { key: "adminNotes",  Icon: BookOpen,   tintBg: "bg-rose-50",    tintText: "text-rose-600" },
   { key: "notes",       Icon: NotebookPen, tintBg: "bg-teal-50",   tintText: "text-teal-600" },
-  { key: "sessions",    Icon: GraduationCap, tintBg: "bg-emerald-50", tintText: "text-emerald-600" },
 ];
 
 // Study tools grid (bottom section)
