@@ -97,6 +97,32 @@ const NAV_GROUPS: NavGroup[] = [
 
 const BAR_GROUPS = NAV_GROUPS.filter((group) => group.showInBar !== false);
 
+const MENU_ITEM_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: string }>> = {
+  ourCourses: { card: "border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/15", icon: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
+  subjectsHub: { card: "border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/15", icon: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
+  notes: { card: "border-teal-500/25 bg-teal-500/10 hover:bg-teal-500/15", icon: "bg-teal-500/15 text-teal-600 dark:text-teal-300" },
+  canvas: { card: "border-indigo-500/25 bg-indigo-500/10 hover:bg-indigo-500/15", icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" },
+  summaries: { card: "border-purple-500/25 bg-purple-500/10 hover:bg-purple-500/15", icon: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
+  mcq: { card: "border-fuchsia-500/25 bg-fuchsia-500/10 hover:bg-fuchsia-500/15", icon: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300" },
+  mindmap: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
+  videoNotes: { card: "border-pink-500/25 bg-pink-500/10 hover:bg-pink-500/15", icon: "bg-pink-500/15 text-pink-600 dark:text-pink-300" },
+  textToVideo: { card: "border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/15", icon: "bg-rose-500/15 text-rose-600 dark:text-rose-300" },
+  youtube: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
+  companion: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
+  teachers: { card: "border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-300" },
+  news: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
+  advices: { card: "border-yellow-500/25 bg-yellow-500/10 hover:bg-yellow-500/15", icon: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
+  liveBattle: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
+  challenge: { card: "border-purple-500/25 bg-purple-500/10 hover:bg-purple-500/15", icon: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
+  sessions: { card: "border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15", icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
+  leaderboard: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
+};
+
+const DEFAULT_MENU_TINT = {
+  card: "border-primary/25 bg-primary/10 hover:bg-primary/15",
+  icon: "bg-primary/15 text-primary",
+};
+
 const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Subjects: BookOpen,
   Study: Layers,
@@ -392,12 +418,20 @@ const BottomGroupNav = ({
                   {openGroup.items.map((it) => {
                     const Icon = it.Icon;
                     const isActive = active === it.key;
+                    const tint = MENU_ITEM_TINTS[it.key] ?? DEFAULT_MENU_TINT;
                     return (
-                      <motion.button key={it.key} whileTap={{ scale: 0.96 }} onClick={() => handleItem(it)} className={`flex min-h-[104px] flex-col justify-between rounded-2xl border p-4 text-start transition-colors ${isActive ? "border-primary bg-primary/10" : "border-border bg-card/70 hover:border-primary/60"}`}>
-                        <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-primary/15">
-                          {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="h-5 w-5 text-primary" />}
+                      <motion.button
+                        key={it.key}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => handleItem(it)}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`relative flex min-h-[104px] flex-col justify-between overflow-hidden rounded-2xl border p-4 text-start shadow-sm transition-all hover:shadow-md ${tint.card} ${isActive ? "ring-2 ring-primary/45" : ""}`}
+                      >
+                        <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl ${tint.icon}`}>
+                          {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="h-5 w-5" />}
                         </span>
-                        <span className="mt-3 text-sm font-semibold text-foreground">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                        <span className="relative mt-3 text-sm font-semibold text-foreground">{language === "ar" ? it.labelAr : it.labelEn}</span>
                       </motion.button>
                     );
                   })}
