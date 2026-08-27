@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Loader2, Save, Palette, MessageCircle, Crown, Settings, Lock, LogOut, Globe } from "lucide-react";
+import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe } from "lucide-react";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -15,9 +15,7 @@ import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
-import { PremiumBadge } from "@/components/PremiumBadge";
 import { useSubscription } from "@/hooks/useSubscription";
-import { getPaddleEnvironment } from "@/lib/paddle";
 import {
   CharacterAvatar,
   type Gender,
@@ -76,8 +74,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const { isPremium, subscription } = useSubscription();
-  const [portalLoading, setPortalLoading] = useState(false);
+  const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
 
@@ -89,11 +86,6 @@ const AccountCenter = ({
       return;
     }
     apply();
-  };
-
-  const openPortal = async () => {
-    // Subscriptions are managed manually via Telegram (@ias404).
-    window.open("https://t.me/ias404", "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -358,20 +350,6 @@ const AccountCenter = ({
             <button type="submit" disabled={saving || !name.trim() || !!pendingRequest} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold disabled:opacity-60 inline-flex items-center justify-center gap-2">
               {saving ? <><Loader2 className="w-4 h-4 animate-spin" />{text.saving}</> : <><Save className="w-4 h-4" />{name.trim() && name.trim() !== savedName ? text.requestName : text.save}</>}
             </button>
-            {isPremium && (
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <PremiumBadge size="sm" />
-                <button
-                  type="button"
-                  onClick={openPortal}
-                  disabled={portalLoading}
-                  className="inline-flex items-center gap-2 text-xs px-3 py-2 rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition disabled:opacity-60"
-                >
-                  {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Settings className="w-3.5 h-3.5" />}
-                  {portalLoading ? text.openingPortal : text.manageSub}
-                </button>
-              </div>
-            )}
           </form>
         )}
         </div>
