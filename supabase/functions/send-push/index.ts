@@ -80,11 +80,15 @@ async function sendFcm(
   body: string,
   link?: string | null,
 ): Promise<boolean> {
-  // Data-only message: the service worker always wakes up and displays the
-  // notification itself. A top-level `notification` block relies on the SDK's
-  // auto-display, which silently drops on some browsers/PWA installs.
+  // Send a real Web Push notification. FCM/browser can display this payload
+  // while the PWA is closed; data-only payloads are not reliably delivered in
+  // the background on every mobile browser.
   const message: Record<string, unknown> = {
     token,
+    notification: {
+      title: title || "تميزك",
+      body: body || "",
+    },
     data: {
       title: title ?? "",
       body: body ?? "",
@@ -93,6 +97,14 @@ async function sendFcm(
     android: { priority: "high" },
     webpush: {
       headers: { Urgency: "high", TTL: "86400" },
+      notification: {
+        title: title || "تميزك",
+        body: body || "",
+        icon: "/app-icon-192.png",
+        badge: "/app-icon-192.png",
+        tag: "tamayzak-push",
+        renotify: true,
+      },
       fcm_options: { link: link ?? "/" },
     },
   };
