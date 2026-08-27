@@ -206,6 +206,7 @@ const Welcome = () => {
           <a href="/tools/flashcards">فلاش كاردات</a>
           <a href="/tools/ministerial-bank">بنك الأسئلة الوزارية</a>
           <a href="/tools/mcq">أسئلة اختيار من متعدد MCQ</a>
+          <a href="/tools">كل الأدوات</a>
         </div>
 
       </motion.div>
