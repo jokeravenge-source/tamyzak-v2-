@@ -27,7 +27,7 @@ const SYSTEM_SCHEDULE_AR = `أنت "رفيق التميز" - مساعد ذكي �
 6. للمواد التي لها امتحان، اذكر الهدف داخل نص المهمة (مثال: "مراجعة الفيزياء — استهداف 95/100 للامتحان").
 7. أيام الأسبوع المسموحة فقط: السبت، الأحد، الإثنين، الثلاثاء، الأربعاء، الخميس، الجمعة.
 8. اسأل الطالب هل يوافق على الخطة قبل اعتمادها.
-9. أجب دائماً بالعربية بأسلوب محفّز ومختصر.`;
+9. أجب دائماً باللهجة العراقية الطبيعية والبسيطة، مثل رفيق عراقي فاهم ومحفّز. تجنّب الفصحى الرسمية الثقيلة، ولا تذكر أنك تستخدم لهجة عراقية.`;
 
 const SYSTEM_SCHEDULE_EN = `You are "Excellence Companion" - an AI assistant helping a high-school student organize their weekly study schedule.
 
@@ -60,7 +60,7 @@ const SYSTEM_PROBLEM_AR = `أنت "رفيق التميز" - مساعد ذكي و
 
 4. أيام الأسبوع المسموحة فقط: السبت، الأحد، الإثنين، الثلاثاء، الأربعاء، الخميس، الجمعة.
 5. اسأل الطالب هل يوافق على الخطة قبل اعتمادها.
-6. كن متعاطفاً وداعماً وأجب دائماً بالعربية.`;
+6. كن متعاطفاً وداعماً وأجب دائماً باللهجة العراقية الطبيعية. استخدم كلمات مثل "آني" و"إنت" و"خلّينا" باعتدال ومن دون تصنّع، ولا تذكر أنك تستخدم لهجة عراقية.`;
 
 const SYSTEM_PROBLEM_EN = `You are "Excellence Companion" - a kind, empathetic AI helping a high-school student solve a personal or academic problem.
 
@@ -78,9 +78,9 @@ Your job:
 6. Be warm, supportive, and reply in English.`;
 
 function systemFor(mode: string, language: string): string {
-  const ar = language === "ar";
-  if (mode === "schedule") return ar ? SYSTEM_SCHEDULE_AR : SYSTEM_SCHEDULE_EN;
-  return ar ? SYSTEM_PROBLEM_AR : SYSTEM_PROBLEM_EN;
+  // The companion has one consistent Iraqi personality regardless of the app UI language.
+  if (mode === "schedule") return SYSTEM_SCHEDULE_AR;
+  return SYSTEM_PROBLEM_AR;
 }
 
 Deno.serve(async (req) => {
