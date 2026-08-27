@@ -38,6 +38,7 @@ export async function initFirebase() {
   try {
     if (pushSupported() && Notification.permission === "granted") {
       await messagingServiceWorker();
+      await registerPushToken();
       await onPushMessage();
     }
   } catch {
@@ -93,6 +94,14 @@ export async function enablePushNotifications(): Promise<string | null> {
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return null;
+
+  return registerPushToken();
+}
+
+/** Refresh and persist the device token whenever an already-authorized PWA
+ * starts. This keeps background delivery working after FCM rotates a token. */
+async function registerPushToken(): Promise<string | null> {
+  if (!pushSupported() || !(await messagingSupported()) || Notification.permission !== "granted") return null;
 
   const registration = await messagingServiceWorker();
   const messaging = getMessaging(getFirebaseApp());
