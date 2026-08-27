@@ -66,14 +66,8 @@ const NoteCard = ({
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="relative rounded-3xl border border-white/10 overflow-hidden cursor-grab active:cursor-grabbing touch-pan-y"
+      className="relative mx-auto flex aspect-[3/4] w-[min(100%,calc(64vh*0.75))] min-w-[280px] flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing touch-pan-y"
     >
-      {note.background_image_url && (
-        <>
-          <img src={note.background_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/70" />
-        </>
-      )}
       <motion.div
         style={{ opacity: yesOpacity }}
         className="absolute top-5 start-5 z-10 px-3 py-1 rounded-lg border-2 border-emerald-400 text-emerald-400 font-bold text-sm rotate-[-8deg]"
@@ -86,9 +80,19 @@ const NoteCard = ({
       >
         ✕
       </motion.div>
-      <div className={`relative p-6 md:p-10 max-h-[62vh] overflow-y-auto ${note.background_image_url ? "" : "bg-secondary/30"}`}>
-        <div className="text-5xl mb-3">{note.cover_emoji || "📘"}</div>
-        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">{note.title}</h2>
+
+      <div className="relative h-[36%] shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary/75 to-accent">
+        {note.background_image_url && (
+          <img src={note.background_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/70" />
+        <div className="absolute inset-x-0 bottom-0 p-5 text-primary-foreground">
+          <div className="mb-2 text-5xl drop-shadow-lg">{note.cover_emoji || "📘"}</div>
+          <h2 className="line-clamp-2 text-2xl font-bold leading-tight drop-shadow-md md:text-3xl">{note.title}</h2>
+        </div>
+      </div>
+
+      <div className="relative flex-1 overflow-y-auto bg-card p-5 md:p-6">
         <AdminNoteRenderer blocks={note.blocks} language={language} />
       </div>
     </motion.article>
