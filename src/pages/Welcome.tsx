@@ -202,6 +202,12 @@ const Welcome = () => {
         >
           وزاريات السادس العلمي مع الأجوبة
         </a>
+        <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] font-semibold underline" style={{ color: NAVY_SOFT }}>
+          <a href="/tools/flashcards">فلاش كاردات</a>
+          <a href="/tools/ministerial-bank">بنك الأسئلة الوزارية</a>
+          <a href="/tools/mcq">أسئلة اختيار من متعدد MCQ</a>
+        </div>
+
       </motion.div>
     </main>
   );
