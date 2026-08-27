@@ -230,13 +230,13 @@ const App = () => {
 
   // Public, crawlable tool landing pages (/tools/flashcards, /tools/mcq, ...).
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/tools/")) {
-    const tool = getPublicTool(window.location.pathname);
-    if (tool) {
+    const slug = window.location.pathname.replace(/\/+$/, "").replace(/^\/tools\//, "");
+    if (["flashcards", "ministerial-bank", "mcq"].includes(slug)) {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Suspense fallback={null}>
-              <ToolLanding tool={tool} />
+              <ToolLanding slug={slug} />
             </Suspense>
           </TooltipProvider>
         </QueryClientProvider>

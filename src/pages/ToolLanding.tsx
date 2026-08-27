@@ -123,13 +123,10 @@ export const PUBLIC_TOOLS: Tool[] = [
   },
 ];
 
-export const getPublicTool = (pathname: string) => {
-  const clean = pathname.replace(/\/+$/, "");
-  const slug = clean.replace(/^\/tools\//, "");
-  return PUBLIC_TOOLS.find((t) => t.slug === slug) ?? null;
-};
+const ToolLanding = ({ slug }: { slug: string }) => {
+  const tool = PUBLIC_TOOLS.find((t) => t.slug === slug);
+  if (!tool) return null;
 
-const ToolLanding = ({ tool }: { tool: Tool }) => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
