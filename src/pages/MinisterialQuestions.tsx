@@ -34,7 +34,7 @@ const MinisterialQuestions = () => {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: sections.flatMap((s) =>
-      s.items.slice(0, 4).map((it) => ({
+      s.items.slice(0, 6).map((it) => ({
         "@type": "Question",
         name: it.q,
         acceptedAnswer: { "@type": "Answer", text: it.a },
