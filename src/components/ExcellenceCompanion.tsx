@@ -184,25 +184,6 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
       content: m === "schedule" ? t.welcomeSchedule : m === "psych" ? t.welcomePsych : t.welcomeProblem,
     };
     setMessages([welcome]);
-    if (m === "psych") {
-      setLoading(true);
-      (async () => {
-        try {
-          const { data } = await supabase
-            .from("psych_messages")
-            .select("role, content, created_at")
-            .order("created_at", { ascending: true })
-            .limit(200);
-          if (Array.isArray(data) && data.length) {
-            const history: Msg[] = data
-              .filter((r) => r.role === "user" || r.role === "assistant")
-              .map((r) => ({ role: r.role as Msg["role"], content: r.content as string }));
-            setMessages([welcome, ...history]);
-          }
-        } catch { /* ignore */ }
-        setLoading(false);
-      })();
-    }
   };
 
   const send = async () => {
@@ -213,18 +194,6 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
     setInput("");
     setLoading(true);
     try {
-      if (mode === "psych") {
-        const { data, error } = await supabase.functions.invoke("psych-chat", {
-          body: { message: text, history: messages.slice(-20) },
-        });
-        const reply = (data as { reply?: string } | null)?.reply;
-        if (error && !reply) {
-          setMessages([...next, { role: "assistant", content: t.error }]);
-          return;
-        }
-        setMessages([...next, { role: "assistant", content: reply ?? t.error }]);
-        return;
-      }
       const { data, error } = await supabase.functions.invoke("excellence-companion", {
         body: { mode, language, messages: next },
       });
