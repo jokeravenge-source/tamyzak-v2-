@@ -189,7 +189,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => (notebook ? setNotebook(null) : onBack())}
-          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-8"
+          className="mb-8 inline-flex h-9 items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 text-sm font-medium text-primary shadow-sm transition-all hover:border-primary/45 hover:bg-primary/15"
         >
           <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
           {t("رجوع", "Back")}
@@ -265,7 +265,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
               </h1>
               <button
                 onClick={() => setMode(mode === "unknown-list" ? "deck" : "unknown-list")}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm hover:bg-secondary"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 text-sm text-amber-500 shadow-sm transition-colors hover:bg-amber-500/15 dark:text-amber-300"
               >
                 <ListX className="w-4 h-4 text-amber-400" />
                 {t("الملاحظات غير المفهومة", "Not understood notes")} ({unknownNotes.length})
@@ -345,13 +345,13 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                 <div className="flex items-center justify-center gap-4">
                   <button
                     onClick={() => swipe(false)}
-                    className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl border border-red-500/40 text-red-400 hover:bg-red-500/10 font-semibold"
+                    className="inline-flex h-12 items-center gap-2 rounded-2xl border border-rose-400/45 bg-gradient-to-br from-rose-500 to-red-600 px-6 font-semibold text-white shadow-[0_10px_24px_-10px_rgba(244,63,94,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0"
                   >
                     <X className="w-5 h-5" /> {t("لم أفهم", "Didn't get it")}
                   </button>
                   <button
                     onClick={() => swipe(true)}
-                    className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 font-semibold"
+                    className="inline-flex h-12 items-center gap-2 rounded-2xl border border-emerald-300/45 bg-gradient-to-br from-emerald-400 to-teal-600 px-6 font-semibold text-white shadow-[0_10px_24px_-10px_rgba(16,185,129,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0"
                   >
                     <Check className="w-5 h-5" /> {t("فهمتها", "Understood")}
                   </button>
@@ -379,7 +379,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                 type="button"
                 onClick={() => setSelectedNote(null)}
                 aria-label={t("إغلاق", "Close")}
-                className="ms-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
+                className="ms-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-sm transition-colors hover:bg-primary/20"
               >
                 <X className="h-5 w-5" />
               </button>
