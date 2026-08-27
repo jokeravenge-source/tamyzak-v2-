@@ -154,48 +154,57 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
 
   return (
     <main
-      className="min-h-screen bg-background text-foreground"
+      className="relative min-h-screen overflow-hidden bg-background text-foreground"
       dir={ar ? "rtl" : "ltr"}
       style={{ fontFamily: ar ? "'IBM Plex Sans Arabic', system-ui, sans-serif" : "Inter, system-ui, sans-serif" }}
     >
-      <div className="max-w-4xl mx-auto px-5 md:px-8 py-10 md:py-14">
-        {/* Header — calm, no glow, no gradient */}
-        <div className="flex items-start justify-between gap-4 mb-10">
-          <div className="min-w-0">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-32 -end-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute top-[38rem] -start-32 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
+      <div className="relative max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-12">
+        <div className="relative mb-8 overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/15 via-card to-violet-500/10 p-5 shadow-[0_24px_70px_-35px_hsl(var(--primary)/0.55)] md:p-8">
+          <div aria-hidden="true" className="absolute -end-10 -top-16 h-44 w-44 rounded-full border-[28px] border-primary/10" />
+          <div className="relative flex items-start justify-between gap-3 md:gap-4">
+            <div className="min-w-0">
             <button
               onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground hover:text-foreground mb-4"
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground backdrop-blur hover:text-foreground"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />{t.back}
+              <ArrowLeft className={`w-3.5 h-3.5 ${ar ? "rotate-180" : ""}`} />{t.back}
             </button>
-            <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{t.today}</p>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+              <Brain className="h-3.5 w-3.5" /> {t.today}
+            </div>
             <h1
-              className="text-3xl md:text-[44px] font-bold tracking-tight leading-[1.05] mt-1"
+              className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]"
               style={{ fontFamily: ar ? "'Cairo', 'IBM Plex Sans Arabic', sans-serif" : "'Space Grotesk', Inter, sans-serif" }}
             >
               {t.title}
             </h1>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              {ar ? "نظرة سريعة وذكية على إنجازك اليوم وما تحتاج تركز عليه بعدها." : "A clear, smart snapshot of today's progress and what deserves your attention next."}
+            </p>
           </div>
           <button
             onClick={() => load(true)}
             disabled={refreshing}
-            className="shrink-0 inline-flex items-center gap-2 h-10 px-4 border border-border hover:border-foreground/50 text-foreground text-xs font-semibold uppercase tracking-[0.14em] disabled:opacity-50 transition-colors clip-facet-badge"
+            aria-label={refreshing ? t.generating : t.regenerate}
+            className="shrink-0 inline-flex h-11 w-11 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50 sm:w-auto sm:px-4 md:px-5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? t.generating : t.regenerate}
+            <span className="hidden sm:inline">{refreshing ? t.generating : t.regenerate}</span>
           </button>
+          </div>
         </div>
 
         {loading && !report ? (
           <div className="py-24 text-center text-muted-foreground text-sm">…</div>
         ) : (
-          <div className="space-y-10">
-            {/* Primary measurements — 4 quiet number blocks divided by hairlines */}
-            <section className="grid grid-cols-2 md:grid-cols-4 border-t border-b border-border divide-x divide-border rtl:divide-x-reverse">
-              <Measure label={t.minutes} value={`${report?.focused_minutes ?? 0}`} unit={t.min} sub={meta ? `${focusedPct}% ${t.target}` : undefined} />
-              <Measure label={t.todoToday} value={`${todo.done}/${todo.total}`} sub={`${todo.pct}% ${t.complete}`} />
-              <Measure label={t.missions} value={`${report?.missions_completed ?? 0}`} />
-              <Measure label={t.points} value={`${report?.points_earned ?? 0}`} accent sub={meta?.days_to_exam != null ? `${meta.days_to_exam} ${t.exam}` : undefined} />
+          <div className="space-y-6 md:space-y-8">
+            <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+              <Measure icon={Clock} tone="sky" label={t.minutes} value={`${report?.focused_minutes ?? 0}`} unit={t.min} sub={meta ? `${focusedPct}% ${t.target}` : undefined} />
+              <Measure icon={ListChecks} tone="emerald" label={t.todoToday} value={`${todo.done}/${todo.total}`} sub={`${todo.pct}% ${t.complete}`} />
+              <Measure icon={Target} tone="violet" label={t.missions} value={`${report?.missions_completed ?? 0}`} />
+              <Measure icon={Trophy} tone="amber" label={t.points} value={`${report?.points_earned ?? 0}`} sub={meta?.days_to_exam != null ? `${meta.days_to_exam} ${t.exam}` : undefined} />
             </section>
 
             {/* Today's to-do — calm parchment card, single-cut corner */}
@@ -231,12 +240,12 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
             {/* Goal proximity */}
             {meta?.days_to_exam != null && (
               <Panel icon={Flag} title={t.goal} subtitle={t.goalDesc}>
-                <div className="grid grid-cols-2 gap-px bg-border mt-2 border border-border">
-                  <div className="bg-background p-5">
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="rounded-2xl bg-emerald-500/10 p-5">
                     <div className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-1">{t.complete}</div>
                     <div className="font-mono text-4xl font-bold tabular-nums">{todo.pct}<span className="text-xl text-muted-foreground/70">%</span></div>
                   </div>
-                  <div className="bg-background p-5">
+                  <div className="rounded-2xl bg-violet-500/10 p-5">
                     <div className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-1">{t.exam}</div>
                     <div className="font-mono text-4xl font-bold tabular-nums">{meta.days_to_exam}</div>
                   </div>
@@ -302,33 +311,33 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
 
                 <button
                   onClick={enableLink}
-                  className="h-10 px-5 bg-foreground text-background text-xs font-semibold uppercase tracking-[0.14em] inline-flex items-center gap-2 clip-facet-badge hover:opacity-90"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/15 hover:opacity-90"
                 >
                   <Link2 className="w-3.5 h-3.5" />{t.enable}
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 p-3 border border-border font-mono text-xs overflow-hidden">
+                  <div className="flex items-center gap-2 overflow-hidden rounded-xl border border-border bg-muted/30 p-3 font-mono text-xs">
                     <span className="truncate">{location.origin}/follow/{token}</span>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={copyLink} className="h-9 px-4 border border-border hover:border-foreground/50 text-xs font-semibold uppercase tracking-[0.12em] inline-flex items-center gap-1.5 clip-facet-badge">
+                    <button onClick={copyLink} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground hover:opacity-90">
                       {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       {copied ? t.copied : t.copy}
                     </button>
-                    <button onClick={revoke} className="h-9 px-4 border border-destructive/40 text-destructive hover:border-destructive/70 text-xs font-semibold uppercase tracking-[0.12em] clip-facet-badge">
+                    <button onClick={revoke} className="h-10 rounded-xl border border-destructive/30 bg-destructive/5 px-4 text-xs font-bold text-destructive hover:bg-destructive/10">
                       {t.revoke}
                     </button>
                   </div>
                   {accessCode && (
-                    <div className="mt-3 border border-border p-4">
+                    <div className="mt-3 rounded-2xl border border-border bg-muted/20 p-4">
                       <div className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold mb-1">{t.accessCode}</div>
                       <p className="text-[11px] text-muted-foreground mb-3">{t.accessCodeDesc}</p>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 text-center font-mono text-2xl font-bold tabular-nums tracking-[0.5em] py-3 bg-foreground/5 border border-border">
+                        <div className="flex-1 rounded-xl border border-border bg-background py-3 text-center font-mono text-2xl font-bold tabular-nums tracking-[0.5em]">
                           {accessCode}
                         </div>
-                        <button onClick={copyCode} className="h-12 px-3 border border-border hover:border-foreground/50 text-xs font-semibold uppercase tracking-[0.12em] inline-flex items-center gap-1 clip-facet-badge">
+                        <button onClick={copyCode} className="inline-flex h-12 items-center gap-1 rounded-xl border border-border bg-background px-4 text-xs font-semibold hover:border-primary/50">
                           {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
@@ -344,12 +353,12 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
         )}
 
         {/* Points, ranks and study-hour progress (moved from Settings) */}
-        <div className="mt-10">
+        <div className="mt-8">
           <ProgressStats language={language} />
         </div>
 
         {/* Excellence Companion — kept here per product spec, framed like the rest */}
-        <div className="mt-10 border border-border bg-background p-5 clip-facet">
+        <div className="mt-8 overflow-hidden rounded-[2rem] border border-border bg-card/80 p-5 shadow-sm">
           <ExcellenceCompanion language={language} embedded />
         </div>
       </div>
@@ -358,11 +367,19 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
 }
 
 /* Calm primary measurement cell — divided columns, mono numeral, no chrome */
-function Measure({ label, value, unit, sub, accent }: { label: string; value: string; unit?: string; sub?: string; accent?: boolean }) {
+const MEASURE_TONES = {
+  sky: "bg-sky-500/10 text-sky-600 dark:text-sky-300",
+  emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  violet: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+  amber: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
+} as const;
+
+function Measure({ icon: Icon, tone, label, value, unit, sub }: { icon: any; tone: keyof typeof MEASURE_TONES; label: string; value: string; unit?: string; sub?: string }) {
   return (
-    <div className="p-5 md:p-6">
-      <div className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">{label}</div>
-      <div className={`font-mono text-3xl md:text-4xl font-bold tabular-nums leading-none ${accent ? "text-primary" : "text-foreground"}`}>
+    <div className="group rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg md:p-5">
+      <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${MEASURE_TONES[tone]}`}><Icon className="h-5 w-5" /></div>
+      <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-3xl font-black tabular-nums leading-none text-foreground md:text-4xl">
         {value}
         {unit && <span className="text-base font-normal text-muted-foreground/70 ms-1">{unit}</span>}
       </div>
@@ -374,11 +391,11 @@ function Measure({ label, value, unit, sub, accent }: { label: string; value: st
 /* Parchment panel with a single beveled corner — the quiet "facet echo" */
 function Panel({ icon: Icon, title, subtitle, children }: { icon: any; title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="border border-border bg-background p-5 md:p-6 clip-facet">
+    <section className="rounded-[1.75rem] border border-border/70 bg-card/80 p-5 shadow-[0_14px_45px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm md:p-6">
       <header className="mb-4">
-        <div className="inline-flex items-center gap-2 mb-1">
-          <Icon className="w-3.5 h-3.5 text-foreground" />
-          <h2 className="text-[11px] uppercase tracking-[0.22em] font-semibold text-foreground">{title}</h2>
+        <div className="inline-flex items-center gap-3 mb-1">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
+          <h2 className="text-sm font-extrabold text-foreground md:text-base">{title}</h2>
         </div>
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </header>
@@ -390,9 +407,9 @@ function Panel({ icon: Icon, title, subtitle, children }: { icon: any; title: st
 /* Hairline progress bar — ink-on-parchment, no gradient */
 function Bar({ value }: { value: number }) {
   return (
-    <div className="h-[3px] w-full bg-foreground/10 overflow-hidden">
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-foreground/10">
       <div
-        className="h-full bg-foreground transition-[width] duration-700 ease-out"
+        className="h-full rounded-full bg-gradient-to-r from-primary via-violet-500 to-cyan-400 transition-[width] duration-700 ease-out"
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>
@@ -401,12 +418,12 @@ function Bar({ value }: { value: number }) {
 
 function Block({ title, items }: { title: string; items: string[] }) {
   return (
-    <div>
-      <div className="text-[10px] uppercase tracking-[0.22em] font-semibold mb-2 text-muted-foreground">{title}</div>
+    <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
+      <div className="text-xs font-extrabold mb-3 text-foreground">{title}</div>
       <ul className="space-y-1.5 text-sm">
         {items.map((x, i) => (
-          <li key={i} className="flex gap-3 items-baseline">
-            <span className="font-mono text-muted-foreground/70 tabular-nums text-[11px] w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+          <li key={i} className="flex gap-3 items-start rounded-xl bg-background/70 p-2.5">
+            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-[10px] font-bold text-primary">{i + 1}</span>
             <span className="flex-1">{x}</span>
           </li>
         ))}
