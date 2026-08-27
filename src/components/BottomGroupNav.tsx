@@ -8,6 +8,7 @@ import {
   UserCog, Crown,
   Home, Palette, GraduationCap as CoursesIcon, Users2, Lock,
   Menu as MenuIcon, MessageCircle, LineChart, Compass, Moon,
+  ArrowLeft, X,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -31,6 +32,7 @@ type NavGroup = {
   directKey?: MainMenuChoice;
   locked?: boolean;
   url?: string; // external link (opens in new tab)
+  showInBar?: boolean;
 };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -73,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Organizations", titleAr: "منظماتنا",
+    showInBar: false,
     items: [
       { key: "orgTamayzak", labelEn: "Tamayzak", labelAr: "تميزك", Icon: Sparkles, url: "https://tamyazak.site" },
       { key: "org6thDhs", labelEn: "6th DHS", labelAr: "6th DHS", Icon: GraduationCap, url: "https://t.me/a6th_dhs", imageUrl: org6thDhsLogo.url },
@@ -84,12 +87,15 @@ const NAV_GROUPS: NavGroup[] = [
   {
     titleEn: "Menu", titleAr: "القائمة",
     items: [
+      { key: "organizations" as MainMenuChoice, labelEn: "Organizations", labelAr: "منظماتنا", Icon: Network },
       { key: "account", labelEn: "Settings", labelAr: "الإعدادات", Icon: Settings },
       { key: "support" as MainMenuChoice, labelEn: "Support", labelAr: "الدعم", Icon: MessageCircle },
       { key: "report", labelEn: "Progress", labelAr: "تقدمي", Icon: LineChart },
     ],
   },
 ];
+
+const BAR_GROUPS = NAV_GROUPS.filter((group) => group.showInBar !== false);
 
 const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Subjects: BookOpen,
@@ -127,6 +133,10 @@ const BottomGroupNav = ({
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
 
   const handleItem = (it: NavItem) => {
+    if ((it.key as string) === "organizations") {
+      setSheetGroup("Organizations");
+      return;
+    }
     if (it.url) {
       setSheetGroup(null);
       window.open(it.url, "_blank", "noopener,noreferrer");
@@ -216,9 +226,9 @@ const BottomGroupNav = ({
               className="pointer-events-none absolute left-1/2 -top-5 z-0 h-16 w-16 -translate-x-1/2 rounded-full border border-border bg-background"
             />
             {(() => {
-              const half = Math.ceil(NAV_GROUPS.length / 2);
-              const left = NAV_GROUPS.slice(0, half);
-              const right = NAV_GROUPS.slice(half);
+              const half = Math.ceil(BAR_GROUPS.length / 2);
+              const left = BAR_GROUPS.slice(0, half);
+              const right = BAR_GROUPS.slice(half);
               const renderGroup = (g: NavGroup) => {
                 const Icon = GROUP_ICONS[g.titleEn] ?? Layers;
                 const isActive = activeGroup === g.titleEn;
@@ -267,7 +277,9 @@ const BottomGroupNav = ({
               };
               return (
                 <>
-                  {left.map(renderGroup)}
+                  <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
+                    {left.map(renderGroup)}
+                  </div>
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.9 }}
@@ -278,7 +290,9 @@ const BottomGroupNav = ({
                   >
                     <Compass className="w-5 h-5" />
                   </motion.button>
-                  {right.map(renderGroup)}
+                  <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
+                    {right.map(renderGroup)}
+                  </div>
                 </>
               );
             })()}
@@ -292,63 +306,105 @@ const BottomGroupNav = ({
     <AnimatePresence>
       {openGroup && openGroup.items.length > 0 && (
         <motion.div
-          className="fixed inset-0 z-[110] flex flex-col"
+          className="fixed inset-0 z-[110]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           dir={isRTL ? "rtl" : "ltr"}
         >
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-xl" onClick={() => setSheetGroup(null)} />
-          <motion.div
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 flex-1 overflow-y-auto px-4 pt-8 pb-40"
-          >
-            <div className="max-w-3xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {language === "ar" ? openGroup.titleAr : openGroup.titleEn}
-                </h2>
-                <button
-                  onClick={() => setSheetGroup(null)}
-                  className="px-3 py-1.5 rounded-lg text-sm font-semibold text-muted-foreground hover:text-foreground border border-border"
-                >
-                  {language === "ar" ? "إغلاق" : "Close"}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {openGroup.items.map((it) => {
-                  const Icon = it.Icon;
-                  const isActive = active === it.key;
-                  return (
-                    <motion.button
-                      key={it.key}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => handleItem(it)}
-                      className={`text-start rounded-2xl border p-4 min-h-[104px] flex flex-col justify-between transition-colors ${
-                        isActive
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-card/70 hover:border-primary/60"
-                      }`}
+          <button
+            type="button"
+            aria-label={language === "ar" ? "إغلاق" : "Close"}
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+            onClick={() => setSheetGroup(null)}
+          />
+
+          {openGroup.titleEn === "Menu" || openGroup.titleEn === "Organizations" ? (
+            <motion.aside
+              initial={{ x: isRTL ? "-100%" : "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: isRTL ? "-100%" : "100%" }}
+              transition={{ type: "spring", stiffness: 360, damping: 34 }}
+              className={`absolute inset-y-0 z-10 w-[86%] max-w-sm border-border bg-card shadow-2xl ${isRTL ? "left-0 border-r" : "right-0 border-l"}`}
+            >
+              <div className="flex h-full flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+                <div className="mb-6 flex items-center gap-3">
+                  {openGroup.titleEn === "Organizations" && (
+                    <button
+                      type="button"
+                      onClick={() => setSheetGroup("Menu")}
+                      aria-label={language === "ar" ? "رجوع" : "Back"}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground"
                     >
-                      <span className="w-10 h-10 rounded-xl bg-primary/15 inline-flex items-center justify-center overflow-hidden">
-                        {it.imageUrl ? (
-                          <img src={it.imageUrl} alt={it.labelEn} className="w-full h-full object-cover" />
-                        ) : (
-                          <Icon className="w-5 h-5 text-primary" />
-                        )}
-                      </span>
-                      <span className="text-sm font-semibold text-foreground mt-3">
-                        {language === "ar" ? it.labelAr : it.labelEn}
-                      </span>
-                    </motion.button>
-                  );
-                })}
+                      <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+                    </button>
+                  )}
+                  <h2 className="flex-1 text-2xl font-bold text-foreground">
+                    {language === "ar" ? openGroup.titleAr : openGroup.titleEn}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setSheetGroup(null)}
+                    aria-label={language === "ar" ? "إغلاق" : "Close"}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 space-y-2 overflow-y-auto">
+                  {openGroup.items.map((it) => {
+                    const Icon = it.Icon;
+                    const isActive = active === it.key;
+                    return (
+                      <motion.button
+                        key={it.key}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleItem(it)}
+                        className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-start transition-colors ${isActive ? "border-primary bg-primary/10" : "border-border bg-background/35 hover:border-primary/50"}`}
+                      >
+                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/15">
+                          {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="h-5 w-5 text-primary" />}
+                        </span>
+                        <span className="font-semibold text-foreground">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.aside>
+          ) : (
+            <motion.div
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 h-full overflow-y-auto px-4 pb-40 pt-8"
+            >
+              <div className="mx-auto max-w-3xl">
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-foreground">{language === "ar" ? openGroup.titleAr : openGroup.titleEn}</h2>
+                  <button onClick={() => setSheetGroup(null)} className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
+                    {language === "ar" ? "إغلاق" : "Close"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {openGroup.items.map((it) => {
+                    const Icon = it.Icon;
+                    const isActive = active === it.key;
+                    return (
+                      <motion.button key={it.key} whileTap={{ scale: 0.96 }} onClick={() => handleItem(it)} className={`flex min-h-[104px] flex-col justify-between rounded-2xl border p-4 text-start transition-colors ${isActive ? "border-primary bg-primary/10" : "border-border bg-card/70 hover:border-primary/60"}`}>
+                        <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-primary/15">
+                          {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="h-5 w-5 text-primary" />}
+                        </span>
+                        <span className="mt-3 text-sm font-semibold text-foreground">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
