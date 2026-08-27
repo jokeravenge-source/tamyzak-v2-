@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, CalendarDays, HeartHandshake, CheckCircle2, Heart } from "lucide-react";
+import { Sparkles, X, Send, CalendarDays, HeartHandshake, CheckCircle2, Heart, ChevronDown, Plus, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GeminiStatus from "@/components/GeminiStatus";
 import ChatBlobBackground from "@/components/ChatBlobBackground";
@@ -17,7 +17,7 @@ const labels = {
   en: {
     fab: "Success Companion",
     title: "Success Companion",
-    subtitle: "Pick how I can help you today",
+    subtitle: "Choose how your AI should help",
     schedule: "Organize my schedule",
     scheduleDesc: "Tell me your subjects and I'll plan your week.",
     problem: "Solve my problem",
@@ -37,21 +37,24 @@ const labels = {
     introGenerate: "Generate my study plan",
     introSkip: "Skip — just explore the website",
     continueToApp: "Continue to the app",
+    newChat: "New chat",
+    modeLabel: "Assistant mode",
+    disclaimer: "Tamayzak AI can make mistakes. Check important information.",
   },
   ar: {
     fab: "رفيق النجاح",
     title: "رفيق النجاح",
-    subtitle: "اختر كيف أقدر أساعدك اليوم",
+    subtitle: "اختار شلون تريدني أساعدك",
     schedule: "نظم جدولي",
     scheduleDesc: "أخبرني بموادك وسأنظّم لك أسبوعك.",
     problem: "حلي مشكلتي",
     problemDesc: "شاركني مشكلتك وسنحلها سوياً.",
     psych: "الدعم النفسي",
     psychDesc: "مساحة آمنة للحديث عن التوتر والقلق وضغوط الدراسة.",
-    welcomePsych: "أهلاً بك. أنا هنا للاستماع إليك ومساعدتك على تجاوز التوتر والقلق وضغوط الدراسة. تحدث بحرية، كل ما تقوله سرّي.",
+    welcomePsych: "هلا بيك، آني هنا حتى أسمعك وأساعدك ويا التوتر والقلق وضغط الدراسة. احچي براحتك، شنو مضايقك هالفترة؟",
     placeholder: "اكتب رسالتك…",
-    welcomeSchedule: "أهلاً! أخبرني بالمواد التي تريد دراستها هذا الأسبوع، وكم مرة لكل مادة، وأي أيام مناسبة لك؟ سأسألك أيضاً إن كان لديك امتحان قريب في أيٍّ منها وما الدرجة التي تطمح إليها، حتى أبني الخطة على هدفك.",
-    welcomeProblem: "أهلاً! أنا هنا لمساعدتك. ما المشكلة التي تريد العمل عليها؟",
+    welcomeSchedule: "هلا بيك! خلّيني أرتبلك أسبوعك بشكل يناسبك. شنو المواد اللي تريد تدرسها، وشكد وقتك المتاح باليوم؟",
+    welcomeProblem: "هلا بيك! احچيلي براحتك، شنو المشكلة اللي تريد نحلها سوّة؟",
     approve: "وافق على الخطة وأضفها لقائمة مهامي",
     approved: "تمت إضافة الخطة لقائمة مهامك الأسبوعية ✓",
     back: "رجوع",
@@ -61,6 +64,9 @@ const labels = {
     introGenerate: "أنشئ خطتي الدراسية",
     introSkip: "تخطّي — استكشف الموقع فقط",
     continueToApp: "متابعة إلى التطبيق",
+    newChat: "محادثة جديدة",
+    modeLabel: "وضع المساعد",
+    disclaimer: "رفيق التميز ممكن يخطئ، فتأكد من المعلومات المهمة.",
   },
 };
 
@@ -106,20 +112,20 @@ const PLANNED_WEEK_KEY = "app_companion_planned_week_v1";
 
 const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLanguage; embedded?: boolean }) => {
   const [open, setOpen] = useState(embedded);
-  const [mode, setMode] = useState<Mode | null>(null);
+  const t = labels[language];
+  const [mode, setMode] = useState<Mode>("schedule");
   const [intro, setIntro] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => [{ role: "assistant", content: labels[language].welcomeSchedule }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [approved, setApproved] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-  const t = labels[language];
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
     const onWelcome = () => {
       setIntro(true);
-      setMode(null);
+      setMode("schedule");
       setMessages([]);
       setApproved(false);
       setOpen(true);
@@ -155,8 +161,8 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const reset = () => {
-    setMode(null);
-    setMessages([]);
+    const welcome = mode === "schedule" ? t.welcomeSchedule : mode === "psych" ? t.welcomePsych : t.welcomeProblem;
+    setMessages([{ role: "assistant", content: welcome }]);
     setInput("");
     setApproved(false);
   };
@@ -201,7 +207,7 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
 
   const send = async () => {
     const text = input.trim();
-    if (!text || loading || !mode) return;
+    if (!text || loading) return;
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setInput("");
@@ -281,6 +287,9 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
     } catch { /* ignore */ }
   };
 
+  const ActiveModeIcon = mode === "schedule" ? CalendarDays : mode === "psych" ? Heart : HeartHandshake;
+  const activeModeLabel = mode === "schedule" ? t.schedule : mode === "psych" ? t.psych : t.problem;
+
   const panel = (
           <div
             dir={language === "ar" ? "rtl" : "ltr"}
@@ -292,26 +301,45 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
             onClick={(e) => e.stopPropagation()}
           >
             <ChatBlobBackground />
-            <div className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/40">
+            <header className="relative z-10 border-b border-border/70 bg-background/80 px-3 py-3 backdrop-blur-xl sm:px-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <div>
-                  <div className="font-semibold text-sm">{t.title}</div>
-                  {mode && !intro && (
-                    <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">
-                      ← {t.back}
-                    </button>
+                <div className="gemini-dot inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm">
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-bold">{t.title}</div>
+                  {!intro && (
+                    <div className="relative mt-0.5 inline-flex max-w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+                      <ActiveModeIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span className="truncate">{activeModeLabel}</span>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                      <select
+                        value={mode}
+                        onChange={(e) => pickMode(e.target.value as Mode)}
+                        aria-label={t.modeLabel}
+                        className="absolute inset-0 cursor-pointer opacity-0"
+                      >
+                        <option value="schedule">{t.schedule}</option>
+                        <option value="problem">{t.problem}</option>
+                        <option value="psych">{t.psych}</option>
+                      </select>
+                    </div>
                   )}
                 </div>
+                {!intro && (
+                  <button onClick={reset} aria-label={t.newChat} title={t.newChat} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <Plus className="h-5 w-5" />
+                  </button>
+                )}
+                {!embedded && !intro && (
+                  <button onClick={() => setOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
-              {!embedded && !intro && (
-                <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-1">
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
+            </header>
 
-            {intro && !mode ? (
+            {intro && messages.length === 0 ? (
               <div className="relative z-10 flex-1 overflow-y-auto p-6 flex flex-col gap-4 justify-center">
                 <h2 className="text-xl font-bold text-center">{t.introTitle}</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed text-center">{t.introBody}</p>
@@ -328,61 +356,21 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
                   {t.introSkip}
                 </button>
               </div>
-            ) : !mode ? (
-              <div className="relative z-10 flex-1 overflow-y-auto p-6 flex flex-col gap-4 justify-center">
-                <p className="text-center text-sm text-muted-foreground mb-2">{t.subtitle}</p>
-                <button
-                  onClick={() => pickMode("schedule")}
-                  className="group rounded-2xl p-5 border border-primary/30 bg-secondary/40 hover:border-primary hover:-translate-y-1 transition-all text-start"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
-                      <CalendarDays className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold">{t.schedule}</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t.scheduleDesc}</p>
-                </button>
-                <button
-                  onClick={() => pickMode("problem")}
-                  className="group rounded-2xl p-5 border border-accent/30 bg-secondary/40 hover:border-accent hover:-translate-y-1 transition-all text-start"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-11 h-11 rounded-xl bg-accent/15 flex items-center justify-center">
-                      <HeartHandshake className="w-5 h-5 text-accent" />
-                    </div>
-                    <h3 className="font-semibold">{t.problem}</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t.problemDesc}</p>
-                </button>
-                <button
-                  onClick={() => pickMode("psych")}
-                  className="group rounded-2xl p-5 border border-primary/30 bg-secondary/40 hover:border-primary hover:-translate-y-1 transition-all text-start"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold">{t.psych}</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t.psychDesc}</p>
-                </button>
-              </div>
             ) : (
               <>
-                <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="relative z-10 flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-6">
                   {messages.map((m, i) => {
                     const display = m.role === "assistant" ? stripPlanBlock(m.content) : m.content;
                     return m.role === "user" ? (
                       <div key={i} className="flex justify-end">
-                        <div className="max-w-[85%] rounded-3xl px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed bg-secondary text-foreground border border-border">
+                        <div className="max-w-[85%] rounded-[1.4rem] rounded-ee-md bg-secondary px-4 py-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                           {display}
                         </div>
                       </div>
                     ) : (
                       <div key={i} className="flex gap-3 items-start">
-                        <span className="gemini-dot mt-1 inline-block w-5 h-5 rounded-full shrink-0" aria-hidden />
-                        <div className="flex-1 text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                        <span className="gemini-dot mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full" aria-hidden><Sparkles className="h-3.5 w-3.5 text-white" /></span>
+                        <div className="min-w-0 flex-1 whitespace-pre-wrap text-[15px] leading-7 text-foreground">
                           {display}
                         </div>
                       </div>
@@ -413,27 +401,31 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
                   <div ref={endRef} />
                 </div>
 
-                <div className="relative z-10 border-t border-border p-3 flex items-end gap-2 bg-secondary/30">
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        send();
-                      }
-                    }}
-                    placeholder={t.placeholder}
-                    rows={1}
-                    className="flex-1 resize-none rounded-xl bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary max-h-32"
-                  />
-                  <button
-                    onClick={send}
-                    disabled={!input.trim() || loading}
-                    className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:opacity-90 transition"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
+                <div className="relative z-10 bg-background/85 px-3 pb-3 pt-2 backdrop-blur-xl sm:px-5">
+                  <div className="flex items-end gap-2 rounded-[1.6rem] border border-border bg-card p-2 ps-4 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.55)] focus-within:border-primary/50">
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          send();
+                        }
+                      }}
+                      placeholder={t.placeholder}
+                      rows={1}
+                      className="max-h-32 min-h-10 flex-1 resize-none bg-transparent py-2 text-sm focus:outline-none"
+                    />
+                    <button
+                      onClick={send}
+                      disabled={!input.trim() || loading}
+                      aria-label={language === "ar" ? "إرسال" : "Send"}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="mt-2 text-center text-[10px] text-muted-foreground">{t.disclaimer}</p>
                 </div>
               </>
             )}
