@@ -270,10 +270,16 @@ const BottomGroupNav = ({
                     whileHover={{ scale: 1.06 }}
                     onClick={() => onGuide?.()}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
-                    className="shrink-0 mx-0.5 h-12 w-12 -mt-3 inline-flex flex-col items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_8px_24px_hsl(var(--primary)/0.55)]"
+                    className="relative shrink-0 mx-0.5 h-16 w-16 -mt-6 inline-flex flex-col items-center justify-center text-primary-foreground drop-shadow-[0_10px_20px_hsl(var(--primary)/0.5)]"
                   >
-                    <Compass className="w-5 h-5" />
-                    <span className="text-[9px] font-bold tracking-wide mt-0.5">
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/65 [clip-path:polygon(18%_0,82%_0,100%_18%,100%_82%,82%_100%,18%_100%,0_82%,0_18%)]"
+                    />
+                    <span className="relative z-10 w-11 h-11 rounded-full border-2 border-primary-foreground/70 bg-background/25 backdrop-blur-sm inline-flex items-center justify-center shadow-inner">
+                      <Compass className="w-5 h-5" />
+                    </span>
+                    <span className="relative z-10 -mt-0.5 rounded-full bg-background/85 px-2 py-0.5 text-[8px] font-bold tracking-wide text-primary shadow-sm">
                       {language === "ar" ? "أرشدني" : "Guide"}
                     </span>
                   </motion.button>
