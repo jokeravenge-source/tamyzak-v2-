@@ -92,6 +92,8 @@ const ChallengePage = lazy(() => import("./pages/Challenge"));
 const JoinTamayzak = lazy(() => import("./pages/JoinTamayzak"));
 const MinisterialQuestions = lazy(() => import("./pages/MinisterialQuestions"));
 const ToolLanding = lazy(() => import("./pages/ToolLanding"));
+const ToolsIndex = lazy(() => import("./pages/ToolsIndex"));
+import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
@@ -228,10 +230,23 @@ const App = () => {
     );
   }
 
+  // Public, crawlable tools hub (/tools).
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/tools") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <ToolsIndex />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Public, crawlable tool landing pages (/tools/flashcards, /tools/mcq, ...).
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/tools/")) {
     const slug = window.location.pathname.replace(/\/+$/, "").replace(/^\/tools\//, "");
-    if (["flashcards", "ministerial-bank", "mcq"].includes(slug)) {
+    if (PUBLIC_TOOL_SLUGS.includes(slug)) {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
