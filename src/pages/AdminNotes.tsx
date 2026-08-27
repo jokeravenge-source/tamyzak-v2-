@@ -42,16 +42,19 @@ const writeUnknown = (nbId: string, ids: string[]) =>
 const NoteCard = ({
   note,
   language,
+  fallbackCoverUrl,
   onSwipe,
 }: {
   note: NoteRow;
   language: AppLanguage;
+  fallbackCoverUrl?: string | null;
   onSwipe: (understood: boolean) => void;
 }) => {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-250, 250], [-12, 12]);
   const yesOpacity = useTransform(x, [40, 160], [0, 1]);
   const noOpacity = useTransform(x, [-160, -40], [1, 0]);
+  const coverUrl = note.background_image_url || fallbackCoverUrl;
 
   return (
     <motion.article
@@ -82,8 +85,8 @@ const NoteCard = ({
       </motion.div>
 
       <div className="relative h-[36%] shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary/75 to-accent">
-        {note.background_image_url && (
-          <img src={note.background_image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        {coverUrl && (
+          <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/70" />
         <div className="absolute inset-x-0 bottom-0 p-5 text-primary-foreground">
@@ -326,7 +329,13 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                   {index + 1}/{queue.length}
                 </p>
                 <AnimatePresence mode="wait">
-                  <NoteCard key={queue[index].id} note={queue[index]} language={language} onSwipe={swipe} />
+                  <NoteCard
+                    key={queue[index].id}
+                    note={queue[index]}
+                    language={language}
+                    fallbackCoverUrl={notebook.cover_image_url}
+                    onSwipe={swipe}
+                  />
                 </AnimatePresence>
                 <div className="flex items-center justify-center gap-4">
                   <button
