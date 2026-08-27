@@ -43,11 +43,13 @@ const NoteCard = ({
   note,
   language,
   fallbackCoverUrl,
+  onOpen,
   onSwipe,
 }: {
   note: NoteRow;
   language: AppLanguage;
   fallbackCoverUrl?: string | null;
+  onOpen: () => void;
   onSwipe: (understood: boolean) => void;
 }) => {
   const x = useMotionValue(0);
@@ -66,10 +68,11 @@ const NoteCard = ({
         if (info.offset.x > 120) onSwipe(true);
         else if (info.offset.x < -120) onSwipe(false);
       }}
+      onTap={onOpen}
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="relative mx-auto flex aspect-[3/4] w-[min(100%,calc(64vh*0.75))] min-w-[280px] flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing touch-pan-y"
+      className="relative mx-auto flex aspect-[4/5] w-full max-w-xl flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing touch-pan-y"
     >
       <motion.div
         style={{ opacity: yesOpacity }}
@@ -113,6 +116,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
   const [unknownIds, setUnknownIds] = useState<string[]>([]);
   const [mode, setMode] = useState<"deck" | "unknown-list">("deck");
   const [reviewing, setReviewing] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<NoteRow | null>(null);
 
   useEffect(() => {
     void markAllAdminNotesSeen();
@@ -334,6 +338,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                     note={queue[index]}
                     language={language}
                     fallbackCoverUrl={notebook.cover_image_url}
+                    onOpen={() => setSelectedNote(queue[index])}
                     onSwipe={swipe}
                   />
                 </AnimatePresence>
@@ -359,6 +364,51 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedNote && (
+          <motion.div
+            className="fixed inset-0 z-[200] overflow-y-auto bg-background"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur-xl">
+              <h2 className="min-w-0 flex-1 truncate font-semibold text-foreground">{selectedNote.title}</h2>
+              <button
+                type="button"
+                onClick={() => setSelectedNote(null)}
+                aria-label={t("إغلاق", "Close")}
+                className="ms-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="mx-auto max-w-3xl pb-20"
+            >
+              {(selectedNote.background_image_url || notebook?.cover_image_url) && (
+                <div className="w-full bg-black/90">
+                  <img
+                    src={selectedNote.background_image_url || notebook?.cover_image_url || ""}
+                    alt={selectedNote.title}
+                    className="mx-auto max-h-[72vh] w-full object-contain"
+                  />
+                </div>
+              )}
+              <article className="px-5 py-8 md:px-8">
+                <div className="mb-4 text-5xl">{selectedNote.cover_emoji || "📘"}</div>
+                <h1 className="mb-7 text-3xl font-bold leading-tight text-foreground md:text-4xl">{selectedNote.title}</h1>
+                <AdminNoteRenderer blocks={selectedNote.blocks} language={language} />
+              </article>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };
