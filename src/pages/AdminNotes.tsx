@@ -84,7 +84,7 @@ const NoteCard = ({
         ✕
       </motion.div>
 
-      <div className="relative h-[36%] shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary/75 to-accent">
+      <div className="relative h-[52%] shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary/75 to-accent">
         {coverUrl && (
           <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
