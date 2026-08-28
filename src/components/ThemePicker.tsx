@@ -253,12 +253,27 @@ export function applyTheme(id: ThemeId) {
   const def = THEMES.find((t) => t.id === id);
   if (!def) return;
   const tag = ensureStyleTag();
-  const varDecls = Object.entries(def.vars)
+  const vars = { ...def.vars };
+  if (def.mode === "dark") {
+    // Keep text consistently readable across every dark theme and prevent
+    // browser-level forced dark mode from creating muddy gray foregrounds.
+    vars["--foreground"] = "0 0% 100%";
+    vars["--card-foreground"] = "0 0% 100%";
+    vars["--popover-foreground"] = "0 0% 100%";
+    vars["--secondary-foreground"] = "0 0% 100%";
+    vars["--card-front-fg"] = "0 0% 100%";
+  }
+  const varDecls = Object.entries(vars)
     .map(([k, v]) => `  ${k}: ${v} !important;`)
     .join("\n");
   // Inject as a stylesheet targeting :root, html and body — wins over any
   // class-based rule and survives preview wrappers stripping classes.
-  tag.textContent = `:root, html, body {\n  color-scheme: ${def.mode};\n${varDecls}\n}\nbody { background: var(--gradient-bg) !important; background-attachment: fixed !important; }\n`;
+  const colorScheme = def.mode === "dark" ? "dark" : "only light";
+  tag.textContent = `:root, html, body {\n  color-scheme: ${colorScheme};\n${varDecls}\n}\nbody { background: var(--gradient-bg) !important; background-attachment: fixed !important; }\n`;
+  const schemeMeta = document.getElementById("app-color-scheme") as HTMLMetaElement | null;
+  if (schemeMeta) schemeMeta.content = colorScheme;
+  const themeMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+  if (themeMeta) themeMeta.content = def.mode === "dark" ? "#0b1020" : "#f8fafc";
   // Also keep the tailwind `dark:` variant working by toggling .dark on both html and body.
   for (const el of [document.documentElement, document.body]) {
     if (!el) continue;
@@ -269,13 +284,6 @@ export function applyTheme(id: ThemeId) {
 
 export function getInitialTheme(): ThemeId {
   if (typeof window === "undefined") return "notion-light";
-  // One-time migration: the redesigned UI is locked to a light Cloud White palette,
-  // so any previously stored dark theme is reset on load.
-  const MIGRATION_FLAG = "app_theme_migration_v2_cloudwhite";
-  if (!localStorage.getItem(MIGRATION_FLAG)) {
-    localStorage.removeItem(THEME_STORAGE_KEY);
-    localStorage.setItem(MIGRATION_FLAG, "1");
-  }
   const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
   if (stored && THEMES.some((t) => t.id === stored)) return stored;
   return "notion-light";
