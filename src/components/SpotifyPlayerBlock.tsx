@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music2, Link2, X, Play, Pause, LogOut, ExternalLink, Copy } from "lucide-react";
+import { Music2, Link2, X, Play, Pause, LogOut, ExternalLink, Copy, ChevronDown } from "lucide-react";
 import {
   beginLogin, getAccessToken, getClientId, getRedirectUri,
   isConnected, logout, parsePlaylistUri, setClientId, clearClientId,
@@ -37,6 +37,7 @@ function loadSdk(): Promise<void> {
 }
 
 export default function SpotifyPlayerBlock({ language }: { language: "en" | "ar" }) {
+  const [open, setOpen] = useState(false);
   const [connected, setConnected] = useState<boolean>(isConnected());
   const [clientIdInput, setClientIdInput] = useState<string>(getClientId() || "");
   const [hasClientId, setHasClientId] = useState<boolean>(!!getClientId());
@@ -69,6 +70,10 @@ export default function SpotifyPlayerBlock({ language }: { language: "en" | "ar"
     copied: "تم نسخ الرابط",
     openDash: "فتح Spotify Dashboard",
     notReady: "المشغل غير جاهز بعد...",
+    openSettings: "فتح Spotify",
+    setupHint: "الربط والتشغيل الكامل",
+    connected: "متصل",
+    collapse: "إخفاء التفاصيل",
   } : {
     title: "Spotify (Full Playback)",
     needClientId: "To play full songs, link your own Spotify Premium account.",
@@ -89,6 +94,10 @@ export default function SpotifyPlayerBlock({ language }: { language: "en" | "ar"
     copied: "Redirect URI copied",
     openDash: "Open Spotify Dashboard",
     notReady: "Player not ready yet…",
+    openSettings: "Open Spotify",
+    setupHint: "Connect and enable full playback",
+    connected: "Connected",
+    collapse: "Hide details",
   };
 
   // Initialize player once connected
@@ -193,11 +202,31 @@ export default function SpotifyPlayerBlock({ language }: { language: "en" | "ar"
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-white/10 bg-secondary/30 backdrop-blur p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Music2 className="w-5 h-5 text-primary" />
-        <h3 className="text-sm font-semibold">{L.title}</h3>
-      </div>
+    <div className="mt-4 overflow-hidden rounded-2xl border border-[#1DB954]/25 bg-card/60 backdrop-blur transition-colors">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-3.5 text-start hover:bg-[#1DB954]/10"
+      >
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1DB954]/15 text-[#1DB954]">
+          <Music2 className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold">{L.openSettings}</span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {connected ? `${L.connected}${trackName ? ` · ${trackName}` : ""}` : L.setupHint}
+          </span>
+        </span>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+      <div className="space-y-3 border-t border-[#1DB954]/15 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2"><Music2 className="h-4 w-4 text-[#1DB954]" /><h3 className="text-sm font-semibold">{L.title}</h3></div>
+          <button type="button" onClick={() => setOpen(false)} className="text-xs font-medium text-muted-foreground hover:text-foreground">{L.collapse}</button>
+        </div>
 
       {!hasClientId ? (
         <div className="space-y-2">
@@ -267,6 +296,8 @@ export default function SpotifyPlayerBlock({ language }: { language: "en" | "ar"
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+      )}
     </div>
   );
 }
