@@ -5,7 +5,7 @@ import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
   LogOut, Bell, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
   Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
-  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette,
+  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
 import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
@@ -84,6 +84,8 @@ export type BasicsChoice =
   | "ministerialBank"
   | "subjectsHub"
   | "mindmap";
+
+const TEMP_LOCKED_TOOLS = new Set<MainMenuChoice>(["adminNotes"]);
 
 const MOTIVATIONAL_PHRASES = {
   en: [
@@ -595,6 +597,7 @@ const Basics = ({
     return meta ? topicLabel(meta, language === "ar" ? "ar" : "en") : "";
   }, [onboarding, language]);
   const navigate = (k: MainMenuChoice) => {
+    if (TEMP_LOCKED_TOOLS.has(k)) return;
     setActiveKey(k);
     recordToolUse(k);
     // sync active group
@@ -846,14 +849,16 @@ const Basics = ({
               })().map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
+                const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 return (
                   <motion.button
                     key={it.key}
                     variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={isLocked ? undefined : { y: -2 }}
+                    whileTap={isLocked ? undefined : { scale: 0.98 }}
+                    disabled={isLocked}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className="group bg-card p-5 border border-border rounded-2xl text-left hover:border-primary/40 hover:shadow-[var(--shadow-card)] transition-all"
+                    className={`group bg-card p-5 border border-border rounded-2xl text-left transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
                   >
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                       <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
@@ -865,8 +870,8 @@ const Basics = ({
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{meta.subtitle}</p>
                     )}
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      {language === "ar" ? "افتح" : "Open"}
-                      <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
+                      {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : (language === "ar" ? "افتح" : "Open")}
+                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />}
                     </span>
                   </motion.button>
                 );
@@ -1109,14 +1114,16 @@ const Basics = ({
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
+                const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 if (!meta) return null;
                 return (
                   <motion.button
                     key={it.key}
-                    whileHover={{ y: -3 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={isLocked ? undefined : { y: -3 }}
+                    whileTap={isLocked ? undefined : { scale: 0.98 }}
+                    disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-[var(--shadow-card)] transition-all ${tint.card}`}
+                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
@@ -1126,7 +1133,7 @@ const Basics = ({
                     <h3 className="relative pe-7 text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-5 text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-3 end-3 inline-flex h-7 w-7 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
-                      <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />
+                      {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </motion.button>
                 );
@@ -1235,6 +1242,7 @@ const Basics = ({
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
+                const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 if (!meta) return null;
                 const showNotesDot = it.key === "adminNotes" && unseenNotes > 0;
                 return (
@@ -1242,9 +1250,10 @@ const Basics = ({
                     key={it.key}
                     variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    whileHover={{ y: -3 }}
+                    whileHover={isLocked ? undefined : { y: -3 }}
+                    disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm hover:shadow-md transition-all ${tint.card}`}
+                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
@@ -1262,7 +1271,7 @@ const Basics = ({
                     <h3 className="relative pe-6 font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-4 text-[10px] sm:text-xs leading-relaxed text-muted-foreground line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-2.5 end-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full opacity-65 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
-                      <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />
+                      {isLocked ? <Lock className="h-3 w-3" /> : <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </motion.button>
                 );
