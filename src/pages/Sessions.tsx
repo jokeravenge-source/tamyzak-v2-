@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, Info, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ type SortField = "date" | "minutes" | "points";
 type SortDir = "asc" | "desc";
 
 const SessionsHistory = ({ language, userId }: { language: AppLanguage; userId: string | null }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<PastSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -376,6 +376,17 @@ const SUBJECTS = [
   { code: "biology", en: "Biology", ar: "الأحياء", Icon: Leaf },
 ] as const;
 
+const SUBJECT_TINTS: Record<string, { card: string; icon: string }> = {
+  islamic: { card: "border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15", icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
+  arabic: { card: "border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/15", icon: "bg-rose-500/15 text-rose-600 dark:text-rose-300" },
+  english: { card: "border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-300" },
+  french: { card: "border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/15", icon: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
+  math: { card: "border-indigo-500/25 bg-indigo-500/10 hover:bg-indigo-500/15", icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" },
+  physics: { card: "border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/15", icon: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
+  chemistry: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
+  biology: { card: "border-lime-500/25 bg-lime-500/10 hover:bg-lime-500/15", icon: "bg-lime-500/15 text-lime-700 dark:text-lime-300" },
+};
+
 const T = {
   en: {
     title: "Study Sessions", desc: "Pick a subject, set a mission, and earn points.",
@@ -385,8 +396,8 @@ const T = {
     switchRoom: "Switch room",
     saved: "Session saved",
     pointsTitle: "How points work",
-    pointsLine1: "You earn 1 point for every full hour you study.",
-    pointsLine2: "Finish your mission and get +1 bonus point.",
+    pointsLine1: "You earn 5 points for every full hour you study.",
+    pointsLine2: "Mark your mission complete to keep a clear record of your progress.",
     pointsLine3: "Points add up per subject on the leaderboard.",
     pomodoro: "Pomodoro",
     pomodoroOn: "On",
@@ -402,7 +413,7 @@ const T = {
     discardTitle: "Discard this session?",
     discardIntro: "This will permanently remove the current session. The following will NOT be saved:",
     discardBullet1: "Time studied so far in this session",
-    discardBullet2: "Points you would have earned (1 per full hour, +1 if mission completed)",
+    discardBullet2: "Points you would have earned (5 per full hour)",
     discardBullet3: "Your mission text and completion status",
     discardNote: "Your past saved sessions and leaderboard score are not affected. This action cannot be undone.",
     discardCancel: "Keep session",
@@ -419,8 +430,8 @@ const T = {
     switchRoom: "تغيير الغرفة",
     saved: "تم حفظ الجلسة",
     pointsTitle: "كيف تُحسب النقاط",
-    pointsLine1: "تحصل على نقطة واحدة لكل ساعة دراسة كاملة.",
-    pointsLine2: "إذا أنجزت مهمتك تحصل على نقطة إضافية (+1).",
+    pointsLine1: "تحصل على 5 نقاط لكل ساعة دراسة كاملة.",
+    pointsLine2: "علّم المهمة كمكتملة حتى يبقى إنجازك واضحاً بسجل الجلسات.",
     pointsLine3: "تتجمع النقاط لكل مادة على لوحة المتصدرين.",
     pomodoro: "بومودورو",
     pomodoroOn: "مفعّل",
@@ -436,7 +447,7 @@ const T = {
     discardTitle: "إلغاء هذه الجلسة؟",
     discardIntro: "سيتم حذف الجلسة الحالية نهائياً. لن يتم حفظ ما يلي:",
     discardBullet1: "الوقت الذي درسته في هذه الجلسة",
-    discardBullet2: "النقاط التي كنت ستكسبها (نقطة لكل ساعة كاملة، +1 عند إنجاز المهمة)",
+    discardBullet2: "النقاط التي كنت ستكسبها (5 نقاط لكل ساعة كاملة)",
     discardBullet3: "نص المهمة وحالة الإنجاز",
     discardNote: "جلساتك المحفوظة سابقاً ونقاطك على لوحة المتصدرين لن تتأثر. لا يمكن التراجع عن هذا الإجراء.",
     discardCancel: "الاحتفاظ بالجلسة",
@@ -925,26 +936,46 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   if (!subject) {
     return (
-    <main className="relative min-h-screen px-4 py-10 md:py-16" dir={dir}>
-      <button onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <header className="text-center max-w-2xl mx-auto mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">{L.title}</h1>
-          <p className="text-muted-foreground">{L.desc}</p>
-        </header>
-        <div className="max-w-2xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-primary/5 backdrop-blur p-5">
-          <div className="flex items-center gap-2 mb-2 text-primary font-semibold">
-            <Info className="w-4 h-4" />
-            <span>{L.pointsTitle}</span>
+    <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
+        <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-[36rem] -start-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="relative mx-auto max-w-5xl">
+          <button onClick={onBack} aria-label={language === "ar" ? "رجوع" : "Back"} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
+            <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "رجوع" : "Back"}
+          </button>
+          <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/15 via-card to-cyan-500/10 p-6 shadow-[0_24px_70px_-38px_hsl(var(--primary)/0.55)] md:p-9">
+            <div aria-hidden="true" className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[30px] border-primary/10" />
+            <div className="relative max-w-2xl">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><Sparkles className="h-3.5 w-3.5" /> {language === "ar" ? "ركّز وأنجز" : "Focus and achieve"}</span>
+              <h1 className="text-3xl font-black tracking-tight md:text-5xl">{L.title}</h1>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">{L.desc}</p>
+            </div>
+          </header>
+
+          <section className="mb-8">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div><h2 className="text-xl font-extrabold">{language === "ar" ? "اختار المادة وابدأ" : "Choose a subject to begin"}</h2><p className="mt-1 text-sm text-muted-foreground">{language === "ar" ? "تگدر تغيّر الغرفة بعدين بدون ما تخسر وقتك." : "You can switch rooms later without losing your time."}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {SUBJECTS.map((s) => {
+                const SIcon = s.Icon;
+                const tint = SUBJECT_TINTS[s.code];
+                return (
+                  <button key={s.code} onClick={() => setSubject(s.code)} className={`group min-h-32 rounded-2xl border p-4 text-start shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg ${tint.card}`}>
+                    <span className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl ${tint.icon}`}><SIcon className="h-5 w-5" /></span>
+                    <span className="flex items-center gap-2"><span className="min-w-0 flex-1 font-bold">{language === "ar" ? s.ar : s.en}</span><ChevronRight className={`h-4 w-4 shrink-0 opacity-50 transition-transform group-hover:translate-x-0.5 ${dir === "rtl" ? "rotate-180" : ""}`} /></span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="mb-8 grid gap-3 sm:grid-cols-3">
+            {[L.pointsLine1, L.pointsLine2, L.pointsLine3].map((line, i) => (
+              <div key={line} className="flex gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 text-sm"><span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-bold text-primary">{i + 1}</span><span className="leading-relaxed text-muted-foreground">{line}</span></div>
+            ))}
           </div>
-          <ul className="text-sm text-muted-foreground list-disc ps-5 space-y-1">
-            <li>{L.pointsLine1}</li>
-            <li>{L.pointsLine2}</li>
-            <li>{L.pointsLine3}</li>
-          </ul>
-        </div>
-        <SessionsHistory language={language} userId={userId} />
+
         <PrivateStudyRooms language={language}>
           <div className="text-sm font-semibold mb-1">
             {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك الخاصة" : "Start your study timer inside your private room"}
@@ -966,44 +997,35 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             ))}
           </div>
         </PrivateStudyRooms>
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-          {SUBJECTS.map((s) => {
-            const SIcon = s.Icon;
-            return (
-              <div key={s.code} className="rounded-2xl border border-primary/40 bg-secondary/40 backdrop-blur p-4 hover:border-primary transition-all">
-                <button onClick={() => setSubject(s.code)} className="w-full flex items-center gap-3 mb-3 text-left">
-                  <SIcon className="w-6 h-6 text-primary" />
-                  <div className="font-semibold text-lg flex-1">{language === "ar" ? s.ar : s.en}</div>
-                  <span className="text-xs text-primary underline">{language === "ar" ? "ادخل" : "Enter"}</span>
-                </button>
-                <StudyRoom language={language} subject={s.code} currentUserId={userId} />
-              </div>
-            );
-          })}
+          <div className="mt-8"><SessionsHistory language={language} userId={userId} /></div>
         </div>
       </main>
     );
   }
 
   const subj = SUBJECTS.find((s) => s.code === subject)!;
+  const ActiveSubjectIcon = subj.Icon;
+  const activeTint = SUBJECT_TINTS[subj.code];
+  const nextHourProgress = ((seconds % 3600) / 3600) * 100;
 
   return (
-    <main className="relative min-h-screen px-4 py-10 md:py-16" dir={dir}>
-      {/* Back to main menu — keep the timer running and persisted; only "Switch room" resets. */}
-      <button onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer">
-        <ArrowLeft className="w-5 h-5" />
-      </button>
-      <div className="max-w-3xl mx-auto">
-        <header className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text">{language === "ar" ? subj.ar : subj.en}</h1>
-          <p className="text-muted-foreground mt-1">{displayName}</p>
+    <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
+      <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+      <div className="relative max-w-4xl mx-auto">
+        <button onClick={onBack} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
+          <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "الرئيسية" : "Home"}
+        </button>
+        <header className={`mb-6 rounded-[2rem] border p-5 shadow-sm ${activeTint.card}`}>
+          <div className="flex items-center gap-4">
+            <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${activeTint.icon}`}><ActiveSubjectIcon className="h-6 w-6" /></span>
+            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{language === "ar" ? subj.ar : subj.en}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p></div>
+            {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
+          </div>
         </header>
-
-        <StudyRoom language={language} subject={subject} currentUserId={userId} />
 
         {/* All session features live inside the private room card */}
         <PrivateStudyRooms language={language}>
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur p-6 md:p-8 space-y-5">
+        <div className="rounded-[2rem] border border-border/70 bg-card/80 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] backdrop-blur md:p-8 space-y-5">
           <label className="block">
             <span className="text-sm text-muted-foreground flex items-center gap-2 mb-2"><Target className="w-4 h-4" /> {L.mission}</span>
             <Input value={mission} onChange={(e) => setMission(e.target.value)} placeholder={L.missionPh} disabled={started} maxLength={200} />
@@ -1071,8 +1093,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </div>
           )}
 
-          <div className="text-center py-6">
-            <div className="text-6xl md:text-7xl font-mono font-bold gradient-text">{fmt(seconds)}</div>
+          <div className="py-5 text-center">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{started ? (running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
+            <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(seconds)}</div>
+            <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour"}</span><span>{Math.floor(nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 transition-all" style={{ width: `${nextHourProgress}%` }} /></div></div>
           </div>
 
           {started && (
@@ -1082,9 +1106,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </label>
           )}
 
-          <div className="flex justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {!started ? (
-              <Button size="lg" onClick={startSession} className="gap-2"><Play className="w-4 h-4" /> {L.start}</Button>
+              <Button size="lg" onClick={startSession} className="h-12 min-w-40 gap-2 rounded-xl text-base shadow-lg shadow-primary/20"><Play className="w-5 h-5" /> {L.start}</Button>
             ) : (
               <>
                 {running ? (
@@ -1118,7 +1142,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           )}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-secondary/30 backdrop-blur p-4 flex items-center gap-3 flex-wrap">
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 backdrop-blur">
           <Music className="w-5 h-5 text-primary" />
           <div className="flex rounded-full border border-white/10 overflow-hidden text-xs">
             <button onClick={() => switchPlaylist("music")} className={`px-3 py-1 ${playlist === "music" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "موسيقى" : "Music"}</button>
@@ -1140,12 +1164,17 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         <SpotifyPlayerBlock language={language} />
         </PrivateStudyRooms>
 
+        <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur md:p-5">
+          <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
+          <StudyRoom language={language} subject={subject} currentUserId={userId} />
+        </section>
+
         <section className="mt-10">
           <h2 className="text-xl font-semibold flex items-center gap-2 mb-4"><Trophy className="w-5 h-5 text-primary" /> {L.leaderboard}</h2>
           {board.length === 0 ? (
             <p className="text-muted-foreground text-sm">{L.noOne}</p>
           ) : (
-            <ol className="rounded-2xl border border-white/10 bg-secondary/30 backdrop-blur divide-y divide-white/10 overflow-hidden">
+            <ol className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-card/70 backdrop-blur">
               {board.map((r, i) => (
                 <li key={i} className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3">
