@@ -49,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Study", titleAr: "الأدوات",
+    locked: true,
     items: [
       { key: "notes", labelEn: "Notes", labelAr: "ملاحظاتي", Icon: NotebookPen },
       { key: "canvas", labelEn: "Canvas", labelAr: "اللوحة", Icon: Palette },
@@ -203,7 +204,7 @@ const BottomGroupNav = ({
         className="pointer-events-auto w-full max-w-3xl rounded-2xl border border-border bg-card/85 backdrop-blur-xl shadow-[0_18px_50px_-12px_hsl(var(--primary)/0.25)] p-1.5"
         aria-label="Primary"
       >
-        {currentGroup.items.length > 0 && (
+        {currentGroup.items.length > 0 && !currentGroup.locked && (
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeGroup}
