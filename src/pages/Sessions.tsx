@@ -421,6 +421,14 @@ const T = {
     hourTitle: "One hour completed!",
     hourDesc: "Great work — take a quick breath. Click continue when you're ready to keep studying.",
     hourContinue: "Continue session",
+    saveTitle: "Save this session?",
+    saveQuestion: "Do you want to remove any minutes before saving?",
+    saveWithoutEdit: "No, save as is",
+    editTime: "Yes, edit time",
+    minutesToRemove: "Minutes to remove",
+    finalTime: "Time that will be saved",
+    saveAdjusted: "Save adjusted session",
+    invalidRemove: "Enter a number of minutes within the session duration.",
   },
   ar: {
     title: "جلسات الدراسة", desc: "اختر مادة وحدد مهمتك واكسب النقاط.",
@@ -455,6 +463,14 @@ const T = {
     hourTitle: "أتممت ساعة كاملة!",
     hourDesc: "أحسنت — خذ نفساً سريعاً. اضغط على متابعة عندما تكون جاهزاً لمواصلة الدراسة.",
     hourContinue: "متابعة الجلسة",
+    saveTitle: "حفظ هذه الجلسة؟",
+    saveQuestion: "تريد تحذف دقائق من الوقت قبل الحفظ؟",
+    saveWithoutEdit: "لا، احفظها مثل ما هي",
+    editTime: "نعم، أعدّل الوقت",
+    minutesToRemove: "عدد الدقائق المراد حذفها",
+    finalTime: "الوقت الذي سيتم حفظه",
+    saveAdjusted: "حفظ الوقت المعدّل",
+    invalidRemove: "أدخل عدد دقائق ضمن مدة الجلسة.",
   },
 } as const;
 
@@ -480,6 +496,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [displayName, setDisplayName] = useState("");
   const [pomodoro, setPomodoro] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [editingSaveTime, setEditingSaveTime] = useState(false);
+  const [minutesToRemove, setMinutesToRemove] = useState("");
+  const wasRunningBeforeSaveRef = useRef(false);
   const [hourPauseOpen, setHourPauseOpen] = useState(false);
   const lastHourPromptRef = useRef(0);
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(DEFAULT_WORK_MIN);
@@ -845,10 +865,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setHourPauseOpen(false);
   };
 
-  const stopAndSave = async () => {
+  const stopAndSave = async (durationSeconds = seconds) => {
     if (!userId || !subject) return;
     if (savingRef.current) return;
-    if (seconds <= 0) {
+    if (durationSeconds <= 0) {
       setStarted(false); setRunning(false); setMission(""); setCompleted(false);
       localStorage.removeItem(PERSIST_KEY);
       return;
@@ -856,13 +876,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     savingRef.current = true;
     setRunning(false);
     // 5 points per full studied hour.
-    const points = Math.floor(seconds / 3600) * 5;
+    const points = Math.floor(durationSeconds / 3600) * 5;
     let insertedId: string | null = null;
     let lastErr: string | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const { data: inserted, error } = await supabase.from("study_sessions").insert({
-          user_id: userId, subject, mission: mission.trim(), duration_seconds: seconds,
+          user_id: userId, subject, mission: mission.trim(), duration_seconds: durationSeconds,
           mission_completed: completed, points,
         }).select("id").single();
         if (!error) { insertedId = inserted?.id ?? null; lastErr = null; break; }
@@ -895,6 +915,29 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     lastPhaseSwitchRef.current = -1;
     loadBoard(subject);
     setTimeout(() => { savingRef.current = false; }, 500);
+  };
+
+  const requestSave = () => {
+    wasRunningBeforeSaveRef.current = running;
+    setRunning(false);
+    setEditingSaveTime(false);
+    setMinutesToRemove("");
+    setSaveOpen(true);
+  };
+
+  const cancelSave = () => {
+    setSaveOpen(false);
+    setEditingSaveTime(false);
+    setMinutesToRemove("");
+    if (wasRunningBeforeSaveRef.current) setRunning(true);
+  };
+
+  const confirmSave = async (removeMinutes = 0) => {
+    const adjustedSeconds = Math.max(0, seconds - Math.floor(removeMinutes * 60));
+    setSaveOpen(false);
+    setEditingSaveTime(false);
+    setMinutesToRemove("");
+    await stopAndSave(adjustedSeconds);
   };
 
   const discardSession = async () => {
@@ -1008,6 +1051,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const ActiveSubjectIcon = subj.Icon;
   const activeTint = SUBJECT_TINTS[subj.code];
   const nextHourProgress = ((seconds % 3600) / 3600) * 100;
+  const removeMinutesNumber = Number.parseInt(minutesToRemove, 10);
+  const maxRemovableMinutes = Math.max(0, Math.ceil(seconds / 60) - 1);
+  const validRemoval = Number.isFinite(removeMinutesNumber) && removeMinutesNumber >= 1 && removeMinutesNumber <= maxRemovableMinutes;
+  const adjustedPreviewSeconds = validRemoval ? seconds - removeMinutesNumber * 60 : seconds;
 
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
@@ -1117,7 +1164,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                 ) : (
                   <Button size="lg" onClick={() => setRunning(true)} className="gap-2"><Play className="w-4 h-4" /> {L.resume}</Button>
                 )}
-                <Button size="lg" variant="destructive" onClick={stopAndSave} className="gap-2"><Square className="w-4 h-4" /> {L.stop}</Button>
+                <Button size="lg" variant="destructive" onClick={requestSave} className="gap-2"><Square className="w-4 h-4" /> {L.stop}</Button>
                 <Button size="lg" variant="outline" onClick={() => setDiscardOpen(true)} className="gap-2"><Trash2 className="w-4 h-4" /> {L.discard}</Button>
               </>
             )}
@@ -1194,6 +1241,52 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           )}
         </section>
       </div>
+      <AlertDialog open={saveOpen} onOpenChange={(open) => { if (!open) cancelSave(); }}>
+        <AlertDialogContent dir={dir}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{L.saveTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{L.saveQuestion}</AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="rounded-2xl border border-border bg-muted/25 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-muted-foreground">{L.finalTime}</span>
+              <span className="font-mono text-2xl font-black text-foreground">{fmt(adjustedPreviewSeconds)}</span>
+            </div>
+          </div>
+
+          {editingSaveTime && (
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold">{L.minutesToRemove}</span>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={maxRemovableMinutes}
+                step={1}
+                autoFocus
+                value={minutesToRemove}
+                onChange={(event) => setMinutesToRemove(event.target.value.replace(/\D/g, ""))}
+                placeholder={`1 – ${maxRemovableMinutes}`}
+                className="h-12 text-center font-mono text-lg"
+              />
+              {minutesToRemove && !validRemoval && <p className="text-xs text-destructive">{L.invalidRemove}</p>}
+            </label>
+          )}
+
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel>{L.discardCancel}</AlertDialogCancel>
+            {!editingSaveTime ? (
+              <>
+                <Button type="button" variant="outline" onClick={() => setEditingSaveTime(true)} disabled={maxRemovableMinutes < 1}>{L.editTime}</Button>
+                <Button type="button" onClick={() => void confirmSave(0)}>{L.saveWithoutEdit}</Button>
+              </>
+            ) : (
+              <Button type="button" disabled={!validRemoval} onClick={() => void confirmSave(removeMinutesNumber)}>{L.saveAdjusted}</Button>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
