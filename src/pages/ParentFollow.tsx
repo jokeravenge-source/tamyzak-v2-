@@ -139,7 +139,7 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(false);
   };
 
-  const PARCHMENT = "relative min-h-screen overflow-hidden bg-background text-foreground";
+  const PARCHMENT = "relative min-h-screen overflow-hidden bg-slate-950 text-white [&_.text-foreground]:text-white [&_.text-card-foreground]:text-white [&_.text-muted-foreground]:text-white/60 [&_.border-border]:border-white/10";
   const FONT_STYLE = { fontFamily: "Inter, 'IBM Plex Sans Arabic', system-ui, sans-serif" };
 
   if (!unlocked) {
@@ -147,7 +147,7 @@ export default function ParentFollow({ token }: { token: string }) {
       <main className={`${PARCHMENT} flex items-center justify-center p-5`} style={FONT_STYLE}>
         <div aria-hidden="true" className="absolute -top-24 -end-20 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
         <div aria-hidden="true" className="absolute -bottom-24 -start-20 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
-        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-indigo-500/15 bg-card/90 p-7 text-center text-card-foreground shadow-[0_28px_80px_-35px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-9">
+        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-indigo-400/20 bg-slate-900/85 p-7 text-center text-white shadow-[0_28px_80px_-35px_rgba(99,102,241,0.65)] backdrop-blur-xl sm:p-9">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-indigo-600 ring-1 ring-indigo-500/20 dark:text-indigo-300">
             <Lock className="w-6 h-6" />
           </div>
@@ -164,7 +164,7 @@ export default function ParentFollow({ token }: { token: string }) {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="••••••"
             aria-label="6-digit access code"
-            className="h-16 w-full rounded-2xl border border-indigo-500/15 bg-indigo-500/5 text-center font-mono text-3xl font-bold tracking-[0.55em] text-foreground outline-none transition focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/10"
+            className="h-16 w-full rounded-2xl border border-white/10 bg-white/5 text-center font-mono text-3xl font-bold tracking-[0.55em] text-white placeholder:text-white/35 outline-none transition focus:border-indigo-400/60 focus:ring-4 focus:ring-indigo-500/10"
           />
           {err && <p className="text-sm text-destructive">{err}</p>}
           <button type="submit" disabled={submitting || code.length < 4} className="h-12 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:opacity-50">
@@ -186,14 +186,14 @@ export default function ParentFollow({ token }: { token: string }) {
   if (!data)
     return (
       <main className={`${PARCHMENT} flex items-center justify-center p-6`} style={FONT_STYLE}>
-        <div className="max-w-md text-center border border-border bg-card text-card-foreground p-8 clip-facet space-y-3">
+        <div className="max-w-md space-y-3 rounded-[2rem] border border-white/10 bg-slate-900/85 p-8 text-center text-white shadow-2xl">
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
           <p className="text-muted-foreground text-sm">
             {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
           </p>
           <button
             onClick={() => { sessionStorage.removeItem(`pf_code_${token}`); setErr(null); setUnlocked(false); }}
-            className="h-10 px-5 border border-border text-xs uppercase tracking-[0.16em] font-semibold hover:bg-muted"
+            className="h-10 rounded-xl border border-white/15 px-5 text-xs font-semibold text-white hover:bg-white/10"
           >
             Try another code
           </button>
@@ -219,18 +219,18 @@ export default function ParentFollow({ token }: { token: string }) {
       <div aria-hidden="true" className="pointer-events-none absolute -top-32 -end-24 h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute top-[42rem] -start-32 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
       <div className="relative mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-12">
-        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-indigo-500/15 bg-gradient-to-br from-indigo-500/15 via-card to-violet-500/10 p-5 shadow-[0_24px_70px_-35px_rgba(99,102,241,0.5)] md:p-8">
+        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-indigo-400/20 bg-gradient-to-br from-indigo-600/40 via-slate-900/95 to-violet-600/35 p-5 text-white shadow-[0_24px_70px_-35px_rgba(99,102,241,0.7)] md:p-8">
           <div aria-hidden="true" className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[30px] border-violet-500/10" />
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-300">
                 <Eye className="h-3.5 w-3.5" /> Parent view · read-only
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Today's progress for</p>
+              <p className="text-sm font-medium text-white/65">Today's progress for</p>
               <h1 className="mt-1 truncate text-3xl font-black tracking-tight md:text-5xl" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>
                 {data.student_name}
               </h1>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/60">
                 <span className="inline-flex items-center gap-1.5"><Activity className="h-3.5 w-3.5 text-indigo-500" /> Live progress</span>
                 {lastUpdated && <span>Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
               </div>
@@ -264,7 +264,7 @@ export default function ParentFollow({ token }: { token: string }) {
                 <SubHeading>By subject</SubHeading>
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {perSubject.map(([subj, v]) => (
-                    <li key={subj} className="rounded-xl border border-border/60 bg-muted/25 p-3 text-sm">
+                    <li key={subj} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
                       <div className="flex items-center justify-between gap-2"><span className="font-bold capitalize">{subj}</span><span className="font-mono font-bold text-indigo-600 dark:text-indigo-300">{v.minutes} min</span></div>
                       <span className="mt-1 block text-xs text-muted-foreground">{v.sessions} sessions · {v.missions} missions</span>
                     </li>
@@ -280,7 +280,7 @@ export default function ParentFollow({ token }: { token: string }) {
                 </SubHeading>
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {tools.map((t) => (
-                    <li key={t.feature} className="flex items-center justify-between rounded-xl bg-violet-500/5 px-3 py-2.5 text-sm">
+                    <li key={t.feature} className="flex items-center justify-between rounded-xl bg-violet-400/10 px-3 py-2.5 text-sm">
                       <span>{TOOL_LABELS[t.feature] ?? t.feature}</span>
                       <span className="font-mono tabular-nums">× {t.count}</span>
                     </li>
@@ -298,7 +298,7 @@ export default function ParentFollow({ token }: { token: string }) {
               <div><p className="text-xs text-muted-foreground">Weekly total</p><p className="font-mono text-3xl font-black">{weekMinutes} <span className="text-sm font-medium text-muted-foreground">min</span></p></div>
               <div className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-600 dark:text-violet-300">Avg {Math.round(weekMinutes / 7)} min/day</div>
             </div>
-            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-muted/20 px-3 pt-4">
+            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-white/5 px-3 pt-4">
               {data.last_7_days.map((d) => (
                 <div key={d.date} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={`${d.date}: ${d.minutes} minutes`}>
                   <span className="font-mono text-[10px] font-bold opacity-0 transition-opacity group-hover:opacity-100">{d.minutes}</span>
@@ -332,7 +332,7 @@ export default function ParentFollow({ token }: { token: string }) {
           {/* To-do */}
           <Panel icon={ListChecks} title="Today's to-do list">
             {!data.todays_todos?.length ? (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-center">
                 <ListChecks className="mx-auto mb-2 h-7 w-7 text-muted-foreground/60" />
                 <p className="text-sm font-semibold">No tasks planned for today</p>
                 <p className="mt-1 text-xs text-muted-foreground">New tasks will appear here automatically.</p>
@@ -340,12 +340,12 @@ export default function ParentFollow({ token }: { token: string }) {
             ) : (
               <>
                 <div className="mb-5 flex items-center gap-4 rounded-2xl bg-emerald-500/10 p-4">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-background font-mono text-sm font-black text-emerald-600 shadow-sm">{todoPct}%</div>
-                  <div className="min-w-0 flex-1"><p className="font-bold">{todoDone} of {todoTotal} completed</p><div className="mt-2 h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${todoPct}%` }} /></div></div>
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-950/70 font-mono text-sm font-black text-emerald-300 shadow-sm">{todoPct}%</div>
+                  <div className="min-w-0 flex-1"><p className="font-bold text-white">{todoDone} of {todoTotal} completed</p><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${todoPct}%` }} /></div></div>
                 </div>
                 <ul className="space-y-2">
                   {data.todays_todos.map((td, i) => (
-                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-500/20 bg-emerald-500/5" : "border-border/70 bg-muted/20"}`}>
+                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-400/20 bg-emerald-400/10" : "border-white/10 bg-white/5"}`}>
                       {td.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                       <span className={`flex-1 text-sm ${td.done ? "line-through text-muted-foreground" : "font-medium"}`}>{td.text}</span>
                       <span className="font-mono text-[10px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
@@ -375,7 +375,7 @@ const MEASURE_TONES = {
 
 function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: keyof typeof MEASURE_TONES; label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card/85 p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg md:p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-white shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-indigo-400/25 hover:bg-white/[0.09] hover:shadow-lg md:p-5">
       <span className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${MEASURE_TONES[tone]}`}><Icon className="h-5 w-5" /></span>
       <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
       <div className="font-mono text-3xl font-black tabular-nums leading-none text-foreground md:text-4xl">
@@ -388,7 +388,7 @@ function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: ke
 
 function Panel({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.75rem] border border-border/70 bg-card/85 p-5 text-card-foreground shadow-[0_14px_45px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm md:p-6">
+    <section className="rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 text-white shadow-[0_18px_55px_-32px_rgba(0,0,0,0.8)] backdrop-blur-sm md:p-6">
       <header className="mb-5 inline-flex items-center gap-3">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-violet-500/15 text-indigo-600 dark:text-indigo-300"><Icon className="h-4 w-4" /></span>
         <h2 className="text-sm font-extrabold md:text-base">{title}</h2>
@@ -415,11 +415,11 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="mt-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+    <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
       <SubHeading>{title}</SubHeading>
       <ul className="space-y-1.5 text-sm">
         {items.map((x, i) => (
-          <li key={i} className="flex items-start gap-3 rounded-xl bg-background/70 p-2.5">
+          <li key={i} className="flex items-start gap-3 rounded-xl bg-slate-950/40 p-2.5">
             <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/10 font-mono text-[10px] font-bold text-violet-600 dark:text-violet-300">{i + 1}</span>
             <span className="flex-1">{x}</span>
           </li>
