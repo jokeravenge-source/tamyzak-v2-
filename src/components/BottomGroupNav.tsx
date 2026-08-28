@@ -49,7 +49,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Study", titleAr: "الأدوات",
-    locked: true,
     items: [
       { key: "notes", labelEn: "Notes", labelAr: "ملاحظاتي", Icon: NotebookPen },
       { key: "canvas", labelEn: "Canvas", labelAr: "اللوحة", Icon: Palette },
