@@ -475,6 +475,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [board, setBoard] = useState<{ name: string; points: number }[]>([]);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [pomodoro, setPomodoro] = useState(false);
@@ -1169,22 +1170,27 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           <StudyRoom language={language} subject={subject} currentUserId={userId} />
         </section>
 
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold flex items-center gap-2 mb-4"><Trophy className="w-5 h-5 text-primary" /> {L.leaderboard}</h2>
-          {board.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{L.noOne}</p>
-          ) : (
-            <ol className="divide-y divide-border overflow-hidden rounded-2xl border border-border/70 bg-card/70 backdrop-blur">
-              {board.map((r, i) => (
-                <li key={i} className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{i + 1}</span>
-                    <span>{r.name}</span>
-                  </div>
-                  <span className="font-semibold text-primary">{r.points} {L.points}</span>
-                </li>
-              ))}
-            </ol>
+        <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/60 backdrop-blur">
+          <button type="button" onClick={() => setLeaderboardOpen((value) => !value)} aria-expanded={leaderboardOpen} className="flex w-full items-center gap-3 p-3.5 text-start hover:bg-amber-500/10">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-300"><Trophy className="h-5 w-5" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{L.leaderboard}</span><span className="block truncate text-xs text-muted-foreground">{board.length > 0 ? `${board.length} ${language === "ar" ? "طالب" : "students"}${board[0] ? ` · #1 ${board[0].name}` : ""}` : L.noOne}</span></span>
+            <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${leaderboardOpen ? "rotate-180" : ""}`} />
+          </button>
+          {leaderboardOpen && (
+            <div className="border-t border-amber-500/15 p-3">
+              {board.length === 0 ? (
+                <p className="py-5 text-center text-sm text-muted-foreground">{L.noOne}</p>
+              ) : (
+                <ol className="divide-y divide-border overflow-hidden rounded-xl border border-border/70 bg-card/70">
+                  {board.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-3"><span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${i < 3 ? "bg-amber-500 text-slate-950" : "bg-muted text-muted-foreground"}`}>{i + 1}</span><span>{r.name}</span></div>
+                      <span className="font-semibold text-amber-600 dark:text-amber-300">{r.points} {L.points}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
           )}
         </section>
       </div>
