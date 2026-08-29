@@ -2948,6 +2948,7 @@ export type Database = {
           label: string
         }[]
       }
+      admin_common_mistakes: { Args: { _limit?: number }; Returns: Json }
       admin_grant_points: {
         Args: { _points: number; _reason?: string; _user_id: string }
         Returns: Json
