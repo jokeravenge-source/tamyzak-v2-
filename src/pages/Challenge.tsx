@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Upload, Loader2, Trophy, Timer, Check, X, Sparkles,
   Trash2, Play, ChevronRight, Medal, CalendarClock, Lock, Image as ImageIcon,
+  Database, Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordMistake } from "@/lib/mistakes";
@@ -43,6 +44,24 @@ type Attempt = {
 };
 
 type Draft = { question: string; choices: string[]; answer_index: number; explanation?: string };
+
+type BankQuestion = Draft & {
+  id: string;
+  subject: string;
+  chapter: number;
+  chapter_title: string | null;
+};
+
+const BANK_SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
+  physics: { ar: "الفيزياء", en: "Physics" },
+  chemistry: { ar: "الكيمياء", en: "Chemistry" },
+  biology: { ar: "الأحياء", en: "Biology" },
+  english: { ar: "الإنكليزية", en: "English" },
+  french: { ar: "الفرنسية", en: "French" },
+  arabic: { ar: "العربية", en: "Arabic" },
+  islamic: { ar: "الإسلامية", en: "Islamic" },
+  math: { ar: "الرياضيات", en: "Math" },
+};
 
 const fmtMs = (ms: number) => `${(ms / 1000).toFixed(2)}s`;
 
@@ -149,7 +168,7 @@ const ChallengePage = ({
         </header>
         {isAdmin && (
           <button onClick={() => setCreating(true)} className="w-full mb-6 h-12 rounded-xl bg-primary text-primary-foreground font-semibold inline-flex items-center justify-center gap-2">
-            <Upload className="h-4 w-4" /> {T(language, "إنشاء تحدٍ من ملف PDF", "Create challenge from PDF")}
+            <Upload className="h-4 w-4" /> {T(language, "إنشاء تحدٍ جديد", "Create new challenge")}
           </button>
         )}
         {loading ? (
@@ -281,6 +300,7 @@ const ChallengeCard = ({
 };
 
 const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () => void }) => {
+  const [sourceMode, setSourceMode] = useState<"bank" | "ai">("bank");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [count, setCount] = useState(10);
@@ -292,6 +312,74 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Draft[] | null>(null);
+  const [bankRows, setBankRows] = useState<BankQuestion[]>([]);
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankSubject, setBankSubject] = useState("");
+  const [bankChapter, setBankChapter] = useState<number | null>(null);
+  const [selectedBankIds, setSelectedBankIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (sourceMode !== "bank") return;
+    let alive = true;
+    setBankLoading(true);
+    setSelectedBankIds(new Set());
+    setBankSubject("");
+    setBankChapter(null);
+    (async () => {
+      const { data, error } = await supabase
+        .from("mcq_banks")
+        .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation")
+        .eq("language", qLang)
+        .order("subject", { ascending: true })
+        .order("chapter", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .limit(2000);
+      if (!alive) return;
+      if (error) toast.error(error.message);
+      setBankRows(((data ?? []) as any[]).filter((row) => Array.isArray(row.choices) && row.choices.length === 4));
+      setBankLoading(false);
+    })();
+    return () => { alive = false; };
+  }, [sourceMode, qLang]);
+
+  const bankSubjects = useMemo(
+    () => [...new Set(bankRows.map((row) => row.subject))].sort(),
+    [bankRows],
+  );
+  const bankChapters = useMemo(() => {
+    const byChapter = new Map<number, string | null>();
+    bankRows.filter((row) => row.subject === bankSubject).forEach((row) => {
+      if (!byChapter.has(row.chapter)) byChapter.set(row.chapter, row.chapter_title);
+    });
+    return [...byChapter.entries()].sort((a, b) => a[0] - b[0]);
+  }, [bankRows, bankSubject]);
+  const visibleBankRows = useMemo(
+    () => bankRows.filter((row) => row.subject === bankSubject && (bankChapter === null || row.chapter === bankChapter)),
+    [bankRows, bankSubject, bankChapter],
+  );
+
+  const toggleBankQuestion = (id: string) => {
+    setSelectedBankIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else if (next.size < 30) next.add(id);
+      else toast.error(T(language, "الحد الأقصى 30 سؤالاً", "Maximum 30 questions"));
+      return next;
+    });
+  };
+
+  const useBankQuestions = () => {
+    if (!title.trim()) return toast.error(T(language, "اكتب عنوان التحدي", "Enter a title"));
+    if (selectedBankIds.size < 3) return toast.error(T(language, "اختر 3 أسئلة على الأقل", "Select at least 3 questions"));
+    const selectedRows = bankRows.filter((row) => selectedBankIds.has(row.id));
+    setCount(selectedRows.length);
+    setDrafts(selectedRows.map((row) => ({
+      question: row.question,
+      choices: row.choices.map(String),
+      answer_index: row.answer_index,
+      explanation: row.explanation ?? undefined,
+    })));
+  };
 
   const generate = async () => {
     if (!file) return toast.error(T(language, "اختر ملف PDF", "Pick a PDF file"));
@@ -403,13 +491,27 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
             <textarea value={description} onChange={(e) => setDescription(e.target.value)}
               placeholder={T(language, "وصف / متطلبات (اختياري)", "Description / requirements (optional)")}
               className="w-full min-h-20 p-3 rounded-lg border border-border bg-background text-sm" />
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm">
-                <span className="text-muted-foreground">{T(language, "عدد الأسئلة", "Questions")}</span>
-                <input type="number" min={3} max={30} value={count}
-                  onChange={(e) => setCount(Math.max(3, Math.min(30, parseInt(e.target.value || "10", 10))))}
-                  className="mt-1 w-full h-11 px-3 rounded-lg border border-border bg-background" />
-              </label>
+
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-background/60 p-1.5">
+              <button type="button" onClick={() => setSourceMode("bank")}
+                className={`h-11 rounded-lg text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors ${sourceMode === "bank" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary"}`}>
+                <Database className="h-4 w-4" /> {T(language, "بنك الأسئلة", "Question bank")}
+              </button>
+              <button type="button" onClick={() => setSourceMode("ai")}
+                className={`h-11 rounded-lg text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors ${sourceMode === "ai" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-secondary"}`}>
+                <Bot className="h-4 w-4" /> {T(language, "توليد بالذكاء الاصطناعي", "Generate with AI")}
+              </button>
+            </div>
+
+            <div className={`grid ${sourceMode === "ai" ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+              {sourceMode === "ai" && (
+                <label className="text-sm">
+                  <span className="text-muted-foreground">{T(language, "عدد الأسئلة", "Questions")}</span>
+                  <input type="number" min={3} max={30} value={count}
+                    onChange={(e) => setCount(Math.max(3, Math.min(30, parseInt(e.target.value || "10", 10))))}
+                    className="mt-1 w-full h-11 px-3 rounded-lg border border-border bg-background" />
+                </label>
+              )}
               <label className="text-sm">
                 <span className="text-muted-foreground">{T(language, "ثواني لكل سؤال", "Seconds per question")}</span>
                 <input type="number" min={5} max={120} value={seconds}
@@ -425,6 +527,77 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
                 </button>
               ))}
             </div>
+
+            {sourceMode === "bank" && (
+              <div className="space-y-3 rounded-xl border border-border bg-background/40 p-4">
+                {bankLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" /> {T(language, "جاري تحميل بنك الأسئلة...", "Loading question bank...")}
+                  </div>
+                ) : bankRows.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">{T(language, "لا توجد أسئلة بهذه اللغة", "No questions available in this language")}</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <label className="text-sm">
+                        <span className="text-muted-foreground">{T(language, "المادة", "Subject")}</span>
+                        <select value={bankSubject} onChange={(e) => { setBankSubject(e.target.value); setBankChapter(null); }}
+                          className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3">
+                          <option value="">{T(language, "اختر المادة", "Select subject")}</option>
+                          {bankSubjects.map((subject) => (
+                            <option key={subject} value={subject}>{BANK_SUBJECT_LABELS[subject]?.[language] ?? subject}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-sm">
+                        <span className="text-muted-foreground">{T(language, "الفصل", "Chapter")}</span>
+                        <select value={bankChapter ?? ""} disabled={!bankSubject}
+                          onChange={(e) => setBankChapter(e.target.value ? Number(e.target.value) : null)}
+                          className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3 disabled:opacity-50">
+                          <option value="">{T(language, "كل الفصول", "All chapters")}</option>
+                          {bankChapters.map(([chapter, chapterTitle]) => (
+                            <option key={chapter} value={chapter}>{T(language, "الفصل", "Chapter")} {chapter}{chapterTitle ? ` — ${chapterTitle}` : ""}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-primary">{selectedBankIds.size} {T(language, "سؤال محدد", "selected")}</span>
+                      {selectedBankIds.size > 0 && (
+                        <button type="button" onClick={() => setSelectedBankIds(new Set())} className="text-muted-foreground hover:text-foreground">
+                          {T(language, "إلغاء التحديد", "Clear selection")}
+                        </button>
+                      )}
+                    </div>
+
+                    {bankSubject ? (
+                      <div className="max-h-[26rem] space-y-2 overflow-y-auto pe-1">
+                        {visibleBankRows.map((row) => {
+                          const checked = selectedBankIds.has(row.id);
+                          return (
+                            <button key={row.id} type="button" onClick={() => toggleBankQuestion(row.id)}
+                              className={`w-full rounded-xl border p-3 text-start transition-colors ${checked ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/40"}`}>
+                              <span className="flex items-start gap-3">
+                                <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                                  {checked && <Check className="h-3.5 w-3.5" />}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium leading-relaxed">{row.question}</span>
+                                  <span className="mt-1 block text-[11px] text-muted-foreground">{T(language, "الفصل", "Chapter")} {row.chapter}{row.chapter_title ? ` · ${row.chapter_title}` : ""}</span>
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="rounded-lg bg-secondary/40 p-4 text-center text-sm text-muted-foreground">{T(language, "اختر المادة حتى تظهر الأسئلة", "Select a subject to view its questions")}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
             <label className="block text-sm">
               <span className="text-muted-foreground inline-flex items-center gap-1">
                 <CalendarClock className="h-4 w-4" /> {T(language, "وقت وتاريخ بدء التحدي", "Challenge start date & time")}
@@ -448,16 +621,20 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
                 </>
               )}
             </label>
-            <label className="block rounded-xl border border-dashed border-border p-5 text-center cursor-pointer hover:bg-secondary/50">
-              <input type="file" accept="application/pdf,.pdf,.docx,.txt" className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <Upload className="h-5 w-5 mx-auto mb-2 text-primary" />
-              <span className="text-sm">{file ? file.name : T(language, "ارفع ملف PDF", "Upload a PDF")}</span>
-            </label>
-            <button onClick={generate} disabled={busy}
+            {sourceMode === "ai" && (
+              <label className="block rounded-xl border border-dashed border-border p-5 text-center cursor-pointer hover:bg-secondary/50">
+                <input type="file" accept="application/pdf,.pdf,.docx,.txt" className="hidden"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <Upload className="h-5 w-5 mx-auto mb-2 text-primary" />
+                <span className="text-sm">{file ? file.name : T(language, "ارفع ملف PDF", "Upload a PDF")}</span>
+              </label>
+            )}
+            <button onClick={sourceMode === "bank" ? useBankQuestions : generate} disabled={busy || (sourceMode === "bank" && selectedBankIds.size < 3)}
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {T(language, "توليد الأسئلة", "Generate questions")}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : sourceMode === "bank" ? <Database className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              {sourceMode === "bank"
+                ? T(language, `استخدام ${selectedBankIds.size} أسئلة محددة`, `Use ${selectedBankIds.size} selected questions`)
+                : T(language, "توليد الأسئلة", "Generate questions")}
             </button>
           </div>
         ) : (
