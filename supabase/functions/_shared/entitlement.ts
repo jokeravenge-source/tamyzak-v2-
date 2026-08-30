@@ -11,7 +11,7 @@ export type EntitlementResult =
  *
  * Returns 401 if no auth, 429 if quota is exhausted.
  */
-export async function claimFeature(req: Request, feature: string): Promise<EntitlementResult> {
+export async function claimFeature(req: Request, feature: string, dailyLimit?: number): Promise<EntitlementResult> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return { ok: false, status: 401, error: "Sign in to use this feature." };
@@ -30,7 +30,12 @@ export async function claimFeature(req: Request, feature: string): Promise<Entit
     return { ok: false, status: 401, error: "Invalid session." };
   }
 
-  const { data: allowed, error } = await supabase.rpc("claim_daily_feature", { _feature: feature });
+  const { data: allowed, error } = dailyLimit == null
+    ? await supabase.rpc("claim_daily_feature", { _feature: feature })
+    : await supabase.rpc("claim_daily_feature_limit", {
+      _feature: feature,
+      _limit: Math.max(0, Math.floor(dailyLimit)),
+    });
   if (error) {
     return { ok: false, status: 500, error: error.message };
   }
