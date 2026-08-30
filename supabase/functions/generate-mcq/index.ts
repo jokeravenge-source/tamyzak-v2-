@@ -340,7 +340,7 @@ Deno.serve(async (req) => {
       const admin = await requireAdmin(req);
       if (!admin.ok) return json({ error: admin.error }, admin.status);
     } else {
-      const entitlement = await claimFeature(req, "mcq");
+      const entitlement = await claimFeature(req, "mcq", 2);
       if (!entitlement.ok) {
         return json({ error: entitlement.error, upgrade: entitlement.status === 429 }, entitlement.status);
       }
