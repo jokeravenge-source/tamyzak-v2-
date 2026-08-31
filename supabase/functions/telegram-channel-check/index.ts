@@ -19,7 +19,6 @@ Deno.serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY");
@@ -27,21 +26,22 @@ Deno.serve(async (req) => {
       return json({ error: "Telegram connector not configured" }, 500);
     }
 
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
-    });
-    const { data: u, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !u?.user) return json({ error: "Unauthorized" }, 401);
+    const auth = await requireUser(req);
+    if (!auth.ok) {
+      // Not signed in / stale token: never block the app, just report unknown.
+      return json({ ok: false, joined: true, error: "unauthenticated" });
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: row } = await admin
       .from("telegram_verifications")
       .select("telegram_user_id")
-      .eq("user_id", u.user.id)
+      .eq("user_id", auth.userId)
       .maybeSingle();
 
     const tgId = row?.telegram_user_id;
     if (!tgId) return json({ ok: false, joined: false, error: "not_linked" });
+
 
     const res = await fetch(`${GATEWAY_URL}/getChatMember`, {
       method: "POST",
