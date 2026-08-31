@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import {
   Layers, Target, Users, Swords, ScrollText, Settings, BookOpen,
   NotebookPen, FileText, HelpCircle, Network, Headphones, Video, Youtube,
@@ -14,7 +13,7 @@ import {
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
-import aiRoboAnimation from "@/assets/ai-robo.json";
+import aiRoboVideo from "@/assets/ai-robo.webm.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -133,8 +132,6 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Organizations: Network,
   Menu: MenuIcon,
 };
-
-const AI_ROBO_ANIMATION_DATA = JSON.stringify(aiRoboAnimation);
 
 const BottomGroupNav = ({
   language, active, onSelect, onGuide,
@@ -318,11 +315,16 @@ const BottomGroupNav = ({
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
                     className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
-                    <DotLottieReact
-                      data={AI_ROBO_ANIMATION_DATA}
-                      autoplay
+                    <video
+                      src={aiRoboVideo.url}
+                      autoPlay
                       loop
-                      className="pointer-events-none h-full w-full scale-[1.22]"
+                      muted
+                      playsInline
+                      preload="auto"
+                      aria-hidden="true"
+                      onCanPlay={(event) => { void event.currentTarget.play().catch(() => undefined); }}
+                      className="pointer-events-none h-full w-full scale-[1.28] object-cover mix-blend-screen"
                     />
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
