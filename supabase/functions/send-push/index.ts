@@ -137,10 +137,14 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const adminAuth = await requireAdmin(req);
-    if (!adminAuth.ok) {
-      console.error("send-push auth rejected:", adminAuth.status, adminAuth.error);
-      return json({ error: adminAuth.error }, adminAuth.status);
+    const bearer = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
+    const isInternal = bearer.length > 0 && bearer === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!isInternal) {
+      const adminAuth = await requireAdmin(req);
+      if (!adminAuth.ok) {
+        console.error("send-push auth rejected:", adminAuth.status, adminAuth.error);
+        return json({ error: adminAuth.error }, adminAuth.status);
+      }
     }
 
     const rawSa = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
@@ -161,6 +165,9 @@ Deno.serve(async (req) => {
     const text = String(body.body ?? "").slice(0, 3500).trim();
     const link = body.link ? String(body.link).slice(0, 500) : null;
     const targetUserId = body.target_user_id ? String(body.target_user_id) : null;
+    const targetUserIds = Array.isArray(body.target_user_ids)
+      ? [...new Set(body.target_user_ids.map(String).filter(Boolean))].slice(0, 500)
+      : [];
     if (!title && !text) return json({ error: "Title or body is required" }, 400);
 
     const admin = createClient(
@@ -170,6 +177,7 @@ Deno.serve(async (req) => {
 
     let tokenQuery = admin.from("push_tokens").select("token");
     if (targetUserId) tokenQuery = tokenQuery.eq("user_id", targetUserId);
+    else if (targetUserIds.length > 0) tokenQuery = tokenQuery.in("user_id", targetUserIds);
     const { data: tokenRows, error: tErr } = await tokenQuery;
     if (tErr) return json({ error: tErr.message }, 500);
 
