@@ -19,7 +19,8 @@ import { missionsData, missionsOrder } from "@/data/missions";
 import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
 import StreakTree from "@/components/StreakTree";
-import RankStone, { rankFromPoints, RANK_LABELS, type StoneRank } from "@/components/RankStone";
+import RankStone from "@/components/RankStone";
+import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
@@ -557,17 +558,15 @@ const Basics = ({
       window.removeEventListener("app:feature-unlocked", onFocus);
     };
   }, []);
-  const currentRank = rankFromPoints(totalPoints);
-  const rankLabel = RANK_LABELS[currentRank][language];
-  const STREAK_GOAL_BY_RANK: Record<StoneRank, number> = {
-    coal: 5,
-    copper: 10,
-    silver: 15,
-    gold: 20,
-    diamond: 25,
-    royal: 30,
-  };
-  const stoneFill = Math.min(1, (streakDays || 0) / STREAK_GOAL_BY_RANK[currentRank]);
+  const leaderboardRank = rankFor(totalPoints);
+  const currentRank = leaderboardRank.key;
+  const rankLabel = leaderboardRank.label[language];
+  const rankIndex = RANKS.findIndex((rank) => rank.key === currentRank);
+  const nextRank = rankIndex >= 0 ? RANKS[rankIndex + 1] : undefined;
+  const pointsToNextRank = nextRank ? Math.max(0, nextRank.min - totalPoints) : 0;
+  const stoneFill = nextRank
+    ? Math.max(0, Math.min(1, (totalPoints - leaderboardRank.min) / (nextRank.min - leaderboardRank.min)))
+    : 1;
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -920,6 +919,13 @@ const Basics = ({
                     <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
                   )}
                 </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {nextRank
+                    ? (language === "ar"
+                      ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
+                      : `${pointsToNextRank} points to ${nextRank.label.en}`)
+                    : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
+                </p>
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   <div className="rounded-2xl border border-border bg-card px-3 py-2.5">
                     <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
