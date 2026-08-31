@@ -14,7 +14,7 @@ import {
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
-import aiRoboAnimation from "@/assets/ai-robo-animation.json";
+import aiRoboAnimation from "@/assets/ai-robo.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
