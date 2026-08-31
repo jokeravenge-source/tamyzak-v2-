@@ -65,6 +65,17 @@ const BANK_SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
 
 const fmtMs = (ms: number) => `${(ms / 1000).toFixed(2)}s`;
 
+const shuffleQuestions = <T,>(items: T[]): T[] => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const random = new Uint32Array(1);
+    crypto.getRandomValues(random);
+    const j = random[0] % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const toLocalInput = (iso: string | null) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -711,7 +722,11 @@ const ChallengeRunner = ({
         .eq("challenge_id", challenge.id)
         .order("sort_order", { ascending: true });
       if (error) toast.error(error.message);
-      setQuestions(((data as any[]) || []).map((q) => ({ ...q, choices: (q.choices as string[]) || [] })));
+      const loadedQuestions = ((data as any[]) || []).map((q) => ({
+        ...q,
+        choices: (q.choices as string[]) || [],
+      }));
+      setQuestions(shuffleQuestions(loadedQuestions));
       setLoading(false);
       loadBoard();
     })();
