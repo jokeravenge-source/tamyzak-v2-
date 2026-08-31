@@ -1,5 +1,7 @@
 import { protect } from "../_shared/guard.ts";
+import { requireUser } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
