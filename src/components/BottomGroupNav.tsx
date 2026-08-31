@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
 import {
   Layers, Target, Users, Swords, ScrollText, Settings, BookOpen,
   NotebookPen, FileText, HelpCircle, Network, Headphones, Video, Youtube,
@@ -13,6 +14,7 @@ import {
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
+import aiRoboLottie from "@/assets/ai-robo.lottie.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -154,6 +156,13 @@ const BottomGroupNav = ({
   useEffect(() => { setPortalRoot(document.body); }, []);
   const navVisible = useNavVisibility();
   const [sheetGroup, setSheetGroup] = useState<string | null>(null);
+  const [guideLottie, setGuideLottie] = useState<DotLottie | null>(null);
+
+  const fireGuideAnimation = (eventName: "thinkClick" | "jumpClick") => {
+    try {
+      guideLottie?.stateMachineFireEvent(eventName);
+    } catch { /* keep navigation responsive if animation playback fails */ }
+  };
 
   const currentGroup = NAV_GROUPS.find((g) => g.titleEn === activeGroup) ?? NAV_GROUPS[0];
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
@@ -310,11 +319,22 @@ const BottomGroupNav = ({
                     type="button"
                     whileTap={{ scale: 0.9 }}
                     whileHover={{ scale: 1.06 }}
-                    onClick={() => onGuide?.()}
+                    onMouseEnter={() => fireGuideAnimation("thinkClick")}
+                    onFocus={() => fireGuideAnimation("thinkClick")}
+                    onClick={() => {
+                      fireGuideAnimation("jumpClick");
+                      onGuide?.();
+                    }}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
-                    className="relative z-20 shrink-0 mx-1 h-12 w-12 -mt-4 inline-flex items-center justify-center rounded-full border-[5px] border-background bg-primary text-primary-foreground shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
+                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
-                    <Compass className="w-5 h-5" />
+                    <DotLottieReact
+                      src={aiRoboLottie.url}
+                      stateMachineId="StateMachine1"
+                      autoplay
+                      dotLottieRefCallback={setGuideLottie}
+                      className="pointer-events-none h-full w-full scale-[1.22]"
+                    />
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
                     {right.map(renderGroup)}
