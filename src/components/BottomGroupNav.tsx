@@ -313,7 +313,7 @@ const BottomGroupNav = ({
                     whileHover={{ scale: 1.06 }}
                     onClick={() => onGuide?.()}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
-                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
+                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-transparent"
                   >
                     <video
                       src={aiRoboVideo.url}
