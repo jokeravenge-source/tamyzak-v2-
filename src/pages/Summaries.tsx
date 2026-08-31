@@ -264,6 +264,22 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
         </div>
         <h1 className="text-4xl md:text-6xl font-bold gradient-text leading-[1.1] mb-3">{t("Community Summaries", "ملخصات الطلاب")}</h1>
         <p className="text-muted-foreground md:text-lg">{t("Share PDF summaries and like the best ones. Top likes rise to the top.", "شارك ملخصاتك مع زملائك وادعم الأفضل. الأكثر إعجاباً يتصدر.")}</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5" aria-live="polite">
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2 text-primary shadow-sm">
+            <FileText className="h-4 w-4" />
+            <span className="text-sm font-bold">
+              {loading ? "…" : rows.length} {t("available files", "ملف متاح")}
+            </span>
+          </div>
+          {pending.length > 0 && (
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-2 text-amber-600 dark:text-amber-300 shadow-sm">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-bold">
+                {pending.length} {t("pending", "قيد المراجعة")}
+              </span>
+            </div>
+          )}
+        </div>
       </header>
 
       <section ref={uploadPanelRef} className="max-w-3xl mx-auto mt-8 relative z-20 scroll-mt-8">
