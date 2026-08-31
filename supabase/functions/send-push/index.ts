@@ -168,20 +168,31 @@ Deno.serve(async (req) => {
     const targetUserIds = Array.isArray(body.target_user_ids)
       ? [...new Set(body.target_user_ids.map(String).filter(Boolean))].slice(0, 500)
       : [];
-    if (!title && !text) return json({ error: "Title or body is required" }, 400);
+    const personalizedMessages = Array.isArray(body.messages)
+      ? body.messages.slice(0, 500).map((message: any) => ({
+        user_id: String(message?.user_id ?? ""),
+        title: String(message?.title ?? "").slice(0, 200).trim(),
+        body: String(message?.body ?? "").slice(0, 3500).trim(),
+        link: message?.link ? String(message.link).slice(0, 500) : "/",
+      })).filter((message: { user_id: string; title: string; body: string }) =>
+        message.user_id && (message.title || message.body)
+      )
+      : [];
+    if (!title && !text && personalizedMessages.length === 0) return json({ error: "Title or body is required" }, 400);
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    let tokenQuery = admin.from("push_tokens").select("token");
+    let tokenQuery = admin.from("push_tokens").select("token, user_id");
     if (targetUserId) tokenQuery = tokenQuery.eq("user_id", targetUserId);
     else if (targetUserIds.length > 0) tokenQuery = tokenQuery.in("user_id", targetUserIds);
+    else if (personalizedMessages.length > 0) tokenQuery = tokenQuery.in("user_id", personalizedMessages.map((message: { user_id: string }) => message.user_id));
     const { data: tokenRows, error: tErr } = await tokenQuery;
     if (tErr) return json({ error: tErr.message }, 500);
 
-    const tokens = (tokenRows ?? []).map((r) => (r as { token: string }).token).filter(Boolean);
+    const tokens = (tokenRows ?? []) as Array<{ token: string; user_id: string }>;
     console.log(`send-push: found ${tokens.length} token(s)`);
     if (tokens.length === 0) {
       return json({ sent: 0, failed: 0, total: 0, reason: "no_tokens" });
@@ -193,10 +204,24 @@ Deno.serve(async (req) => {
     let failed = 0;
     const deadTokens: string[] = [];
 
-    for (const token of tokens) {
+    const deliveries = personalizedMessages.length > 0
+      ? tokens.flatMap((row) => personalizedMessages
+        .filter((message: { user_id: string }) => message.user_id === row.user_id)
+        .map((message: { title: string; body: string; link: string }) => ({ token: row.token, personalized: message })))
+      : tokens.map((row) => ({ token: row.token, personalized: undefined }));
+
+    for (const delivery of deliveries) {
+      const { token, personalized } = delivery;
       let ok = false;
       try {
-        ok = await sendFcm(accessToken, sa.project_id, token, title || "تميزك", text, link);
+        ok = await sendFcm(
+          accessToken,
+          sa.project_id,
+          token,
+          personalized?.title || title || "تميزك",
+          personalized?.body ?? text,
+          personalized?.link ?? link,
+        );
       } catch (e) {
         console.error("FCM send error", e instanceof Error ? e.message : e);
       }
@@ -212,15 +237,15 @@ Deno.serve(async (req) => {
 
     // Clean up invalid tokens so we don't keep retrying them.
     if (deadTokens.length > 0) {
-      await admin.from("push_tokens").delete().in("token", deadTokens);
+      await admin.from("push_tokens").delete().in("token", [...new Set(deadTokens)]);
     }
 
-    console.log(`send-push result: sent=${sent} failed=${failed} total=${tokens.length}`);
+    console.log(`send-push result: sent=${sent} failed=${failed} total=${deliveries.length}`);
     return json({
       sent,
       failed,
       cleaned: deadTokens.length,
-      total: tokens.length,
+      total: deliveries.length,
     });
   } catch (e) {
     console.error("send-push fatal:", e instanceof Error ? e.message : e);
