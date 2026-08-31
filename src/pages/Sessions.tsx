@@ -856,6 +856,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   const startSession = () => {
     if (!mission.trim()) { toast.error(language === "ar" ? "أدخل مهمتك" : "Type a mission first"); return; }
+    if (pomodoro) {
+      if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
+      if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
+    }
     setStarted(true);
     setRunning(true);
     setPhase("work");
@@ -1108,11 +1112,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                   type="number"
                   min={1}
                   max={180}
-                  value={pomodoroWorkMin}
+                  value={pomodoroWorkMin || ""}
                   onChange={(e) => {
+                    if (e.target.value === "") { setPomodoroWorkMin(0); return; }
                     const v = parseInt(e.target.value, 10);
-                    if (!isNaN(v)) setPomodoroWorkMin(Math.max(1, Math.min(180, v)));
+                    if (!isNaN(v)) setPomodoroWorkMin(Math.min(180, v));
                   }}
+                  onBlur={() => { if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN); }}
                   className="w-20 text-center"
                 />
               </label>
@@ -1122,11 +1128,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                   type="number"
                   min={1}
                   max={180}
-                  value={pomodoroRestMin}
+                  value={pomodoroRestMin || ""}
                   onChange={(e) => {
+                    if (e.target.value === "") { setPomodoroRestMin(0); return; }
                     const v = parseInt(e.target.value, 10);
-                    if (!isNaN(v)) setPomodoroRestMin(Math.max(1, Math.min(180, v)));
+                    if (!isNaN(v)) setPomodoroRestMin(Math.min(180, v));
                   }}
+                  onBlur={() => { if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN); }}
                   className="w-20 text-center"
                 />
               </label>
