@@ -313,19 +313,24 @@ const BottomGroupNav = ({
                     whileHover={{ scale: 1.06 }}
                     onClick={() => onGuide?.()}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
-                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-transparent"
+                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-visible rounded-full border-[5px] border-background bg-transparent"
                   >
-                    <video
-                      src={aiRoboVideo.url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="auto"
-                      aria-hidden="true"
-                      onCanPlay={(event) => { void event.currentTarget.play().catch(() => undefined); }}
-                      className="pointer-events-none h-full w-full scale-[1.28] object-cover mix-blend-screen"
-                    />
+                    <span className="absolute inset-0 overflow-hidden rounded-full">
+                      <video
+                        src={aiRoboVideo.url}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        aria-hidden="true"
+                        onCanPlay={(event) => { void event.currentTarget.play().catch(() => undefined); }}
+                        className="pointer-events-none h-full w-full scale-[1.28] object-cover mix-blend-screen"
+                      />
+                    </span>
+                    <span className="pointer-events-none absolute -bottom-4 whitespace-nowrap text-[10px] font-bold leading-none text-foreground">
+                      المرشد
+                    </span>
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
                     {right.map(renderGroup)}
