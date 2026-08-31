@@ -9,7 +9,7 @@ import {
   UserCog, Crown,
   Home, Palette, GraduationCap as CoursesIcon, Users2, Lock,
   Menu as MenuIcon, MessageCircle, LineChart, Compass, Moon,
-  ArrowLeft, X,
+  ArrowLeft, X, Bot,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -157,6 +157,31 @@ const BottomGroupNav = ({
   const navVisible = useNavVisibility();
   const [sheetGroup, setSheetGroup] = useState<string | null>(null);
   const [guideLottie, setGuideLottie] = useState<DotLottie | null>(null);
+  const [guideLottieSrc, setGuideLottieSrc] = useState<string | null>(null);
+  const [guideLottieLoaded, setGuideLottieLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const encoded = aiRoboLottie.url.split(",")[1];
+      if (!encoded) return;
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      const objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/zip" }));
+      setGuideLottieSrc(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } catch {
+      setGuideLottieSrc(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!guideLottie) return;
+    const markLoaded = () => setGuideLottieLoaded(true);
+    if (guideLottie.isLoaded) markLoaded();
+    else guideLottie.addEventListener("load", markLoaded);
+    return () => guideLottie.removeEventListener("load", markLoaded);
+  }, [guideLottie]);
 
   const fireGuideAnimation = (eventName: "thinkClick" | "jumpClick") => {
     try {
@@ -328,13 +353,16 @@ const BottomGroupNav = ({
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
                     className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
-                    <DotLottieReact
-                      src={aiRoboLottie.url}
-                      stateMachineId="StateMachine1"
-                      autoplay
-                      dotLottieRefCallback={setGuideLottie}
-                      className="pointer-events-none h-full w-full scale-[1.22]"
-                    />
+                    <Bot className={`absolute h-6 w-6 text-primary-foreground transition-opacity ${guideLottieLoaded ? "opacity-0" : "opacity-100"}`} />
+                    {guideLottieSrc && (
+                      <DotLottieReact
+                        src={guideLottieSrc}
+                        stateMachineId="StateMachine1"
+                        autoplay
+                        dotLottieRefCallback={setGuideLottie}
+                        className={`pointer-events-none h-full w-full scale-[1.22] transition-opacity ${guideLottieLoaded ? "opacity-100" : "opacity-0"}`}
+                      />
+                    )}
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
                     {right.map(renderGroup)}
