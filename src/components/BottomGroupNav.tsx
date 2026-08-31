@@ -14,7 +14,7 @@ import {
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
-import aiRoboLottie from "@/assets/ai-robo.lottie.asset.json";
+import aiRoboAnimation from "@/assets/ai-robo-animation.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -134,37 +134,7 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Menu: MenuIcon,
 };
 
-const extractAnimationFromDotLottie = async (encoded: string) => {
-  const binary = atob(encoded);
-  const archive = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  const view = new DataView(archive.buffer);
-  const decoder = new TextDecoder();
-  let offset = 0;
-
-  while (offset + 30 <= archive.length && view.getUint32(offset, true) === 0x04034b50) {
-    const compression = view.getUint16(offset + 8, true);
-    const compressedSize = view.getUint32(offset + 18, true);
-    const fileNameLength = view.getUint16(offset + 26, true);
-    const extraLength = view.getUint16(offset + 28, true);
-    const fileNameStart = offset + 30;
-    const dataStart = fileNameStart + fileNameLength + extraLength;
-    const fileName = decoder.decode(archive.subarray(fileNameStart, fileNameStart + fileNameLength));
-
-    if (fileName === "a/Main Scene.json") {
-      const compressed = archive.slice(dataStart, dataStart + compressedSize);
-      const jsonBytes = compression === 0
-        ? compressed
-        : new Uint8Array(await new Response(
-            new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw")),
-          ).arrayBuffer());
-      return URL.createObjectURL(new Blob([jsonBytes], { type: "application/json" }));
-    }
-
-    offset = dataStart + compressedSize;
-  }
-
-  throw new Error("AI robot animation was not found");
-};
+const AI_ROBO_ANIMATION_DATA = JSON.stringify(aiRoboAnimation);
 
 const BottomGroupNav = ({
   language, active, onSelect, onGuide,
@@ -189,28 +159,7 @@ const BottomGroupNav = ({
   const navVisible = useNavVisibility();
   const [sheetGroup, setSheetGroup] = useState<string | null>(null);
   const [guideLottie, setGuideLottie] = useState<DotLottie | null>(null);
-  const [guideLottieSrc, setGuideLottieSrc] = useState<string | null>(null);
   const [guideLottieLoaded, setGuideLottieLoaded] = useState(false);
-
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    let cancelled = false;
-    const encoded = aiRoboLottie.url.split(",")[1];
-    if (!encoded) return;
-
-    void extractAnimationFromDotLottie(encoded)
-      .then((url) => {
-        objectUrl = url;
-        if (cancelled) URL.revokeObjectURL(url);
-        else setGuideLottieSrc(url);
-      })
-      .catch(() => setGuideLottieSrc(null));
-
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, []);
 
   useEffect(() => {
     if (!guideLottie) return;
@@ -380,15 +329,13 @@ const BottomGroupNav = ({
                     className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
                     <Bot className={`absolute h-6 w-6 text-primary-foreground transition-opacity ${guideLottieLoaded ? "opacity-0" : "opacity-100"}`} />
-                    {guideLottieSrc && (
-                      <DotLottieReact
-                        src={guideLottieSrc}
-                        autoplay
-                        loop
-                        dotLottieRefCallback={setGuideLottie}
-                        className={`pointer-events-none h-full w-full scale-[1.22] transition-opacity ${guideLottieLoaded ? "opacity-100" : "opacity-0"}`}
-                      />
-                    )}
+                    <DotLottieReact
+                      data={AI_ROBO_ANIMATION_DATA}
+                      autoplay
+                      loop
+                      dotLottieRefCallback={setGuideLottie}
+                      className={`pointer-events-none h-full w-full scale-[1.22] transition-opacity ${guideLottieLoaded ? "opacity-100" : "opacity-0"}`}
+                    />
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
                     {right.map(renderGroup)}
