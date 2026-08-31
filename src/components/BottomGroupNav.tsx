@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
-import { unzipSync } from "fflate";
 import {
   Layers, Target, Users, Swords, ScrollText, Settings, BookOpen,
   NotebookPen, FileText, HelpCircle, Network, Headphones, Video, Youtube,
@@ -135,12 +134,36 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Menu: MenuIcon,
 };
 
-const extractAnimationFromDotLottie = (encoded: string) => {
+const extractAnimationFromDotLottie = async (encoded: string) => {
   const binary = atob(encoded);
   const archive = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  const jsonBytes = unzipSync(archive)["a/Main Scene.json"];
-  if (!jsonBytes) throw new Error("AI robot animation was not found");
-  return URL.createObjectURL(new Blob([jsonBytes], { type: "application/json" }));
+  const view = new DataView(archive.buffer);
+  const decoder = new TextDecoder();
+  let offset = 0;
+
+  while (offset + 30 <= archive.length && view.getUint32(offset, true) === 0x04034b50) {
+    const compression = view.getUint16(offset + 8, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    const fileNameLength = view.getUint16(offset + 26, true);
+    const extraLength = view.getUint16(offset + 28, true);
+    const fileNameStart = offset + 30;
+    const dataStart = fileNameStart + fileNameLength + extraLength;
+    const fileName = decoder.decode(archive.subarray(fileNameStart, fileNameStart + fileNameLength));
+
+    if (fileName === "a/Main Scene.json") {
+      const compressed = archive.slice(dataStart, dataStart + compressedSize);
+      const jsonBytes = compression === 0
+        ? compressed
+        : new Uint8Array(await new Response(
+            new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw")),
+          ).arrayBuffer());
+      return URL.createObjectURL(new Blob([jsonBytes], { type: "application/json" }));
+    }
+
+    offset = dataStart + compressedSize;
+  }
+
+  throw new Error("AI robot animation was not found");
 };
 
 const BottomGroupNav = ({
@@ -175,14 +198,13 @@ const BottomGroupNav = ({
     const encoded = aiRoboLottie.url.split(",")[1];
     if (!encoded) return;
 
-    try {
-      const url = extractAnimationFromDotLottie(encoded);
-      objectUrl = url;
-      if (cancelled) URL.revokeObjectURL(url);
-      else setGuideLottieSrc(url);
-    } catch {
-      setGuideLottieSrc(null);
-    }
+    void extractAnimationFromDotLottie(encoded)
+      .then((url) => {
+        objectUrl = url;
+        if (cancelled) URL.revokeObjectURL(url);
+        else setGuideLottieSrc(url);
+      })
+      .catch(() => setGuideLottieSrc(null));
 
     return () => {
       cancelled = true;
