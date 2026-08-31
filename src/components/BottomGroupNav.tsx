@@ -313,9 +313,9 @@ const BottomGroupNav = ({
                     whileHover={{ scale: 1.06 }}
                     onClick={() => onGuide?.()}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
-                    className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-visible rounded-full border-[5px] border-background bg-transparent"
+                    className="relative z-20 shrink-0 mx-1 h-16 w-16 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-transparent"
                   >
-                    <span className="absolute inset-0 overflow-hidden rounded-full">
+                    <span className="absolute inset-x-0 top-0 h-12 overflow-hidden rounded-t-full">
                       <video
                         src={aiRoboVideo.url}
                         autoPlay
@@ -325,10 +325,10 @@ const BottomGroupNav = ({
                         preload="auto"
                         aria-hidden="true"
                         onCanPlay={(event) => { void event.currentTarget.play().catch(() => undefined); }}
-                        className="pointer-events-none h-full w-full scale-[1.28] object-cover mix-blend-screen"
+                        className="pointer-events-none h-full w-full scale-[1.2] object-cover mix-blend-screen"
                       />
                     </span>
-                    <span className="pointer-events-none absolute -bottom-4 whitespace-nowrap text-[10px] font-bold leading-none text-foreground">
+                    <span className="pointer-events-none absolute inset-x-0 bottom-1 whitespace-nowrap text-center text-[9px] font-bold leading-none text-foreground">
                       المرشد
                     </span>
                   </motion.button>
