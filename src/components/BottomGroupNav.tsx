@@ -177,7 +177,16 @@ const BottomGroupNav = ({
 
   useEffect(() => {
     if (!guideLottie) return;
-    const markLoaded = () => setGuideLottieLoaded(true);
+    const markLoaded = () => {
+      setGuideLottieLoaded(true);
+      try {
+        guideLottie.stateMachineLoad("StateMachine1");
+        guideLottie.stateMachineStart();
+      } catch {
+        guideLottie.setLoop(true);
+        guideLottie.play();
+      }
+    };
     if (guideLottie.isLoaded) markLoaded();
     else guideLottie.addEventListener("load", markLoaded);
     return () => guideLottie.removeEventListener("load", markLoaded);
@@ -357,8 +366,8 @@ const BottomGroupNav = ({
                     {guideLottieSrc && (
                       <DotLottieReact
                         src={guideLottieSrc}
-                        stateMachineId="StateMachine1"
                         autoplay
+                        loop
                         dotLottieRefCallback={setGuideLottie}
                         className={`pointer-events-none h-full w-full scale-[1.22] transition-opacity ${guideLottieLoaded ? "opacity-100" : "opacity-0"}`}
                       />
