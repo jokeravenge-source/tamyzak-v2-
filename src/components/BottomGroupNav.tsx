@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import {
   Layers, Target, Users, Swords, ScrollText, Settings, BookOpen,
   NotebookPen, FileText, HelpCircle, Network, Headphones, Video, Youtube,
@@ -9,7 +9,7 @@ import {
   UserCog, Crown,
   Home, Palette, GraduationCap as CoursesIcon, Users2, Lock,
   Menu as MenuIcon, MessageCircle, LineChart, Compass, Moon,
-  ArrowLeft, X, Bot,
+  ArrowLeft, X,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -158,16 +158,6 @@ const BottomGroupNav = ({
   useEffect(() => { setPortalRoot(document.body); }, []);
   const navVisible = useNavVisibility();
   const [sheetGroup, setSheetGroup] = useState<string | null>(null);
-  const [guideLottie, setGuideLottie] = useState<DotLottie | null>(null);
-  const [guideLottieLoaded, setGuideLottieLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!guideLottie) return;
-    const markLoaded = () => setGuideLottieLoaded(true);
-    if (guideLottie.isLoaded) markLoaded();
-    else guideLottie.addEventListener("load", markLoaded);
-    return () => guideLottie.removeEventListener("load", markLoaded);
-  }, [guideLottie]);
 
   const currentGroup = NAV_GROUPS.find((g) => g.titleEn === activeGroup) ?? NAV_GROUPS[0];
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
@@ -328,13 +318,11 @@ const BottomGroupNav = ({
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
                     className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
-                    <Bot className={`absolute h-6 w-6 text-primary-foreground transition-opacity ${guideLottieLoaded ? "opacity-0" : "opacity-100"}`} />
                     <DotLottieReact
                       data={AI_ROBO_ANIMATION_DATA}
                       autoplay
                       loop
-                      dotLottieRefCallback={setGuideLottie}
-                      className={`pointer-events-none h-full w-full scale-[1.22] transition-opacity ${guideLottieLoaded ? "opacity-100" : "opacity-0"}`}
+                      className="pointer-events-none h-full w-full scale-[1.22]"
                     />
                   </motion.button>
                   <div className="relative z-10 flex min-w-0 flex-1 items-stretch gap-1">
