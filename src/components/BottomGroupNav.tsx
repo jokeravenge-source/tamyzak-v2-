@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
+import { unzipSync } from "fflate";
 import {
   Layers, Target, Users, Swords, ScrollText, Settings, BookOpen,
   NotebookPen, FileText, HelpCircle, Network, Headphones, Video, Youtube,
@@ -134,6 +135,14 @@ const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
   Menu: MenuIcon,
 };
 
+const extractAnimationFromDotLottie = (encoded: string) => {
+  const binary = atob(encoded);
+  const archive = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const jsonBytes = unzipSync(archive)["a/Main Scene.json"];
+  if (!jsonBytes) throw new Error("AI robot animation was not found");
+  return URL.createObjectURL(new Blob([jsonBytes], { type: "application/json" }));
+};
+
 const BottomGroupNav = ({
   language, active, onSelect, onGuide,
 }: {
@@ -161,42 +170,33 @@ const BottomGroupNav = ({
   const [guideLottieLoaded, setGuideLottieLoaded] = useState(false);
 
   useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    const encoded = aiRoboLottie.url.split(",")[1];
+    if (!encoded) return;
+
     try {
-      const encoded = aiRoboLottie.url.split(",")[1];
-      if (!encoded) return;
-      const binary = atob(encoded);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-      const objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/zip" }));
-      setGuideLottieSrc(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
+      const url = extractAnimationFromDotLottie(encoded);
+      objectUrl = url;
+      if (cancelled) URL.revokeObjectURL(url);
+      else setGuideLottieSrc(url);
     } catch {
       setGuideLottieSrc(null);
     }
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
   }, []);
 
   useEffect(() => {
     if (!guideLottie) return;
-    const markLoaded = () => {
-      setGuideLottieLoaded(true);
-      try {
-        guideLottie.stateMachineLoad("StateMachine1");
-        guideLottie.stateMachineStart();
-      } catch {
-        guideLottie.setLoop(true);
-        guideLottie.play();
-      }
-    };
+    const markLoaded = () => setGuideLottieLoaded(true);
     if (guideLottie.isLoaded) markLoaded();
     else guideLottie.addEventListener("load", markLoaded);
     return () => guideLottie.removeEventListener("load", markLoaded);
   }, [guideLottie]);
-
-  const fireGuideAnimation = (eventName: "thinkClick" | "jumpClick") => {
-    try {
-      guideLottie?.stateMachineFireEvent(eventName);
-    } catch { /* keep navigation responsive if animation playback fails */ }
-  };
 
   const currentGroup = NAV_GROUPS.find((g) => g.titleEn === activeGroup) ?? NAV_GROUPS[0];
   const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
@@ -353,12 +353,7 @@ const BottomGroupNav = ({
                     type="button"
                     whileTap={{ scale: 0.9 }}
                     whileHover={{ scale: 1.06 }}
-                    onMouseEnter={() => fireGuideAnimation("thinkClick")}
-                    onFocus={() => fireGuideAnimation("thinkClick")}
-                    onClick={() => {
-                      fireGuideAnimation("jumpClick");
-                      onGuide?.();
-                    }}
+                    onClick={() => onGuide?.()}
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
                     className="relative z-20 shrink-0 mx-1 h-14 w-14 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.5)]"
                   >
