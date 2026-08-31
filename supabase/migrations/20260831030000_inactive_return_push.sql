@@ -68,7 +68,14 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://mwksmqcthfwgvldgbggy.supabase.co/functions/v1/inactive-return-push',
-    headers := '{"Content-Type":"application/json"}'::jsonb,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || coalesce(
+        current_setting('app.settings.service_role_key', true),
+        (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1),
+        ''
+      )
+    ),
     body := '{}'::jsonb
   );
   $$
