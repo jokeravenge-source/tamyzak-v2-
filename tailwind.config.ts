@@ -64,6 +64,19 @@ export default {
         physics: "hsl(var(--physics))",
         chemistry: "hsl(var(--chemistry))",
         biology: "hsl(var(--biology))",
+        "board-green": {
+          DEFAULT: "var(--board-green)",
+          foreground: "var(--board-green-foreground)",
+          soft: "var(--board-green-soft)",
+        },
+        "board-white": "var(--board-white)",
+        "board-blue": "var(--board-blue)",
+        "board-blue-ink": "var(--board-blue-ink)",
+        "board-blue-line": "var(--board-blue-line)",
+        "board-accent": {
+          DEFAULT: "var(--board-accent)",
+          foreground: "var(--board-accent-foreground)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -76,6 +89,11 @@ export default {
         body: ["Inter", "system-ui", "sans-serif"],
         "body-ar": ["IBM Plex Sans Arabic", "Cairo", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        arabic: ["IBM Plex Sans Arabic", "Cairo", "Noto Sans Arabic", "sans-serif"],
+      },
+      boxShadow: {
+        soft: "0 1px 2px rgb(0 0 0 / 0.04), 0 4px 14px rgb(0 0 0 / 0.06)",
+        board: "0 6px 24px rgb(0 0 0 / 0.18)",
       },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
