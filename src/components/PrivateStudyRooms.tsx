@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Link2, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
+import StudentProfileDialog from "./StudentProfileDialog";
 
 type Room = { id: string; code: string; name: string; owner_id: string };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
@@ -43,6 +44,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const [isAdmin, setIsAdmin] = useState(false);
   const [bans, setBans] = useState<{ user_id: string; display_name: string | null }[]>([]);
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [openProfile, setOpenProfile] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const L = ar
@@ -532,25 +534,32 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
             const roomOwner = m.user_id === room.owner_id;
             return (
               <div key={m.user_id} className="flex flex-col items-center" style={{ width: 96 }}>
-                <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-[10px] font-medium max-w-[96px] truncate ${mine ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30"}`}>
-                  {mine ? (ar ? "أنت" : "You") : m.display_name}
-                </div>
-                <div className="relative">
-                  <CharacterAvatar gender={m.gender ?? "male"} traits={m.character ?? undefined} size={76} />
-                  {/* Wooden desk */}
-                  <div className="w-20 h-3 -mt-2 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />
-                  <div className="flex justify-between w-16 mx-auto">
-                    <div className="w-0.5 h-3 bg-primary/40" />
-                    <div className="w-0.5 h-3 bg-primary/40" />
+                <button
+                  type="button"
+                  onClick={() => setOpenProfile(m.user_id)}
+                  aria-label={ar ? `عرض ملف ${m.display_name}` : `View ${m.display_name}'s profile`}
+                  className="group flex flex-col items-center rounded-xl outline-none transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-[10px] font-medium max-w-[96px] truncate ${mine ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30 group-hover:border-primary/60"}`}>
+                    {mine ? (ar ? "أنت" : "You") : m.display_name}
                   </div>
-                </div>
-                {roomOwner && (
-                  <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
-                )}
-                <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${presence[m.user_id]?.is_running ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
-                  <Timer className="w-2.5 h-2.5" />
-                  {presence[m.user_id] ? fmtClock(presence[m.user_id].elapsed_seconds) : "--:--"}
-                </span>
+                  <div className="relative">
+                    <CharacterAvatar gender={m.gender ?? "male"} traits={m.character ?? undefined} size={76} />
+                    {/* Wooden desk */}
+                    <div className="w-20 h-3 -mt-2 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />
+                    <div className="flex justify-between w-16 mx-auto">
+                      <div className="w-0.5 h-3 bg-primary/40" />
+                      <div className="w-0.5 h-3 bg-primary/40" />
+                    </div>
+                  </div>
+                  {roomOwner && (
+                    <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
+                  )}
+                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${presence[m.user_id]?.is_running ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                    <Timer className="w-2.5 h-2.5" />
+                    {presence[m.user_id] ? fmtClock(presence[m.user_id].elapsed_seconds) : "--:--"}
+                  </span>
+                </button>
                 {isOwner && !mine && (
                   <div className="mt-1 flex flex-col items-center gap-0.5">
                     <button onClick={() => transferOwnership(m)} className="text-[10px] text-primary/90 hover:text-primary flex items-center gap-0.5">
@@ -643,6 +652,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
       </div>
 
       {children && <div className="mt-5 pt-5 border-t border-white/10">{children}</div>}
+      <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
     </section>
   );
 }
