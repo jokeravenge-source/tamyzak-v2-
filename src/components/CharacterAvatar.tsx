@@ -14,6 +14,7 @@ import girl5 from "@/assets/character-girl-5.png";
 import girl6 from "@/assets/character-girl-6.png";
 import girl7 from "@/assets/character-girl-7.png";
 import strawHat from "@/assets/straw-hat.png.asset.json";
+import redCap from "@/assets/red-cap.png.asset.json";
 
 export type Gender = "male" | "female";
 
@@ -31,7 +32,7 @@ export const LIPSTICK_COLORS = ["#dc2626", "#e11d48", "#be185d", "#9d174d", "#f4
 export const EYESHADOW_COLORS = ["#a855f7", "#ec4899", "#06b6d4", "#10b981", "#f59e0b", "#6366f1"] as const;
 export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ffffff", "#f59e0b"] as const;
 export type NecklaceKind = "gold" | "pearl" | null;
-export type HatKind = "straw" | null;
+export type HatKind = "straw" | "red-cap" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -124,6 +125,26 @@ export function CharacterAvatar({
             top: "-15%",
             left: "50%",
             width: "70%",
+            height: "auto",
+            transform: "translateX(-50%)",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {hat === "red-cap" && (
+        <img
+          src={redCap.url}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 3,
+            top: "-12%",
+            left: "50%",
+            width: "63%",
             height: "auto",
             transform: "translateX(-50%)",
             imageRendering: "pixelated",
