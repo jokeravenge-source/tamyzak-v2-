@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity } from "lucide-react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const PARENT_INPUT = "h-12 w-full rounded-xl border border-border bg-background/80 px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
 
 
 type Snapshot = {
@@ -21,6 +22,8 @@ type Snapshot = {
   today_per_subject?: Record<string, { minutes: number; sessions: number; missions: number }>;
   tools_used_today?: Array<{ feature: string; count: number }>;
   questions_solved_today?: number;
+  parent_scores?: Array<{ id: string; subject: string; title: string; score: number; max_score: number; note: string | null; created_at: string }>;
+  parent_notes?: Array<{ id: string; note_text: string; created_at: string }>;
 };
 
 const TOOL_LABELS: Record<string, string> = {
@@ -46,6 +49,11 @@ export default function ParentFollow({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "scores" | "notes">("overview");
+  const [savingEntry, setSavingEntry] = useState(false);
+  const [entryMessage, setEntryMessage] = useState<string | null>(null);
+  const [scoreForm, setScoreForm] = useState({ subject: "", title: "", score: "", maxScore: "100", note: "" });
+  const [noteText, setNoteText] = useState("");
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
@@ -137,6 +145,29 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(true);
     await fetchSnapshot();
     setRefreshing(false);
+  };
+
+  const saveParentEntry = async (action: "add_score" | "add_note", payload: Record<string, unknown>) => {
+    setSavingEntry(true);
+    setEntryMessage(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/parent-follow-view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        body: JSON.stringify({ token, code, action, payload }),
+      });
+      const next = await res.json().catch(() => null);
+      if (!res.ok || next?.error) throw new Error(next?.error ?? "save_failed");
+      setData(next as Snapshot);
+      setLastUpdated(new Date());
+      setEntryMessage(action === "add_score" ? "Score added successfully." : "Note added successfully.");
+      if (action === "add_score") setScoreForm({ subject: "", title: "", score: "", maxScore: "100", note: "" });
+      else setNoteText("");
+    } catch {
+      setEntryMessage("Could not save. Please check the values and try again.");
+    } finally {
+      setSavingEntry(false);
+    }
   };
 
   const PARCHMENT = "relative min-h-screen overflow-hidden bg-background text-foreground";
@@ -249,7 +280,25 @@ export default function ParentFollow({ token }: { token: string }) {
           <Measure icon={CalendarDays} tone="cyan" label="Days to exam" value={data.days_to_exam != null ? `${data.days_to_exam}` : "—"} />
         </section>
 
-        <div className="space-y-6 md:space-y-8">
+        <nav className="mb-6 grid grid-cols-3 gap-1.5 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
+          {([
+            ["overview", "Overview", Activity],
+            ["scores", "Scores", Award],
+            ["notes", "Notes", NotebookPen],
+          ] as const).map(([key, label, Icon]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => { setActiveTab(key); setEntryMessage(null); }}
+              aria-current={activeTab === key ? "page" : undefined}
+              className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl text-xs font-bold transition sm:text-sm ${activeTab === key ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            >
+              <Icon className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </nav>
+
+        {activeTab === "overview" && <div className="space-y-6 md:space-y-8">
           {/* Today's activity */}
           <Panel icon={Wrench} title="Today's activity">
             <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -360,7 +409,64 @@ export default function ParentFollow({ token }: { token: string }) {
             <GraduationCap className="w-3 h-3 inline-block mb-0.5 me-1.5" />
             Tamyzak parent view
           </p>
-        </div>
+        </div>}
+
+        {activeTab === "scores" && (
+          <div className="space-y-6">
+            <Panel icon={Award} title="Add a student score">
+              <form
+                className="grid gap-4 sm:grid-cols-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void saveParentEntry("add_score", {
+                    subject: scoreForm.subject,
+                    title: scoreForm.title,
+                    score: Number(scoreForm.score),
+                    max_score: Number(scoreForm.maxScore),
+                    note: scoreForm.note,
+                  });
+                }}
+              >
+                <Field label="Subject"><input required maxLength={80} value={scoreForm.subject} onChange={(e) => setScoreForm((v) => ({ ...v, subject: e.target.value }))} placeholder="e.g. Physics" className={PARENT_INPUT} /></Field>
+                <Field label="Exam or assignment"><input required maxLength={120} value={scoreForm.title} onChange={(e) => setScoreForm((v) => ({ ...v, title: e.target.value }))} placeholder="e.g. Chapter 2 quiz" className={PARENT_INPUT} /></Field>
+                <Field label="Score"><input required type="number" min="0" step="0.01" value={scoreForm.score} onChange={(e) => setScoreForm((v) => ({ ...v, score: e.target.value }))} placeholder="85" className={PARENT_INPUT} /></Field>
+                <Field label="Out of"><input required type="number" min="0.01" step="0.01" value={scoreForm.maxScore} onChange={(e) => setScoreForm((v) => ({ ...v, maxScore: e.target.value }))} className={PARENT_INPUT} /></Field>
+                <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-bold text-muted-foreground">Comment (optional)</span><textarea maxLength={500} rows={3} value={scoreForm.note} onChange={(e) => setScoreForm((v) => ({ ...v, note: e.target.value }))} placeholder="Add feedback about this result…" className={`${PARENT_INPUT} h-auto py-3`} /></label>
+                <button disabled={savingEntry} className="sm:col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">
+                  {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add score
+                </button>
+              </form>
+              {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
+            </Panel>
+
+            <Panel icon={Trophy} title="Score history">
+              {!data.parent_scores?.length ? <EmptyState icon={Award} text="No scores added yet." /> : (
+                <ul className="space-y-3">{data.parent_scores.map((item) => {
+                  const pct = Math.round((Number(item.score) / Number(item.max_score)) * 100);
+                  return <li key={item.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.subject} · {new Date(item.created_at).toLocaleDateString()}</p></div><div className="shrink-0 text-end"><p className="font-mono text-xl font-black text-indigo-600 dark:text-indigo-300">{item.score}/{item.max_score}</p><p className="text-[10px] font-bold text-muted-foreground">{pct}%</p></div></div>{item.note && <p className="mt-3 rounded-xl bg-background/70 p-3 text-sm text-muted-foreground">{item.note}</p>}</li>;
+                })}</ul>
+              )}
+            </Panel>
+          </div>
+        )}
+
+        {activeTab === "notes" && (
+          <div className="space-y-6">
+            <Panel icon={NotebookPen} title="Notes">
+              <form onSubmit={(event) => { event.preventDefault(); void saveParentEntry("add_note", { note_text: noteText }); }}>
+                <label><span className="mb-1.5 block text-xs font-bold text-muted-foreground">New note about the student</span><textarea required maxLength={1000} rows={5} value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Write an observation, encouragement, or reminder…" className={`${PARENT_INPUT} h-auto py-3`} /></label>
+                <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>Saved privately for this follow-up link</span><span>{noteText.length}/1000</span></div>
+                <button disabled={savingEntry || !noteText.trim()} className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">
+                  {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add note
+                </button>
+              </form>
+              {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
+            </Panel>
+            <Panel icon={ListChecks} title="Previous notes">
+              {!data.parent_notes?.length ? <EmptyState icon={NotebookPen} text="No parent notes yet." /> : <ul className="space-y-3">{data.parent_notes.map((item) => <li key={item.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed">{item.note_text}</p><p className="mt-3 text-[10px] font-semibold text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></li>)}</ul>}
+            </Panel>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -427,4 +533,12 @@ function Section({ title, items }: { title: string; items: string[] }) {
       </ul>
     </div>
   );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label><span className="mb-1.5 block text-xs font-bold text-muted-foreground">{label}</span>{children}</label>;
+}
+
+function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {
+  return <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-7 text-center"><Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" /><p className="text-sm font-semibold text-muted-foreground">{text}</p></div>;
 }
