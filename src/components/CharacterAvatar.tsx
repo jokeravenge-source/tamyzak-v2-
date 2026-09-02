@@ -13,6 +13,7 @@ import girl4 from "@/assets/character-girl-4.png";
 import girl5 from "@/assets/character-girl-5.png";
 import girl6 from "@/assets/character-girl-6.png";
 import girl7 from "@/assets/character-girl-7.png";
+import strawHat from "@/assets/straw-hat.png.asset.json";
 
 export type Gender = "male" | "female";
 
@@ -30,6 +31,7 @@ export const LIPSTICK_COLORS = ["#dc2626", "#e11d48", "#be185d", "#9d174d", "#f4
 export const EYESHADOW_COLORS = ["#a855f7", "#ec4899", "#06b6d4", "#10b981", "#f59e0b", "#6366f1"] as const;
 export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ffffff", "#f59e0b"] as const;
 export type NecklaceKind = "gold" | "pearl" | null;
+export type HatKind = "straw" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -43,6 +45,7 @@ export type CharacterTraits = {
   muscle?: boolean;
   headband?: string | null;
   necklace?: NecklaceKind;
+  hat?: HatKind;
   variant?: CharacterVariant;
 };
 
@@ -59,6 +62,7 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
     muscle: false,
     headband: null,
     necklace: null,
+    hat: null,
     variant: 1,
   };
 }
@@ -80,6 +84,7 @@ export function CharacterAvatar({
   const idx = Math.max(0, Math.min(MALE_VARIANTS.length - 1, variant - 1));
   const src = g === "female" ? FEMALE_VARIANTS[idx] : MALE_VARIANTS[idx];
   const hasCrown = traits?.accessory === "crown";
+  const hat = traits?.hat ?? null;
   const skin = traits?.skin ?? SKIN_COLORS[0];
   const tinted = useSkinTinted(src, skin);
   return (
@@ -107,7 +112,27 @@ export function CharacterAvatar({
         }}
         draggable={false}
       />
-      {hasCrown && (
+      {hat === "straw" && (
+        <img
+          src={strawHat.url}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 3,
+            top: "-5%",
+            left: "50%",
+            width: "55%",
+            height: "auto",
+            transform: "translateX(-50%)",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {hasCrown && !hat && (
         <span
           aria-hidden
           style={{
