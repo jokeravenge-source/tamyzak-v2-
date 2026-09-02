@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award, FileDown, BarChart3 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -22,6 +22,8 @@ type Snapshot = {
   today_per_subject?: Record<string, { minutes: number; sessions: number; missions: number }>;
   tools_used_today?: Array<{ feature: string; count: number }>;
   questions_solved_today?: number;
+  weekly_days?: Array<{ date: string; minutes: number; sessions: number; missions: number; points: number; questions: number; tools: number; todo_done: number; todo_total: number; subjects: Record<string, number> }>;
+  weekly_subjects?: Array<{ subject: string; minutes: number }>;
   parent_scores?: Array<{ id: string; subject: string; title: string; score: number; max_score: number; note: string | null; created_at: string }>;
   parent_notes?: Array<{ id: string; note_text: string; created_at: string }>;
 };
@@ -49,7 +51,9 @@ export default function ParentFollow({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "scores" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "report" | "scores" | "notes">("overview");
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const weeklyReportRef = useRef<HTMLDivElement>(null);
   const [savingEntry, setSavingEntry] = useState(false);
   const [entryMessage, setEntryMessage] = useState<string | null>(null);
   const [scoreForm, setScoreForm] = useState({ subject: "", title: "", score: "", maxScore: "100", note: "" });
@@ -170,6 +174,46 @@ export default function ParentFollow({ token }: { token: string }) {
     }
   };
 
+  const exportWeeklyPdf = async () => {
+    const node = weeklyReportRef.current;
+    if (!node || !data) return;
+    setExportingPdf(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(node, {
+        backgroundColor: "#f8fafc",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: Math.max(node.scrollWidth, 900),
+      });
+      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const imageWidth = pageWidth - margin * 2;
+      const imageHeight = (canvas.height * imageWidth) / canvas.width;
+      const printableHeight = pageHeight - margin * 2;
+      const image = canvas.toDataURL("image/jpeg", 0.94);
+      let offset = 0;
+      do {
+        if (offset > 0) pdf.addPage();
+        pdf.addImage(image, "JPEG", margin, margin - offset, imageWidth, imageHeight, undefined, "FAST");
+        offset += printableHeight;
+      } while (offset < imageHeight);
+      const safeName = data.student_name.replace(/[^\p{L}\p{N}_-]+/gu, "-");
+      pdf.save(`${safeName || "student"}-weekly-report.pdf`);
+    } catch (error) {
+      console.error("Weekly report PDF export failed", error);
+      setEntryMessage("The PDF could not be created. Please try again.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const PARCHMENT = "relative min-h-screen overflow-hidden bg-background text-foreground";
   const FONT_STYLE = { fontFamily: "Inter, 'IBM Plex Sans Arabic', system-ui, sans-serif" };
 
@@ -244,6 +288,16 @@ export default function ParentFollow({ token }: { token: string }) {
   const todoDone = data.todays_todos?.filter((todo) => todo.done).length ?? 0;
   const todoPct = todoTotal ? Math.round((todoDone / todoTotal) * 100) : 0;
   const weekMinutes = data.last_7_days.reduce((sum, day) => sum + day.minutes, 0);
+  const weeklyDays = data.weekly_days ?? data.last_7_days.map((day) => ({ ...day, sessions: 0, missions: 0, points: 0, questions: 0, tools: 0, todo_done: 0, todo_total: 0, subjects: {} }));
+  const weekSessions = weeklyDays.reduce((sum, day) => sum + day.sessions, 0);
+  const weekMissions = weeklyDays.reduce((sum, day) => sum + day.missions, 0);
+  const weekQuestions = weeklyDays.reduce((sum, day) => sum + day.questions, 0);
+  const weekTodoDone = weeklyDays.reduce((sum, day) => sum + day.todo_done, 0);
+  const weekTodoTotal = weeklyDays.reduce((sum, day) => sum + day.todo_total, 0);
+  const weeklyGoalMinutes = Math.max(0, Number(data.weekly_goal_hours ?? 0) * 60);
+  const weeklyGoalPct = weeklyGoalMinutes ? Math.min(100, Math.round((weekMinutes / weeklyGoalMinutes) * 100)) : null;
+  const reportStart = weeklyDays[0]?.date;
+  const reportEnd = weeklyDays[weeklyDays.length - 1]?.date;
 
   return (
     <main className={PARCHMENT} style={FONT_STYLE}>
@@ -280,9 +334,10 @@ export default function ParentFollow({ token }: { token: string }) {
           <Measure icon={CalendarDays} tone="cyan" label="Days to exam" value={data.days_to_exam != null ? `${data.days_to_exam}` : "—"} />
         </section>
 
-        <nav className="mb-6 grid grid-cols-3 gap-1.5 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
+        <nav className="mb-6 grid grid-cols-4 gap-1.5 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
           {([
             ["overview", "Overview", Activity],
+            ["report", "Weekly", BarChart3],
             ["scores", "Scores", Award],
             ["notes", "Notes", NotebookPen],
           ] as const).map(([key, label, Icon]) => (
@@ -411,6 +466,45 @@ export default function ParentFollow({ token }: { token: string }) {
           </p>
         </div>}
 
+        {activeTab === "report" && (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-extrabold">Complete weekly report</p>
+                <p className="mt-1 text-xs text-muted-foreground">Review the full week, then save or print a polished PDF copy.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void exportWeeklyPdf()}
+                disabled={exportingPdf}
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:opacity-60"
+              >
+                {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                {exportingPdf ? "Creating PDF…" : "Download PDF"}
+              </button>
+            </div>
+            {entryMessage && <p className="text-center text-xs font-semibold text-destructive">{entryMessage}</p>}
+            <WeeklyReport
+              reportRef={weeklyReportRef}
+              studentName={data.student_name}
+              parentName={data.parent_name}
+              days={weeklyDays}
+              subjects={data.weekly_subjects ?? []}
+              totalMinutes={weekMinutes}
+              sessions={weekSessions}
+              missions={weekMissions}
+              questions={weekQuestions}
+              todoDone={weekTodoDone}
+              todoTotal={weekTodoTotal}
+              goalHours={data.weekly_goal_hours}
+              goalPct={weeklyGoalPct}
+              startDate={reportStart}
+              endDate={reportEnd}
+              scores={data.parent_scores ?? []}
+            />
+          </div>
+        )}
+
         {activeTab === "scores" && (
           <div className="space-y-6">
             <Panel icon={Award} title="Add a student score">
@@ -470,6 +564,156 @@ export default function ParentFollow({ token }: { token: string }) {
       </div>
     </main>
   );
+}
+
+type WeeklyDay = NonNullable<Snapshot["weekly_days"]>[number];
+
+function WeeklyReport({
+  reportRef, studentName, parentName, days, subjects, totalMinutes, sessions, missions, questions,
+  todoDone, todoTotal, goalHours, goalPct, startDate, endDate, scores,
+}: {
+  reportRef: React.RefObject<HTMLDivElement>;
+  studentName: string;
+  parentName: string | null;
+  days: WeeklyDay[];
+  subjects: Array<{ subject: string; minutes: number }>;
+  totalMinutes: number;
+  sessions: number;
+  missions: number;
+  questions: number;
+  todoDone: number;
+  todoTotal: number;
+  goalHours: number | null;
+  goalPct: number | null;
+  startDate?: string;
+  endDate?: string;
+  scores: NonNullable<Snapshot["parent_scores"]>;
+}) {
+  const strongestDay = days.reduce<WeeklyDay | null>((best, day) => !best || day.minutes > best.minutes ? day : best, null);
+  const maxDayMinutes = Math.max(1, ...days.map((day) => day.minutes));
+  const maxSubjectMinutes = Math.max(1, ...subjects.map((subject) => subject.minutes));
+  const dateLabel = (date?: string, options?: Intl.DateTimeFormatOptions) => date
+    ? new Date(`${date}T12:00:00`).toLocaleDateString(undefined, options ?? { day: "numeric", month: "short", year: "numeric" })
+    : "—";
+  const periodScores = scores.filter((score) => {
+    const date = score.created_at.slice(0, 10);
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  });
+
+  return (
+    <div ref={reportRef} className="overflow-hidden rounded-[1.75rem] shadow-xl" style={{ background: "#f8fafc", color: "#172033", fontFamily: "Inter, Arial, sans-serif" }}>
+      <header className="relative overflow-hidden px-6 py-7 sm:px-9 sm:py-9" style={{ background: "linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #8b5cf6 100%)", color: "#ffffff" }}>
+        <div className="absolute -right-12 -top-14 h-44 w-44 rounded-full" style={{ border: "28px solid rgba(255,255,255,.09)" }} />
+        <div className="relative flex items-start justify-between gap-6">
+          <div>
+            <div className="mb-4 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em]" style={{ background: "rgba(255,255,255,.14)", color: "#ffffff" }}>Tamyzak · Parent follow-up</div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "#ddd6fe" }}>Weekly progress report</p>
+            <h2 className="mt-1 text-3xl font-black sm:text-4xl" style={{ color: "#ffffff" }}>{studentName}</h2>
+            <p className="mt-2 text-xs" style={{ color: "#ede9fe" }}>{dateLabel(startDate)} — {dateLabel(endDate)}</p>
+          </div>
+          <div className="rounded-2xl px-4 py-3 text-right" style={{ background: "rgba(255,255,255,.12)" }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: "#ddd6fe" }}>Prepared for</p>
+            <p className="mt-1 text-sm font-black" style={{ color: "#ffffff" }}>{parentName || "Parent / guardian"}</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="space-y-6 p-5 sm:p-8">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ReportMetric label="Study time" value={formatMinutes(totalMinutes)} color="#4f46e5" background="#eef2ff" />
+          <ReportMetric label="Sessions" value={String(sessions)} color="#7c3aed" background="#f5f3ff" />
+          <ReportMetric label="Missions completed" value={String(missions)} color="#059669" background="#ecfdf5" />
+          <ReportMetric label="Questions / tools" value={String(questions)} color="#0284c7" background="#f0f9ff" />
+        </section>
+
+        <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-base font-black">Study activity by day</p>
+              <p className="mt-1 text-xs" style={{ color: "#64748b" }}>A complete view of the student's last seven days</p>
+            </div>
+            {strongestDay && strongestDay.minutes > 0 && <span className="rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: "#ecfdf5", color: "#047857" }}>Best day: {dateLabel(strongestDay.date, { weekday: "long" })}</span>}
+          </div>
+          <div className="grid grid-cols-7 items-end gap-2" style={{ height: 170 }}>
+            {days.map((day) => (
+              <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
+                <span className="text-[9px] font-black" style={{ color: "#475569" }}>{day.minutes}</span>
+                <div className="w-full max-w-12 rounded-t-lg" style={{ minHeight: 3, height: `${Math.max(2, (day.minutes / maxDayMinutes) * 112)}px`, background: "linear-gradient(180deg,#a78bfa,#4f46e5)" }} />
+                <span className="text-[9px] font-bold" style={{ color: "#64748b" }}>{dateLabel(day.date, { weekday: "short" })}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-5 sm:grid-cols-2">
+          <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+            <p className="mb-4 text-sm font-black">Time by subject</p>
+            {subjects.length ? <div className="space-y-3">{subjects.slice(0, 8).map((subject) => (
+              <div key={subject.subject}>
+                <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]"><span className="truncate font-bold capitalize">{subject.subject}</span><span className="font-black" style={{ color: "#4f46e5" }}>{formatMinutes(subject.minutes)}</span></div>
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: "#eef2f7" }}><div className="h-full rounded-full" style={{ width: `${Math.max(3, (subject.minutes / maxSubjectMinutes) * 100)}%`, background: "linear-gradient(90deg,#4f46e5,#8b5cf6)" }} /></div>
+              </div>
+            ))}</div> : <ReportEmpty>No subject activity recorded this week.</ReportEmpty>}
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+              <div className="flex items-center justify-between gap-3"><p className="text-sm font-black">Weekly goal</p><span className="text-lg font-black" style={{ color: "#7c3aed" }}>{goalPct == null ? "—" : `${goalPct}%`}</span></div>
+              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>{goalHours ? `${formatMinutes(totalMinutes)} of ${goalHours} hours` : "No weekly goal has been set."}</p>
+              <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: "#ede9fe" }}><div className="h-full rounded-full" style={{ width: `${goalPct ?? 0}%`, background: "linear-gradient(90deg,#7c3aed,#a855f7)" }} /></div>
+            </div>
+            <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+              <div className="flex items-center justify-between gap-3"><p className="text-sm font-black">Planned tasks</p><span className="text-lg font-black" style={{ color: "#059669" }}>{todoDone}/{todoTotal}</span></div>
+              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>{todoTotal ? `${Math.round((todoDone / todoTotal) * 100)}% of the week's planned work completed` : "No tasks were planned for this week."}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+          <p className="mb-4 text-sm font-black">Daily details</p>
+          <div className="space-y-2">{days.map((day) => (
+            <div key={day.date} className="grid grid-cols-[1.25fr_repeat(4,.75fr)] items-center gap-2 rounded-xl px-3 py-3 text-[10px]" style={{ background: day.minutes ? "#f5f3ff" : "#f8fafc" }}>
+              <div><p className="font-black">{dateLabel(day.date, { weekday: "long" })}</p><p className="mt-0.5" style={{ color: "#64748b" }}>{dateLabel(day.date, { day: "numeric", month: "short" })}</p></div>
+              <DailyValue label="Study" value={formatMinutes(day.minutes)} />
+              <DailyValue label="Sessions" value={String(day.sessions)} />
+              <DailyValue label="Missions" value={String(day.missions)} />
+              <DailyValue label="Tasks" value={`${day.todo_done}/${day.todo_total}`} />
+            </div>
+          ))}</div>
+        </section>
+
+        {periodScores.length > 0 && <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
+          <p className="mb-4 text-sm font-black">Scores added this week</p>
+          <div className="grid gap-2 sm:grid-cols-2">{periodScores.map((score) => <div key={score.id} className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: "#fffbeb" }}><div><p className="text-xs font-black">{score.title}</p><p className="mt-0.5 text-[9px]" style={{ color: "#78716c" }}>{score.subject}</p></div><p className="text-lg font-black" style={{ color: "#d97706" }}>{score.score}/{score.max_score}</p></div>)}</div>
+        </section>}
+
+        <footer className="flex items-center justify-between border-t pt-4 text-[9px]" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>
+          <span>Generated from the student's verified Tamyzak activity</span>
+          <span>Generated {new Date().toLocaleDateString()}</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function ReportMetric({ label, value, color, background }: { label: string; value: string; color: string; background: string }) {
+  return <div className="rounded-2xl p-4" style={{ background }}><p className="text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: "#64748b" }}>{label}</p><p className="mt-2 text-xl font-black" style={{ color }}>{value}</p></div>;
+}
+
+function DailyValue({ label, value }: { label: string; value: string }) {
+  return <div className="text-center"><p className="font-black" style={{ color: "#334155" }}>{value}</p><p className="mt-0.5 text-[8px]" style={{ color: "#94a3b8" }}>{label}</p></div>;
+}
+
+function ReportEmpty({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-xl border border-dashed p-5 text-center text-xs" style={{ borderColor: "#cbd5e1", color: "#64748b" }}>{children}</div>;
+}
+
+function formatMinutes(minutes: number) {
+  const safe = Math.max(0, Math.round(minutes || 0));
+  if (safe < 60) return `${safe} min`;
+  const hours = Math.floor(safe / 60);
+  const remainder = safe % 60;
+  return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
 }
 
 const MEASURE_TONES = {
