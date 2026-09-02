@@ -3,7 +3,7 @@ import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
-  LogOut, Bell, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
+  LogOut, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
   Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
   Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
 } from "lucide-react";
@@ -170,7 +170,6 @@ const copy = {
   },
 } as const;
 
-type Notif = { id: string; title: string; body: string; link: string | null; created_at: string };
 
 type NavItem = {
   key: MainMenuChoice;
@@ -411,36 +410,9 @@ const Basics = ({
   const heroProgressTotal = todoTotal > 0 ? todoTotal : missionsTotal;
   const heroProgressPct = heroProgressTotal ? Math.min(100, Math.round((heroProgressDone / heroProgressTotal) * 100)) : 0;
 
-  const READ_KEY = "notif_read_ids_v1";
-  const [notifs, setNotifs] = useState<Notif[]>([]);
-  const [readIds, setReadIds] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem(READ_KEY) || "[]"); } catch { return []; }
-  });
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(10);
-      setNotifs((data ?? []) as Notif[]);
-    };
-    load();
-    // Cost: no always-on realtime channel here. Notifications refresh when the
-    // tab becomes visible again — new items still show up without a reload.
-    const onVisible = () => { if (!document.hidden) load(); };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, []);
-  const unread = notifs.filter((n) => !readIds.includes(n.id));
-  const dismiss = (id: string) => {
-    const next = [...readIds, id];
-    setReadIds(next);
-    localStorage.setItem(READ_KEY, JSON.stringify(next));
-  };
   const signOut = async () => { await supabase.auth.signOut(); };
 
-  // Today's pending tasks (todos in localStorage) + unread notifs → quick badge
+  // Today's pending tasks (todos in localStorage) → quick badge
   const [pendingTodos, setPendingTodos] = useState<number>(() => {
     try {
       const arr = JSON.parse(localStorage.getItem("app_todos_v1") || "[]");
@@ -1146,59 +1118,6 @@ const Basics = ({
               })}
             </div>
           </section>
-
-          {/* Unread notifications — horizontal scroll list */}
-          {unread.length > 0 && (
-            <div className="mb-6">
-              <div
-                className="flex flex-row flex-nowrap gap-4 overflow-x-auto overflow-y-hidden pb-3 snap-x snap-mandatory scroll-smooth -mx-1 px-1"
-                style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" }}
-              >
-                {unread.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => onNav("news")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("news"); } }}
-                    className="group relative snap-start shrink-0 w-[18rem] sm:w-[20rem] h-36 overflow-hidden rounded-2xl border border-primary/30 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-glow)]"
-                    style={{ background: "var(--gradient-primary)" }}
-                  >
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none"
-                      style={{
-                        backgroundImage:
-                          "radial-gradient(circle at 80% 20%, hsl(var(--primary-foreground) / 0.35) 0%, transparent 45%), radial-gradient(circle at 10% 90%, hsl(var(--accent) / 0.35) 0%, transparent 50%)",
-                      }}
-                    />
-                    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/20 to-transparent pointer-events-none" />
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
-                      aria-label="Dismiss"
-                      className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-background/40 backdrop-blur flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground hover:bg-background/70 transition"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-
-                    <div className="absolute top-3 left-3 z-10 w-10 h-10 rounded-xl bg-background/30 backdrop-blur-md ring-1 ring-primary-foreground/30 flex items-center justify-center">
-                      <Bell className="w-5 h-5 text-primary-foreground" />
-                    </div>
-
-                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10">
-                      <h3 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h3>
-                      {n.body && (
-                        <p className="text-xs text-primary-foreground/85 mt-0.5 whitespace-pre-wrap line-clamp-2 leading-relaxed drop-shadow">
-                          {n.body}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Countdown — quiet inline strip */}
           {showTimer && (
