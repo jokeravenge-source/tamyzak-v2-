@@ -732,9 +732,9 @@ const Basics = ({
               className="relative inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
             >
               <Target className="w-3.5 h-3.5" />
-              <span>{pendingTodos + unread.length}</span>
+              <span>{pendingTodos + dueMistakes}</span>
               <span className="hidden sm:inline opacity-80">{language === "ar" ? "لليوم" : "today"}</span>
-              {(pendingTodos + unread.length) > 0 && (
+              {(pendingTodos + dueMistakes) > 0 && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
               )}
             </button>
