@@ -910,7 +910,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         });
       } catch { /* points can be reconciled later; the session is saved */ }
     }
-    toast.success(`${L.saved} (+${points} ${L.points})`);
+    toast.success(`${L.saved} (+${points} ${L.points})`, {\n      description: `${L.finalTime}: ${fmt(durationSeconds)}`,\n    });
     try { localStorage.setItem("session_completed_today_v1", new Date().toISOString().slice(0,10)); } catch {}
     setStarted(false); setSeconds(0); setMission(""); setCompleted(false);
     localStorage.removeItem(PERSIST_KEY);
@@ -937,7 +937,26 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   };
 
   const confirmSave = async (removeMinutes = 0) => {
-    const adjustedSeconds = Math.max(0, seconds - Math.floor(removeMinutes * 60));
+    // Freeze the adjusted value everywhere before the async insert starts.
+    // This prevents a stale timer tick/localStorage flush from restoring or
+    // saving the original duration while the edited session is in flight.
+    const baseSeconds = secondsRef.current;
+    const adjustedSeconds = Math.max(0, baseSeconds - Math.floor(removeMinutes * 60));
+    setSeconds(adjustedSeconds);
+    secondsRef.current = adjustedSeconds;
+    accumulatedRef.current = adjustedSeconds;
+    resumeAtRef.current = 0;
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        subject: subjectRef.current,
+        mission: missionRef.current,
+        completed: completedRef.current,
+        started: true,
+        running: false,
+        startedAt: null,
+        accumulated: adjustedSeconds,
+      }));
+    } catch { /* storage is best-effort; database save still continues */ }
     setSaveOpen(false);
     setEditingSaveTime(false);
     setMinutesToRemove("");
