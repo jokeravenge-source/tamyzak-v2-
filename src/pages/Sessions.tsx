@@ -910,7 +910,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         });
       } catch { /* points can be reconciled later; the session is saved */ }
     }
-    toast.success(`${L.saved} (+${points} ${L.points})`, {\n      description: `${L.finalTime}: ${fmt(durationSeconds)}`,\n    });
+    toast.success(`${L.saved} (+${points} ${L.points})`, {
+      description: `${L.finalTime}: ${fmt(durationSeconds)}`,
+    });
     try { localStorage.setItem("session_completed_today_v1", new Date().toISOString().slice(0,10)); } catch {}
     setStarted(false); setSeconds(0); setMission(""); setCompleted(false);
     localStorage.removeItem(PERSIST_KEY);
