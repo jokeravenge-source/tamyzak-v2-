@@ -13,6 +13,7 @@ import { ReferralCard } from "@/components/ReferralCard";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+import strawHat from "@/assets/straw-hat.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -94,6 +95,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
+  const [characterTab, setCharacterTab] = useState<"appearance" | "hats">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
@@ -320,6 +322,26 @@ const AccountCenter = ({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-background/30 p-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCharacterTab("appearance")}
+                    className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "appearance" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {language === "ar" ? "المظهر" : "Appearance"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCharacterTab("hats")}
+                    className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "hats" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {language === "ar" ? "القبعات" : "Hats"}
+                  </button>
+                </div>
+
+                {characterTab === "appearance" ? (
+                  <>
+
                 {/* Skin */}
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">{text.skin}</p>
@@ -378,6 +400,34 @@ const AccountCenter = ({
                     >{text.off}</button>
                   </div>
                 </div>
+                  </>
+                ) : (
+                  <div>
+                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {language === "ar" ? "اختر قبعتك" : "Choose your hat"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ hat: null })}
+                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.hat ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
+                      >
+                        {text.none}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ hat: "straw", accessory: null })}
+                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.hat === "straw" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
+                        aria-label={language === "ar" ? "قبعة القش" : "Straw hat"}
+                      >
+                        <img src={strawHat.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                          {language === "ar" ? "قبعة القش" : "Straw hat"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -568,17 +618,3 @@ function CountdownSettings({ language }: { language: AppLanguage }) {
             value={dateIso}
             onChange={(e) => setDateIso(e.target.value)}
             className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={save} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
-            {isAr ? "حفظ" : "Save"}
-          </button>
-          <button onClick={reset} className="h-10 px-4 rounded-xl border border-white/10 text-muted-foreground text-sm hover:text-foreground transition">
-            {isAr ? "إعادة الضبط" : "Reset"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
