@@ -3,7 +3,7 @@ import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, L
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const PARENT_INPUT = "h-12 w-full rounded-xl border border-border bg-background/80 px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
+const PARENT_INPUT = "h-12 w-full rounded-xl border border-white/10 bg-[#111321]/80 px-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
 
 
 type Snapshot = {
@@ -222,7 +222,7 @@ export default function ParentFollow({ token }: { token: string }) {
       <main className={`${PARCHMENT} flex items-center justify-center p-5`} style={FONT_STYLE}>
         <div aria-hidden="true" className="absolute -top-24 -end-20 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
         <div aria-hidden="true" className="absolute -bottom-24 -start-20 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
-        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-indigo-500/15 bg-card/90 p-7 text-center text-card-foreground shadow-[0_28px_80px_-35px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-9">
+        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-white/10 bg-[#191a2b]/95 p-7 text-center text-slate-100 shadow-[0_28px_80px_-35px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-9">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-indigo-600 ring-1 ring-indigo-500/20 dark:text-indigo-300">
             <Lock className="w-6 h-6" />
           </div>
@@ -261,7 +261,7 @@ export default function ParentFollow({ token }: { token: string }) {
   if (!data)
     return (
       <main className={`${PARCHMENT} flex items-center justify-center p-6`} style={FONT_STYLE}>
-        <div className="max-w-md space-y-3 rounded-[2rem] border border-border bg-card p-8 text-center text-card-foreground shadow-2xl">
+        <div className="max-w-md space-y-3 rounded-[2rem] border border-white/10 bg-[#191a2b] p-8 text-center text-slate-100 shadow-2xl">
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
           <p className="text-muted-foreground text-sm">
             {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
@@ -304,7 +304,7 @@ export default function ParentFollow({ token }: { token: string }) {
       <div aria-hidden="true" className="pointer-events-none absolute -top-32 -end-24 h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute top-[42rem] -start-32 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
       <div className="relative mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-12">
-        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-indigo-500/15 bg-gradient-to-br from-indigo-500/15 via-card to-violet-500/10 p-5 shadow-[0_24px_70px_-35px_rgba(99,102,241,0.5)] md:p-8">
+        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo-500/25 via-[#1b1b31] to-violet-500/20 p-5 text-slate-100 shadow-[0_24px_70px_-35px_rgba(99,102,241,0.5)] md:p-8">
           <div aria-hidden="true" className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[30px] border-violet-500/10" />
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -334,7 +334,7 @@ export default function ParentFollow({ token }: { token: string }) {
           <Measure icon={CalendarDays} tone="cyan" label="Days to exam" value={data.days_to_exam != null ? `${data.days_to_exam}` : "—"} />
         </section>
 
-        <nav className="mb-6 grid grid-cols-4 gap-1.5 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
+        <nav className="mb-6 grid grid-cols-4 gap-1.5 rounded-2xl border border-white/10 bg-[#191a2b]/95 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
           {([
             ["overview", "Overview", Activity],
             ["report", "Weekly", BarChart3],
@@ -368,7 +368,7 @@ export default function ParentFollow({ token }: { token: string }) {
                 <SubHeading>By subject</SubHeading>
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {perSubject.map(([subj, v]) => (
-                    <li key={subj} className="rounded-xl border border-border/60 bg-muted/25 p-3 text-sm">
+                    <li key={subj} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-sm">
                       <div className="flex items-center justify-between gap-2"><span className="font-bold capitalize">{subj}</span><span className="font-mono font-bold text-indigo-600 dark:text-indigo-300">{v.minutes} min</span></div>
                       <span className="mt-1 block text-xs text-muted-foreground">{v.sessions} sessions · {v.missions} missions</span>
                     </li>
@@ -402,7 +402,7 @@ export default function ParentFollow({ token }: { token: string }) {
               <div><p className="text-xs text-muted-foreground">Weekly total</p><p className="font-mono text-3xl font-black">{weekMinutes} <span className="text-sm font-medium text-muted-foreground">min</span></p></div>
               <div className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-600 dark:text-violet-300">Avg {Math.round(weekMinutes / 7)} min/day</div>
             </div>
-            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-muted/20 px-3 pt-4">
+            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-white/[0.035] px-3 pt-4">
               {data.last_7_days.map((d) => (
                 <div key={d.date} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={`${d.date}: ${d.minutes} minutes`}>
                   <span className="font-mono text-[10px] font-bold opacity-0 transition-opacity group-hover:opacity-100">{d.minutes}</span>
@@ -436,7 +436,7 @@ export default function ParentFollow({ token }: { token: string }) {
           {/* To-do */}
           <Panel icon={ListChecks} title="Today's to-do list">
             {!data.todays_todos?.length ? (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-6 text-center">
                 <ListChecks className="mx-auto mb-2 h-7 w-7 text-muted-foreground/60" />
                 <p className="text-sm font-semibold">No tasks planned for today</p>
                 <p className="mt-1 text-xs text-muted-foreground">New tasks will appear here automatically.</p>
@@ -444,12 +444,12 @@ export default function ParentFollow({ token }: { token: string }) {
             ) : (
               <>
                 <div className="mb-5 flex items-center gap-4 rounded-2xl bg-emerald-500/10 p-4">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-background font-mono text-sm font-black text-emerald-600 shadow-sm dark:text-emerald-300">{todoPct}%</div>
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#111321] font-mono text-sm font-black text-emerald-300 shadow-sm">{todoPct}%</div>
                   <div className="min-w-0 flex-1"><p className="font-bold">{todoDone} of {todoTotal} completed</p><div className="mt-2 h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${todoPct}%` }} /></div></div>
                 </div>
                 <ul className="space-y-2">
                   {data.todays_todos.map((td, i) => (
-                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-500/20 bg-emerald-500/5" : "border-border/70 bg-muted/20"}`}>
+                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/10 bg-white/[0.035]"}`}>
                       {td.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                       <span className={`flex-1 text-sm ${td.done ? "line-through text-muted-foreground" : "font-medium"}`}>{td.text}</span>
                       <span className="font-mono text-[10px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
@@ -537,7 +537,7 @@ export default function ParentFollow({ token }: { token: string }) {
               {!data.parent_scores?.length ? <EmptyState icon={Award} text="No scores added yet." /> : (
                 <ul className="space-y-3">{data.parent_scores.map((item) => {
                   const pct = Math.round((Number(item.score) / Number(item.max_score)) * 100);
-                  return <li key={item.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.subject} · {new Date(item.created_at).toLocaleDateString()}</p></div><div className="shrink-0 text-end"><p className="font-mono text-xl font-black text-indigo-600 dark:text-indigo-300">{item.score}/{item.max_score}</p><p className="text-[10px] font-bold text-muted-foreground">{pct}%</p></div></div>{item.note && <p className="mt-3 rounded-xl bg-background/70 p-3 text-sm text-muted-foreground">{item.note}</p>}</li>;
+                  return <li key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.subject} · {new Date(item.created_at).toLocaleDateString()}</p></div><div className="shrink-0 text-end"><p className="font-mono text-xl font-black text-indigo-300">{item.score}/{item.max_score}</p><p className="text-[10px] font-bold text-muted-foreground">{pct}%</p></div></div>{item.note && <p className="mt-3 rounded-xl bg-[#111321]/80 p-3 text-sm text-muted-foreground">{item.note}</p>}</li>;
                 })}</ul>
               )}
             </Panel>
@@ -557,7 +557,7 @@ export default function ParentFollow({ token }: { token: string }) {
               {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
             </Panel>
             <Panel icon={ListChecks} title="Previous notes">
-              {!data.parent_notes?.length ? <EmptyState icon={NotebookPen} text="No parent notes yet." /> : <ul className="space-y-3">{data.parent_notes.map((item) => <li key={item.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed">{item.note_text}</p><p className="mt-3 text-[10px] font-semibold text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></li>)}</ul>}
+              {!data.parent_notes?.length ? <EmptyState icon={NotebookPen} text="No parent notes yet." /> : <ul className="space-y-3">{data.parent_notes.map((item) => <li key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed">{item.note_text}</p><p className="mt-3 text-[10px] font-semibold text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></li>)}</ul>}
             </Panel>
           </div>
         )}
@@ -725,10 +725,10 @@ const MEASURE_TONES = {
 
 function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: keyof typeof MEASURE_TONES; label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card/85 p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg md:p-5">
+    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1d1e31] to-[#171827] p-4 text-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-400/30 hover:shadow-lg md:p-5">
       <span className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${MEASURE_TONES[tone]}`}><Icon className="h-5 w-5" /></span>
       <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className="font-mono text-3xl font-black tabular-nums leading-none text-foreground md:text-4xl">
+      <div className="font-mono text-3xl font-black tabular-nums leading-none text-slate-100 md:text-4xl">
         {value}
         {unit && <span className="text-base font-normal text-muted-foreground ms-1">{unit}</span>}
       </div>
@@ -738,7 +738,7 @@ function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: ke
 
 function Panel({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.75rem] border border-border/70 bg-card/85 p-5 text-card-foreground shadow-[0_14px_45px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm md:p-6">
+    <section className="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-[#1d1e31] to-[#171827] p-5 text-slate-100 shadow-[0_14px_45px_-32px_rgba(0,0,0,0.65)] backdrop-blur-sm md:p-6">
       <header className="mb-5 inline-flex items-center gap-3">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-violet-500/15 text-indigo-600 dark:text-indigo-300"><Icon className="h-4 w-4" /></span>
         <h2 className="text-sm font-extrabold md:text-base">{title}</h2>
@@ -765,11 +765,11 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="mt-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
       <SubHeading>{title}</SubHeading>
       <ul className="space-y-1.5 text-sm">
         {items.map((x, i) => (
-          <li key={i} className="flex items-start gap-3 rounded-xl bg-background/70 p-2.5">
+          <li key={i} className="flex items-start gap-3 rounded-xl bg-[#111321]/80 p-2.5">
             <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/10 font-mono text-[10px] font-bold text-violet-600 dark:text-violet-300">{i + 1}</span>
             <span className="flex-1">{x}</span>
           </li>
@@ -784,5 +784,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {
-  return <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-7 text-center"><Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" /><p className="text-sm font-semibold text-muted-foreground">{text}</p></div>;
+  return <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-7 text-center"><Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" /><p className="text-sm font-semibold text-muted-foreground">{text}</p></div>;
 }
