@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Ban, Copy, Crown, DoorOpen, Link2, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
+import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Link2, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 
@@ -12,6 +12,7 @@ type Message = { id: string; user_id: string; display_name: string; body: string
 type Presence = { elapsed_seconds: number; is_running: boolean; subject: string };
 
 const LS_KEY = "study_room_active_v1";
+const MEMBER_PREVIEW_LIMIT = 30;
 
 const fmtClock = (s: number) => {
   const t = Math.max(0, Math.floor(s));
@@ -41,6 +42,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const [presence, setPresence] = useState<Record<string, Presence>>({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [bans, setBans] = useState<{ user_id: string; display_name: string | null }[]>([]);
+  const [showAllMembers, setShowAllMembers] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const L = ar
@@ -61,6 +63,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         transferConfirm: "هل تريد جعل هذا الطالب صاحب الغرفة؟", noTimer: "لا يوجد مؤقّت",
         takeOwner: "استلام الملكية (مشرف)", takeConfirm: "هل تريد استلام ملكية هذه الغرفة؟",
         bannedList: "المحظورون", unban: "رفع الحظر", unbanned: "تم رفع الحظر", noBans: "لا يوجد محظورون",
+        showMore: "عرض المزيد", showLess: "عرض أقل",
       }
     : {
         title: "Private study rooms", create: "Create room", join: "Join",
@@ -79,6 +82,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         transferConfirm: "Make this student the room owner?", noTimer: "No timer",
         takeOwner: "Take ownership (admin)", takeConfirm: "Take ownership of this room?",
         bannedList: "Banned members", unban: "Unban", unbanned: "Member unbanned", noBans: "No banned members",
+        showMore: "Show more", showLess: "Show less",
       };
 
   useEffect(() => {
@@ -237,6 +241,10 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
 
   // Member timers tick locally below; realtime handles server-side changes.
 
+  useEffect(() => {
+    setShowAllMembers(false);
+  }, [room?.id]);
+
   // Tick running timers locally between refreshes
   useEffect(() => {
     const id = setInterval(() => {
@@ -293,7 +301,10 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         .select("id,code,name,owner_id").eq("code", code).eq("is_active", true).maybeSingle();
       if (!data) { toast.error(L.notFound); return; }
       const { error } = await supabase.from("study_room_members")
-        .upsert({ room_id: data.id, user_id: userId, display_name: displayName }, { onConflict: "room_id,user_id" });
+        .upsert(
+          { room_id: data.id, user_id: userId, display_name: displayName, last_seen_at: new Date().toISOString() },
+          { onConflict: "room_id,user_id" },
+        );
       if (error) { toast.error(L.youBanned); return; }
       localStorage.setItem(LS_KEY, data.id);
       setRoom(data as Room);
@@ -315,6 +326,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   }, [userId]);
 
   const isOwner = !!room && (room.owner_id === userId || isAdmin);
+  const visibleMembers = showAllMembers ? members : members.slice(0, MEMBER_PREVIEW_LIMIT);
 
   const shareLink = () => {
     if (!room) return;
@@ -515,7 +527,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         <div className="absolute left-0 right-0 top-[52%] h-px bg-primary/30" />
 
         <div className="relative z-10 pt-16 pb-5 px-3 flex flex-wrap gap-4 justify-center items-end">
-          {members.map((m) => {
+          {visibleMembers.map((m) => {
             const mine = m.user_id === userId;
             const roomOwner = m.user_id === room.owner_id;
             return (
@@ -553,6 +565,19 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
             );
           })}
         </div>
+        {members.length > MEMBER_PREVIEW_LIMIT && (
+          <div className="relative z-10 flex justify-center px-3 pb-4">
+            <button
+              type="button"
+              onClick={() => setShowAllMembers((value) => !value)}
+              aria-expanded={showAllMembers}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-background/85 px-4 py-2 text-xs font-semibold text-primary shadow-sm transition hover:bg-primary/10"
+            >
+              {showAllMembers ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {showAllMembers ? L.showLess : `${L.showMore} (${members.length - MEMBER_PREVIEW_LIMIT})`}
+            </button>
+          </div>
+        )}
       </div>
 
       {isOwner && (
