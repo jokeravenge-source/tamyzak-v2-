@@ -326,6 +326,7 @@ const AccountCenter = ({
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
+                    aria-pressed={characterTab === "appearance"}
                     className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "appearance" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {language === "ar" ? "المظهر" : "Appearance"}
@@ -333,6 +334,7 @@ const AccountCenter = ({
                   <button
                     type="button"
                     onClick={() => setCharacterTab("hats")}
+                    aria-pressed={characterTab === "hats"}
                     className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "hats" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {language === "ar" ? "القبعات" : "Hats"}
@@ -618,3 +620,17 @@ function CountdownSettings({ language }: { language: AppLanguage }) {
             value={dateIso}
             onChange={(e) => setDateIso(e.target.value)}
             className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={save} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
+            {isAr ? "حفظ" : "Save"}
+          </button>
+          <button onClick={reset} className="h-10 px-4 rounded-xl border border-white/10 text-muted-foreground text-sm hover:text-foreground transition">
+            {isAr ? "إعادة الضبط" : "Reset"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
