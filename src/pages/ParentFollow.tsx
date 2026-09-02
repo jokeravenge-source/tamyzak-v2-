@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award, FileDown, BarChart3, X, Printer, Download } from "lucide-react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Minus, Loader2, Award, FileDown, BarChart3, X, Printer, Download } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -16,6 +16,7 @@ type Snapshot = {
   last_7_days: Array<{ date: string; minutes: number }>;
   last_report: any;
   todays_todos?: Array<{ id: string; text: string; done: boolean; day?: string }>;
+  all_todos?: Array<{ id: string; text: string; done: boolean; day?: string }>;
   channel?: string;
   today_minutes?: number;
   today_seconds?: number;
@@ -24,7 +25,8 @@ type Snapshot = {
   questions_solved_today?: number;
   weekly_days?: Array<{ date: string; minutes: number; sessions: number; missions: number; points: number; questions: number; tools: number; todo_done: number; todo_total: number; subjects: Record<string, number> }>;
   weekly_subjects?: Array<{ subject: string; minutes: number }>;
-  parent_scores?: Array<{ id: string; subject: string; title: string; score: number; max_score: number; note: string | null; created_at: string }>;
+  parent_score?: number;
+  parent_score_events?: Array<{ id: string; delta: number; balance_after: number; created_at: string }>;
   parent_notes?: Array<{ id: string; note_text: string; created_at: string }>;
 };
 
@@ -51,7 +53,7 @@ export default function ParentFollow({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "report" | "scores" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "report" | "scores" | "tasks" | "notes">("overview");
   const [exportingPdf, setExportingPdf] = useState(false);
   const weeklyReportRef = useRef<HTMLDivElement>(null);
   const pdfFrameRef = useRef<HTMLIFrameElement>(null);
@@ -59,8 +61,9 @@ export default function ParentFollow({ token }: { token: string }) {
   const [pdfFileName, setPdfFileName] = useState("weekly-report.pdf");
   const [savingEntry, setSavingEntry] = useState(false);
   const [entryMessage, setEntryMessage] = useState<string | null>(null);
-  const [scoreForm, setScoreForm] = useState({ subject: "", title: "", score: "", maxScore: "100", note: "" });
   const [noteText, setNoteText] = useState("");
+  const [todoText, setTodoText] = useState("");
+  const [todoDay, setTodoDay] = useState("Today");
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
@@ -160,7 +163,7 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(false);
   };
 
-  const saveParentEntry = async (action: "add_score" | "add_note", payload: Record<string, unknown>) => {
+  const saveParentEntry = async (action: "adjust_score" | "add_note" | "add_todo", payload: Record<string, unknown>) => {
     setSavingEntry(true);
     setEntryMessage(null);
     try {
@@ -173,9 +176,9 @@ export default function ParentFollow({ token }: { token: string }) {
       if (!res.ok || next?.error) throw new Error(next?.error ?? "save_failed");
       setData(next as Snapshot);
       setLastUpdated(new Date());
-      setEntryMessage(action === "add_score" ? "Score added successfully." : "Note added successfully.");
-      if (action === "add_score") setScoreForm({ subject: "", title: "", score: "", maxScore: "100", note: "" });
-      else setNoteText("");
+      setEntryMessage(action === "adjust_score" ? "Score updated." : action === "add_todo" ? "Task sent to the student." : "Note added successfully.");
+      if (action === "add_todo") setTodoText("");
+      if (action === "add_note") setNoteText("");
     } catch {
       setEntryMessage("Could not save. Please check the values and try again.");
     } finally {
@@ -359,11 +362,12 @@ export default function ParentFollow({ token }: { token: string }) {
           <Measure icon={CalendarDays} tone="cyan" label="Days to exam" value={data.days_to_exam != null ? `${data.days_to_exam}` : "—"} />
         </section>
 
-        <nav className="mb-6 grid grid-cols-4 gap-1.5 rounded-2xl border border-white/10 bg-[#191a2b]/95 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
+        <nav className="mb-6 grid grid-cols-5 gap-1.5 rounded-2xl border border-white/10 bg-[#191a2b]/95 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
           {([
             ["overview", "Overview", Activity],
             ["report", "Weekly", BarChart3],
             ["scores", "Scores", Award],
+            ["tasks", "Tasks", ListChecks],
             ["notes", "Notes", NotebookPen],
           ] as const).map(([key, label, Icon]) => (
             <button
@@ -525,46 +529,48 @@ export default function ParentFollow({ token }: { token: string }) {
               goalPct={weeklyGoalPct}
               startDate={reportStart}
               endDate={reportEnd}
-              scores={data.parent_scores ?? []}
+              scoreEvents={data.parent_score_events ?? []}
             />
           </div>
         )}
 
         {activeTab === "scores" && (
           <div className="space-y-6">
-            <Panel icon={Award} title="Add a student score">
-              <form
-                className="grid gap-4 sm:grid-cols-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void saveParentEntry("add_score", {
-                    subject: scoreForm.subject,
-                    title: scoreForm.title,
-                    score: Number(scoreForm.score),
-                    max_score: Number(scoreForm.maxScore),
-                    note: scoreForm.note,
-                  });
-                }}
-              >
-                <Field label="Subject"><input required maxLength={80} value={scoreForm.subject} onChange={(e) => setScoreForm((v) => ({ ...v, subject: e.target.value }))} placeholder="e.g. Physics" className={PARENT_INPUT} /></Field>
-                <Field label="Exam or assignment"><input required maxLength={120} value={scoreForm.title} onChange={(e) => setScoreForm((v) => ({ ...v, title: e.target.value }))} placeholder="e.g. Chapter 2 quiz" className={PARENT_INPUT} /></Field>
-                <Field label="Score"><input required type="number" min="0" step="0.01" value={scoreForm.score} onChange={(e) => setScoreForm((v) => ({ ...v, score: e.target.value }))} placeholder="85" className={PARENT_INPUT} /></Field>
-                <Field label="Out of"><input required type="number" min="0.01" step="0.01" value={scoreForm.maxScore} onChange={(e) => setScoreForm((v) => ({ ...v, maxScore: e.target.value }))} className={PARENT_INPUT} /></Field>
-                <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-bold text-muted-foreground">Comment (optional)</span><textarea maxLength={500} rows={3} value={scoreForm.note} onChange={(e) => setScoreForm((v) => ({ ...v, note: e.target.value }))} placeholder="Add feedback about this result…" className={`${PARENT_INPUT} h-auto py-3`} /></label>
-                <button disabled={savingEntry} className="sm:col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">
-                  {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add score
-                </button>
-              </form>
+            <Panel icon={Award} title="Student score">
+              <div className="rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/15 to-violet-500/10 p-6 text-center">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-300">Current score</p>
+                <p className="my-4 font-mono text-7xl font-black text-white tabular-nums">{data.parent_score ?? 5}</p>
+                <p className="mb-6 text-xs text-muted-foreground">Every student starts with 5 points.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" disabled={savingEntry || (data.parent_score ?? 5) <= 0} onClick={() => void saveParentEntry("adjust_score", { delta: -1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-rose-500/15 font-bold text-rose-300 transition hover:bg-rose-500/25 disabled:opacity-40"><Minus className="h-5 w-5" /> Subtract 1</button>
+                  <button type="button" disabled={savingEntry} onClick={() => void saveParentEntry("adjust_score", { delta: 1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500/15 font-bold text-emerald-300 transition hover:bg-emerald-500/25 disabled:opacity-40"><Plus className="h-5 w-5" /> Add 1</button>
+                </div>
+              </div>
               {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
             </Panel>
 
             <Panel icon={Trophy} title="Score history">
-              {!data.parent_scores?.length ? <EmptyState icon={Award} text="No scores added yet." /> : (
-                <ul className="space-y-3">{data.parent_scores.map((item) => {
-                  const pct = Math.round((Number(item.score) / Number(item.max_score)) * 100);
-                  return <li key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.subject} · {new Date(item.created_at).toLocaleDateString()}</p></div><div className="shrink-0 text-end"><p className="font-mono text-xl font-black text-indigo-300">{item.score}/{item.max_score}</p><p className="text-[10px] font-bold text-muted-foreground">{pct}%</p></div></div>{item.note && <p className="mt-3 rounded-xl bg-[#111321]/80 p-3 text-sm text-muted-foreground">{item.note}</p>}</li>;
-                })}</ul>
+              {!data.parent_score_events?.length ? <EmptyState icon={Award} text="No score changes yet." /> : (
+                <ul className="space-y-3">{data.parent_score_events.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.035] p-4"><div><p className={`font-bold ${item.delta > 0 ? "text-emerald-300" : "text-rose-300"}`}>{item.delta > 0 ? "+1 point" : "−1 point"}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></div><p className="font-mono text-2xl font-black text-white">{item.balance_after}</p></li>
+                ))}</ul>
               )}
+            </Panel>
+          </div>
+        )}
+
+        {activeTab === "tasks" && (
+          <div className="space-y-6">
+            <Panel icon={ListChecks} title="Add a task for the student">
+              <form onSubmit={(event) => { event.preventDefault(); void saveParentEntry("add_todo", { text: todoText, day: todoDay === "Today" ? undefined : todoDay }); }} className="space-y-4">
+                <Field label="Task"><input required maxLength={200} value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="e.g. Review chapter 3" className={PARENT_INPUT} /></Field>
+                <Field label="Day"><select value={todoDay} onChange={(event) => setTodoDay(event.target.value)} className={PARENT_INPUT}>{["Today", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => <option key={day} value={day}>{day}</option>)}</select></Field>
+                <button disabled={savingEntry || !todoText.trim()} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">{savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add to student's list</button>
+              </form>
+              {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
+            </Panel>
+            <Panel icon={ListChecks} title="Student task list">
+              {!data.all_todos?.length ? <EmptyState icon={ListChecks} text="No tasks yet." /> : <ul className="space-y-2">{data.all_todos.map((item) => <li key={item.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.035] p-3">{item.done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <Circle className="h-5 w-5 text-slate-500" />}<span className={`flex-1 text-sm ${item.done ? "line-through text-muted-foreground" : ""}`}>{item.text}</span>{item.day && <span className="rounded-full bg-indigo-500/10 px-2 py-1 text-[10px] text-indigo-300">{item.day}</span>}</li>)}</ul>}
             </Panel>
           </div>
         )}
@@ -625,7 +631,7 @@ type WeeklyDay = NonNullable<Snapshot["weekly_days"]>[number];
 
 function WeeklyReport({
   reportRef, studentName, parentName, days, subjects, totalMinutes, sessions, missions, questions,
-  todoDone, todoTotal, goalHours, goalPct, startDate, endDate, scores,
+  todoDone, todoTotal, goalHours, goalPct, startDate, endDate, scoreEvents,
 }: {
   reportRef: React.RefObject<HTMLDivElement>;
   studentName: string;
@@ -642,7 +648,7 @@ function WeeklyReport({
   goalPct: number | null;
   startDate?: string;
   endDate?: string;
-  scores: NonNullable<Snapshot["parent_scores"]>;
+  scoreEvents: NonNullable<Snapshot["parent_score_events"]>;
 }) {
   const strongestDay = days.reduce<WeeklyDay | null>((best, day) => !best || day.minutes > best.minutes ? day : best, null);
   const maxDayMinutes = Math.max(1, ...days.map((day) => day.minutes));
@@ -650,7 +656,7 @@ function WeeklyReport({
   const dateLabel = (date?: string, options?: Intl.DateTimeFormatOptions) => date
     ? new Date(`${date}T12:00:00`).toLocaleDateString(undefined, options ?? { day: "numeric", month: "short", year: "numeric" })
     : "—";
-  const periodScores = scores.filter((score) => {
+  const periodScores = scoreEvents.filter((score) => {
     const date = score.created_at.slice(0, 10);
     return (!startDate || date >= startDate) && (!endDate || date <= endDate);
   });
@@ -738,8 +744,8 @@ function WeeklyReport({
         </section>
 
         {periodScores.length > 0 && <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-          <p className="mb-4 text-sm font-black">Scores added this week</p>
-          <div className="grid gap-2 sm:grid-cols-2">{periodScores.map((score) => <div key={score.id} className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: "#fffbeb" }}><div><p className="text-xs font-black">{score.title}</p><p className="mt-0.5 text-[9px]" style={{ color: "#78716c" }}>{score.subject}</p></div><p className="text-lg font-black" style={{ color: "#d97706" }}>{score.score}/{score.max_score}</p></div>)}</div>
+          <p className="mb-4 text-sm font-black">Score changes this week</p>
+          <div className="grid gap-2 sm:grid-cols-2">{periodScores.map((score) => <div key={score.id} className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: score.delta > 0 ? "#ecfdf5" : "#fff1f2" }}><div><p className="text-xs font-black">{score.delta > 0 ? "+1 point" : "−1 point"}</p><p className="mt-0.5 text-[9px]" style={{ color: "#78716c" }}>{new Date(score.created_at).toLocaleDateString()}</p></div><p className="text-lg font-black" style={{ color: score.delta > 0 ? "#059669" : "#e11d48" }}>{score.balance_after}</p></div>)}</div>
         </section>}
 
         <footer className="flex items-center justify-between border-t pt-4 text-[9px]" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>
