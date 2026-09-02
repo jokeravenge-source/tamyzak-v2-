@@ -14,6 +14,7 @@ import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
+import redCap from "@/assets/red-cap.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -425,6 +426,17 @@ const AccountCenter = ({
                         <img src={strawHat.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
                         <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
                           {language === "ar" ? "قبعة القش" : "Straw hat"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ hat: "red-cap", accessory: null })}
+                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.hat === "red-cap" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
+                        aria-label={language === "ar" ? "القبعة الحمراء" : "Red cap"}
+                      >
+                        <img src={redCap.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                          {language === "ar" ? "القبعة الحمراء" : "Red cap"}
                         </span>
                       </button>
                     </div>
