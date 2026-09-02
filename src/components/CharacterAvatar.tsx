@@ -121,9 +121,9 @@ export function CharacterAvatar({
           style={{
             position: "absolute",
             zIndex: 3,
-            top: "-5%",
+            top: "-15%",
             left: "50%",
-            width: "55%",
+            width: "70%",
             height: "auto",
             transform: "translateX(-50%)",
             imageRendering: "pixelated",
