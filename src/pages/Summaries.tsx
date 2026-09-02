@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, Upload, Heart, FileText, X, Loader2, Hash, Download, Sparkles, Bell, Clock, Check, Eye } from "lucide-react";
+import { ArrowLeft, Upload, Heart, FileText, X, Loader2, Hash, Download, Sparkles, Bell, Clock, Check, Eye, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -40,6 +40,7 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
   const [myLikes, setMyLikes] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [filter, setFilter] = useState<SubjectCode | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [pending, setPending] = useState<SummaryRow[]>([]);
@@ -140,6 +141,12 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
     const filtered = filter === "all" ? rows : rows.filter((r) => r.subject === filter);
     return [...filtered].sort((a, b) => (likes[b.id] ?? 0) - (likes[a.id] ?? 0));
   }, [rows, likes, filter]);
+
+  const visibleRows = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!query) return sorted;
+    return sorted.filter((row) => row.name.toLocaleLowerCase().includes(query));
+  }, [searchQuery, sorted]);
 
   const toggleLike = async (id: string) => {
     if (!userId) return;
@@ -381,7 +388,29 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto mt-10 flex flex-wrap items-center justify-between gap-3 relative z-10">
+      <div className="max-w-6xl mx-auto mt-10 relative z-10">
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-4 rtl:left-auto rtl:right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={t("Search by file name…", "ابحث باسم الملف…")}
+            aria-label={t("Search summaries by file name", "البحث في الملخصات باسم الملف")}
+            className="h-12 w-full rounded-2xl border border-white/10 bg-secondary/60 pl-12 pr-12 rtl:pl-12 rtl:pr-12 text-foreground outline-none backdrop-blur transition placeholder:text-muted-foreground focus:border-primary/60 focus:ring-4 focus:ring-primary/10"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label={t("Clear search", "مسح البحث")}
+              className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setFilter("all")} className={`px-3 py-1.5 rounded-full text-xs border transition-all ${filter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
             <Hash className="w-3 h-3 inline mr-1" />{t("All", "الكل")}
@@ -402,6 +431,7 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
             onChange={(e) => pickFromUploadButton(e.target.files?.[0] ?? null)}
           />
         </label>
+        </div>
       </div>
 
       {/* Floating upload CTA is a real native file input so tapping it opens the picker directly */}
@@ -422,9 +452,13 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
       <section className="max-w-6xl mx-auto mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
         {loading ? (
           <div className="col-span-full flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : sorted.length === 0 ? (
-          <p className="col-span-full text-center text-muted-foreground py-16">{t("No summaries yet. Be the first to upload!", "لا توجد ملخصات بعد. كن أول من يرفع!")}</p>
-        ) : sorted.map((r, i) => (
+        ) : visibleRows.length === 0 ? (
+          <p className="col-span-full text-center text-muted-foreground py-16">
+            {searchQuery.trim()
+              ? t("No files match your search.", "لا توجد ملفات تطابق بحثك.")
+              : t("No summaries yet. Be the first to upload!", "لا توجد ملخصات بعد. كن أول من يرفع!")}
+          </p>
+        ) : visibleRows.map((r, i) => (
           <article key={r.id} className="rounded-3xl p-5 border border-white/10 bg-secondary/40 backdrop-blur flex flex-col gap-3 animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
             <div className="flex items-start justify-between gap-3">
               <div className="w-11 h-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
