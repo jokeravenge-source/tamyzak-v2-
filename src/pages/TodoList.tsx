@@ -150,6 +150,23 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     return () => { cancelled = true; };
   }, []);
 
+  // Keep the list live when a parent assigns a task from Parent Follow-up.
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user || cancelled) return;
+      channel = supabase.channel(`student-todos-${data.user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "student_todos", filter: `user_id=eq.${data.user.id}` }, async () => {
+          const remote = await pullTodos();
+          if (!cancelled && remote) setTodos(remote as Todo[]);
+        })
+        .subscribe();
+    })();
+    return () => { cancelled = true; if (channel) void supabase.removeChannel(channel); };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
     pushTodos(todos);
