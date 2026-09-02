@@ -13,13 +13,13 @@ Deno.serve(async (req) => {
   const guard = await protect(req, "parent-follow-view", { max: 20, windowSeconds: 60 });
   if (!guard.ok) return new Response(JSON.stringify({ error: guard.error }), { status: guard.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
-    const { token, code } = await req.json().catch(() => ({}));
+    const { token, code, action, payload } = await req.json().catch(() => ({}));
     if (!token || typeof token !== "string") return json({ error: "missing_token" }, 400);
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: link } = await admin.from("parent_follow_links")
-      .select("user_id, enabled, parent_name, revoked_at, access_code")
+      .select("id, user_id, enabled, parent_name, revoked_at, access_code")
       .eq("token", token).maybeSingle();
     if (!link || !link.enabled || link.revoked_at) return json({ error: "invalid_or_revoked" }, 404);
     if (!code || typeof code !== "string" || String(code).trim() !== String(link.access_code ?? "").trim()) {
@@ -27,11 +27,38 @@ Deno.serve(async (req) => {
     }
 
     const userId = link.user_id;
-    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }] = await Promise.all([
+
+    if (action === "add_score") {
+      const subject = String(payload?.subject ?? "").trim().slice(0, 80);
+      const title = String(payload?.title ?? "").trim().slice(0, 120);
+      const note = String(payload?.note ?? "").trim().slice(0, 500) || null;
+      const score = Number(payload?.score);
+      const maxScore = Number(payload?.max_score);
+      if (!subject || !title || !Number.isFinite(score) || !Number.isFinite(maxScore) || score < 0 || maxScore <= 0 || score > maxScore) {
+        return json({ error: "invalid_score" }, 400);
+      }
+      const { error } = await admin.from("parent_student_scores").insert({
+        link_id: link.id, student_user_id: userId, subject, title, score, max_score: maxScore, note,
+      });
+      if (error) return json({ error: "score_save_failed" }, 500);
+    } else if (action === "add_note") {
+      const noteText = String(payload?.note_text ?? "").trim().slice(0, 1000);
+      if (!noteText) return json({ error: "invalid_note" }, 400);
+      const { error } = await admin.from("parent_student_notes").insert({
+        link_id: link.id, student_user_id: userId, note_text: noteText,
+      });
+      if (error) return json({ error: "note_save_failed" }, 500);
+    } else if (action && action !== "view") {
+      return json({ error: "invalid_action" }, 400);
+    }
+
+    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }, { data: parentScores }, { data: parentNotes }] = await Promise.all([
       admin.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
       admin.from("student_profile").select("exam_date, target_grade, weekly_goal_hours").eq("user_id", userId).maybeSingle(),
       admin.from("daily_reports").select("*").eq("user_id", userId).order("report_date", { ascending: false }).limit(1).maybeSingle(),
       admin.from("student_todos").select("items, week_key, updated_at").eq("user_id", userId).maybeSingle(),
+      admin.from("parent_student_scores").select("id, subject, title, score, max_score, note, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
+      admin.from("parent_student_notes").select("id, note_text, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
     ]);
 
     // 7-day study sessions for chart
@@ -113,6 +140,8 @@ Deno.serve(async (req) => {
       today_per_subject: todayPerSubject,
       tools_used_today,
       questions_solved_today,
+      parent_scores: parentScores ?? [],
+      parent_notes: parentNotes ?? [],
       channel: `todos:${userId}`,
     });
   } catch (e) {
