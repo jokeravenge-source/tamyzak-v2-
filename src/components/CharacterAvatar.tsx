@@ -14,7 +14,7 @@ import girl5 from "@/assets/character-girl-5.png";
 import girl6 from "@/assets/character-girl-6.png";
 import girl7 from "@/assets/character-girl-7.png";
 import strawHat from "@/assets/straw-hat.png.asset.json";
-import redCap from "@/assets/red-cap.png.asset.json";
+import redCap from "@/assets/red-cap-front.png.asset.json";
 
 export type Gender = "male" | "female";
 
