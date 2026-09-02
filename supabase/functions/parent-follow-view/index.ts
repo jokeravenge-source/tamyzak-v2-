@@ -28,19 +28,29 @@ Deno.serve(async (req) => {
 
     const userId = link.user_id;
 
-    if (action === "add_score") {
-      const subject = String(payload?.subject ?? "").trim().slice(0, 80);
-      const title = String(payload?.title ?? "").trim().slice(0, 120);
-      const note = String(payload?.note ?? "").trim().slice(0, 500) || null;
-      const score = Number(payload?.score);
-      const maxScore = Number(payload?.max_score);
-      if (!subject || !title || !Number.isFinite(score) || !Number.isFinite(maxScore) || score < 0 || maxScore <= 0 || score > maxScore) {
+    if (action === "adjust_score") {
+      const delta = Number(payload?.delta);
+      if (delta !== 1 && delta !== -1) {
         return json({ error: "invalid_score" }, 400);
       }
-      const { error } = await admin.from("parent_student_scores").insert({
-        link_id: link.id, student_user_id: userId, subject, title, score, max_score: maxScore, note,
+      const { error } = await admin.rpc("adjust_parent_student_score", {
+        _link_id: link.id, _student_user_id: userId, _delta: delta,
       });
-      if (error) return json({ error: "score_save_failed" }, 500);
+      if (error) return json({ error: "score_update_failed" }, 500);
+    } else if (action === "add_todo") {
+      const text = String(payload?.text ?? "").trim().slice(0, 200);
+      const day = String(payload?.day ?? "").trim().slice(0, 20) || undefined;
+      if (!text) return json({ error: "invalid_todo" }, 400);
+      const { data: existing } = await admin.from("student_todos")
+        .select("items, week_key").eq("user_id", userId).maybeSingle();
+      const items = Array.isArray(existing?.items) ? existing.items : [];
+      const nextItems = [...items, {
+        id: crypto.randomUUID(), text, done: false, ...(day ? { day } : {}), assigned_by_parent: true,
+      }];
+      const { error } = await admin.from("student_todos").upsert({
+        user_id: userId, items: nextItems, week_key: existing?.week_key ?? null, updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+      if (error) return json({ error: "todo_save_failed" }, 500);
     } else if (action === "add_note") {
       const noteText = String(payload?.note_text ?? "").trim().slice(0, 1000);
       if (!noteText) return json({ error: "invalid_note" }, 400);
@@ -52,12 +62,13 @@ Deno.serve(async (req) => {
       return json({ error: "invalid_action" }, 400);
     }
 
-    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }, { data: parentScores }, { data: parentNotes }] = await Promise.all([
+    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }, { data: scoreBalance }, { data: scoreEvents }, { data: parentNotes }] = await Promise.all([
       admin.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
       admin.from("student_profile").select("exam_date, target_grade, weekly_goal_hours").eq("user_id", userId).maybeSingle(),
       admin.from("daily_reports").select("*").eq("user_id", userId).order("report_date", { ascending: false }).limit(1).maybeSingle(),
       admin.from("student_todos").select("items, week_key, updated_at").eq("user_id", userId).maybeSingle(),
-      admin.from("parent_student_scores").select("id, subject, title, score, max_score, note, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
+      admin.from("parent_student_score_balances").select("score").eq("link_id", link.id).maybeSingle(),
+      admin.from("parent_student_score_events").select("id, delta, balance_after, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
       admin.from("parent_student_notes").select("id, note_text, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
     ]);
 
@@ -190,7 +201,8 @@ Deno.serve(async (req) => {
       today_per_subject: todayPerSubject,
       tools_used_today,
       questions_solved_today,
-      parent_scores: parentScores ?? [],
+      parent_score: Number(scoreBalance?.score ?? 5),
+      parent_score_events: scoreEvents ?? [],
       parent_notes: parentNotes ?? [],
       channel: `todos:${userId}`,
     });
