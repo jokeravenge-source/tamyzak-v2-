@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award, FileDown, BarChart3 } from "lucide-react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award, FileDown, BarChart3, X, Printer, Download } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -54,6 +54,9 @@ export default function ParentFollow({ token }: { token: string }) {
   const [activeTab, setActiveTab] = useState<"overview" | "report" | "scores" | "notes">("overview");
   const [exportingPdf, setExportingPdf] = useState(false);
   const weeklyReportRef = useRef<HTMLDivElement>(null);
+  const pdfFrameRef = useRef<HTMLIFrameElement>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState("weekly-report.pdf");
   const [savingEntry, setSavingEntry] = useState(false);
   const [entryMessage, setEntryMessage] = useState<string | null>(null);
   const [scoreForm, setScoreForm] = useState({ subject: "", title: "", score: "", maxScore: "100", note: "" });
@@ -132,6 +135,12 @@ export default function ParentFollow({ token }: { token: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlocked, token]);
 
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
   const submitCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = code.trim();
@@ -205,13 +214,29 @@ export default function ParentFollow({ token }: { token: string }) {
         offset += printableHeight;
       } while (offset < imageHeight);
       const safeName = data.student_name.replace(/[^\p{L}\p{N}_-]+/gu, "-");
-      pdf.save(`${safeName || "student"}-weekly-report.pdf`);
+      const fileName = `${safeName || "student"}-weekly-report.pdf`;
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      setPdfFileName(fileName);
+      setPdfUrl(url);
     } catch (error) {
       console.error("Weekly report PDF export failed", error);
       setEntryMessage("The PDF could not be created. Please try again.");
     } finally {
       setExportingPdf(false);
     }
+  };
+
+  const closePdfViewer = () => setPdfUrl(null);
+
+  const printPdf = () => {
+    const frame = pdfFrameRef.current;
+    if (frame?.contentWindow) {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      return;
+    }
+    if (pdfUrl) window.open(pdfUrl, "_blank", "noopener,noreferrer");
   };
 
   const PARCHMENT = "relative min-h-screen overflow-hidden bg-background text-foreground";
@@ -562,6 +587,36 @@ export default function ParentFollow({ token }: { token: string }) {
           </div>
         )}
       </div>
+
+      {pdfUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="Weekly report PDF preview">
+          <div className="flex h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151624] shadow-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-white">Weekly report PDF</p>
+                <p className="mt-0.5 truncate text-[10px] text-slate-400">{pdfFileName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={printPdf} className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-white transition hover:bg-white/10">
+                  <Printer className="h-4 w-4" /><span className="hidden sm:inline">Print</span>
+                </button>
+                <a href={pdfUrl} download={pdfFileName} className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-3 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:brightness-110">
+                  <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
+                </a>
+                <button type="button" onClick={closePdfViewer} aria-label="Close PDF preview" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white transition hover:bg-white/10">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="relative min-h-0 flex-1 bg-[#222438] p-2 sm:p-4">
+              <iframe ref={pdfFrameRef} src={pdfUrl} title="Weekly report PDF" className="h-full w-full rounded-xl border-0 bg-white" />
+              <div className="pointer-events-none absolute inset-x-4 bottom-5 text-center sm:hidden">
+                <span className="inline-flex rounded-full bg-black/70 px-3 py-1.5 text-[10px] font-semibold text-white/80">If preview is unavailable, use Download above</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
