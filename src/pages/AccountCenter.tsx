@@ -14,7 +14,7 @@ import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
-import redCap from "@/assets/red-cap.png.asset.json";
+import redCap from "@/assets/red-cap-front.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
