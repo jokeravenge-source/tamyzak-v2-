@@ -89,8 +89,12 @@ Deno.serve(async (req) => {
       if (s.mission_completed) todayPerSubject[subj].missions += 1;
     }
 
-    const { data: usageRows } = await admin.from("feature_usage")
-      .select("feature").eq("user_id", userId).eq("used_on", todayStr);
+    const weekDates = Object.keys(byDay);
+    const weekStart = weekDates[0];
+    const weekEnd = weekDates[weekDates.length - 1];
+    const { data: weeklyUsageRows } = await admin.from("feature_usage")
+      .select("feature, used_on").eq("user_id", userId).gte("used_on", weekStart).lte("used_on", weekEnd);
+    const usageRows = (weeklyUsageRows ?? []).filter((row: any) => String(row.used_on) === todayStr);
     const toolCounts: Record<string, number> = {};
     for (const r of (usageRows ?? []) as any[]) {
       toolCounts[r.feature] = (toolCounts[r.feature] || 0) + 1;
@@ -99,6 +103,36 @@ Deno.serve(async (req) => {
       .map(([feature, count]) => ({ feature, count }))
       .sort((a, b) => b.count - a.count);
     const questions_solved_today = (toolCounts["mcq"] || 0) + (toolCounts["generate-mcq"] || 0);
+
+    // Rich week view used by the parent report and its printable PDF.
+    const weeklyDays: Record<string, {
+      date: string; minutes: number; sessions: number; missions: number; points: number;
+      questions: number; tools: number; todo_done: number; todo_total: number;
+      subjects: Record<string, number>;
+    }> = {};
+    for (const date of weekDates) {
+      weeklyDays[date] = { date, minutes: 0, sessions: 0, missions: 0, points: 0, questions: 0, tools: 0, todo_done: 0, todo_total: 0, subjects: {} };
+    }
+    const weeklySubjects: Record<string, number> = {};
+    for (const session of (sessions7 ?? []) as any[]) {
+      const date = String(session.created_at).slice(0, 10);
+      const day = weeklyDays[date];
+      if (!day) continue;
+      const minutes = Math.round((Number(session.duration_seconds) || 0) / 60);
+      const subject = String(session.subject || "Other");
+      day.minutes += minutes;
+      day.sessions += 1;
+      day.missions += session.mission_completed ? 1 : 0;
+      day.points += Number(session.points) || 0;
+      day.subjects[subject] = (day.subjects[subject] || 0) + minutes;
+      weeklySubjects[subject] = (weeklySubjects[subject] || 0) + minutes;
+    }
+    for (const row of (weeklyUsageRows ?? []) as any[]) {
+      const day = weeklyDays[String(row.used_on)];
+      if (!day) continue;
+      day.tools += 1;
+      if (row.feature === "mcq" || row.feature === "generate-mcq") day.questions += 1;
+    }
 
     // points total
     const { data: pts } = await admin.from("user_points").select("points").eq("user_id", userId);
@@ -123,6 +157,18 @@ Deno.serve(async (req) => {
       if (!t.day) return true;
       return t.day === todayEn || t.day === todayAr1 || (todayAr2 && t.day === todayAr2);
     });
+    for (const date of weekDates) {
+      const dayDate = new Date(`${date}T12:00:00Z`);
+      const idx = dayDate.getUTCDay();
+      const en = enDays[idx];
+      const ar = arDays[idx];
+      const arAlt = idx === 1 ? "الاثنين" : null;
+      const items = allItems.filter((item) =>
+        (!item.day && date === todayStr) || item.day === en || item.day === ar || (arAlt && item.day === arAlt)
+      );
+      weeklyDays[date].todo_total = items.length;
+      weeklyDays[date].todo_done = items.filter((item) => item.done).length;
+    }
 
     return json({
       student_name: profile?.display_name ?? "Student",
@@ -132,6 +178,10 @@ Deno.serve(async (req) => {
       target_grade: studentProfile?.target_grade ?? null,
       weekly_goal_hours: studentProfile?.weekly_goal_hours ?? null,
       last_7_days: Object.entries(byDay).map(([date, minutes]) => ({ date, minutes })),
+      weekly_days: weekDates.map((date) => weeklyDays[date]),
+      weekly_subjects: Object.entries(weeklySubjects)
+        .map(([subject, minutes]) => ({ subject, minutes }))
+        .sort((a, b) => b.minutes - a.minutes),
       last_report: report ?? null,
       todays_todos: todaysTodos,
       all_todos: allItems,
