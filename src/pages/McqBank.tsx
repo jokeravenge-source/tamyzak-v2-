@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { showAward } from "@/lib/points";
-import { recordMistake } from "@/lib/mistakes";\nimport { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import { recordMistake } from "@/lib/mistakes";
+import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 
 type Row = {
   id: string;
