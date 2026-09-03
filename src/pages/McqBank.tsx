@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { showAward } from "@/lib/points";
-import { recordMistake } from "@/lib/mistakes";
+import { recordMistake } from "@/lib/mistakes";\nimport { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 
 type Row = {
   id: string;
@@ -73,7 +73,12 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .limit(2000),
         (supabase as any).rpc("get_due_mcq_bank_reviews"),
       ]);
-      setRows((data ?? []) as Row[]);
+      const databaseRows = (data ?? []) as Row[];
+      const existingQuestions = new Set(databaseRows.map((row) => row.question.trim()));
+      const chapterTwoFallback = getBuiltInPhysicsCh2(lang).filter(
+        (row) => !existingQuestions.has(row.question.trim()),
+      );
+      setRows([...databaseRows, ...chapterTwoFallback]);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();
