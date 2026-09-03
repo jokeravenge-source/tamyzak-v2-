@@ -330,7 +330,7 @@ const FEATURED_COPY = {
     canvas: { title: "اللوحة", subtitle: "ارسم ونظّم أفكارك بحرية." },
     notes: { title: "ملاحظاتي", subtitle: "اكتب ونظّم ملاحظاتك الدراسية." },
     adminNotes: { title: "ملاحظات دراسية", subtitle: "ملاحظات جميلة أعدّها المدرّسون خصيصاً لك." },
-    companion: { title: "رفيق النجاح", subtitle: "شريكك الذكي في الدراسة والتخطيط." },
+    companion: { title: "رفيقك", subtitle: "شريكك الذكي في الدراسة والتخطيط." },
     liveBattle: { title: "المعركة المباشرة", subtitle: "تحد صديقك" },
     subjectsHub: { title: "المواد", subtitle: "كل موادك، فصلاً بفصل." },
     sessions: { title: "جلسات الدراسة", subtitle: "احسب وقت دراستك وادخل غرف الدراسة." },
@@ -1099,7 +1099,7 @@ const Basics = ({
             whileHover={{ y: -3 }}
             whileTap={{ scale: 0.99 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            aria-label={language === "ar" ? "افتح رفيق النجاح" : "Open Success Companion"}
+            aria-label={language === "ar" ? "افتح رفيقك" : "Open Success Companion"}
             className={`group relative mb-7 w-full overflow-hidden rounded-[28px] border border-primary/25 bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-[0_18px_45px_-24px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-7 ${isRTL ? "text-right" : "text-left"}`}
           >
             <span aria-hidden className="absolute -top-16 -end-10 h-44 w-44 rounded-full border border-white/15 bg-white/10 transition-transform duration-500 group-hover:scale-110" />
@@ -1116,7 +1116,7 @@ const Basics = ({
 
               <span className="min-w-0 flex-1">
                 <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200 sm:text-xs">
-                  {language === "ar" ? "رفيق النجاح" : "Success Companion"}
+                  {language === "ar" ? "رفيقك" : "Success Companion"}
                 </span>
                 <span className="block text-xl font-black leading-snug tracking-tight text-white sm:text-2xl md:text-3xl">
                   {language === "ar" ? "عندك مشكلة بالالتزام؟ جبنالك رفيقك" : "Struggling to stay committed? Meet your companion."}
