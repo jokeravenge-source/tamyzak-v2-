@@ -58,8 +58,8 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         joined: "تم الانضمام إلى الغرفة", hint: "شارك الرمز مع أصدقائك ليدرسوا معك.",
         empty: "لا توجد رسائل بعد — ابدأ الحديث!",
         share: "مشاركة الرابط", linkCopied: "تم نسخ رابط الغرفة",
-        owner: "صاحب الغرفة", del: "حذف الرسالة", ban: "حظر", banned: "تم حظر العضو",
-        banConfirm: "هل تريد حظر هذا الطالب من الغرفة؟", youBanned: "تم حظرك من هذه الغرفة",
+        owner: "صاحب الغرفة", del: "حذف الرسالة", ban: "إزالة", banned: "تمت إزالة العضو",
+        banConfirm: "هل تريد إزالة هذا الطالب من الغرفة؟ يمكنه الانضمام مجدداً بالرابط أو الرمز.", youBanned: "تم حظرك من هذه الغرفة",
         deleted: "تم حذف الرسالة", roomView: "قاعة الدراسة",
         makeOwner: "تعيين كصاحب الغرفة", ownerChanged: "تم نقل ملكية الغرفة",
         transferConfirm: "هل تريد جعل هذا الطالب صاحب الغرفة؟", noTimer: "لا يوجد مؤقّت",
@@ -77,8 +77,8 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         joined: "Joined the room", hint: "Share the code with friends so they can study with you.",
         empty: "No messages yet — say hi!",
         share: "Share link", linkCopied: "Room link copied",
-        owner: "Owner", del: "Delete message", ban: "Ban", banned: "Member banned",
-        banConfirm: "Ban this student from the room?", youBanned: "You are banned from this room",
+        owner: "Owner", del: "Delete message", ban: "Remove", banned: "Member removed",
+        banConfirm: "Remove this student? They can rejoin using the link or code.", youBanned: "You are banned from this room",
         deleted: "Message deleted", roomView: "Study hall",
         makeOwner: "Make owner", ownerChanged: "Room ownership transferred",
         transferConfirm: "Make this student the room owner?", noTimer: "No timer",
@@ -362,11 +362,11 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const banMember = async (m: Member) => {
     if (!room || !userId) return;
     if (!window.confirm(L.banConfirm)) return;
-    const { error } = await supabase.from("study_room_bans")
-      .insert({ room_id: room.id, user_id: m.user_id, display_name: m.display_name, banned_by: userId });
-    if (error && !error.message.includes("duplicate")) { toast.error(error.message); return; }
-    await supabase.from("study_room_members").delete().eq("room_id", room.id).eq("user_id", m.user_id);
-    await supabase.from("study_room_messages").delete().eq("room_id", room.id).eq("user_id", m.user_id);
+    // Removing a member is temporary: no ban row is created, so a valid
+    // invitation link or room code can restore the membership immediately.
+    const { error } = await supabase.from("study_room_members")
+      .delete().eq("room_id", room.id).eq("user_id", m.user_id);
+    if (error) { toast.error(error.message); return; }
     toast.success(L.banned);
     loadRoom(room.id);
   };
