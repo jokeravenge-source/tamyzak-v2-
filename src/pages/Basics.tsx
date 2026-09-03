@@ -1093,7 +1093,7 @@ const Basics = ({
           {/* Success companion — featured commitment card */}
           <motion.button
             type="button"
-            onClick={() => navigate("companion")}
+            onClick={() => window.open("https://t.me/rafeeqaak", "_blank", "noopener,noreferrer")}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -3 }}
