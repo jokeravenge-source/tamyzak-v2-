@@ -2897,6 +2897,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_home_dashboard_stats: { Args: never; Returns: Json }
       admin_analytics_dropoff: { Args: never; Returns: Json }
       admin_analytics_engagement: { Args: never; Returns: Json }
       admin_analytics_features: {

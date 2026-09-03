@@ -1,28 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
-  ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
-  LogOut, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
-  Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
-  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
+  ArrowRight, ArrowLeft, Layers, AlertTriangle, FileText, GraduationCap,
+  ListChecks, Newspaper, ScrollText, Network, Search, Trophy, Target,
+  HelpCircle, Headphones, Lightbulb, Sparkles, UserCog, BookOpen, Heart,
+  Users, Settings, NotebookPen, Youtube, Swords, Video, Palette, Lock,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
 import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
 
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import type { MainMenuChoice } from "@/pages/MainMenu";
-import { useSubscription } from "@/hooks/useSubscription";
-import { missionsData, missionsOrder } from "@/data/missions";
 import { useTodos } from "@/lib/todoTopicProgress";
-import StreakTree from "@/components/StreakTree";
+import HomeCountdown from "@/components/HomeCountdown";
 import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
-import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
+import { totalDueCount } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
+
+const StreakTree = lazy(() => import("@/components/StreakTree"));
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   physics: { ar: "الفيزياء", en: "Physics" },
@@ -40,39 +41,6 @@ function subjectLabel(subject: string, language: AppLanguage): string {
   return m ? (language === "ar" ? m.ar : m.en) : subject;
 }
 
-function useStreakDays(): number {
-  const [days, setDays] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("streak_state_v1");
-      if (raw) return JSON.parse(raw).days ?? 0;
-    } catch {}
-    return 0;
-  });
-  useEffect(() => {
-    const read = () => {
-      try {
-        const raw = localStorage.getItem("streak_state_v1");
-        if (raw) setDays(JSON.parse(raw).days ?? 0);
-      } catch {}
-    };
-    read();
-    const id = window.setInterval(read, 1500);
-    window.addEventListener("storage", read);
-    return () => { window.clearInterval(id); window.removeEventListener("storage", read); };
-  }, []);
-  useEffect(() => {
-    if (!days) return;
-    try {
-      const key = "tmz_streak_tracked_v1";
-      const today = new Date().toISOString().slice(0, 10);
-      if (localStorage.getItem(key) === `${today}:${days}`) return;
-      localStorage.setItem(key, `${today}:${days}`);
-      trackStreakUpdated(days);
-    } catch { /* ignore */ }
-  }, [days]);
-  return days;
-}
-
 export type BasicsChoice =
   | "flashcards"
   | "malazam"
@@ -86,6 +54,16 @@ export type BasicsChoice =
   | "mindmap";
 
 const TEMP_LOCKED_TOOLS = new Set<MainMenuChoice>(["adminNotes"]);
+const MISSIONS_TOTAL = 506;
+
+type HomeDashboardStats = {
+  display_name: string;
+  total_points: number;
+  current_streak: number;
+  missions_done: number;
+  board_rank: number | null;
+  board_total: number;
+};
 
 const MOTIVATIONAL_PHRASES = {
   en: [
@@ -350,13 +328,12 @@ const Basics = ({
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
   const [motivationalPhrase] = useState(() => phrases[Math.floor(Math.random() * phrases.length)]);
-  const { isPremium } = useSubscription();
   const fc = FEATURED_COPY[language];
   const [activeKey, setActiveKey] = useState<MainMenuChoice>("flashcards");
   const [activeGroup, setActiveGroup] = useState<string>(NAV_GROUPS[0].titleEn);
   const todos = useTodos();
   const [missionsDone, setMissionsDone] = useState<number>(0);
-  const streakDays = useStreakDays();
+  const [streakDays, setStreakDays] = useState(0);
   const [showAllTools, setShowAllTools] = useState<boolean>(false);
   const [recentKeys, setRecentKeys] = useState<string[]>(() => getRecentTools());
 
@@ -370,46 +347,18 @@ const Basics = ({
     };
   }, []);
   const [dueCards, setDueCards] = useState<number>(0);
-  const [dueGroups, setDueGroups] = useState<DueGroup[]>([]);
 
   useEffect(() => {
     let active = true;
     totalDueCount().then((n) => { if (active) setDueCards(n); });
-    dueBreakdown().then((g) => { if (active) setDueGroups(g); });
     return () => { active = false; };
   }, []);
 
-  // Total missions across all subjects/chapters
-  const missionsTotal = (() => {
-    let total = 0;
-    missionsOrder.forEach((s) => {
-      const data = missionsData[s];
-      data?.chapters.forEach((c) => { total += c.topics.length; });
-    });
-    return total;
-  })();
-
-  useEffect(() => {
-    (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      const { data } = await supabase
-        .from("mission_progress")
-        .select("completed")
-        .eq("user_id", u.user.id)
-        .eq("completed", true);
-      setMissionsDone((data ?? []).length);
-    })();
-  }, []);
-
-  const missionsPct = missionsTotal ? Math.min(100, Math.round((missionsDone / missionsTotal) * 100)) : 0;
   const todoDone = todos.filter((todo) => todo.done).length;
   const todoTotal = todos.length;
   const heroProgressDone = todoTotal > 0 ? todoDone : missionsDone;
-  const heroProgressTotal = todoTotal > 0 ? todoTotal : missionsTotal;
+  const heroProgressTotal = todoTotal > 0 ? todoTotal : MISSIONS_TOTAL;
   const heroProgressPct = heroProgressTotal ? Math.min(100, Math.round((heroProgressDone / heroProgressTotal) * 100)) : 0;
-
-  const signOut = async () => { await supabase.auth.signOut(); };
 
   // Today's pending tasks (todos in localStorage) → quick badge
   const [pendingTodos, setPendingTodos] = useState<number>(() => {
@@ -433,102 +382,55 @@ const Basics = ({
     };
   }, []);
 
-  const DEFAULT_TARGET_ISO = "2026-06-13T07:00";
-  const [eventName, setEventName] = useState<string>(() => localStorage.getItem("custom_countdown_name_v1") || "");
-  const [eventDateISO, setEventDateISO] = useState<string>(() => localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
-  useEffect(() => {
-    const sync = () => {
-      setEventName(localStorage.getItem("custom_countdown_name_v1") || "");
-      setEventDateISO(localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
-    };
-    window.addEventListener("storage", sync);
-    window.addEventListener("app:countdown-changed", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("app:countdown-changed", sync);
-    };
-  }, []);
-  const TARGET = new Date(eventDateISO).getTime();
-  const [now, setNow] = useState<number>(() => Date.now());
-  const [showTimer, setShowTimer] = useState<boolean>(() => localStorage.getItem("countdown_hidden_v1") !== "1");
-  useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, []);
-  const diff = Math.max(0, TARGET - now);
-  const cd = {
-    d: Math.floor(diff / 86400000),
-    h: Math.floor((diff % 86400000) / 3600000),
-    m: Math.floor((diff % 3600000) / 60000),
-    s: Math.floor((diff % 60000) / 1000),
-  };
-  const targetDate = new Date(eventDateISO);
-  const formattedTarget = isNaN(targetDate.getTime())
-    ? ""
-    : targetDate.toLocaleString(language === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const defaultEvtName = language === "ar" ? "موعد مهم" : "Important date";
-  const evtName = eventName.trim() || defaultEvtName;
-  const timerLabel = language === "ar" ? `${evtName} — ${formattedTarget}` : `${evtName} — ${formattedTarget}`;
-  const units = language === "ar"
-    ? { d: "يوم", h: "ساعة", m: "دقيقة", s: "ثانية" }
-    : { d: "Days", h: "Hours", m: "Min", s: "Sec" };
-  const dismissTimer = () => {
-    localStorage.setItem("countdown_hidden_v1", "1");
-    setShowTimer(false);
-  };
-
   const [username, setUsername] = useState<string>(() => localStorage.getItem("app_display_name_v1") || "");
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [boardRank, setBoardRank] = useState<number | null>(null);
   const [boardTotal, setBoardTotal] = useState<number>(0);
   useEffect(() => {
-    let uid: string | null = null;
+    let active = true;
+    let lastFetch = 0;
     const load = async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      uid = u.user.id;
-      const { data } = await supabase
-        .from("user_points")
-        .select("points")
-        .eq("user_id", u.user.id);
-      const total = (data ?? []).reduce((sum, r: { points: number | null }) => sum + (r.points ?? 0), 0);
-      setTotalPoints(total);
-
-      // Standing among all students (all-time totals, same source as the leaderboard).
-      const pageSize = 1000;
-      const totals = new Map<string, number>();
-      let from = 0;
-      for (;;) {
-        const { data: page, error } = await supabase
-          .from("user_points")
-          .select("user_id, points")
-          .range(from, from + pageSize - 1);
-        if (error) break;
-        (page ?? []).forEach((r: { user_id: string; points: number | null }) => {
-          totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + (r.points ?? 0));
-        });
-        if (!page || page.length < pageSize) break;
-        from += pageSize;
+      lastFetch = Date.now();
+      const { data, error } = await supabase.rpc("get_home_dashboard_stats");
+      if (!active || error || !data) return;
+      const stats = data as unknown as HomeDashboardStats;
+      setTotalPoints(stats.total_points ?? 0);
+      setStreakDays(stats.current_streak ?? 0);
+      setMissionsDone(stats.missions_done ?? 0);
+      setBoardTotal(stats.board_total ?? 0);
+      setBoardRank(stats.board_rank ?? null);
+      if (stats.display_name) {
+        setUsername(stats.display_name);
+        localStorage.setItem("app_display_name_v1", stats.display_name);
       }
-      const mine = totals.get(u.user.id) ?? total;
-      let ahead = 0;
-      totals.forEach((v, k) => { if (k !== u.user!.id && v > mine) ahead += 1; });
-      setBoardTotal(totals.size);
-      setBoardRank(totals.size ? ahead + 1 : null);
     };
-    load();
-    const onFocus = () => load();
+    void load();
+    const onFocus = () => {
+      if (document.hidden || Date.now() - lastFetch < 30000) return;
+      void load();
+    };
+    const onProgress = () => void load();
     window.addEventListener("focus", onFocus);
-    // Cost: points changes are always triggered locally, so we listen to the
-    // in-app event instead of keeping a realtime channel open.
-    window.addEventListener("app:progress-updated", onFocus);
-    window.addEventListener("app:feature-unlocked", onFocus);
+    window.addEventListener("app:progress-updated", onProgress);
+    window.addEventListener("app:feature-unlocked", onProgress);
     return () => {
+      active = false;
       window.removeEventListener("focus", onFocus);
-      window.removeEventListener("app:progress-updated", onFocus);
-      window.removeEventListener("app:feature-unlocked", onFocus);
+      window.removeEventListener("app:progress-updated", onProgress);
+      window.removeEventListener("app:feature-unlocked", onProgress);
     };
   }, []);
+
+  useEffect(() => {
+    if (!streakDays) return;
+    try {
+      const key = "tmz_streak_tracked_v1";
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem(key) === `${today}:${streakDays}`) return;
+      localStorage.setItem(key, `${today}:${streakDays}`);
+      trackStreakUpdated(streakDays);
+    } catch { /* ignore */ }
+  }, [streakDays]);
   const leaderboardRank = rankFor(totalPoints);
   const currentRank = leaderboardRank.key;
   const rankLabel = leaderboardRank.label[language];
@@ -539,15 +441,6 @@ const Basics = ({
     ? Math.max(0, Math.min(1, (totalPoints - leaderboardRank.min) / (nextRank.min - leaderboardRank.min)))
     : 1;
   useEffect(() => {
-    (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      const { data: p } = await supabase.from("profiles").select("display_name").eq("user_id", u.user.id).maybeSingle();
-      if (p?.display_name) {
-        setUsername(p.display_name);
-        localStorage.setItem("app_display_name_v1", p.display_name);
-      }
-    })();
     const onChange = () => setUsername(localStorage.getItem("app_display_name_v1") || "");
     window.addEventListener("app:username-changed", onChange);
     return () => window.removeEventListener("app:username-changed", onChange);
@@ -1180,32 +1073,7 @@ const Basics = ({
             </div>
           </section>
 
-          {/* Countdown — quiet inline strip */}
-          {showTimer && (
-            <div className="mb-6 rounded-2xl border border-border bg-card px-5 py-4 flex items-center gap-4">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
-                <Timer className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{language === "ar" ? "موعد مهم" : "Save the date"}</p>
-                <p className="font-semibold text-sm truncate">{timerLabel}</p>
-              </div>
-              <div className="sm:hidden shrink-0 rounded-xl bg-primary/10 px-3 py-2 text-center">
-                <span className="block text-base font-black tabular-nums text-primary">{cd.d}</span>
-                <span className="block text-[9px] text-muted-foreground">{units.d}</span>
-              </div>
-              <div className="hidden sm:flex items-center gap-1.5 text-sm font-bold tabular-nums">
-                <span>{String(cd.d).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.d}</span>
-                <span className="text-muted-foreground mx-1">·</span>
-                <span>{String(cd.h).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.h}</span>
-                <span className="text-muted-foreground mx-1">·</span>
-                <span>{String(cd.m).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.m}</span>
-              </div>
-              <button onClick={dismissTimer} aria-label="Dismiss" className="text-muted-foreground hover:text-foreground p-1 shrink-0">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <HomeCountdown language={language} />
 
           {/* Recently used tools (falls back to the tools menu) */}
           <section className="mb-7">
@@ -1277,7 +1145,9 @@ const Basics = ({
 
           {/* Streak tree — bottom */}
           <section>
-            <StreakTree language={language} />
+            <Suspense fallback={<div className="mx-auto my-12 h-80 max-w-md animate-pulse rounded-xl bg-muted/50" />}>
+              <StreakTree language={language} daysOverride={streakDays} />
+            </Suspense>
           </section>
           </div>
         </div>

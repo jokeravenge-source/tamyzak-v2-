@@ -11,7 +11,7 @@ type StreakState = { days: number; lastDate: string; celebrated?: boolean };
 
 // The server stores the account's streak, so it survives deployments, browser
 // storage cleanup, and moves between the Lovable and custom-domain addresses.
-function useStreak() {
+function useStreak(enabled = true) {
   const [state, setState] = useState<StreakState>(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -21,6 +21,7 @@ function useStreak() {
   });
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
 
     const refresh = async () => {
@@ -49,7 +50,7 @@ function useStreak() {
       active = false;
       window.removeEventListener("app:progress-updated", refresh);
     };
-  }, []);
+  }, [enabled]);
 
   const markCelebrated = () => {
     setState((p) => {
@@ -125,9 +126,10 @@ function LottieTree({ progress }: { progress: number }) {
   );
 }
 
-const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
-  const { state, markCelebrated } = useStreak();
-  const progress = Math.min(state.days / FULL_DAYS, 1);
+const StreakTree = ({ language = "en", daysOverride }: { language?: "en" | "ar"; daysOverride?: number }) => {
+  const { state, markCelebrated } = useStreak(daysOverride === undefined);
+  const days = daysOverride ?? state.days;
+  const progress = Math.min(days / FULL_DAYS, 1);
   const pct = Math.round(progress * 100);
 
   const treeBoxRef = useRef<HTMLDivElement | null>(null);
@@ -136,7 +138,7 @@ const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
 
   // Sparkle + pop when a new apple appears (roughly one per streak day).
   useEffect(() => {
-    const appleCount = state.days; // 1 apple per day, up to FULL_DAYS
+    const appleCount = days; // 1 apple per day, up to FULL_DAYS
     const prev = prevAppleCountRef.current;
     if (prev === -1) {
       prevAppleCountRef.current = appleCount;
@@ -169,10 +171,10 @@ const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
       }
     }
     prevAppleCountRef.current = appleCount;
-  }, [state.days]);
+  }, [days]);
 
   useEffect(() => {
-    if (state.days >= FULL_DAYS && !state.celebrated) {
+    if (days >= FULL_DAYS && !state.celebrated) {
       const end = Date.now() + 4000;
       const burst = () => {
         confetti({ particleCount: 80, spread: 80, origin: { y: 0.7 } });
@@ -183,11 +185,11 @@ const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
       burst();
       markCelebrated();
     }
-  }, [state.days, state.celebrated, markCelebrated]);
+  }, [days, state.celebrated, markCelebrated]);
 
   const T = language === "ar"
-    ? { days: state.days === 1 ? "يوم" : "يوماً", label: "سلسلة المثابرة", full: "اكتملت الشجرة! 🎉" }
-    : { days: state.days === 1 ? "day" : "days", label: "Your streak", full: "Tree fully grown! 🎉" };
+    ? { days: days === 1 ? "يوم" : "يوماً", label: "سلسلة المثابرة", full: "اكتملت الشجرة! 🎉" }
+    : { days: days === 1 ? "day" : "days", label: "Your streak", full: "Tree fully grown! 🎉" };
 
   return (
     <section dir={language === "ar" ? "rtl" : "ltr"} className="w-full mt-12 mb-6">
@@ -200,7 +202,7 @@ const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
         <div className="mt-4 text-center">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{T.label}</p>
           <p className="text-3xl font-semibold text-foreground mt-1">
-            {state.days} <span className="text-base font-normal text-muted-foreground">{T.days}</span>
+            {days} <span className="text-base font-normal text-muted-foreground">{T.days}</span>
           </p>
           <div className="mt-4 h-1.5 w-full rounded-full bg-muted overflow-hidden">
             <div
@@ -209,7 +211,7 @@ const StreakTree = ({ language = "en" }: { language?: "en" | "ar" }) => {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {progress >= 1 ? T.full : `${pct}% · ${FULL_DAYS - state.days} ${language === "ar" ? "يوم متبقي" : "days to go"}`}
+            {progress >= 1 ? T.full : `${pct}% · ${Math.max(0, FULL_DAYS - days)} ${language === "ar" ? "يوم متبقي" : "days to go"}`}
           </p>
         </div>
       </div>

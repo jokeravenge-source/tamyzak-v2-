@@ -35,7 +35,8 @@ import ZombieGuard from "./components/ZombieGuard";
 import MistakesPunishment from "./components/MistakesPunishment";
 import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
-import Basics, { type BasicsChoice } from "./pages/Basics";
+import type { BasicsChoice } from "./pages/Basics";
+const Basics = lazy(() => import("./pages/Basics"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 import { isOnboardingDone, markOnboardedRemote, syncOnboardingWithServer, type OnboardingSubject } from "@/lib/onboarding";
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
@@ -43,14 +44,14 @@ import { recordToolUse } from "@/lib/recentTools";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const More = lazy(() => import("./pages/More"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
-import PointsAwardOverlay from "./components/PointsAwardOverlay";
-import FeatureUnlockCelebration from "./components/FeatureUnlockCelebration";
-import NewFeatureAnnouncement from "./components/NewFeatureAnnouncement";
-import UsageIntroGate from "./components/UsageIntroGate";
+const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
+const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
+const NewFeatureAnnouncement = lazy(() => import("./components/NewFeatureAnnouncement"));
+const UsageIntroGate = lazy(() => import("./components/UsageIntroGate"));
 
 const GuideChat = lazy(() => import("./pages/GuideChat"));
 
-import FeatureUnlocks from "./pages/FeatureUnlocks";
+const FeatureUnlocks = lazy(() => import("./pages/FeatureUnlocks"));
 import { ensureDailyLogin, fetchUnlockedKeys, isGatedMenu, type FeatureKey } from "@/lib/unlocks";
 const TodoList = lazy(() => import("./pages/TodoList"));
 const News = lazy(() => import("./pages/News"));
@@ -96,18 +97,18 @@ import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
-import ParentFollow from "./pages/ParentFollow";
-import OAuthConsent from "./pages/OAuthConsent";
-import ResetPassword from "./pages/ResetPassword";
+const ParentFollow = lazy(() => import("./pages/ParentFollow"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
-import InstallAppPrompt from "./components/InstallAppPrompt";
-import { PremiumWelcomeOverlay } from "./components/PremiumWelcomeOverlay";
-import SearchFAB from "./components/SearchFAB";
-import ExcellenceCompanion from "./components/ExcellenceCompanion";
+const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
+const PremiumWelcomeOverlay = lazy(() => import("./components/PremiumWelcomeOverlay").then((m) => ({ default: m.PremiumWelcomeOverlay })));
+const SearchFAB = lazy(() => import("./components/SearchFAB"));
+const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"));
 import TelegramGate from "./components/TelegramGate";
-import TelegramChannelGate from "./components/TelegramChannelGate";
+const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
-import BottomGroupNav from "./components/BottomGroupNav";
+const BottomGroupNav = lazy(() => import("./components/BottomGroupNav"));
 import { startAnalyticsSession, captureSignupSource } from "@/lib/analytics";
 import { captureReferralCode, redeemPendingReferral } from "@/lib/referral";
 
@@ -183,7 +184,9 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <ParentFollow token={followMatch[1]} />
+          <Suspense fallback={null}>
+            <ParentFollow token={followMatch[1]} />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -196,7 +199,9 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <OAuthConsent />
+          <Suspense fallback={null}>
+            <OAuthConsent />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -210,7 +215,9 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <ResetPassword />
+          <Suspense fallback={null}>
+            <ResetPassword />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -694,17 +701,18 @@ const App = () => {
       <Sonner />
       <ZombieGuard />
       <SpotifyAuthCallback />
-      <PointsAwardOverlay language={language ?? "en"} />
-      <FeatureUnlockCelebration
-        language={language ?? "en"}
-        onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
-      />
       <PaymentTestModeBanner />
-      <InstallAppPrompt />
-      {language && <PremiumWelcomeOverlay language={language} />}
-      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
-        <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
-      )}
+      <Suspense fallback={null}>
+        <PointsAwardOverlay language={language ?? "en"} />
+        <FeatureUnlockCelebration
+          language={language ?? "en"}
+          onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
+        />
+        <InstallAppPrompt />
+        {language && <PremiumWelcomeOverlay language={language} />}
+        {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+          <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
+        )}
       {guideOpen && language && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-background">
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>}>
@@ -741,6 +749,7 @@ const App = () => {
           onGuide={() => setGuideOpen(true)}
         />
       )}
+      </Suspense>
       <PageTransition
         routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${channelVerified ? "ch" : "noch"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
