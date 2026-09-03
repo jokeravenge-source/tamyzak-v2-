@@ -6,6 +6,9 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+const INSTALL_PROMPT_SKIPPED_KEY = "tmz_install_prompt_skipped_at_v1";
+const SKIP_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -22,6 +25,7 @@ export default function InstallAppPrompt() {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const [ios] = useState(() => isIOS());
   const [safari] = useState(() => isSafari());
 
@@ -29,6 +33,15 @@ export default function InstallAppPrompt() {
     if (isStandalone()) {
       setInstalled(true);
       return;
+    }
+
+    try {
+      const skippedAt = Number(localStorage.getItem(INSTALL_PROMPT_SKIPPED_KEY) ?? 0);
+      if (skippedAt > 0 && Date.now() - skippedAt < SKIP_DURATION_MS) {
+        setSkipped(true);
+      }
+    } catch {
+      // Storage may be unavailable; the prompt can still be dismissed in memory.
     }
 
     const onBeforeInstall = (event: Event) => {
@@ -56,16 +69,26 @@ export default function InstallAppPrompt() {
     if (isStandalone()) setInstalled(true);
   }
 
+  const skip = () => {
+    setSkipped(true);
+    try {
+      localStorage.setItem(INSTALL_PROMPT_SKIPPED_KEY, String(Date.now()));
+    } catch {
+      // The in-memory state still dismisses the card for this visit.
+    }
+  };
+
   const install = async () => {
     if (!promptEvent) return;
     setInstalling(true);
     await promptEvent.prompt();
-    await promptEvent.userChoice;
+    const choice = await promptEvent.userChoice;
+    if (choice.outcome === "dismissed") skip();
     setPromptEvent(null);
     setInstalling(false);
   };
 
-  if (installed || (!ios && !promptEvent)) return null;
+  if (installed || skipped || (!ios && !promptEvent)) return null;
 
   return (
     <div className="fixed inset-0 z-[200] bg-background/90 backdrop-blur-sm flex items-center justify-center p-5" dir="rtl">
@@ -115,6 +138,13 @@ export default function InstallAppPrompt() {
             </button>
           </>
         )}
+        <button
+          type="button"
+          onClick={skip}
+          className="mt-3 w-full rounded-xl border border-border bg-transparent px-4 py-3 text-sm font-bold text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
+        >
+          ليس الآن
+        </button>
       </section>
     </div>
   );
