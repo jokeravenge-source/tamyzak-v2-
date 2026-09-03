@@ -629,11 +629,24 @@ const Basics = ({
   }[language];
   const activeCopy = todoCopy;
   const toolsHeader = { en: "Study tools", ar: "أدوات الدراسة" }[language];
+  const essentialKeys = new Set<MainMenuChoice>(FEATURED.map((item) => item.key));
+  const availableSecondaryTools = STUDY_TOOLS.filter(
+    (item) => !essentialKeys.has(item.key) && !TEMP_LOCKED_TOOLS.has(item.key),
+  );
   const recentTools = recentKeys
-    .filter((k) => k !== "liveBattle" && TOOL_ICONS[k as MainMenuChoice] && (fc as any)[k])
+    .filter((key) => {
+      const toolKey = key as MainMenuChoice;
+      return (
+        toolKey !== "liveBattle" &&
+        !essentialKeys.has(toolKey) &&
+        !TEMP_LOCKED_TOOLS.has(toolKey) &&
+        TOOL_ICONS[toolKey] &&
+        (fc as any)[toolKey]
+      );
+    })
     .slice(0, 4)
-    .map((k) => ({ key: k as MainMenuChoice, Icon: TOOL_ICONS[k as MainMenuChoice]! }));
-  const displayedTools = recentTools.length > 0 ? recentTools : STUDY_TOOLS.slice(0, 4);
+    .map((key) => ({ key: key as MainMenuChoice, Icon: TOOL_ICONS[key as MainMenuChoice]! }));
+  const displayedTools = recentTools.length > 0 ? recentTools : availableSecondaryTools.slice(0, 4);
 
   const displayedToolsHeader = recentTools.length > 0
     ? { en: "Recently used", ar: "المستخدمة مؤخراً" }[language]
@@ -756,7 +769,7 @@ const Basics = ({
       </div>
 
       {/* Content */}
-      <main className="px-3 sm:px-5 md:px-10 py-4 sm:py-8 md:py-12 pb-48">
+      <main className="px-3 sm:px-5 md:px-10 py-4 sm:py-7 md:py-8 pb-48">
         <h1 className="sr-only">{language === "ar" ? "أدوات الدراسة" : "Study tools"}</h1>
         <AnimatePresence mode="wait">
         {showAllTools ? (
@@ -857,7 +870,7 @@ const Basics = ({
           {/* ====== Noir & Gold bento dashboard ====== */}
           {/* Header */}
           {/* === The Facet Stone hero === */}
-          <header className="mb-7 md:mb-10">
+          <header className="mb-6 rounded-[28px] border border-border/80 bg-gradient-to-br from-card via-card to-primary/10 p-4 shadow-[var(--shadow-card)] sm:p-6">
             <div className="flex items-center gap-3 sm:gap-6">
               <div className="shrink-0 sm:hidden">
                 <RankStone
@@ -931,7 +944,7 @@ const Basics = ({
             <button
               type="button"
               onClick={() => onNav("mistakes")}
-              className="w-full mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-start hover:border-amber-400 transition-colors"
+              className="w-full mb-4 flex items-center gap-3 rounded-2xl border border-amber-400/35 bg-amber-500/10 p-3.5 text-start hover:border-amber-400 hover:bg-amber-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
               <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-4 h-4" />
@@ -952,7 +965,7 @@ const Basics = ({
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
           <section className="mb-6">
-            <div className="bg-card rounded-3xl border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
+            <div className="bg-card rounded-[28px] border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
               <div className="flex items-center gap-3 mb-4">
                 <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Target className="w-4 h-4" />
@@ -1078,11 +1091,21 @@ const Basics = ({
           </section>
 
           {/* Core tools */}
-          <section className="mb-6">
-            <h2 className="text-base sm:text-lg font-bold text-foreground mb-4">
-              {language === "ar" ? "الأساسيات" : "Essentials"}
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <section className="mb-7">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-foreground">
+                  {language === "ar" ? "الأساسيات" : "Essentials"}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {language === "ar" ? "أهم الأدوات حتى تبدأ بسرعة." : "The tools you need to get started quickly."}
+                </p>
+              </div>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+                {FEATURED.length} {language === "ar" ? "أدوات" : "tools"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {FEATURED.map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
@@ -1096,7 +1119,7 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[136px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[168px] sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
+                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-3.5 sm:min-h-[150px] sm:p-4 rounded-2xl shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
@@ -1124,6 +1147,10 @@ const Basics = ({
                 <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{language === "ar" ? "موعد مهم" : "Save the date"}</p>
                 <p className="font-semibold text-sm truncate">{timerLabel}</p>
               </div>
+              <div className="sm:hidden shrink-0 rounded-xl bg-primary/10 px-3 py-2 text-center">
+                <span className="block text-base font-black tabular-nums text-primary">{cd.d}</span>
+                <span className="block text-[9px] text-muted-foreground">{units.d}</span>
+              </div>
               <div className="hidden sm:flex items-center gap-1.5 text-sm font-bold tabular-nums">
                 <span>{String(cd.d).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.d}</span>
                 <span className="text-muted-foreground mx-1">·</span>
@@ -1138,11 +1165,16 @@ const Basics = ({
           )}
 
           {/* Recently used tools (falls back to the tools menu) */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
-                {displayedToolsHeader}
-              </h2>
+          <section className="mb-7">
+            <div className="flex items-end justify-between mb-4 gap-3">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  {displayedToolsHeader}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {language === "ar" ? "اختصارات سريعة بدون تكرار أدوات الأساسيات." : "Quick shortcuts without repeating your essentials."}
+                </p>
+              </div>
               <button
                 onClick={() => setShowAllTools(true)}
                 className="text-xs sm:text-sm font-semibold text-primary hover:opacity-80 inline-flex items-center gap-1 transition-opacity shrink-0"
@@ -1156,7 +1188,7 @@ const Basics = ({
               initial="hidden"
               animate="show"
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
             >
               {displayedTools.map((it) => {
                 const Icon = it.Icon;
