@@ -16,7 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { useSubscription } from "@/hooks/useSubscription";
 import { missionsData, missionsOrder } from "@/data/missions";
-import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
 import StreakTree from "@/components/StreakTree";
 import RankStone from "@/components/RankStone";
@@ -634,15 +633,7 @@ const Basics = ({
     .filter((k) => k !== "liveBattle" && TOOL_ICONS[k as MainMenuChoice] && (fc as any)[k])
     .slice(0, 4)
     .map((k) => ({ key: k as MainMenuChoice, Icon: TOOL_ICONS[k as MainMenuChoice]! }));
-  const displayedTools = (() => {
-    const base = recentTools.length > 0 ? recentTools : STUDY_TOOLS.slice(0, 4);
-    const pinned: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
-      { key: "mcqBank" as MainMenuChoice, Icon: Layers },
-      { key: "adminNotes" as MainMenuChoice, Icon: BookOpen },
-      { key: "notes" as MainMenuChoice, Icon: NotebookPen },
-    ].filter((p) => !base.some((t) => t.key === p.key));
-    return [...pinned, ...base].slice(0, 6);
-  })();
+  const displayedTools = recentTools.length > 0 ? recentTools : STUDY_TOOLS.slice(0, 4);
 
   const displayedToolsHeader = recentTools.length > 0
     ? { en: "Recently used", ar: "المستخدمة مؤخراً" }[language]
@@ -718,31 +709,33 @@ const Basics = ({
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
-      <div className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-10 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="sticky top-0 z-40 backdrop-blur-md bg-background/85 border-b border-border">
+        <div className="max-w-6xl mx-auto px-3 sm:px-5 md:px-10 h-14 flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
-            <p className="text-base font-bold text-primary leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>tamayzak</p>
+            <p className="hidden sm:block text-base font-bold text-primary leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>tamayzak</p>
             <button
-              onClick={() => onNav("report")}
-              aria-label={language === "ar" ? "خطتي اليوم" : "Today's plan"}
-              title={language === "ar" ? "خطتك اليوم — اضغط لعرض الخطة" : "Today's plan — tap to open"}
-              className="relative inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
+              type="button"
+              onClick={() => navigate("todo")}
+              aria-label={language === "ar" ? `${pendingTodos} مهام متبقية` : `${pendingTodos} tasks remaining`}
+              title={language === "ar" ? "افتح قائمة المهام" : "Open to-do list"}
+              className="relative inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
             >
-              <Target className="w-3.5 h-3.5" />
-              <span>{pendingTodos + dueMistakes}</span>
-              <span className="hidden sm:inline opacity-80">{language === "ar" ? "لليوم" : "today"}</span>
-              {(pendingTodos + dueMistakes) > 0 && (
+              <ListChecks className="w-3.5 h-3.5" />
+              <span>{pendingTodos}</span>
+              <span className="hidden md:inline opacity-80">{language === "ar" ? "مهام" : "tasks"}</span>
+              {pendingTodos > 0 && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
               )}
             </button>
           </div>
           <button
+            type="button"
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-w-[10rem] sm:min-w-[16rem]"
+            className="mx-auto inline-flex min-w-0 flex-1 sm:max-w-sm items-center gap-2 h-9 px-3 rounded-xl border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Search className="w-3.5 h-3.5 text-primary" />
             <span className="flex-1 text-start truncate">
@@ -751,10 +744,11 @@ const Basics = ({
             <kbd className="hidden sm:inline-block text-[10px] text-muted-foreground/70 border border-border rounded px-1">⌘K</kbd>
           </button>
           <button
+            type="button"
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className="ms-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="inline-flex shrink-0 items-center justify-center w-9 h-9 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -829,7 +823,7 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group bg-card p-5 border border-border rounded-2xl text-left transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
+                    className={`group bg-card p-5 border border-border rounded-2xl text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
                   >
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                       <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
@@ -872,62 +866,73 @@ const Basics = ({
           {/* ====== Noir & Gold bento dashboard ====== */}
           {/* Header */}
           {/* === The Facet Stone hero === */}
-          <header className="mb-8 md:mb-12">
-            <div className="flex items-center gap-5 sm:gap-7">
-              <RankStone
-                rank={currentRank}
-                size={104}
-                fillProgress={stoneFill}
-                glow={currentRank === "royal" || currentRank === "diamond"}
-                className="shrink-0"
-              />
+          <header className="mb-7 md:mb-10">
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className="shrink-0 sm:hidden">
+                <RankStone
+                  rank={currentRank}
+                  size={78}
+                  fillProgress={stoneFill}
+                  glow={currentRank === "royal" || currentRank === "diamond"}
+                />
+              </div>
+              <div className="hidden shrink-0 sm:block">
+                <RankStone
+                  rank={currentRank}
+                  size={104}
+                  fillProgress={stoneFill}
+                  glow={currentRank === "royal" || currentRank === "diamond"}
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-ash mb-1">
                   {language === "ar" ? "رتبتك" : "Your rank"}
                 </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                <h2 className="truncate text-xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
                   {rankLabel}
                   {username && (
-                    <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
+                    <span className="text-ash font-normal text-sm sm:text-lg ms-2">· {username}</span>
                   )}
                 </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 line-clamp-2 text-[11px] sm:text-xs text-muted-foreground">
                   {nextRank
                     ? (language === "ar"
                       ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
                       : `${pointsToNextRank} points to ${nextRank.label.en}`)
                     : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
                 </p>
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="rounded-2xl border border-border bg-card px-3 py-2.5">
-                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onNav("unlocks")}
-                    className="text-start rounded-2xl border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
-                  >
-                    <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? "نقطة · افتح الأدوات" : "points · unlock tools"}
-                    </p>
-                  </button>
-                  <div className="col-span-2 sm:col-span-1 rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2.5">
-                    <p className="font-mono text-primary text-xl font-semibold tabular-nums leading-none">
-                      {boardRank ? `#${boardRank}` : "—"}
-                    </p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar"
-                        ? `ترتيبك بين ${boardTotal} طالب عراقي`
-                        : `your place among ${boardTotal} Iraqi students`}
-                    </p>
-                  </div>
-                </div>
               </div>
               <GiftMcqButton language={language} />
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-2xl border border-border bg-card px-3 py-3">
+                <p className="font-mono text-ember text-lg sm:text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
+                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
+                  {language === "ar" ? "سلسلة الأيام" : "day streak"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNav("unlocks")}
+                className="text-start rounded-2xl border border-border bg-card px-3 py-3 transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <p className="font-mono text-foreground text-lg sm:text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
+                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
+                  {language === "ar" ? "النقاط" : "points"}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNav("leaderboard")}
+                className="text-start rounded-2xl border border-primary/40 bg-primary/5 px-3 py-3 transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <p className="font-mono text-primary text-lg sm:text-xl font-semibold tabular-nums leading-none">
+                  {boardRank ? `#${boardRank}` : "—"}
+                </p>
+                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
+                  {language === "ar" ? `المتصدرون · ${boardTotal}` : `leaderboard · ${boardTotal}`}
+                </p>
+              </button>
             </div>
           </header>
 
@@ -940,7 +945,7 @@ const Basics = ({
               <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-4 h-4" />
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block font-bold text-foreground">
                   {language === "ar" ? "حان وقت مراجعة أخطائك" : "Time to review your mistakes"}
                 </span>
@@ -1004,7 +1009,9 @@ const Basics = ({
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold text-foreground truncate">
                       {todoTotal > 0
-                        ? (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`)
+                        ? (todoDone === todoTotal
+                          ? (language === "ar" ? "أنجزت مهام اليوم" : "Today's tasks are complete")
+                          : (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`))
                         : (language === "ar" ? "أضف مهام اليوم" : "Add today's tasks")}
                     </span>
                     <span className="block text-[11px] text-muted-foreground truncate">
@@ -1076,9 +1083,6 @@ const Basics = ({
                 </button>
               </div>
 
-              <div className="mt-3 text-center">
-                <VisitCounter inline />
-              </div>
             </div>
           </section>
 
@@ -1101,14 +1105,14 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
+                    className={`group relative min-h-[136px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[168px] sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
                     <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-sm ring-1 ring-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform ${tint.icon}`}>
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <h3 className="relative pe-7 text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
+                    <h3 className="relative pe-7 text-foreground text-sm sm:text-lg font-bold mb-1 line-clamp-2">{meta.title}</h3>
                     <p className="relative pe-5 text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-3 end-3 inline-flex h-7 w-7 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
                       {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
@@ -1178,7 +1182,7 @@ const Basics = ({
                     whileHover={isLocked ? undefined : { y: -3 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
+                    className={`group relative min-h-[122px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[146px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
