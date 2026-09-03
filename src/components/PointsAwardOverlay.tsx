@@ -1,127 +1,141 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Trophy, Sparkles, Star, X } from "lucide-react";
-import { POINT_VALUES, type PointSource, checkUnseenAwards } from "@/lib/points";
+import { MoonStar, Sparkles, Trophy, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const COPY: Record<PointSource, { en: string; ar: string }> = {
-  summary:   { en: "Your summary was approved!",     ar: "تمت الموافقة على ملخصك!" },
-  flashcard: { en: "Great work on those flashcards!", ar: "أحسنت في البطاقات!" },
-  mcq:       { en: "Perfect score on the quiz!",      ar: "علامة كاملة في الاختبار!" },
-  essay:     { en: "Perfect score on the essay!",     ar: "علامة كاملة في المقال!" },
-};
+type DailySummary = { date: string; points: number };
+const SEEN_KEY_PREFIX = "points_daily_summary_seen_v1";
 
-type Item = { id: string; source: PointSource; points: number };
+function localDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function previousDayRange() {
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  const start = new Date(end);
+  start.setDate(start.getDate() - 1);
+  return { date: localDateKey(start), start: start.toISOString(), end: end.toISOString() };
+}
 
 const PointsAwardOverlay = ({ language }: { language: "en" | "ar" }) => {
-  const [queue, setQueue] = useState<Item[]>([]);
+  const [summary, setSummary] = useState<DailySummary | null>(null);
+  const checkingRef = useRef(false);
+  const isAr = language === "ar";
 
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const d = (e as CustomEvent).detail as { source: PointSource; points: number };
-      setQueue((q) => [...q, { id: crypto.randomUUID(), source: d.source, points: d.points }]);
-    };
-    window.addEventListener("app:point-award", handler);
-    // Check for awards earned while user was away
-    const t = setTimeout(() => checkUnseenAwards(), 1200);
-    return () => { window.removeEventListener("app:point-award", handler); clearTimeout(t); };
+  const checkDailySummary = useCallback(async () => {
+    if (checkingRef.current) return;
+    checkingRef.current = true;
+
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData.user;
+      if (!user) return;
+
+      const range = previousDayRange();
+      const seenKey = `${SEEN_KEY_PREFIX}:${user.id}`;
+      if (localStorage.getItem(seenKey) === range.date) return;
+
+      const { data, error } = await supabase
+        .from("user_points")
+        .select("points")
+        .eq("user_id", user.id)
+        .gte("created_at", range.start)
+        .lt("created_at", range.end);
+      if (error) return;
+
+      localStorage.setItem(seenKey, range.date);
+      const points = (data ?? []).reduce(
+        (total, award) => total + (Number(award.points) || 0),
+        0,
+      );
+      if (points > 0) setSummary({ date: range.date, points });
+    } finally {
+      checkingRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
-    if (!queue.length) return;
-    const t = setTimeout(() => setQueue((q) => q.slice(1)), 3500);
-    return () => clearTimeout(t);
-  }, [queue]);
+    void checkDailySummary();
+    let midnightTimer: ReturnType<typeof setTimeout>;
 
-  const current = queue[0];
-  const isAr = language === "ar";
+    const scheduleMidnightCheck = () => {
+      clearTimeout(midnightTimer);
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 2, 0);
+      midnightTimer = setTimeout(() => {
+        void checkDailySummary();
+        scheduleMidnightCheck();
+      }, Math.max(1_000, nextMidnight.getTime() - Date.now()));
+    };
+    const checkWhenVisible = () => {
+      if (document.visibilityState === "visible") void checkDailySummary();
+    };
+
+    scheduleMidnightCheck();
+    document.addEventListener("visibilitychange", checkWhenVisible);
+    window.addEventListener("focus", checkWhenVisible);
+    return () => {
+      clearTimeout(midnightTimer);
+      document.removeEventListener("visibilitychange", checkWhenVisible);
+      window.removeEventListener("focus", checkWhenVisible);
+    };
+  }, [checkDailySummary]);
 
   return (
     <AnimatePresence>
-      {current && (
+      {summary && (
         <motion.div
-          key={current.id}
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 260, damping: 22 }}
-          className="fixed inset-0 z-[100] pointer-events-none px-3 flex items-center justify-center"
-          dir={isAr ? "rtl" : "ltr"}
+          key={summary.date}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/65 px-4 backdrop-blur-sm"
+          dir={isAr ? "rtl" : "ltr"} role="dialog" aria-modal="true"
+          aria-labelledby="daily-points-title"
         >
-          <div className="relative w-[min(400px,calc(100vw-1.5rem))] overflow-hidden rounded-[28px] border border-primary/40 bg-gradient-to-br from-primary/25 via-background/90 to-accent/25 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_25px_70px_-10px_hsl(var(--primary)/0.55)] pointer-events-auto">
-            <button
-              type="button"
-              onClick={() => setQueue((q) => q.slice(1))}
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
+            className="relative w-full max-w-sm overflow-hidden rounded-[30px] border border-primary/30 bg-gradient-to-br from-card via-card to-primary/10 p-6 text-center shadow-2xl"
+          >
+            <button type="button" onClick={() => setSummary(null)}
               aria-label={isAr ? "إغلاق" : "Close"}
-              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full border border-white/15 bg-background/40 text-muted-foreground hover:bg-background/70 hover:text-foreground transition flex items-center justify-center"
-            >
-              <X className="w-4 h-4" />
+              className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background/65 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+              <X className="h-4 w-4" />
             </button>
-
-            {/* Glow orbs */}
-            <div className="pointer-events-none absolute -top-16 -right-10 w-40 h-40 rounded-full bg-primary/30 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-accent/25 blur-3xl" />
-
-            {/* Floating sparkles */}
-            {[0, 1, 2].map((i) => (
-              <motion.span
-                key={i}
-                className="pointer-events-none absolute text-primary/70"
-                style={{
-                  top: `${15 + i * 22}%`,
-                  [i % 2 ? "right" : "left"]: `${8 + i * 10}%`,
-                }}
-                initial={{ opacity: 0, scale: 0, y: 6 }}
-                animate={{ opacity: [0, 1, 0], scale: [0.4, 1, 0.6], y: [-2, -12, -20] }}
-                transition={{ duration: 2.4, delay: 0.15 + i * 0.15, repeat: Infinity, repeatDelay: 0.4 }}
-              >
-                <Sparkles className="w-3 h-3" />
-              </motion.span>
-            ))}
-
-            <div className="relative flex items-center gap-3 sm:gap-4">
-              <motion.div
-                initial={{ rotate: -25, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ delay: 0.08, type: "spring", stiffness: 320, damping: 16 }}
-                className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center shadow-[0_10px_25px_-5px_hsl(var(--primary)/0.7)] ring-2 ring-primary/30"
-              >
-                <Trophy className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow" />
-              </motion.div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-[0.22em] text-primary font-bold mb-1">
-                  <Star className="w-3 h-3 fill-current" />
-                  <span className="truncate">{isAr ? "تهانينا!" : "Congratulations!"}</span>
-                </div>
-                <p className="text-sm sm:text-base font-semibold text-foreground leading-snug line-clamp-2">
-                  {(() => {
-                    const c = COPY[current.source] ?? { en: "Nice work!", ar: "أحسنت!" };
-                    return isAr ? c.ar : c.en;
-                  })()}
-                </p>
-                <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
-                  <motion.span
-                    initial={{ scale: 0.6, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.25, type: "spring", stiffness: 260 }}
-                    className="text-2xl sm:text-3xl font-black bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent leading-none"
-                  >
-                    +{current.points}
-                  </motion.span>
-                  <span className="text-xs sm:text-sm text-muted-foreground">
-                    {isAr ? "نقطة" : "points"}
-                  </span>
-                </div>
-              </div>
+            <div className="pointer-events-none absolute -start-12 -top-12 h-36 w-36 rounded-full bg-primary/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-14 -end-10 h-36 w-36 rounded-full bg-accent/20 blur-3xl" />
+            <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
+              <Trophy className="h-10 w-10" />
+              <Sparkles className="absolute -end-2 -top-2 h-6 w-6 text-primary" />
             </div>
-
-            {/* Progress bar shimmer */}
-            <motion.div
-              className="absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-primary via-accent to-primary rounded-b-[28px]"
-              initial={{ width: "100%" }}
-              animate={{ width: "0%" }}
-              transition={{ duration: 3.4, ease: "linear" }}
-            />
-          </div>
+            <div className="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              <MoonStar className="h-4 w-4" />
+              {isAr ? "حصيلة اليوم" : "Daily total"}
+            </div>
+            <h2 id="daily-points-title" className="text-xl font-black text-foreground">
+              {isAr ? "شوف شكد أبدعت البارحة!" : "Look what you achieved yesterday!"}
+            </h2>
+            <div className="my-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-5">
+              <span className="block text-5xl font-black text-primary">+{summary.points}</span>
+              <span className="mt-1 block text-sm font-semibold text-muted-foreground">
+                {isAr ? "نقطة جمعتها خلال اليوم" : "points earned during the day"}
+              </span>
+            </div>
+            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
+              {isAr
+                ? "جمعنالك كل نقاطك برسالة وحدة حتى يبقى تركيزك على دراستك. استمر، شغلك كلش حلو!"
+                : "We collected all your points into one message so you can stay focused. Keep it up!"}
+            </p>
+            <button type="button" onClick={() => setSummary(null)}
+              className="w-full rounded-2xl bg-gradient-to-r from-primary to-accent px-5 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 active:scale-[0.98]">
+              {isAr ? "يلا نكمل" : "Keep going"}
+            </button>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
