@@ -18,6 +18,7 @@ import girl9 from "@/assets/character-girl-9.png.asset.json";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
+import kittyEars from "@/assets/kitty-ears.png.asset.json";
 
 export type Gender = "male" | "female";
 
@@ -35,7 +36,7 @@ export const LIPSTICK_COLORS = ["#dc2626", "#e11d48", "#be185d", "#9d174d", "#f4
 export const EYESHADOW_COLORS = ["#a855f7", "#ec4899", "#06b6d4", "#10b981", "#f59e0b", "#6366f1"] as const;
 export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ffffff", "#f59e0b"] as const;
 export type NecklaceKind = "gold" | "pearl" | null;
-export type HatKind = "straw" | "red-cap" | null;
+export type HatKind = "straw" | "red-cap" | "kitty-ears" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -173,6 +174,26 @@ export function CharacterAvatar({
             transform: "translateX(-50%)",
             imageRendering: "pixelated",
             filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {hat === "kitty-ears" && (
+        <img
+          src={kittyEars.url}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 3,
+            top: "-1%",
+            left: "50%",
+            width: "62%",
+            height: "auto",
+            transform: "translateX(-50%)",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.25))",
             pointerEvents: "none",
           }}
         />
