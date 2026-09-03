@@ -19,6 +19,21 @@ const VAPID_KEY =
   "BJQ07swxhDuKP8uJXyIG5SbfGDo6y8HQZbGjTDjQys9HdTfSyDJrIa30yCU9kRvTNPY07GxckGVAdDmGFyg4cBM";
 
 let app: FirebaseApp | null = null;
+let authRefreshBound = false;
+
+export function isIOSDevice() {
+  return typeof navigator !== "undefined" && (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+export function isStandalonePwa() {
+  return typeof window !== "undefined" && (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
 
 export function getFirebaseApp(): FirebaseApp {
   if (!app) app = initializeApp(firebaseConfig);
@@ -32,6 +47,13 @@ export async function initFirebase() {
     if (await analyticsSupported()) getAnalytics(instance);
   } catch {
     /* analytics must never break the app */
+  }
+  if (!authRefreshBound) {
+    authRefreshBound = true;
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user || pushPermission() !== "granted") return;
+      window.setTimeout(() => { void registerPushToken(); }, 0);
+    });
   }
   // If the user already granted permission, make sure the messaging worker is
   // live and foreground messages surface as real OS notifications.
@@ -81,6 +103,7 @@ async function messagingServiceWorker() {
   } catch {
     /* ignore */
   }
+  await navigator.serviceWorker.ready;
   return reg;
 }
 
@@ -111,23 +134,20 @@ async function registerPushToken(): Promise<string | null> {
   });
   if (!token) return null;
 
-  try {
-    const { data: u } = await supabase.auth.getUser();
-    if (u.user) {
-      await supabase.from("push_tokens").upsert(
+  const { data: u, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!u.user) throw new Error("Sign in before enabling notifications");
+  const { error: tokenError } = await supabase.from("push_tokens").upsert(
         {
           user_id: u.user.id,
           token,
-          platform: "web",
+          platform: isIOSDevice() ? "ios-pwa" : "web",
           user_agent: navigator.userAgent.slice(0, 300),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "token" },
       );
-    }
-  } catch {
-    /* storing the token must not fail the flow */
-  }
+  if (tokenError) throw tokenError;
 
   return token;
 }
