@@ -18,14 +18,22 @@ const messaging = firebase.messaging();
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
-function show(title, body, url) {
+function show(title, body, url, messageId) {
   return self.registration.showNotification(title || "تميزك", {
     body: body || "",
     icon: "/app-icon-192.png",
     badge: "/app-icon-192.png",
-    tag: "tamayzak-push",
+    tag: messageId ? `tamayzak-push-${messageId}` : "tamayzak-push",
     renotify: true,
     data: { url: url || "/" },
+  });
+}
+
+function showOnce(title, body, url, messageId) {
+  const tag = messageId ? `tamayzak-push-${messageId}` : "tamayzak-push";
+  return self.registration.getNotifications({ tag }).then((existing) => {
+    if (existing.length > 0) return;
+    return show(title, body, url, messageId);
   });
 }
 
@@ -33,10 +41,7 @@ function show(title, body, url) {
 messaging.onBackgroundMessage((payload) => {
   const d = payload.data || {};
   const n = payload.notification || {};
-  // Notification payloads are displayed automatically by FCM. Only render
-  // legacy data-only messages here to avoid duplicate notifications.
-  if (n.title || n.body) return;
-  return show(n.title || d.title, n.body || d.body, d.url);
+  return showOnce(n.title || d.title, n.body || d.body, d.url, d.messageId);
 });
 
 // Raw fallback: fires even if the FCM SDK handler is skipped, and guarantees
@@ -50,18 +55,11 @@ self.addEventListener("push", (event) => {
   }
   const d = payload.data || {};
   const n = payload.notification || {};
-  // FCM handles notification payloads even when the PWA has no open window.
-  // This listener remains as a fallback for older data-only messages.
-  if (n.title || n.body) return;
   const title = n.title || d.title;
   const body = n.body || d.body;
   if (!title && !body) return;
   event.waitUntil(
-    self.registration.getNotifications({ tag: "tamayzak-push" }).then((existing) => {
-      // The SDK handler may have already displayed this one.
-      if (existing.some((x) => x.title === (title || "تميزك") && x.body === (body || ""))) return;
-      return show(title, body, d.url);
-    }),
+    showOnce(title, body, d.url, d.messageId),
   );
 });
 
