@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { motion } from "framer-motion";
 
 export type StoneRank = "coal" | "copper" | "silver" | "gold" | "diamond" | "royal";
@@ -29,7 +30,8 @@ const RankStone = ({
   className?: string;
   glow?: boolean;
 }) => {
-  const id = `stone-${rank}`;
+  const uniqueId = useId().replace(/:/g, "");
+  const id = `stone-${rank}-${uniqueId}`;
   const clamp = Math.max(0, Math.min(1, fillProgress));
   // Stone outline: a faceted polygon (top crown + body + flat base)
   const outline = "50,4 86,22 96,56 78,92 50,100 22,92 4,56 14,22";
@@ -41,12 +43,12 @@ const RankStone = ({
   const facetE = "50,52 78,92 50,100 22,92";
 
   const materials: Record<StoneRank, { a: string; b: string; rim: string; shine: string }> = {
-    coal:    { a: "#2a2c34", b: "#0e0f15", rim: "#3a3d48", shine: "#5a5e6d" },
-    copper:  { a: "#c98257", b: "#6f3a1f", rim: "#e9a677", shine: "#fbd9b8" },
-    silver:  { a: "#dfe4ea", b: "#7c8290", rim: "#f5f7fa", shine: "#ffffff" },
-    gold:    { a: "#e8b341", b: "#8a5a14", rim: "#f7d271", shine: "#fff3c4" },
-    diamond: { a: "#bfe6f4", b: "#5a96b3", rim: "#ffffff", shine: "#ffffff" },
-    royal:   { a: "#e8a33d", b: "#3a1d4a", rim: "#ffd27a", shine: "#fff0c2" },
+    coal:    { a: "#4b5563", b: "#111827", rim: "#6b7280", shine: "#9ca3af" },
+    copper:  { a: "#f08a4b", b: "#8f3518", rim: "#ffb27a", shine: "#ffe0c2" },
+    silver:  { a: "#f1f5f9", b: "#64748b", rim: "#ffffff", shine: "#ffffff" },
+    gold:    { a: "#ffd84d", b: "#b66a00", rim: "#fff09a", shine: "#fffbd6" },
+    diamond: { a: "#9ff3ff", b: "#087ea4", rim: "#e8fdff", shine: "#ffffff" },
+    royal:   { a: "#c084fc", b: "#581c87", rim: "#f0abfc", shine: "#fff0ff" },
   };
   const m = materials[rank];
 
@@ -69,7 +71,7 @@ const RankStone = ({
         viewBox="0 0 100 104"
         width={size}
         height={size}
-        className="relative drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
+        className="relative saturate-125 drop-shadow-[0_8px_20px_rgba(0,0,0,0.32)]"
         role="img"
         aria-label={`${rank} rank stone`}
       >
@@ -105,8 +107,8 @@ const RankStone = ({
               y={104 - 104 * clamp}
               width="100"
               height={104 * clamp}
-              fill="hsl(35 92% 60%)"
-              opacity="0.32"
+              fill={m.rim}
+              opacity="0.22"
             />
           </g>
         )}
@@ -130,7 +132,7 @@ const RankStone = ({
         )}
 
         {/* Rim light */}
-        <polygon points={outline} fill="none" stroke={m.rim} strokeWidth="1" opacity="0.55" />
+        <polygon points={outline} fill="none" stroke={m.rim} strokeWidth="1.8" opacity="0.9" />
       </svg>
     </motion.div>
   );
