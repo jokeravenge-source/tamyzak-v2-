@@ -80,31 +80,20 @@ async function sendFcm(
   body: string,
   link?: string | null,
 ): Promise<boolean> {
-  // Send a real Web Push notification. FCM/browser can display this payload
-  // while the PWA is closed; data-only payloads are not reliably delivered in
-  // the background on every mobile browser.
+  const messageId = crypto.randomUUID();
+  // Send a data message and let our service worker display it. This produces
+  // one consistent notification path on iOS Home Screen apps and Chromium.
   const message: Record<string, unknown> = {
     token,
-    notification: {
-      title: title || "تميزك",
-      body: body || "",
-    },
     data: {
       title: title ?? "",
       body: body ?? "",
       url: link ?? "/",
+      messageId,
     },
     android: { priority: "high" },
     webpush: {
       headers: { Urgency: "high", TTL: "86400" },
-      notification: {
-        title: title || "تميزك",
-        body: body || "",
-        icon: "/app-icon-192.png",
-        badge: "/app-icon-192.png",
-        tag: "tamayzak-push",
-        renotify: true,
-      },
       fcm_options: { link: link ?? "/" },
     },
   };
