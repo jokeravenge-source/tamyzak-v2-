@@ -19,6 +19,7 @@ import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
+import goldChain from "@/assets/gold-chain.png.asset.json";
 
 export type Gender = "male" | "female";
 
@@ -37,6 +38,7 @@ export const EYESHADOW_COLORS = ["#a855f7", "#ec4899", "#06b6d4", "#10b981", "#f
 export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ffffff", "#f59e0b"] as const;
 export type NecklaceKind = "gold" | "pearl" | null;
 export type HatKind = "straw" | "red-cap" | "kitty-ears" | null;
+export type ChainKind = "gold" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -51,6 +53,7 @@ export type CharacterTraits = {
   headband?: string | null;
   necklace?: NecklaceKind;
   hat?: HatKind;
+  chain?: ChainKind;
   variant?: CharacterVariant;
 };
 
@@ -68,6 +71,7 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
     headband: null,
     necklace: null,
     hat: null,
+    chain: null,
     variant: 1,
   };
 }
@@ -214,6 +218,26 @@ export function CharacterAvatar({
         >
           👑
         </span>
+      )}
+      {traits?.chain === "gold" && (
+        <img
+          src={goldChain.url}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 5,
+            top: "44%",
+            left: "50%",
+            width: "39%",
+            height: "auto",
+            transform: "translateX(-50%)",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
+            pointerEvents: "none",
+          }}
+        />
       )}
     </div>
   );
