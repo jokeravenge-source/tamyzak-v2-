@@ -3000,6 +3000,7 @@ export type Database = {
         }[]
       }
       get_exam_answer_path: { Args: { _exam_id: string }; Returns: string }
+      get_home_dashboard_stats: { Args: never; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       has_active_premium: {
         Args: { check_env?: string; user_uuid: string }
