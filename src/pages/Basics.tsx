@@ -853,15 +853,6 @@ const Basics = ({
           style={{ fontFamily: "'Plus Jakarta Sans', 'Cairo', sans-serif" }}
         >
         <div className="max-w-6xl mx-auto">
-          {/* subtle brass aura */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 15% -10%, hsl(var(--primary) / 0.10), transparent 55%), radial-gradient(circle at 90% 110%, hsl(var(--primary) / 0.08), transparent 55%)",
-            }}
-          />
           <div className="relative">
           {/* ====== Noir & Gold bento dashboard ====== */}
           {/* Header */}
