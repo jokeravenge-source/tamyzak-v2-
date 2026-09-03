@@ -3,13 +3,14 @@ import { Bell, BellRing, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { enablePushNotifications, pushPermission, onPushMessage } from "@/lib/firebase";
+import { enablePushNotifications, pushPermission, onPushMessage, isIOSDevice, isStandalonePwa } from "@/lib/firebase";
 
 export function PushNotificationsCard({ language }: { language: "ar" | "en" }) {
   const isAr = language === "ar";
   const t = (en: string, ar: string) => (isAr ? ar : en);
   const [state, setState] = useState<NotificationPermission | "unsupported">("default");
   const [busy, setBusy] = useState(false);
+  const needsIOSInstall = isIOSDevice() && !isStandalonePwa();
 
   useEffect(() => {
     setState(pushPermission());
@@ -30,7 +31,7 @@ export function PushNotificationsCard({ language }: { language: "ar" | "en" }) {
     }
   };
 
-  if (state === "unsupported") return null;
+  if (state === "unsupported" && !needsIOSInstall) return null;
 
   return (
     <Card className="p-4 space-y-3">
@@ -45,7 +46,12 @@ export function PushNotificationsCard({ language }: { language: "ar" | "en" }) {
         <h2 className="text-base font-semibold">{t("Push notifications", "تنبيهات الهاتف")}</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        {state === "granted"
+        {needsIOSInstall
+          ? t(
+              "Install Tamayzak on your Home Screen first, then open it from its icon to enable notifications.",
+              "ثبّت تميزك على الشاشة الرئيسية أولاً، وبعدها افتحه من الأيقونة حتى تفعّل التنبيهات.",
+            )
+          : state === "granted"
           ? t(
               "This device will receive Tamayzak reminders and announcements.",
               "سيستلم هذا الجهاز تنبيهات تميزك والتذكيرات.",
@@ -60,7 +66,7 @@ export function PushNotificationsCard({ language }: { language: "ar" | "en" }) {
                 "استلم تذكيرات الامتحانات ومراجعة الأخطاء والميزات الجديدة.",
               )}
       </p>
-      {state !== "denied" && (
+      {!needsIOSInstall && state !== "denied" && state !== "unsupported" && (
         <Button onClick={enable} disabled={busy || state === "granted"} className="w-full">
           {state === "granted"
             ? t("Enabled", "مُفعّل")
