@@ -17,6 +17,7 @@ import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
+import goldChain from "@/assets/gold-chain.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -98,7 +99,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories">("appearance");
+  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories" | "chains">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
@@ -325,7 +326,7 @@ const AccountCenter = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-white/10 bg-background/30 p-1.5">
+                <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-background/30 p-1">
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
@@ -349,6 +350,14 @@ const AccountCenter = ({
                     className={`h-10 rounded-xl text-[11px] font-bold transition sm:text-xs ${characterTab === "accessories" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {text.accessories}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCharacterTab("chains")}
+                    aria-pressed={characterTab === "chains"}
+                    className={`h-10 rounded-xl text-[10px] font-bold transition sm:text-xs ${characterTab === "chains" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {language === "ar" ? "السلاسل" : "Chains"}
                   </button>
                 </div>
 
@@ -441,7 +450,7 @@ const AccountCenter = ({
                       </button>
                     </div>
                   </div>
-                ) : (
+                ) : characterTab === "accessories" ? (
                   <div>
                     <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
                       {language === "ar" ? "اختر إكسسوار الشخصية" : "Choose an accessory"}
@@ -474,6 +483,32 @@ const AccountCenter = ({
                         <span className="text-4xl" aria-hidden>👑</span>
                         <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
                           {text.crown}{!isPremium ? ` · ${text.premiumOnly}` : ""}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {language === "ar" ? "اختر سلسلة الشخصية" : "Choose a chain"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ chain: null })}
+                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.chain ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
+                      >
+                        {text.none}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ chain: "gold" })}
+                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.chain === "gold" ? "border-amber-400 bg-amber-500/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
+                        aria-label={language === "ar" ? "السلسلة الذهبية" : "Gold chain"}
+                      >
+                        <img src={goldChain.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                          {language === "ar" ? "السلسلة الذهبية" : "Gold chain"}
                         </span>
                       </button>
                     </div>
