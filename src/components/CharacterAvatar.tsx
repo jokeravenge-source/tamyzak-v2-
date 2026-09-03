@@ -17,6 +17,7 @@ import girl8 from "@/assets/character-girl-8.png.asset.json";
 import girl9 from "@/assets/character-girl-9.png.asset.json";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
+import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 
 export type Gender = "male" | "female";
 
@@ -116,6 +117,26 @@ export function CharacterAvatar({
         }}
         draggable={false}
       />
+      {traits?.accessory === "glasses" && (
+        <img
+          src={pixelSunglasses.url}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 4,
+            top: "35.5%",
+            left: "50%",
+            width: "40%",
+            height: "auto",
+            transform: "translateX(-50%)",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.28))",
+            pointerEvents: "none",
+          }}
+        />
+      )}
       {hat === "straw" && (
         <img
           src={strawHat.url}
