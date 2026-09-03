@@ -1090,6 +1090,49 @@ const Basics = ({
             </div>
           </section>
 
+          {/* Success companion — featured commitment card */}
+          <motion.button
+            type="button"
+            onClick={() => navigate("companion")}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            aria-label={language === "ar" ? "افتح رفيق النجاح" : "Open Success Companion"}
+            className={`group relative mb-7 w-full overflow-hidden rounded-[28px] border border-primary/25 bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-[0_18px_45px_-24px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-7 ${isRTL ? "text-right" : "text-left"}`}
+          >
+            <span aria-hidden className="absolute -top-16 -end-10 h-44 w-44 rounded-full border border-white/15 bg-white/10 transition-transform duration-500 group-hover:scale-110" />
+            <span aria-hidden className="absolute -bottom-20 end-20 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl" />
+            <span aria-hidden className="absolute top-5 end-24 h-2 w-2 rounded-full bg-white/70 shadow-[22px_20px_0_-2px_rgba(255,255,255,0.55),-16px_34px_0_-2px_rgba(255,255,255,0.4)]" />
+
+            <span className="relative flex items-center gap-4 sm:gap-6">
+              <span className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-inner backdrop-blur-sm sm:h-20 sm:w-20 sm:rounded-3xl">
+                <Sparkles className="h-8 w-8 text-white sm:h-10 sm:w-10" />
+                <span className="absolute -bottom-1 -end-1 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300 text-indigo-950 shadow-lg ring-4 ring-primary">
+                  <Heart className="h-3.5 w-3.5 fill-current" />
+                </span>
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200 sm:text-xs">
+                  {language === "ar" ? "رفيق النجاح" : "Success Companion"}
+                </span>
+                <span className="block text-xl font-black leading-snug tracking-tight text-white sm:text-2xl md:text-3xl">
+                  {language === "ar" ? "عندك مشكلة بالالتزام؟ جبنالك رفيقك" : "Struggling to stay committed? Meet your companion."}
+                </span>
+                <span className="mt-2 block max-w-2xl text-xs leading-relaxed text-white/75 sm:text-sm">
+                  {language === "ar" ? "يرتّب خطتك، يتابع تقدمك، ويبقى وياك خطوة بخطوة." : "Plan your studies, track your progress, and keep moving one step at a time."}
+                </span>
+              </span>
+
+              <span className="hidden h-11 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 text-sm font-bold text-white backdrop-blur-sm transition-colors group-hover:bg-white/25 sm:inline-flex">
+                {language === "ar" ? "تعرّف عليه" : "Meet yours"}
+                {isRTL ? <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> : <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+              </span>
+            </span>
+          </motion.button>
+
           {/* Core tools */}
           <section className="mb-7">
             <div className="mb-4 flex items-end justify-between gap-3">
