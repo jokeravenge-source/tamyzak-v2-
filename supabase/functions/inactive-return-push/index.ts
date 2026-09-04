@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         title: "اشتقنالك 💜",
-        body: "صارلك 3 أيام ما فتحت تميزك. ارجع ويانا وكمل تقدمك، مكانك محفوظ!",
+        body: "صارلك أكثر من 24 ساعة ما فتحت تميزك. اشتقنالك — ارجع وكمل تقدمك، مكانك محفوظ!",
         link: "/",
         target_user_ids: userIds,
       }),
@@ -55,12 +55,33 @@ Deno.serve(async (req) => {
       return json({ error: "push_delivery_failed", details: pushResult }, 502);
     }
 
-    await (admin as any)
-      .from("inactivity_push_log")
-      .update({ status: "sent", sent_at: new Date().toISOString() })
-      .eq("batch_id", batchId);
+    const sentUserIds = Array.isArray(pushResult?.sent_user_ids)
+      ? pushResult.sent_user_ids.map(String)
+      : [];
+    const failedUserIds = userIds.filter((userId) => !sentUserIds.includes(userId));
 
-    return json({ eligible_users: userIds.length, ...pushResult });
+    if (sentUserIds.length > 0) {
+      await (admin as any)
+        .from("inactivity_push_log")
+        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("batch_id", batchId)
+        .in("user_id", sentUserIds);
+    }
+    // Failed/no-token users must be eligible for the next hourly retry.
+    if (failedUserIds.length > 0) {
+      await (admin as any)
+        .from("inactivity_push_log")
+        .delete()
+        .eq("batch_id", batchId)
+        .in("user_id", failedUserIds);
+    }
+
+    return json({
+      eligible_users: userIds.length,
+      delivered_users: sentUserIds.length,
+      retry_users: failedUserIds.length,
+      ...pushResult,
+    });
   } catch (error) {
     await (admin as any).from("inactivity_push_log").delete().eq("batch_id", batchId);
     console.error("inactive-return-push:", error instanceof Error ? error.message : error);
