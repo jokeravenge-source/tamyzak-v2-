@@ -869,6 +869,29 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setHourPauseOpen(false);
   };
 
+  const resumeSession = () => {
+    if (!startedRef.current || secondsRef.current >= MAX_SECONDS) return;
+    // Re-anchor immediately instead of waiting for React effects. This avoids
+    // a stale paused snapshot when resuming after backgrounding or an hourly
+    // check-in, and makes the room presence update in the same interaction.
+    accumulatedRef.current = secondsRef.current;
+    resumeAtRef.current = Date.now();
+    runningRef.current = true;
+    setRunning(true);
+    void pushPresence();
+  };
+
+  const continueAfterHour = () => {
+    // Mark the current hour as acknowledged before resuming so the check-in
+    // effect cannot reopen the dialog on the same timer value.
+    lastHourPromptRef.current = Math.max(
+      lastHourPromptRef.current,
+      Math.floor(secondsRef.current / 3600),
+    );
+    setHourPauseOpen(false);
+    resumeSession();
+  };
+
   const stopAndSave = async (durationSeconds = seconds) => {
     if (!userId || !subject) return;
     if (savingRef.current) return;
@@ -1191,7 +1214,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                 {running ? (
                   <Button size="lg" variant="secondary" onClick={() => setRunning(false)} className="gap-2"><Pause className="w-4 h-4" /> {L.pause}</Button>
                 ) : (
-                  <Button size="lg" onClick={() => setRunning(true)} className="gap-2"><Play className="w-4 h-4" /> {L.resume}</Button>
+                  <Button size="lg" onClick={resumeSession} className="gap-2"><Play className="w-4 h-4" /> {L.resume}</Button>
                 )}
                 <Button size="lg" variant="destructive" onClick={requestSave} className="gap-2"><Square className="w-4 h-4" /> {L.stop}</Button>
                 <Button size="lg" variant="outline" onClick={() => setDiscardOpen(true)} className="gap-2"><Trash2 className="w-4 h-4" /> {L.discard}</Button>
@@ -1350,7 +1373,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setHourPauseOpen(false); setRunning(true); }}>
+            <AlertDialogAction onClick={continueAfterHour}>
               {L.hourContinue}
             </AlertDialogAction>
           </AlertDialogFooter>
