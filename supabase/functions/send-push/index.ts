@@ -72,6 +72,13 @@ async function getFcmAccessToken(sa: {
   return tokenData.access_token as string;
 }
 
+type FcmDeliveryResult = {
+  ok: boolean;
+  deadToken: boolean;
+  status: number;
+  error?: string;
+};
+
 async function sendFcm(
   accessToken: string,
   projectId: string,
@@ -79,7 +86,7 @@ async function sendFcm(
   title: string,
   body: string,
   link?: string | null,
-): Promise<boolean> {
+): Promise<FcmDeliveryResult> {
   const messageId = crypto.randomUUID();
   // Send a data message and let our service worker display it. This produces
   // one consistent notification path on iOS Home Screen apps and Chromium.
@@ -111,10 +118,23 @@ async function sendFcm(
   );
   if (!res.ok) {
     const errText = await res.text();
+    let errorStatus = "";
+    try {
+      const parsed = JSON.parse(errText);
+      errorStatus = String(parsed?.error?.status ?? parsed?.error?.details?.[0]?.errorCode ?? "");
+    } catch {
+      /* keep the raw response for diagnostics */
+    }
+    // Only permanent registration-token errors should delete a token. Auth,
+    // quota and transient Firebase errors must be retried instead.
+    const deadToken =
+      res.status === 404 ||
+      errorStatus === "UNREGISTERED" ||
+      /registration-token-not-registered|requested entity was not found/i.test(errText);
     console.error(`FCM send failed [${res.status}] for token ${token.slice(0, 16)}…: ${errText.slice(0, 300)}`);
-    return false;
+    return { ok: false, deadToken, status: res.status, error: errText.slice(0, 500) };
   }
-  return true;
+  return { ok: true, deadToken: false, status: res.status };
 }
 
 Deno.serve(async (req) => {
@@ -196,14 +216,18 @@ Deno.serve(async (req) => {
     const deliveries = personalizedMessages.length > 0
       ? tokens.flatMap((row) => personalizedMessages
         .filter((message: { user_id: string }) => message.user_id === row.user_id)
-        .map((message: { title: string; body: string; link: string }) => ({ token: row.token, personalized: message })))
-      : tokens.map((row) => ({ token: row.token, personalized: undefined }));
+        .map((message: { title: string; body: string; link: string }) => ({ token: row.token, userId: row.user_id, personalized: message })))
+      : tokens.map((row) => ({ token: row.token, userId: row.user_id, personalized: undefined }));
+
+    const sentUsers = new Set<string>();
+    const failedUsers = new Set<string>();
+    const failureStatuses: Record<string, number> = {};
 
     for (const delivery of deliveries) {
-      const { token, personalized } = delivery;
-      let ok = false;
+      const { token, userId, personalized } = delivery;
+      let result: FcmDeliveryResult = { ok: false, deadToken: false, status: 0 };
       try {
-        ok = await sendFcm(
+        result = await sendFcm(
           accessToken,
           sa.project_id,
           token,
@@ -214,12 +238,15 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error("FCM send error", e instanceof Error ? e.message : e);
       }
-      if (ok) {
+      if (result.ok) {
         sent++;
+        sentUsers.add(userId);
+        failedUsers.delete(userId);
       } else {
         failed++;
-        // Token is likely invalid/expired — collect for cleanup.
-        deadTokens.push(token);
+        if (!sentUsers.has(userId)) failedUsers.add(userId);
+        failureStatuses[String(result.status)] = (failureStatuses[String(result.status)] ?? 0) + 1;
+        if (result.deadToken) deadTokens.push(token);
       }
       await new Promise((r) => setTimeout(r, 30));
     }
@@ -235,6 +262,9 @@ Deno.serve(async (req) => {
       failed,
       cleaned: deadTokens.length,
       total: deliveries.length,
+      sent_user_ids: [...sentUsers],
+      failed_user_ids: [...failedUsers],
+      failure_statuses: failureStatuses,
     });
   } catch (e) {
     console.error("send-push fatal:", e instanceof Error ? e.message : e);
