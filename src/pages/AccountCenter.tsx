@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles } from "lucide-react";
+import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -15,12 +15,10 @@ import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
-import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
-import kittyEars from "@/assets/kitty-ears.png.asset.json";
-import goldChain from "@/assets/gold-chain.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
+import { CUSTOMIZABLE_STUDY_TOOLS, saveHiddenStudyTools, useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import {
   CharacterAvatar,
   type Gender,
@@ -93,13 +91,14 @@ const AccountCenter = ({
   const ux = uxText[language];
   const [name, setName] = useState("");
   const [navMode, setNavMode] = useState<NavVisibilityMode>(() => getNavVisibilityMode());
+  const hiddenStudyTools = useHiddenStudyTools();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories" | "chains">("appearance");
+  const [characterTab, setCharacterTab] = useState<"appearance" | "hats">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
@@ -326,7 +325,7 @@ const AccountCenter = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-background/30 p-1">
+                <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-background/30 p-1.5">
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
@@ -342,22 +341,6 @@ const AccountCenter = ({
                     className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "hats" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {language === "ar" ? "القبعات" : "Hats"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCharacterTab("accessories")}
-                    aria-pressed={characterTab === "accessories"}
-                    className={`h-10 rounded-xl text-[11px] font-bold transition sm:text-xs ${characterTab === "accessories" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {text.accessories}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCharacterTab("chains")}
-                    aria-pressed={characterTab === "chains"}
-                    className={`h-10 rounded-xl text-[10px] font-bold transition sm:text-xs ${characterTab === "chains" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {language === "ar" ? "السلاسل" : "Chains"}
                   </button>
                 </div>
 
@@ -401,8 +384,29 @@ const AccountCenter = ({
                   </div>
                 </div>
 
+                {/* Crown accessory — Premium only */}
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                    👑 {text.crown}
+                    {!isPremium && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-400/40 text-amber-300">
+                        {text.premiumOnly}
+                      </span>
+                    )}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => tryPremium(() => updateTraits({ accessory: "crown" }))}
+                      className={`flex-1 h-10 rounded-lg text-xs font-semibold border transition ${effective?.accessory === "crown" ? "bg-amber-500/20 border-amber-400 text-amber-200" : "border-white/10 bg-background/40 text-muted-foreground hover:text-foreground"}`}
+                    >{text.on}</button>
+                    <button
+                      onClick={() => tryPremium(() => updateTraits({ accessory: null }))}
+                      className={`flex-1 h-10 rounded-lg text-xs font-semibold border transition ${effective?.accessory !== "crown" ? "bg-primary/15 border-primary text-primary" : "border-white/10 bg-background/40 text-muted-foreground hover:text-foreground"}`}
+                    >{text.off}</button>
+                  </div>
+                </div>
                   </>
-                ) : characterTab === "hats" ? (
+                ) : (
                   <div>
                     <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
                       {language === "ar" ? "اختر قبعتك" : "Choose your hat"}
@@ -417,7 +421,7 @@ const AccountCenter = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateTraits({ hat: "straw", accessory: effective?.accessory === "crown" ? null : effective?.accessory })}
+                        onClick={() => updateTraits({ hat: "straw", accessory: null })}
                         className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.hat === "straw" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
                         aria-label={language === "ar" ? "قبعة القش" : "Straw hat"}
                       >
@@ -428,87 +432,13 @@ const AccountCenter = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateTraits({ hat: "red-cap", accessory: effective?.accessory === "crown" ? null : effective?.accessory })}
+                        onClick={() => updateTraits({ hat: "red-cap", accessory: null })}
                         className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.hat === "red-cap" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
                         aria-label={language === "ar" ? "القبعة الحمراء" : "Red cap"}
                       >
                         <img src={redCap.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
                         <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
                           {language === "ar" ? "القبعة الحمراء" : "Red cap"}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ hat: "kitty-ears", accessory: effective?.accessory === "crown" ? null : effective?.accessory })}
-                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.hat === "kitty-ears" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
-                        aria-label={language === "ar" ? "آذان القطة" : "Cat ears"}
-                      >
-                        <img src={kittyEars.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
-                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
-                          {language === "ar" ? "آذان القطة" : "Cat ears"}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                ) : characterTab === "accessories" ? (
-                  <div>
-                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {language === "ar" ? "اختر إكسسوار الشخصية" : "Choose an accessory"}
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ accessory: null })}
-                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.accessory ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
-                      >
-                        {text.none}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ accessory: "glasses" })}
-                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.accessory === "glasses" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
-                        aria-label={text.glasses}
-                      >
-                        <img src={pixelSunglasses.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
-                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
-                          {text.glasses}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => tryPremium(() => updateTraits({ accessory: "crown", hat: null }))}
-                        className={`relative aspect-square rounded-2xl border-2 bg-background/40 p-3 transition ${effective?.accessory === "crown" ? "border-amber-400 bg-amber-500/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
-                        aria-label={text.crown}
-                      >
-                        <span className="text-4xl" aria-hidden>👑</span>
-                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
-                          {text.crown}{!isPremium ? ` · ${text.premiumOnly}` : ""}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {language === "ar" ? "اختر سلسلة الشخصية" : "Choose a chain"}
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ chain: null })}
-                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.chain ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
-                      >
-                        {text.none}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ chain: "gold" })}
-                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${effective?.chain === "gold" ? "border-amber-400 bg-amber-500/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
-                        aria-label={language === "ar" ? "السلسلة الذهبية" : "Gold chain"}
-                      >
-                        <img src={goldChain.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
-                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
-                          {language === "ar" ? "السلسلة الذهبية" : "Gold chain"}
                         </span>
                       </button>
                     </div>
@@ -556,6 +486,70 @@ const AccountCenter = ({
 
             <ProfileDetailsCard language={language} />
             <CountdownSettings language={language} />
+
+            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <SlidersHorizontal className="w-5 h-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {language === "ar" ? "تخصيص أدوات الدراسة" : "Customize study tools"}
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {language === "ar"
+                      ? "اخفِ الأدوات التي لا تحتاجها. إذا لم تُخفِ أي أداة فستظهر جميع الأدوات."
+                      : "Hide tools you do not need. When none are hidden, every tool is shown."}
+                  </p>
+                </div>
+                {hiddenStudyTools.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveHiddenStudyTools(new Set());
+                      toast.success(language === "ar" ? "تم إظهار جميع الأدوات" : "All tools are now visible");
+                    }}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 text-[11px] font-semibold text-primary hover:bg-primary/15"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {language === "ar" ? "إظهار الكل" : "Show all"}
+                  </button>
+                )}
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                {CUSTOMIZABLE_STUDY_TOOLS.map((tool) => {
+                  const hidden = hiddenStudyTools.has(tool.key);
+                  return (
+                    <div key={tool.key} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-background/40 p-3">
+                      <span className={`min-w-0 truncate text-sm font-medium ${hidden ? "text-muted-foreground" : "text-foreground"}`}>
+                        {language === "ar" ? tool.ar : tool.en}
+                      </span>
+                      <button
+                        type="button"
+                        aria-pressed={!hidden}
+                        onClick={() => {
+                          const next = new Set(hiddenStudyTools);
+                          if (hidden) next.delete(tool.key);
+                          else next.add(tool.key);
+                          saveHiddenStudyTools(next);
+                        }}
+                        className={`inline-flex h-9 min-w-[88px] shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition ${
+                          hidden
+                            ? "border-white/10 bg-background/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                            : "border-emerald-500/35 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+                        }`}
+                      >
+                        {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        {hidden
+                          ? (language === "ar" ? "مخفي" : "Hidden")
+                          : (language === "ar" ? "ظاهر" : "Shown")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-3">
           <div className="flex items-center gap-3">
