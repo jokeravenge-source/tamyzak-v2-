@@ -15,6 +15,7 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
 import aiRoboAnimation from "@/assets/ai-robo-animated.webp.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
+import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 
 type NavItem = {
   key: MainMenuChoice;
@@ -142,22 +143,28 @@ const BottomGroupNav = ({
   onGuide?: () => void;
 }) => {
   const isRTL = language === "ar";
+  const hiddenStudyTools = useHiddenStudyTools();
+  const visibleNavGroups = NAV_GROUPS.map((group) =>
+    group.titleEn === "Study"
+      ? { ...group, items: group.items.filter((item) => !hiddenStudyTools.has(item.key)) }
+      : group,
+  );
   const initialGroup =
-    NAV_GROUPS.find((g) => g.items.some((it) => it.key === active))?.titleEn ??
-    NAV_GROUPS[0].titleEn;
+    visibleNavGroups.find((g) => g.items.some((it) => it.key === active))?.titleEn ??
+    visibleNavGroups[0].titleEn;
   const [activeGroup, setActiveGroup] = useState<string>(initialGroup);
   useEffect(() => {
-    const g = NAV_GROUPS.find((gr) => gr.items.some((it) => it.key === active));
+    const g = visibleNavGroups.find((gr) => gr.items.some((it) => it.key === active));
     if (g) setActiveGroup(g.titleEn);
-  }, [active]);
+  }, [active, hiddenStudyTools]);
 
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   useEffect(() => { setPortalRoot(document.body); }, []);
   const navVisible = useNavVisibility();
   const [sheetGroup, setSheetGroup] = useState<string | null>(null);
 
-  const currentGroup = NAV_GROUPS.find((g) => g.titleEn === activeGroup) ?? NAV_GROUPS[0];
-  const openGroup = NAV_GROUPS.find((g) => g.titleEn === sheetGroup) ?? null;
+  const currentGroup = visibleNavGroups.find((g) => g.titleEn === activeGroup) ?? visibleNavGroups[0];
+  const openGroup = visibleNavGroups.find((g) => g.titleEn === sheetGroup) ?? null;
 
   const handleItem = (it: NavItem) => {
     if ((it.key as string) === "organizations") {
