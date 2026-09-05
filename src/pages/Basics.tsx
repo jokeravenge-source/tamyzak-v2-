@@ -1,29 +1,30 @@
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
+import { useEffect, useMemo, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
-  ArrowRight, ArrowLeft, Layers, AlertTriangle, FileText, GraduationCap,
-  ListChecks, Newspaper, ScrollText, Network, Search, Trophy, Target,
-  HelpCircle, Headphones, Lightbulb, Sparkles, UserCog, BookOpen, Heart,
-  Users, Settings, NotebookPen, Youtube, Swords, Video, Palette, Lock,
+  ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
+  LogOut, Bell, X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
+  Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
+  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
 import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import { useSubscription } from "@/hooks/useSubscription";
+import { missionsData, missionsOrder } from "@/data/missions";
+import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
-import HomeCountdown from "@/components/HomeCountdown";
+import StreakTree from "@/components/StreakTree";
 import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
-import { totalDueCount } from "@/lib/srs";
+import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
-
-const StreakTree = lazy(() => import("@/components/StreakTree"));
+import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   physics: { ar: "الفيزياء", en: "Physics" },
@@ -41,6 +42,39 @@ function subjectLabel(subject: string, language: AppLanguage): string {
   return m ? (language === "ar" ? m.ar : m.en) : subject;
 }
 
+function useStreakDays(): number {
+  const [days, setDays] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem("streak_state_v1");
+      if (raw) return JSON.parse(raw).days ?? 0;
+    } catch {}
+    return 0;
+  });
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = localStorage.getItem("streak_state_v1");
+        if (raw) setDays(JSON.parse(raw).days ?? 0);
+      } catch {}
+    };
+    read();
+    const id = window.setInterval(read, 1500);
+    window.addEventListener("storage", read);
+    return () => { window.clearInterval(id); window.removeEventListener("storage", read); };
+  }, []);
+  useEffect(() => {
+    if (!days) return;
+    try {
+      const key = "tmz_streak_tracked_v1";
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem(key) === `${today}:${days}`) return;
+      localStorage.setItem(key, `${today}:${days}`);
+      trackStreakUpdated(days);
+    } catch { /* ignore */ }
+  }, [days]);
+  return days;
+}
+
 export type BasicsChoice =
   | "flashcards"
   | "malazam"
@@ -54,16 +88,6 @@ export type BasicsChoice =
   | "mindmap";
 
 const TEMP_LOCKED_TOOLS = new Set<MainMenuChoice>(["adminNotes"]);
-const MISSIONS_TOTAL = 506;
-
-type HomeDashboardStats = {
-  display_name: string;
-  total_points: number;
-  current_streak: number;
-  missions_done: number;
-  board_rank: number | null;
-  board_total: number;
-};
 
 const MOTIVATIONAL_PHRASES = {
   en: [
@@ -147,6 +171,7 @@ const copy = {
   },
 } as const;
 
+type Notif = { id: string; title: string; body: string; link: string | null; created_at: string };
 
 type NavItem = {
   key: MainMenuChoice;
@@ -308,7 +333,7 @@ const FEATURED_COPY = {
     canvas: { title: "اللوحة", subtitle: "ارسم ونظّم أفكارك بحرية." },
     notes: { title: "ملاحظاتي", subtitle: "اكتب ونظّم ملاحظاتك الدراسية." },
     adminNotes: { title: "ملاحظات دراسية", subtitle: "ملاحظات جميلة أعدّها المدرّسون خصيصاً لك." },
-    companion: { title: "رفيقك", subtitle: "شريكك الذكي في الدراسة والتخطيط." },
+    companion: { title: "رفيق النجاح", subtitle: "شريكك الذكي في الدراسة والتخطيط." },
     liveBattle: { title: "المعركة المباشرة", subtitle: "تحد صديقك" },
     subjectsHub: { title: "المواد", subtitle: "كل موادك، فصلاً بفصل." },
     sessions: { title: "جلسات الدراسة", subtitle: "احسب وقت دراستك وادخل غرف الدراسة." },
@@ -328,14 +353,16 @@ const Basics = ({
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
   const [motivationalPhrase] = useState(() => phrases[Math.floor(Math.random() * phrases.length)]);
+  const { isPremium } = useSubscription();
   const fc = FEATURED_COPY[language];
   const [activeKey, setActiveKey] = useState<MainMenuChoice>("flashcards");
   const [activeGroup, setActiveGroup] = useState<string>(NAV_GROUPS[0].titleEn);
   const todos = useTodos();
   const [missionsDone, setMissionsDone] = useState<number>(0);
-  const [streakDays, setStreakDays] = useState(0);
+  const streakDays = useStreakDays();
   const [showAllTools, setShowAllTools] = useState<boolean>(false);
   const [recentKeys, setRecentKeys] = useState<string[]>(() => getRecentTools());
+  const hiddenStudyTools = useHiddenStudyTools();
 
   useEffect(() => {
     const sync = () => setRecentKeys(getRecentTools());
@@ -347,20 +374,75 @@ const Basics = ({
     };
   }, []);
   const [dueCards, setDueCards] = useState<number>(0);
+  const [dueGroups, setDueGroups] = useState<DueGroup[]>([]);
 
   useEffect(() => {
     let active = true;
     totalDueCount().then((n) => { if (active) setDueCards(n); });
+    dueBreakdown().then((g) => { if (active) setDueGroups(g); });
     return () => { active = false; };
   }, []);
 
+  // Total missions across all subjects/chapters
+  const missionsTotal = (() => {
+    let total = 0;
+    missionsOrder.forEach((s) => {
+      const data = missionsData[s];
+      data?.chapters.forEach((c) => { total += c.topics.length; });
+    });
+    return total;
+  })();
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase
+        .from("mission_progress")
+        .select("completed")
+        .eq("user_id", u.user.id)
+        .eq("completed", true);
+      setMissionsDone((data ?? []).length);
+    })();
+  }, []);
+
+  const missionsPct = missionsTotal ? Math.min(100, Math.round((missionsDone / missionsTotal) * 100)) : 0;
   const todoDone = todos.filter((todo) => todo.done).length;
   const todoTotal = todos.length;
   const heroProgressDone = todoTotal > 0 ? todoDone : missionsDone;
-  const heroProgressTotal = todoTotal > 0 ? todoTotal : MISSIONS_TOTAL;
+  const heroProgressTotal = todoTotal > 0 ? todoTotal : missionsTotal;
   const heroProgressPct = heroProgressTotal ? Math.min(100, Math.round((heroProgressDone / heroProgressTotal) * 100)) : 0;
 
-  // Today's pending tasks (todos in localStorage) → quick badge
+  const READ_KEY = "notif_read_ids_v1";
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(READ_KEY) || "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(10);
+      setNotifs((data ?? []) as Notif[]);
+    };
+    load();
+    // Cost: no always-on realtime channel here. Notifications refresh when the
+    // tab becomes visible again — new items still show up without a reload.
+    const onVisible = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
+  const unread = notifs.filter((n) => !readIds.includes(n.id));
+  const dismiss = (id: string) => {
+    const next = [...readIds, id];
+    setReadIds(next);
+    localStorage.setItem(READ_KEY, JSON.stringify(next));
+  };
+  const signOut = async () => { await supabase.auth.signOut(); };
+
+  // Today's pending tasks (todos in localStorage) + unread notifs → quick badge
   const [pendingTodos, setPendingTodos] = useState<number>(() => {
     try {
       const arr = JSON.parse(localStorage.getItem("app_todos_v1") || "[]");
@@ -382,55 +464,102 @@ const Basics = ({
     };
   }, []);
 
+  const DEFAULT_TARGET_ISO = "2026-06-13T07:00";
+  const [eventName, setEventName] = useState<string>(() => localStorage.getItem("custom_countdown_name_v1") || "");
+  const [eventDateISO, setEventDateISO] = useState<string>(() => localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
+  useEffect(() => {
+    const sync = () => {
+      setEventName(localStorage.getItem("custom_countdown_name_v1") || "");
+      setEventDateISO(localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
+    };
+    window.addEventListener("storage", sync);
+    window.addEventListener("app:countdown-changed", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("app:countdown-changed", sync);
+    };
+  }, []);
+  const TARGET = new Date(eventDateISO).getTime();
+  const [now, setNow] = useState<number>(() => Date.now());
+  const [showTimer, setShowTimer] = useState<boolean>(() => localStorage.getItem("countdown_hidden_v1") !== "1");
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const diff = Math.max(0, TARGET - now);
+  const cd = {
+    d: Math.floor(diff / 86400000),
+    h: Math.floor((diff % 86400000) / 3600000),
+    m: Math.floor((diff % 3600000) / 60000),
+    s: Math.floor((diff % 60000) / 1000),
+  };
+  const targetDate = new Date(eventDateISO);
+  const formattedTarget = isNaN(targetDate.getTime())
+    ? ""
+    : targetDate.toLocaleString(language === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const defaultEvtName = language === "ar" ? "موعد مهم" : "Important date";
+  const evtName = eventName.trim() || defaultEvtName;
+  const timerLabel = language === "ar" ? `${evtName} — ${formattedTarget}` : `${evtName} — ${formattedTarget}`;
+  const units = language === "ar"
+    ? { d: "يوم", h: "ساعة", m: "دقيقة", s: "ثانية" }
+    : { d: "Days", h: "Hours", m: "Min", s: "Sec" };
+  const dismissTimer = () => {
+    localStorage.setItem("countdown_hidden_v1", "1");
+    setShowTimer(false);
+  };
+
   const [username, setUsername] = useState<string>(() => localStorage.getItem("app_display_name_v1") || "");
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [boardRank, setBoardRank] = useState<number | null>(null);
   const [boardTotal, setBoardTotal] = useState<number>(0);
   useEffect(() => {
-    let active = true;
-    let lastFetch = 0;
+    let uid: string | null = null;
     const load = async () => {
-      lastFetch = Date.now();
-      const { data, error } = await supabase.rpc("get_home_dashboard_stats");
-      if (!active || error || !data) return;
-      const stats = data as unknown as HomeDashboardStats;
-      setTotalPoints(stats.total_points ?? 0);
-      setStreakDays(stats.current_streak ?? 0);
-      setMissionsDone(stats.missions_done ?? 0);
-      setBoardTotal(stats.board_total ?? 0);
-      setBoardRank(stats.board_rank ?? null);
-      if (stats.display_name) {
-        setUsername(stats.display_name);
-        localStorage.setItem("app_display_name_v1", stats.display_name);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      uid = u.user.id;
+      const { data } = await supabase
+        .from("user_points")
+        .select("points")
+        .eq("user_id", u.user.id);
+      const total = (data ?? []).reduce((sum, r: { points: number | null }) => sum + (r.points ?? 0), 0);
+      setTotalPoints(total);
+
+      // Standing among all students (all-time totals, same source as the leaderboard).
+      const pageSize = 1000;
+      const totals = new Map<string, number>();
+      let from = 0;
+      for (;;) {
+        const { data: page, error } = await supabase
+          .from("user_points")
+          .select("user_id, points")
+          .range(from, from + pageSize - 1);
+        if (error) break;
+        (page ?? []).forEach((r: { user_id: string; points: number | null }) => {
+          totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + (r.points ?? 0));
+        });
+        if (!page || page.length < pageSize) break;
+        from += pageSize;
       }
+      const mine = totals.get(u.user.id) ?? total;
+      let ahead = 0;
+      totals.forEach((v, k) => { if (k !== u.user!.id && v > mine) ahead += 1; });
+      setBoardTotal(totals.size);
+      setBoardRank(totals.size ? ahead + 1 : null);
     };
-    void load();
-    const onFocus = () => {
-      if (document.hidden || Date.now() - lastFetch < 30000) return;
-      void load();
-    };
-    const onProgress = () => void load();
+    load();
+    const onFocus = () => load();
     window.addEventListener("focus", onFocus);
-    window.addEventListener("app:progress-updated", onProgress);
-    window.addEventListener("app:feature-unlocked", onProgress);
+    // Cost: points changes are always triggered locally, so we listen to the
+    // in-app event instead of keeping a realtime channel open.
+    window.addEventListener("app:progress-updated", onFocus);
+    window.addEventListener("app:feature-unlocked", onFocus);
     return () => {
-      active = false;
       window.removeEventListener("focus", onFocus);
-      window.removeEventListener("app:progress-updated", onProgress);
-      window.removeEventListener("app:feature-unlocked", onProgress);
+      window.removeEventListener("app:progress-updated", onFocus);
+      window.removeEventListener("app:feature-unlocked", onFocus);
     };
   }, []);
-
-  useEffect(() => {
-    if (!streakDays) return;
-    try {
-      const key = "tmz_streak_tracked_v1";
-      const today = new Date().toISOString().slice(0, 10);
-      if (localStorage.getItem(key) === `${today}:${streakDays}`) return;
-      localStorage.setItem(key, `${today}:${streakDays}`);
-      trackStreakUpdated(streakDays);
-    } catch { /* ignore */ }
-  }, [streakDays]);
   const leaderboardRank = rankFor(totalPoints);
   const currentRank = leaderboardRank.key;
   const rankLabel = leaderboardRank.label[language];
@@ -441,6 +570,15 @@ const Basics = ({
     ? Math.max(0, Math.min(1, (totalPoints - leaderboardRank.min) / (nextRank.min - leaderboardRank.min)))
     : 1;
   useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: p } = await supabase.from("profiles").select("display_name").eq("user_id", u.user.id).maybeSingle();
+      if (p?.display_name) {
+        setUsername(p.display_name);
+        localStorage.setItem("app_display_name_v1", p.display_name);
+      }
+    })();
     const onChange = () => setUsername(localStorage.getItem("app_display_name_v1") || "");
     window.addEventListener("app:username-changed", onChange);
     return () => window.removeEventListener("app:username-changed", onChange);
@@ -522,24 +660,20 @@ const Basics = ({
   }[language];
   const activeCopy = todoCopy;
   const toolsHeader = { en: "Study tools", ar: "أدوات الدراسة" }[language];
-  const essentialKeys = new Set<MainMenuChoice>(FEATURED.map((item) => item.key));
-  const availableSecondaryTools = STUDY_TOOLS.filter(
-    (item) => !essentialKeys.has(item.key) && !TEMP_LOCKED_TOOLS.has(item.key),
-  );
   const recentTools = recentKeys
-    .filter((key) => {
-      const toolKey = key as MainMenuChoice;
-      return (
-        toolKey !== "liveBattle" &&
-        !essentialKeys.has(toolKey) &&
-        !TEMP_LOCKED_TOOLS.has(toolKey) &&
-        TOOL_ICONS[toolKey] &&
-        (fc as any)[toolKey]
-      );
-    })
+    .filter((k) => k !== "liveBattle" && !hiddenStudyTools.has(k) && TOOL_ICONS[k as MainMenuChoice] && (fc as any)[k])
     .slice(0, 4)
-    .map((key) => ({ key: key as MainMenuChoice, Icon: TOOL_ICONS[key as MainMenuChoice]! }));
-  const displayedTools = recentTools.length > 0 ? recentTools : availableSecondaryTools.slice(0, 4);
+    .map((k) => ({ key: k as MainMenuChoice, Icon: TOOL_ICONS[k as MainMenuChoice]! }));
+  const displayedTools = (() => {
+    const visibleStudyTools = STUDY_TOOLS.filter((tool) => !hiddenStudyTools.has(tool.key));
+    const base = recentTools.length > 0 ? recentTools : visibleStudyTools.slice(0, 4);
+    const pinned: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
+      { key: "mcqBank" as MainMenuChoice, Icon: Layers },
+      { key: "adminNotes" as MainMenuChoice, Icon: BookOpen },
+      { key: "notes" as MainMenuChoice, Icon: NotebookPen },
+    ].filter((p) => !hiddenStudyTools.has(p.key) && !base.some((t) => t.key === p.key));
+    return [...pinned, ...base].slice(0, 6);
+  })();
 
   const displayedToolsHeader = recentTools.length > 0
     ? { en: "Recently used", ar: "المستخدمة مؤخراً" }[language]
@@ -561,7 +695,10 @@ const Basics = ({
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-        {NAV_GROUPS.map((g) => (
+        {NAV_GROUPS.map((g) => ({
+          ...g,
+          items: g.titleEn === "Study" ? g.items.filter((it) => !hiddenStudyTools.has(it.key)) : g.items,
+        })).map((g) => (
           <div key={g.titleEn}>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
               {language === "ar" ? g.titleAr : g.titleEn}
@@ -615,33 +752,31 @@ const Basics = ({
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
-      <div className="sticky top-0 z-40 backdrop-blur-md bg-background/85 border-b border-border">
-        <div className="max-w-6xl mx-auto px-3 sm:px-5 md:px-10 h-14 flex items-center gap-2 sm:gap-3">
-          <div className="flex shrink-0 items-center gap-2">
+      <div className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
+        <div className="max-w-5xl mx-auto px-5 md:px-10 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
-            <p className="hidden sm:block text-base font-bold text-primary leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>tamayzak</p>
+            <p className="text-base font-bold text-primary leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>tamayzak</p>
             <button
-              type="button"
-              onClick={() => navigate("todo")}
-              aria-label={language === "ar" ? `${pendingTodos} مهام متبقية` : `${pendingTodos} tasks remaining`}
-              title={language === "ar" ? "افتح قائمة المهام" : "Open to-do list"}
-              className="relative inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
+              onClick={() => onNav("report")}
+              aria-label={language === "ar" ? "خطتي اليوم" : "Today's plan"}
+              title={language === "ar" ? "خطتك اليوم — اضغط لعرض الخطة" : "Today's plan — tap to open"}
+              className="relative inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
             >
-              <ListChecks className="w-3.5 h-3.5" />
-              <span>{pendingTodos}</span>
-              <span className="hidden md:inline opacity-80">{language === "ar" ? "مهام" : "tasks"}</span>
-              {pendingTodos > 0 && (
+              <Target className="w-3.5 h-3.5" />
+              <span>{pendingTodos + unread.length}</span>
+              <span className="hidden sm:inline opacity-80">{language === "ar" ? "لليوم" : "today"}</span>
+              {(pendingTodos + unread.length) > 0 && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
               )}
             </button>
           </div>
           <button
-            type="button"
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className="mx-auto inline-flex min-w-0 flex-1 sm:max-w-sm items-center gap-2 h-9 px-3 rounded-xl border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-w-[10rem] sm:min-w-[16rem]"
           >
             <Search className="w-3.5 h-3.5 text-primary" />
             <span className="flex-1 text-start truncate">
@@ -650,11 +785,10 @@ const Basics = ({
             <kbd className="hidden sm:inline-block text-[10px] text-muted-foreground/70 border border-border rounded px-1">⌘K</kbd>
           </button>
           <button
-            type="button"
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className="inline-flex shrink-0 items-center justify-center w-9 h-9 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="ms-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -662,7 +796,7 @@ const Basics = ({
       </div>
 
       {/* Content */}
-      <main className="px-3 sm:px-5 md:px-10 py-4 sm:py-7 md:py-8 pb-48">
+      <main className="px-3 sm:px-5 md:px-10 py-4 sm:py-8 md:py-12 pb-48">
         <h1 className="sr-only">{language === "ar" ? "أدوات الدراسة" : "Study tools"}</h1>
         <AnimatePresence mode="wait">
         {showAllTools ? (
@@ -685,6 +819,7 @@ const Basics = ({
               {(() => {
                 const seen = new Set<string>();
                 const count = NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
+                  if (hiddenStudyTools.has(it.key)) return false;
                   if (seen.has(it.key)) return false;
                   seen.add(it.key);
                   return true;
@@ -713,6 +848,7 @@ const Basics = ({
               {(() => {
                 const seen = new Set<string>();
                 return NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
+                  if (hiddenStudyTools.has(it.key)) return false;
                   if (seen.has(it.key)) return false;
                   seen.add(it.key);
                   return true;
@@ -729,7 +865,7 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group bg-card p-5 border border-border rounded-2xl text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
+                    className={`group bg-card p-5 border border-border rounded-2xl text-left transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
                   >
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                       <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
@@ -759,77 +895,75 @@ const Basics = ({
           style={{ fontFamily: "'Plus Jakarta Sans', 'Cairo', sans-serif" }}
         >
         <div className="max-w-6xl mx-auto">
+          {/* subtle brass aura */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 15% -10%, hsl(var(--primary) / 0.10), transparent 55%), radial-gradient(circle at 90% 110%, hsl(var(--primary) / 0.08), transparent 55%)",
+            }}
+          />
           <div className="relative">
           {/* ====== Noir & Gold bento dashboard ====== */}
           {/* Header */}
           {/* === The Facet Stone hero === */}
-          <header className="mb-6 rounded-[28px] border border-border/80 bg-gradient-to-br from-card via-card to-primary/10 p-4 shadow-[var(--shadow-card)] sm:p-6">
-            <div className="flex items-center gap-3 sm:gap-6">
-              <div className="shrink-0 sm:hidden">
-                <RankStone
-                  rank={currentRank}
-                  size={78}
-                  fillProgress={stoneFill}
-                  glow={currentRank === "royal" || currentRank === "diamond"}
-                />
-              </div>
-              <div className="hidden shrink-0 sm:block">
-                <RankStone
-                  rank={currentRank}
-                  size={104}
-                  fillProgress={stoneFill}
-                  glow={currentRank === "royal" || currentRank === "diamond"}
-                />
-              </div>
+          <header className="mb-8 md:mb-12">
+            <div className="flex items-center gap-5 sm:gap-7">
+              <RankStone
+                rank={currentRank}
+                size={104}
+                fillProgress={stoneFill}
+                glow={currentRank === "royal" || currentRank === "diamond"}
+                className="shrink-0"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-ash mb-1">
                   {language === "ar" ? "رتبتك" : "Your rank"}
                 </p>
-                <h2 className="truncate text-xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
                   {rankLabel}
                   {username && (
-                    <span className="text-ash font-normal text-sm sm:text-lg ms-2">· {username}</span>
+                    <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
                   )}
                 </h2>
-                <p className="mt-1 line-clamp-2 text-[11px] sm:text-xs text-muted-foreground">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {nextRank
                     ? (language === "ar"
                       ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
                       : `${pointsToNextRank} points to ${nextRank.label.en}`)
                     : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
                 </p>
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="rounded-2xl border border-border bg-card px-3 py-2.5">
+                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onNav("unlocks")}
+                    className="text-start rounded-2xl border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+                  >
+                    <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar" ? "نقطة · افتح الأدوات" : "points · unlock tools"}
+                    </p>
+                  </button>
+                  <div className="col-span-2 sm:col-span-1 rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2.5">
+                    <p className="font-mono text-primary text-xl font-semibold tabular-nums leading-none">
+                      {boardRank ? `#${boardRank}` : "—"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar"
+                        ? `ترتيبك بين ${boardTotal} طالب عراقي`
+                        : `your place among ${boardTotal} Iraqi students`}
+                    </p>
+                  </div>
+                </div>
               </div>
               <GiftMcqButton language={language} />
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-2xl border border-border bg-card px-3 py-3">
-                <p className="font-mono text-ember text-lg sm:text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
-                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
-                  {language === "ar" ? "سلسلة الأيام" : "day streak"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => onNav("unlocks")}
-                className="text-start rounded-2xl border border-border bg-card px-3 py-3 transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <p className="font-mono text-foreground text-lg sm:text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
-                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
-                  {language === "ar" ? "النقاط" : "points"}
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNav("leaderboard")}
-                className="text-start rounded-2xl border border-primary/40 bg-primary/5 px-3 py-3 transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <p className="font-mono text-primary text-lg sm:text-xl font-semibold tabular-nums leading-none">
-                  {boardRank ? `#${boardRank}` : "—"}
-                </p>
-                <p className="mt-1 truncate text-[10px] sm:text-[11px] text-ash">
-                  {language === "ar" ? `المتصدرون · ${boardTotal}` : `leaderboard · ${boardTotal}`}
-                </p>
-              </button>
             </div>
           </header>
 
@@ -837,12 +971,12 @@ const Basics = ({
             <button
               type="button"
               onClick={() => onNav("mistakes")}
-              className="w-full mb-4 flex items-center gap-3 rounded-2xl border border-amber-400/35 bg-amber-500/10 p-3.5 text-start hover:border-amber-400 hover:bg-amber-500/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              className="w-full mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-start hover:border-amber-400 transition-colors"
             >
               <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-4 h-4" />
               </span>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0">
                 <span className="block font-bold text-foreground">
                   {language === "ar" ? "حان وقت مراجعة أخطائك" : "Time to review your mistakes"}
                 </span>
@@ -858,7 +992,7 @@ const Basics = ({
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
           <section className="mb-6">
-            <div className="bg-card rounded-[28px] border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
+            <div className="bg-card rounded-3xl border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
               <div className="flex items-center gap-3 mb-4">
                 <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Target className="w-4 h-4" />
@@ -906,9 +1040,7 @@ const Basics = ({
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold text-foreground truncate">
                       {todoTotal > 0
-                        ? (todoDone === todoTotal
-                          ? (language === "ar" ? "أنجزت مهام اليوم" : "Today's tasks are complete")
-                          : (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`))
+                        ? (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`)
                         : (language === "ar" ? "أضف مهام اليوم" : "Add today's tasks")}
                     </span>
                     <span className="block text-[11px] text-muted-foreground truncate">
@@ -980,69 +1112,19 @@ const Basics = ({
                 </button>
               </div>
 
+              <div className="mt-3 text-center">
+                <VisitCounter inline />
+              </div>
             </div>
           </section>
 
-          {/* Success companion — featured commitment card */}
-          <motion.button
-            type="button"
-            onClick={() => window.open("https://t.me/rafeeqaak", "_blank", "noopener,noreferrer")}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -3 }}
-            whileTap={{ scale: 0.99 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            aria-label={language === "ar" ? "افتح رفيقك" : "Open Success Companion"}
-            className={`group relative mb-7 w-full overflow-hidden rounded-[28px] border border-primary/25 bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-[0_18px_45px_-24px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-7 ${isRTL ? "text-right" : "text-left"}`}
-          >
-            <span aria-hidden className="absolute -top-16 -end-10 h-44 w-44 rounded-full border border-white/15 bg-white/10 transition-transform duration-500 group-hover:scale-110" />
-            <span aria-hidden className="absolute -bottom-20 end-20 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl" />
-            <span aria-hidden className="absolute top-5 end-24 h-2 w-2 rounded-full bg-white/70 shadow-[22px_20px_0_-2px_rgba(255,255,255,0.55),-16px_34px_0_-2px_rgba(255,255,255,0.4)]" />
-
-            <span className="relative flex items-center gap-4 sm:gap-6">
-              <span className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-inner backdrop-blur-sm sm:h-20 sm:w-20 sm:rounded-3xl">
-                <Sparkles className="h-8 w-8 text-white sm:h-10 sm:w-10" />
-                <span className="absolute -bottom-1 -end-1 flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300 text-indigo-950 shadow-lg ring-4 ring-primary">
-                  <Heart className="h-3.5 w-3.5 fill-current" />
-                </span>
-              </span>
-
-              <span className="min-w-0 flex-1">
-                <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200 sm:text-xs">
-                  {language === "ar" ? "رفيقك" : "Success Companion"}
-                </span>
-                <span className="block text-xl font-black leading-snug tracking-tight text-white sm:text-2xl md:text-3xl">
-                  {language === "ar" ? "عندك مشكلة بالالتزام؟ جبنالك رفيقك" : "Struggling to stay committed? Meet your companion."}
-                </span>
-                <span className="mt-2 block max-w-2xl text-xs leading-relaxed text-white/75 sm:text-sm">
-                  {language === "ar" ? "يرتّب خطتك، يتابع تقدمك، ويبقى وياك خطوة بخطوة." : "Plan your studies, track your progress, and keep moving one step at a time."}
-                </span>
-              </span>
-
-              <span className="hidden h-11 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 text-sm font-bold text-white backdrop-blur-sm transition-colors group-hover:bg-white/25 sm:inline-flex">
-                {language === "ar" ? "تعرّف عليه" : "Meet yours"}
-                {isRTL ? <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> : <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
-              </span>
-            </span>
-          </motion.button>
-
           {/* Core tools */}
-          <section className="mb-7">
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-foreground">
-                  {language === "ar" ? "الأساسيات" : "Essentials"}
-                </h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {language === "ar" ? "أهم الأدوات حتى تبدأ بسرعة." : "The tools you need to get started quickly."}
-                </p>
-              </div>
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-                {FEATURED.length} {language === "ar" ? "أدوات" : "tools"}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {FEATURED.map((it) => {
+          <section className="mb-6">
+            <h2 className="text-base sm:text-lg font-bold text-foreground mb-4">
+              {language === "ar" ? "الأساسيات" : "Essentials"}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {FEATURED.filter((it) => !hiddenStudyTools.has(it.key)).map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
@@ -1055,14 +1137,14 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-3.5 sm:min-h-[150px] sm:p-4 rounded-2xl shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
+                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
                     <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-sm ring-1 ring-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform ${tint.icon}`}>
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <h3 className="relative pe-7 text-foreground text-sm sm:text-lg font-bold mb-1 line-clamp-2">{meta.title}</h3>
+                    <h3 className="relative pe-7 text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-5 text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-3 end-3 inline-flex h-7 w-7 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
                       {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
@@ -1073,19 +1155,88 @@ const Basics = ({
             </div>
           </section>
 
-          <HomeCountdown language={language} />
+          {/* Unread notifications — horizontal scroll list */}
+          {unread.length > 0 && (
+            <div className="mb-6">
+              <div
+                className="flex flex-row flex-nowrap gap-4 overflow-x-auto overflow-y-hidden pb-3 snap-x snap-mandatory scroll-smooth -mx-1 px-1"
+                style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" }}
+              >
+                {unread.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => onNav("news")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("news"); } }}
+                    className="group relative snap-start shrink-0 w-[18rem] sm:w-[20rem] h-36 overflow-hidden rounded-2xl border border-primary/30 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-glow)]"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(circle at 80% 20%, hsl(var(--primary-foreground) / 0.35) 0%, transparent 45%), radial-gradient(circle at 10% 90%, hsl(var(--accent) / 0.35) 0%, transparent 50%)",
+                      }}
+                    />
+                    <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/20 to-transparent pointer-events-none" />
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
+                      aria-label="Dismiss"
+                      className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-background/40 backdrop-blur flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground hover:bg-background/70 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+
+                    <div className="absolute top-3 left-3 z-10 w-10 h-10 rounded-xl bg-background/30 backdrop-blur-md ring-1 ring-primary-foreground/30 flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-primary-foreground" />
+                    </div>
+
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10">
+                      <h3 className="text-base font-bold text-primary-foreground line-clamp-1 drop-shadow">{n.title}</h3>
+                      {n.body && (
+                        <p className="text-xs text-primary-foreground/85 mt-0.5 whitespace-pre-wrap line-clamp-2 leading-relaxed drop-shadow">
+                          {n.body}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Countdown — quiet inline strip */}
+          {showTimer && (
+            <div className="mb-6 rounded-2xl border border-border bg-card px-5 py-4 flex items-center gap-4">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+                <Timer className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{language === "ar" ? "موعد مهم" : "Save the date"}</p>
+                <p className="font-semibold text-sm truncate">{timerLabel}</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 text-sm font-bold tabular-nums">
+                <span>{String(cd.d).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.d}</span>
+                <span className="text-muted-foreground mx-1">·</span>
+                <span>{String(cd.h).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.h}</span>
+                <span className="text-muted-foreground mx-1">·</span>
+                <span>{String(cd.m).padStart(2, "0")}</span><span className="text-muted-foreground text-xs">{units.m}</span>
+              </div>
+              <button onClick={dismissTimer} aria-label="Dismiss" className="text-muted-foreground hover:text-foreground p-1 shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Recently used tools (falls back to the tools menu) */}
-          <section className="mb-7">
-            <div className="flex items-end justify-between mb-4 gap-3">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
-                  {displayedToolsHeader}
-                </h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {language === "ar" ? "اختصارات سريعة بدون تكرار أدوات الأساسيات." : "Quick shortcuts without repeating your essentials."}
-                </p>
-              </div>
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-foreground" style={{ fontFamily: "'Syne', sans-serif" }}>
+                {displayedToolsHeader}
+              </h2>
               <button
                 onClick={() => setShowAllTools(true)}
                 className="text-xs sm:text-sm font-semibold text-primary hover:opacity-80 inline-flex items-center gap-1 transition-opacity shrink-0"
@@ -1099,7 +1250,7 @@ const Basics = ({
               initial="hidden"
               animate="show"
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
             >
               {displayedTools.map((it) => {
                 const Icon = it.Icon;
@@ -1116,7 +1267,7 @@ const Basics = ({
                     whileHover={isLocked ? undefined : { y: -3 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[122px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[146px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
+                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
@@ -1145,9 +1296,7 @@ const Basics = ({
 
           {/* Streak tree — bottom */}
           <section>
-            <Suspense fallback={<div className="mx-auto my-12 h-80 max-w-md animate-pulse rounded-xl bg-muted/50" />}>
-              <StreakTree language={language} daysOverride={streakDays} />
-            </Suspense>
+            <StreakTree language={language} />
           </section>
           </div>
         </div>
