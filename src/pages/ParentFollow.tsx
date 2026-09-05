@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Minus, Loader2, Award, FileDown, BarChart3, X, Printer, Download } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const PARENT_INPUT = "h-12 w-full rounded-xl border border-white/10 bg-[#111321]/80 px-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10";
+const PARENT_INPUT = "h-12 w-full rounded-xl border border-border bg-background/80 px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
 
 
 type Snapshot = {
@@ -16,17 +16,15 @@ type Snapshot = {
   last_7_days: Array<{ date: string; minutes: number }>;
   last_report: any;
   todays_todos?: Array<{ id: string; text: string; done: boolean; day?: string }>;
-  all_todos?: Array<{ id: string; text: string; done: boolean; day?: string }>;
+  all_todos?: Array<{ id: string; text: string; done: boolean; day?: string; source?: string }>;
   channel?: string;
   today_minutes?: number;
   today_seconds?: number;
   today_per_subject?: Record<string, { minutes: number; sessions: number; missions: number }>;
   tools_used_today?: Array<{ feature: string; count: number }>;
   questions_solved_today?: number;
-  weekly_days?: Array<{ date: string; minutes: number; sessions: number; missions: number; points: number; questions: number; tools: number; todo_done: number; todo_total: number; subjects: Record<string, number> }>;
-  weekly_subjects?: Array<{ subject: string; minutes: number }>;
+  parent_scores?: Array<{ id: string; subject: string; title: string; score: number; max_score: number; note: string | null; created_at: string }>;
   parent_score?: number;
-  parent_score_events?: Array<{ id: string; delta: number; balance_after: number; created_at: string }>;
   parent_notes?: Array<{ id: string; note_text: string; created_at: string }>;
 };
 
@@ -53,17 +51,13 @@ export default function ParentFollow({ token }: { token: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "report" | "scores" | "tasks" | "notes">("overview");
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const weeklyReportRef = useRef<HTMLDivElement>(null);
-  const pdfFrameRef = useRef<HTMLIFrameElement>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pdfFileName, setPdfFileName] = useState("weekly-report.pdf");
+  const [activeTab, setActiveTab] = useState<"overview" | "todos" | "scores" | "notes">("overview");
   const [savingEntry, setSavingEntry] = useState(false);
   const [entryMessage, setEntryMessage] = useState<string | null>(null);
+  const [scoreForm, setScoreForm] = useState({ subject: "", title: "", score: "", maxScore: "100", note: "" });
   const [noteText, setNoteText] = useState("");
   const [todoText, setTodoText] = useState("");
-  const [todoDay, setTodoDay] = useState("Today");
+  const [todoDay, setTodoDay] = useState("");
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
@@ -138,12 +132,6 @@ export default function ParentFollow({ token }: { token: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlocked, token]);
 
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
-
   const submitCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = code.trim();
@@ -163,7 +151,7 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(false);
   };
 
-  const saveParentEntry = async (action: "adjust_score" | "add_note" | "add_todo", payload: Record<string, unknown>) => {
+  const saveParentEntry = async (action: "adjust_score" | "add_todo" | "add_note", payload: Record<string, unknown>) => {
     setSavingEntry(true);
     setEntryMessage(null);
     try {
@@ -176,70 +164,14 @@ export default function ParentFollow({ token }: { token: string }) {
       if (!res.ok || next?.error) throw new Error(next?.error ?? "save_failed");
       setData(next as Snapshot);
       setLastUpdated(new Date());
-      setEntryMessage(action === "adjust_score" ? "Score updated." : action === "add_todo" ? "Task sent to the student." : "Note added successfully.");
+      setEntryMessage(action === "adjust_score" ? "Score updated successfully." : action === "add_todo" ? "Task added to the student's To-Do list." : "Note added successfully.");
       if (action === "add_todo") setTodoText("");
       if (action === "add_note") setNoteText("");
-    } catch {
-      setEntryMessage("Could not save. Please check the values and try again.");
+    } catch (error) {
+      setEntryMessage(error instanceof Error ? `Could not save: ${error.message}` : "Could not save. Please try again.");
     } finally {
       setSavingEntry(false);
     }
-  };
-
-  const exportWeeklyPdf = async () => {
-    const node = weeklyReportRef.current;
-    if (!node || !data) return;
-    setExportingPdf(true);
-    try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
-        import("jspdf"),
-      ]);
-      const canvas = await html2canvas(node, {
-        backgroundColor: "#f8fafc",
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        windowWidth: Math.max(node.scrollWidth, 900),
-      });
-      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 24;
-      const imageWidth = pageWidth - margin * 2;
-      const imageHeight = (canvas.height * imageWidth) / canvas.width;
-      const printableHeight = pageHeight - margin * 2;
-      const image = canvas.toDataURL("image/jpeg", 0.94);
-      let offset = 0;
-      do {
-        if (offset > 0) pdf.addPage();
-        pdf.addImage(image, "JPEG", margin, margin - offset, imageWidth, imageHeight, undefined, "FAST");
-        offset += printableHeight;
-      } while (offset < imageHeight);
-      const safeName = data.student_name.replace(/[^\p{L}\p{N}_-]+/gu, "-");
-      const fileName = `${safeName || "student"}-weekly-report.pdf`;
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-      setPdfFileName(fileName);
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Weekly report PDF export failed", error);
-      setEntryMessage("The PDF could not be created. Please try again.");
-    } finally {
-      setExportingPdf(false);
-    }
-  };
-
-  const closePdfViewer = () => setPdfUrl(null);
-
-  const printPdf = () => {
-    const frame = pdfFrameRef.current;
-    if (frame?.contentWindow) {
-      frame.contentWindow.focus();
-      frame.contentWindow.print();
-      return;
-    }
-    if (pdfUrl) window.open(pdfUrl, "_blank", "noopener,noreferrer");
   };
 
   const PARCHMENT = "relative min-h-screen overflow-hidden bg-background text-foreground";
@@ -250,7 +182,7 @@ export default function ParentFollow({ token }: { token: string }) {
       <main className={`${PARCHMENT} flex items-center justify-center p-5`} style={FONT_STYLE}>
         <div aria-hidden="true" className="absolute -top-24 -end-20 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
         <div aria-hidden="true" className="absolute -bottom-24 -start-20 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
-        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-white/10 bg-[#191a2b]/95 p-7 text-center text-slate-100 shadow-[0_28px_80px_-35px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-9">
+        <form onSubmit={submitCode} className="relative w-full max-w-md space-y-6 rounded-[2rem] border border-indigo-500/15 bg-card/90 p-7 text-center text-card-foreground shadow-[0_28px_80px_-35px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-9">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-violet-500/20 text-indigo-600 ring-1 ring-indigo-500/20 dark:text-indigo-300">
             <Lock className="w-6 h-6" />
           </div>
@@ -289,7 +221,7 @@ export default function ParentFollow({ token }: { token: string }) {
   if (!data)
     return (
       <main className={`${PARCHMENT} flex items-center justify-center p-6`} style={FONT_STYLE}>
-        <div className="max-w-md space-y-3 rounded-[2rem] border border-white/10 bg-[#191a2b] p-8 text-center text-slate-100 shadow-2xl">
+        <div className="max-w-md space-y-3 rounded-[2rem] border border-border bg-card p-8 text-center text-card-foreground shadow-2xl">
           <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', Inter, sans-serif" }}>Link not available</h1>
           <p className="text-muted-foreground text-sm">
             {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
@@ -316,23 +248,13 @@ export default function ParentFollow({ token }: { token: string }) {
   const todoDone = data.todays_todos?.filter((todo) => todo.done).length ?? 0;
   const todoPct = todoTotal ? Math.round((todoDone / todoTotal) * 100) : 0;
   const weekMinutes = data.last_7_days.reduce((sum, day) => sum + day.minutes, 0);
-  const weeklyDays = data.weekly_days ?? data.last_7_days.map((day) => ({ ...day, sessions: 0, missions: 0, points: 0, questions: 0, tools: 0, todo_done: 0, todo_total: 0, subjects: {} }));
-  const weekSessions = weeklyDays.reduce((sum, day) => sum + day.sessions, 0);
-  const weekMissions = weeklyDays.reduce((sum, day) => sum + day.missions, 0);
-  const weekQuestions = weeklyDays.reduce((sum, day) => sum + day.questions, 0);
-  const weekTodoDone = weeklyDays.reduce((sum, day) => sum + day.todo_done, 0);
-  const weekTodoTotal = weeklyDays.reduce((sum, day) => sum + day.todo_total, 0);
-  const weeklyGoalMinutes = Math.max(0, Number(data.weekly_goal_hours ?? 0) * 60);
-  const weeklyGoalPct = weeklyGoalMinutes ? Math.min(100, Math.round((weekMinutes / weeklyGoalMinutes) * 100)) : null;
-  const reportStart = weeklyDays[0]?.date;
-  const reportEnd = weeklyDays[weeklyDays.length - 1]?.date;
 
   return (
     <main className={PARCHMENT} style={FONT_STYLE}>
       <div aria-hidden="true" className="pointer-events-none absolute -top-32 -end-24 h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute top-[42rem] -start-32 h-72 w-72 rounded-full bg-rose-500/10 blur-3xl" />
       <div className="relative mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-12">
-        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo-500/25 via-[#1b1b31] to-violet-500/20 p-5 text-slate-100 shadow-[0_24px_70px_-35px_rgba(99,102,241,0.5)] md:p-8">
+        <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-indigo-500/15 bg-gradient-to-br from-indigo-500/15 via-card to-violet-500/10 p-5 shadow-[0_24px_70px_-35px_rgba(99,102,241,0.5)] md:p-8">
           <div aria-hidden="true" className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[30px] border-violet-500/10" />
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -362,12 +284,11 @@ export default function ParentFollow({ token }: { token: string }) {
           <Measure icon={CalendarDays} tone="cyan" label="Days to exam" value={data.days_to_exam != null ? `${data.days_to_exam}` : "—"} />
         </section>
 
-        <nav className="mb-6 grid grid-cols-5 gap-1.5 rounded-2xl border border-white/10 bg-[#191a2b]/95 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
+        <nav className="mb-6 grid grid-cols-4 gap-1.5 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm" aria-label="Parent follow-up sections">
           {([
             ["overview", "Overview", Activity],
-            ["report", "Weekly", BarChart3],
+            ["todos", "To-Do", ListChecks],
             ["scores", "Scores", Award],
-            ["tasks", "Tasks", ListChecks],
             ["notes", "Notes", NotebookPen],
           ] as const).map(([key, label, Icon]) => (
             <button
@@ -397,7 +318,7 @@ export default function ParentFollow({ token }: { token: string }) {
                 <SubHeading>By subject</SubHeading>
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {perSubject.map(([subj, v]) => (
-                    <li key={subj} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-sm">
+                    <li key={subj} className="rounded-xl border border-border/60 bg-muted/25 p-3 text-sm">
                       <div className="flex items-center justify-between gap-2"><span className="font-bold capitalize">{subj}</span><span className="font-mono font-bold text-indigo-600 dark:text-indigo-300">{v.minutes} min</span></div>
                       <span className="mt-1 block text-xs text-muted-foreground">{v.sessions} sessions · {v.missions} missions</span>
                     </li>
@@ -431,7 +352,7 @@ export default function ParentFollow({ token }: { token: string }) {
               <div><p className="text-xs text-muted-foreground">Weekly total</p><p className="font-mono text-3xl font-black">{weekMinutes} <span className="text-sm font-medium text-muted-foreground">min</span></p></div>
               <div className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-600 dark:text-violet-300">Avg {Math.round(weekMinutes / 7)} min/day</div>
             </div>
-            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-white/[0.035] px-3 pt-4">
+            <div className="flex h-40 items-end justify-between gap-2 rounded-2xl bg-muted/20 px-3 pt-4">
               {data.last_7_days.map((d) => (
                 <div key={d.date} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={`${d.date}: ${d.minutes} minutes`}>
                   <span className="font-mono text-[10px] font-bold opacity-0 transition-opacity group-hover:opacity-100">{d.minutes}</span>
@@ -465,7 +386,7 @@ export default function ParentFollow({ token }: { token: string }) {
           {/* To-do */}
           <Panel icon={ListChecks} title="Today's to-do list">
             {!data.todays_todos?.length ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-6 text-center">
+              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
                 <ListChecks className="mx-auto mb-2 h-7 w-7 text-muted-foreground/60" />
                 <p className="text-sm font-semibold">No tasks planned for today</p>
                 <p className="mt-1 text-xs text-muted-foreground">New tasks will appear here automatically.</p>
@@ -473,12 +394,12 @@ export default function ParentFollow({ token }: { token: string }) {
             ) : (
               <>
                 <div className="mb-5 flex items-center gap-4 rounded-2xl bg-emerald-500/10 p-4">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#111321] font-mono text-sm font-black text-emerald-300 shadow-sm">{todoPct}%</div>
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-background font-mono text-sm font-black text-emerald-600 shadow-sm dark:text-emerald-300">{todoPct}%</div>
                   <div className="min-w-0 flex-1"><p className="font-bold">{todoDone} of {todoTotal} completed</p><div className="mt-2 h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${todoPct}%` }} /></div></div>
                 </div>
                 <ul className="space-y-2">
                   {data.todays_todos.map((td, i) => (
-                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/10 bg-white/[0.035]"}`}>
+                    <li key={td.id} className={`flex items-center gap-3 rounded-xl border p-3 ${td.done ? "border-emerald-500/20 bg-emerald-500/5" : "border-border/70 bg-muted/20"}`}>
                       {td.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                       <span className={`flex-1 text-sm ${td.done ? "line-through text-muted-foreground" : "font-medium"}`}>{td.text}</span>
                       <span className="font-mono text-[10px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
@@ -495,84 +416,44 @@ export default function ParentFollow({ token }: { token: string }) {
           </p>
         </div>}
 
-        {activeTab === "report" && (
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-extrabold">Complete weekly report</p>
-                <p className="mt-1 text-xs text-muted-foreground">Review the full week, then save or print a polished PDF copy.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void exportWeeklyPdf()}
-                disabled={exportingPdf}
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:translate-y-0 disabled:opacity-60"
-              >
-                {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-                {exportingPdf ? "Creating PDF…" : "Download PDF"}
-              </button>
-            </div>
-            {entryMessage && <p className="text-center text-xs font-semibold text-destructive">{entryMessage}</p>}
-            <WeeklyReport
-              reportRef={weeklyReportRef}
-              studentName={data.student_name}
-              parentName={data.parent_name}
-              days={weeklyDays}
-              subjects={data.weekly_subjects ?? []}
-              totalMinutes={weekMinutes}
-              sessions={weekSessions}
-              missions={weekMissions}
-              questions={weekQuestions}
-              todoDone={weekTodoDone}
-              todoTotal={weekTodoTotal}
-              goalHours={data.weekly_goal_hours}
-              goalPct={weeklyGoalPct}
-              startDate={reportStart}
-              endDate={reportEnd}
-              scoreEvents={data.parent_score_events ?? []}
-            />
-          </div>
-        )}
-
-        {activeTab === "scores" && (
+        {activeTab === "todos" && (
           <div className="space-y-6">
-            <Panel icon={Award} title="Student score">
-              <div className="rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/15 to-violet-500/10 p-6 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-300">Current score</p>
-                <p className="my-4 font-mono text-7xl font-black text-white tabular-nums">{data.parent_score ?? 5}</p>
-                <p className="mb-6 text-xs text-muted-foreground">Every student starts with 5 points.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button" disabled={savingEntry || (data.parent_score ?? 5) <= 0} onClick={() => void saveParentEntry("adjust_score", { delta: -1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-rose-500/15 font-bold text-rose-300 transition hover:bg-rose-500/25 disabled:opacity-40"><Minus className="h-5 w-5" /> Subtract 1</button>
-                  <button type="button" disabled={savingEntry} onClick={() => void saveParentEntry("adjust_score", { delta: 1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500/15 font-bold text-emerald-300 transition hover:bg-emerald-500/25 disabled:opacity-40"><Plus className="h-5 w-5" /> Add 1</button>
-                </div>
-              </div>
+            <Panel icon={ListChecks} title="Add to the student's To-Do list">
+              <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void saveParentEntry("add_todo", { text: todoText, day: todoDay }); }}>
+                <Field label="Task"><input required maxLength={300} value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="What should the student complete?" className={PARENT_INPUT} /></Field>
+                <Field label="Day (optional)">
+                  <select value={todoDay} onChange={(event) => setTodoDay(event.target.value)} className={PARENT_INPUT}>
+                    <option value="">Any day</option>
+                    {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((day) => <option key={day} value={day}>{day}</option>)}
+                  </select>
+                </Field>
+                <button disabled={savingEntry || !todoText.trim()} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">
+                  {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add to student list
+                </button>
+              </form>
               {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
             </Panel>
-
-            <Panel icon={Trophy} title="Score history">
-              {!data.parent_score_events?.length ? <EmptyState icon={Award} text="No score changes yet." /> : (
-                <ul className="space-y-3">{data.parent_score_events.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.035] p-4"><div><p className={`font-bold ${item.delta > 0 ? "text-emerald-300" : "text-rose-300"}`}>{item.delta > 0 ? "+1 point" : "−1 point"}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></div><p className="font-mono text-2xl font-black text-white">{item.balance_after}</p></li>
-                ))}</ul>
+            <Panel icon={CheckCircle2} title="Student To-Do list">
+              {!data.all_todos?.length ? <EmptyState icon={ListChecks} text="No tasks yet." /> : (
+                <ul className="space-y-2">{data.all_todos.map((item) => <li key={item.id} className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 p-3"><span className={item.done ? "text-emerald-500" : "text-muted-foreground"}>{item.done ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</span><span className={`min-w-0 flex-1 text-sm ${item.done ? "text-muted-foreground line-through" : "font-medium"}`}>{item.text}</span>{item.day && <span className="text-[10px] font-semibold text-muted-foreground">{item.day}</span>}</li>)}</ul>
               )}
             </Panel>
           </div>
         )}
 
-        {activeTab === "tasks" && (
-          <div className="space-y-6">
-            <Panel icon={ListChecks} title="Add a task for the student">
-              <form onSubmit={(event) => { event.preventDefault(); void saveParentEntry("add_todo", { text: todoText, day: todoDay === "Today" ? undefined : todoDay }); }} className="space-y-4">
-                <Field label="Task"><input required maxLength={200} value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="e.g. Review chapter 3" className={PARENT_INPUT} /></Field>
-                <Field label="Day"><select value={todoDay} onChange={(event) => setTodoDay(event.target.value)} className={PARENT_INPUT}>{["Today", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => <option key={day} value={day}>{day}</option>)}</select></Field>
-                <button disabled={savingEntry || !todoText.trim()} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-60">{savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add to student's list</button>
-              </form>
-              {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
-            </Panel>
-            <Panel icon={ListChecks} title="Student task list">
-              {!data.all_todos?.length ? <EmptyState icon={ListChecks} text="No tasks yet." /> : <ul className="space-y-2">{data.all_todos.map((item) => <li key={item.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.035] p-3">{item.done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <Circle className="h-5 w-5 text-slate-500" />}<span className={`flex-1 text-sm ${item.done ? "line-through text-muted-foreground" : ""}`}>{item.text}</span>{item.day && <span className="rounded-full bg-indigo-500/10 px-2 py-1 text-[10px] text-indigo-300">{item.day}</span>}</li>)}</ul>}
-            </Panel>
-          </div>
+        {activeTab === "scores" && (
+          <Panel icon={Award} title="Student score">
+            <div className="mx-auto max-w-md text-center">
+              <p className="text-sm text-muted-foreground">The score starts at 5. Add or subtract points using the buttons below.</p>
+              <div className="my-7 font-mono text-7xl font-black tabular-nums text-indigo-600 dark:text-indigo-300">{data.parent_score ?? 5}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" disabled={savingEntry || (data.parent_score ?? 5) <= 0} onClick={() => void saveParentEntry("adjust_score", { delta: -1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 text-lg font-black text-rose-600 disabled:opacity-40 dark:text-rose-300">− 1</button>
+                <button type="button" disabled={savingEntry} onClick={() => void saveParentEntry("adjust_score", { delta: 1 })} className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-lg font-black text-emerald-600 disabled:opacity-40 dark:text-emerald-300">+ 1</button>
+              </div>
+              {savingEntry && <Loader2 className="mx-auto mt-4 h-5 w-5 animate-spin text-indigo-500" />}
+              {entryMessage && <p className="mt-4 text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
+            </div>
+          </Panel>
         )}
 
         {activeTab === "notes" && (
@@ -588,193 +469,13 @@ export default function ParentFollow({ token }: { token: string }) {
               {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
             </Panel>
             <Panel icon={ListChecks} title="Previous notes">
-              {!data.parent_notes?.length ? <EmptyState icon={NotebookPen} text="No parent notes yet." /> : <ul className="space-y-3">{data.parent_notes.map((item) => <li key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed">{item.note_text}</p><p className="mt-3 text-[10px] font-semibold text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></li>)}</ul>}
+              {!data.parent_notes?.length ? <EmptyState icon={NotebookPen} text="No parent notes yet." /> : <ul className="space-y-3">{data.parent_notes.map((item) => <li key={item.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed">{item.note_text}</p><p className="mt-3 text-[10px] font-semibold text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></li>)}</ul>}
             </Panel>
           </div>
         )}
       </div>
-
-      {pdfUrl && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="Weekly report PDF preview">
-          <div className="flex h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#151624] shadow-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-white">Weekly report PDF</p>
-                <p className="mt-0.5 truncate text-[10px] text-slate-400">{pdfFileName}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={printPdf} className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 text-xs font-bold text-white transition hover:bg-white/10">
-                  <Printer className="h-4 w-4" /><span className="hidden sm:inline">Print</span>
-                </button>
-                <a href={pdfUrl} download={pdfFileName} className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-3 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:brightness-110">
-                  <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
-                </a>
-                <button type="button" onClick={closePdfViewer} aria-label="Close PDF preview" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white transition hover:bg-white/10">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="relative min-h-0 flex-1 bg-[#222438] p-2 sm:p-4">
-              <iframe ref={pdfFrameRef} src={pdfUrl} title="Weekly report PDF" className="h-full w-full rounded-xl border-0 bg-white" />
-              <div className="pointer-events-none absolute inset-x-4 bottom-5 text-center sm:hidden">
-                <span className="inline-flex rounded-full bg-black/70 px-3 py-1.5 text-[10px] font-semibold text-white/80">If preview is unavailable, use Download above</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
-}
-
-type WeeklyDay = NonNullable<Snapshot["weekly_days"]>[number];
-
-function WeeklyReport({
-  reportRef, studentName, parentName, days, subjects, totalMinutes, sessions, missions, questions,
-  todoDone, todoTotal, goalHours, goalPct, startDate, endDate, scoreEvents,
-}: {
-  reportRef: React.RefObject<HTMLDivElement>;
-  studentName: string;
-  parentName: string | null;
-  days: WeeklyDay[];
-  subjects: Array<{ subject: string; minutes: number }>;
-  totalMinutes: number;
-  sessions: number;
-  missions: number;
-  questions: number;
-  todoDone: number;
-  todoTotal: number;
-  goalHours: number | null;
-  goalPct: number | null;
-  startDate?: string;
-  endDate?: string;
-  scoreEvents: NonNullable<Snapshot["parent_score_events"]>;
-}) {
-  const strongestDay = days.reduce<WeeklyDay | null>((best, day) => !best || day.minutes > best.minutes ? day : best, null);
-  const maxDayMinutes = Math.max(1, ...days.map((day) => day.minutes));
-  const maxSubjectMinutes = Math.max(1, ...subjects.map((subject) => subject.minutes));
-  const dateLabel = (date?: string, options?: Intl.DateTimeFormatOptions) => date
-    ? new Date(`${date}T12:00:00`).toLocaleDateString(undefined, options ?? { day: "numeric", month: "short", year: "numeric" })
-    : "—";
-  const periodScores = scoreEvents.filter((score) => {
-    const date = score.created_at.slice(0, 10);
-    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
-  });
-
-  return (
-    <div ref={reportRef} className="overflow-hidden rounded-[1.75rem] shadow-xl" style={{ background: "#f8fafc", color: "#172033", fontFamily: "Inter, Arial, sans-serif" }}>
-      <header className="relative overflow-hidden px-6 py-7 sm:px-9 sm:py-9" style={{ background: "linear-gradient(135deg, #4338ca 0%, #6d28d9 55%, #8b5cf6 100%)", color: "#ffffff" }}>
-        <div className="absolute -right-12 -top-14 h-44 w-44 rounded-full" style={{ border: "28px solid rgba(255,255,255,.09)" }} />
-        <div className="relative flex items-start justify-between gap-6">
-          <div>
-            <div className="mb-4 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em]" style={{ background: "rgba(255,255,255,.14)", color: "#ffffff" }}>Tamyzak · Parent follow-up</div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "#ddd6fe" }}>Weekly progress report</p>
-            <h2 className="mt-1 text-3xl font-black sm:text-4xl" style={{ color: "#ffffff" }}>{studentName}</h2>
-            <p className="mt-2 text-xs" style={{ color: "#ede9fe" }}>{dateLabel(startDate)} — {dateLabel(endDate)}</p>
-          </div>
-          <div className="rounded-2xl px-4 py-3 text-right" style={{ background: "rgba(255,255,255,.12)" }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: "#ddd6fe" }}>Prepared for</p>
-            <p className="mt-1 text-sm font-black" style={{ color: "#ffffff" }}>{parentName || "Parent / guardian"}</p>
-          </div>
-        </div>
-      </header>
-
-      <div className="space-y-6 p-5 sm:p-8">
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <ReportMetric label="Study time" value={formatMinutes(totalMinutes)} color="#4f46e5" background="#eef2ff" />
-          <ReportMetric label="Sessions" value={String(sessions)} color="#7c3aed" background="#f5f3ff" />
-          <ReportMetric label="Missions completed" value={String(missions)} color="#059669" background="#ecfdf5" />
-          <ReportMetric label="Questions / tools" value={String(questions)} color="#0284c7" background="#f0f9ff" />
-        </section>
-
-        <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-base font-black">Study activity by day</p>
-              <p className="mt-1 text-xs" style={{ color: "#64748b" }}>A complete view of the student's last seven days</p>
-            </div>
-            {strongestDay && strongestDay.minutes > 0 && <span className="rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: "#ecfdf5", color: "#047857" }}>Best day: {dateLabel(strongestDay.date, { weekday: "long" })}</span>}
-          </div>
-          <div className="grid grid-cols-7 items-end gap-2" style={{ height: 170 }}>
-            {days.map((day) => (
-              <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
-                <span className="text-[9px] font-black" style={{ color: "#475569" }}>{day.minutes}</span>
-                <div className="w-full max-w-12 rounded-t-lg" style={{ minHeight: 3, height: `${Math.max(2, (day.minutes / maxDayMinutes) * 112)}px`, background: "linear-gradient(180deg,#a78bfa,#4f46e5)" }} />
-                <span className="text-[9px] font-bold" style={{ color: "#64748b" }}>{dateLabel(day.date, { weekday: "short" })}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-5 sm:grid-cols-2">
-          <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-            <p className="mb-4 text-sm font-black">Time by subject</p>
-            {subjects.length ? <div className="space-y-3">{subjects.slice(0, 8).map((subject) => (
-              <div key={subject.subject}>
-                <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]"><span className="truncate font-bold capitalize">{subject.subject}</span><span className="font-black" style={{ color: "#4f46e5" }}>{formatMinutes(subject.minutes)}</span></div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: "#eef2f7" }}><div className="h-full rounded-full" style={{ width: `${Math.max(3, (subject.minutes / maxSubjectMinutes) * 100)}%`, background: "linear-gradient(90deg,#4f46e5,#8b5cf6)" }} /></div>
-              </div>
-            ))}</div> : <ReportEmpty>No subject activity recorded this week.</ReportEmpty>}
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-              <div className="flex items-center justify-between gap-3"><p className="text-sm font-black">Weekly goal</p><span className="text-lg font-black" style={{ color: "#7c3aed" }}>{goalPct == null ? "—" : `${goalPct}%`}</span></div>
-              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>{goalHours ? `${formatMinutes(totalMinutes)} of ${goalHours} hours` : "No weekly goal has been set."}</p>
-              <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: "#ede9fe" }}><div className="h-full rounded-full" style={{ width: `${goalPct ?? 0}%`, background: "linear-gradient(90deg,#7c3aed,#a855f7)" }} /></div>
-            </div>
-            <div className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-              <div className="flex items-center justify-between gap-3"><p className="text-sm font-black">Planned tasks</p><span className="text-lg font-black" style={{ color: "#059669" }}>{todoDone}/{todoTotal}</span></div>
-              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>{todoTotal ? `${Math.round((todoDone / todoTotal) * 100)}% of the week's planned work completed` : "No tasks were planned for this week."}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-          <p className="mb-4 text-sm font-black">Daily details</p>
-          <div className="space-y-2">{days.map((day) => (
-            <div key={day.date} className="grid grid-cols-[1.25fr_repeat(4,.75fr)] items-center gap-2 rounded-xl px-3 py-3 text-[10px]" style={{ background: day.minutes ? "#f5f3ff" : "#f8fafc" }}>
-              <div><p className="font-black">{dateLabel(day.date, { weekday: "long" })}</p><p className="mt-0.5" style={{ color: "#64748b" }}>{dateLabel(day.date, { day: "numeric", month: "short" })}</p></div>
-              <DailyValue label="Study" value={formatMinutes(day.minutes)} />
-              <DailyValue label="Sessions" value={String(day.sessions)} />
-              <DailyValue label="Missions" value={String(day.missions)} />
-              <DailyValue label="Tasks" value={`${day.todo_done}/${day.todo_total}`} />
-            </div>
-          ))}</div>
-        </section>
-
-        {periodScores.length > 0 && <section className="rounded-2xl border p-5" style={{ background: "#ffffff", borderColor: "#e2e8f0" }}>
-          <p className="mb-4 text-sm font-black">Score changes this week</p>
-          <div className="grid gap-2 sm:grid-cols-2">{periodScores.map((score) => <div key={score.id} className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: score.delta > 0 ? "#ecfdf5" : "#fff1f2" }}><div><p className="text-xs font-black">{score.delta > 0 ? "+1 point" : "−1 point"}</p><p className="mt-0.5 text-[9px]" style={{ color: "#78716c" }}>{new Date(score.created_at).toLocaleDateString()}</p></div><p className="text-lg font-black" style={{ color: score.delta > 0 ? "#059669" : "#e11d48" }}>{score.balance_after}</p></div>)}</div>
-        </section>}
-
-        <footer className="flex items-center justify-between border-t pt-4 text-[9px]" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>
-          <span>Generated from the student's verified Tamyzak activity</span>
-          <span>Generated {new Date().toLocaleDateString()}</span>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-function ReportMetric({ label, value, color, background }: { label: string; value: string; color: string; background: string }) {
-  return <div className="rounded-2xl p-4" style={{ background }}><p className="text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: "#64748b" }}>{label}</p><p className="mt-2 text-xl font-black" style={{ color }}>{value}</p></div>;
-}
-
-function DailyValue({ label, value }: { label: string; value: string }) {
-  return <div className="text-center"><p className="font-black" style={{ color: "#334155" }}>{value}</p><p className="mt-0.5 text-[8px]" style={{ color: "#94a3b8" }}>{label}</p></div>;
-}
-
-function ReportEmpty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl border border-dashed p-5 text-center text-xs" style={{ borderColor: "#cbd5e1", color: "#64748b" }}>{children}</div>;
-}
-
-function formatMinutes(minutes: number) {
-  const safe = Math.max(0, Math.round(minutes || 0));
-  if (safe < 60) return `${safe} min`;
-  const hours = Math.floor(safe / 60);
-  const remainder = safe % 60;
-  return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
 }
 
 const MEASURE_TONES = {
@@ -786,10 +487,10 @@ const MEASURE_TONES = {
 
 function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: keyof typeof MEASURE_TONES; label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1d1e31] to-[#171827] p-4 text-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-400/30 hover:shadow-lg md:p-5">
+    <div className="rounded-2xl border border-border/70 bg-card/85 p-4 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg md:p-5">
       <span className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${MEASURE_TONES[tone]}`}><Icon className="h-5 w-5" /></span>
       <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className="font-mono text-3xl font-black tabular-nums leading-none text-slate-100 md:text-4xl">
+      <div className="font-mono text-3xl font-black tabular-nums leading-none text-foreground md:text-4xl">
         {value}
         {unit && <span className="text-base font-normal text-muted-foreground ms-1">{unit}</span>}
       </div>
@@ -799,7 +500,7 @@ function Measure({ icon: Icon, tone, label, value, unit }: { icon: any; tone: ke
 
 function Panel({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-[#1d1e31] to-[#171827] p-5 text-slate-100 shadow-[0_14px_45px_-32px_rgba(0,0,0,0.65)] backdrop-blur-sm md:p-6">
+    <section className="rounded-[1.75rem] border border-border/70 bg-card/85 p-5 text-card-foreground shadow-[0_14px_45px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm md:p-6">
       <header className="mb-5 inline-flex items-center gap-3">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-violet-500/15 text-indigo-600 dark:text-indigo-300"><Icon className="h-4 w-4" /></span>
         <h2 className="text-sm font-extrabold md:text-base">{title}</h2>
@@ -826,11 +527,11 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 function Section({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+    <div className="mt-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
       <SubHeading>{title}</SubHeading>
       <ul className="space-y-1.5 text-sm">
         {items.map((x, i) => (
-          <li key={i} className="flex items-start gap-3 rounded-xl bg-[#111321]/80 p-2.5">
+          <li key={i} className="flex items-start gap-3 rounded-xl bg-background/70 p-2.5">
             <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/10 font-mono text-[10px] font-bold text-violet-600 dark:text-violet-300">{i + 1}</span>
             <span className="flex-1">{x}</span>
           </li>
@@ -845,5 +546,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {
-  return <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-7 text-center"><Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" /><p className="text-sm font-semibold text-muted-foreground">{text}</p></div>;
+  return <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-7 text-center"><Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" /><p className="text-sm font-semibold text-muted-foreground">{text}</p></div>;
 }
