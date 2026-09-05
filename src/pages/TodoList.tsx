@@ -137,7 +137,7 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // across browsers/devices and don't disappear after closing the site).
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const syncRemote = async () => {
       const remote = await pullTodos();
       if (cancelled || !remote) return;
       const localRaw = localStorage.getItem(STORAGE_KEY);
@@ -146,25 +146,19 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       const seen = new Set(remote.map((r) => r.id));
       const merged = [...remote, ...local.filter((l) => !seen.has(l.id))] as Todo[];
       setTodos(merged);
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Keep the list live when a parent assigns a task from Parent Follow-up.
-  useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user || cancelled) return;
-      channel = supabase.channel(`student-todos-${data.user.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "student_todos", filter: `user_id=eq.${data.user.id}` }, async () => {
-          const remote = await pullTodos();
-          if (!cancelled && remote) setTodos(remote as Todo[]);
-        })
-        .subscribe();
-    })();
-    return () => { cancelled = true; if (channel) void supabase.removeChannel(channel); };
+    };
+    void syncRemote();
+    const onFocus = () => { void syncRemote(); };
+    const onVisibility = () => { if (!document.hidden) void syncRemote(); };
+    const interval = window.setInterval(() => { if (!document.hidden) void syncRemote(); }, 30000);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   useEffect(() => {
