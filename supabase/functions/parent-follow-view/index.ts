@@ -30,27 +30,56 @@ Deno.serve(async (req) => {
 
     if (action === "adjust_score") {
       const delta = Number(payload?.delta);
-      if (delta !== 1 && delta !== -1) {
-        return json({ error: "invalid_score" }, 400);
+      if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 100) {
+        return json({ error: "invalid_score_delta" }, 400);
       }
       const { error } = await admin.rpc("adjust_parent_student_score", {
-        _link_id: link.id, _student_user_id: userId, _delta: delta,
+        _link_id: link.id,
+        _student_user_id: userId,
+        _delta: delta,
       });
-      if (error) return json({ error: "score_update_failed" }, 500);
+      if (error) return json({ error: "score_adjust_failed", detail: error.message }, 500);
     } else if (action === "add_todo") {
-      const text = String(payload?.text ?? "").trim().slice(0, 200);
-      const day = String(payload?.day ?? "").trim().slice(0, 20) || undefined;
+      const text = String(payload?.text ?? "").trim().slice(0, 300);
+      const day = String(payload?.day ?? "").trim().slice(0, 30) || undefined;
       if (!text) return json({ error: "invalid_todo" }, 400);
-      const { data: existing } = await admin.from("student_todos")
-        .select("items, week_key").eq("user_id", userId).maybeSingle();
-      const items = Array.isArray(existing?.items) ? existing.items : [];
-      const nextItems = [...items, {
-        id: crypto.randomUUID(), text, done: false, ...(day ? { day } : {}), assigned_by_parent: true,
-      }];
-      const { error } = await admin.from("student_todos").upsert({
-        user_id: userId, items: nextItems, week_key: existing?.week_key ?? null, updated_at: new Date().toISOString(),
+
+      const { data: currentTodos, error: readError } = await admin
+        .from("student_todos")
+        .select("items, week_key")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (readError) return json({ error: "todo_read_failed", detail: readError.message }, 500);
+
+      const items = Array.isArray(currentTodos?.items) ? [...currentTodos.items] : [];
+      items.push({
+        id: `parent-${crypto.randomUUID()}`,
+        text,
+        done: false,
+        ...(day ? { day } : {}),
+        source: "parent",
+        created_at: new Date().toISOString(),
+      });
+      const { error: todoError } = await admin.from("student_todos").upsert({
+        user_id: userId,
+        items,
+        week_key: currentTodos?.week_key ?? null,
+        updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
-      if (error) return json({ error: "todo_save_failed" }, 500);
+      if (todoError) return json({ error: "todo_save_failed", detail: todoError.message }, 500);
+    } else if (action === "add_score") {
+      const subject = String(payload?.subject ?? "").trim().slice(0, 80);
+      const title = String(payload?.title ?? "").trim().slice(0, 120);
+      const note = String(payload?.note ?? "").trim().slice(0, 500) || null;
+      const score = Number(payload?.score);
+      const maxScore = Number(payload?.max_score);
+      if (!subject || !title || !Number.isFinite(score) || !Number.isFinite(maxScore) || score < 0 || maxScore <= 0 || score > maxScore) {
+        return json({ error: "invalid_score" }, 400);
+      }
+      const { error } = await admin.from("parent_student_scores").insert({
+        link_id: link.id, student_user_id: userId, subject, title, score, max_score: maxScore, note,
+      });
+      if (error) return json({ error: "score_save_failed" }, 500);
     } else if (action === "add_note") {
       const noteText = String(payload?.note_text ?? "").trim().slice(0, 1000);
       if (!noteText) return json({ error: "invalid_note" }, 400);
@@ -62,14 +91,14 @@ Deno.serve(async (req) => {
       return json({ error: "invalid_action" }, 400);
     }
 
-    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }, { data: scoreBalance }, { data: scoreEvents }, { data: parentNotes }] = await Promise.all([
+    const [{ data: profile }, { data: studentProfile }, { data: report }, { data: todosRow }, { data: parentScores }, { data: parentNotes }, { data: scoreBalance }] = await Promise.all([
       admin.from("profiles").select("display_name").eq("user_id", userId).maybeSingle(),
       admin.from("student_profile").select("exam_date, target_grade, weekly_goal_hours").eq("user_id", userId).maybeSingle(),
       admin.from("daily_reports").select("*").eq("user_id", userId).order("report_date", { ascending: false }).limit(1).maybeSingle(),
       admin.from("student_todos").select("items, week_key, updated_at").eq("user_id", userId).maybeSingle(),
-      admin.from("parent_student_score_balances").select("score").eq("link_id", link.id).maybeSingle(),
-      admin.from("parent_student_score_events").select("id, delta, balance_after, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
+      admin.from("parent_student_scores").select("id, subject, title, score, max_score, note, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
       admin.from("parent_student_notes").select("id, note_text, created_at").eq("link_id", link.id).order("created_at", { ascending: false }).limit(100),
+      admin.from("parent_student_score_balances").select("score, updated_at").eq("link_id", link.id).maybeSingle(),
     ]);
 
     // 7-day study sessions for chart
@@ -100,12 +129,8 @@ Deno.serve(async (req) => {
       if (s.mission_completed) todayPerSubject[subj].missions += 1;
     }
 
-    const weekDates = Object.keys(byDay);
-    const weekStart = weekDates[0];
-    const weekEnd = weekDates[weekDates.length - 1];
-    const { data: weeklyUsageRows } = await admin.from("feature_usage")
-      .select("feature, used_on").eq("user_id", userId).gte("used_on", weekStart).lte("used_on", weekEnd);
-    const usageRows = (weeklyUsageRows ?? []).filter((row: any) => String(row.used_on) === todayStr);
+    const { data: usageRows } = await admin.from("feature_usage")
+      .select("feature").eq("user_id", userId).eq("used_on", todayStr);
     const toolCounts: Record<string, number> = {};
     for (const r of (usageRows ?? []) as any[]) {
       toolCounts[r.feature] = (toolCounts[r.feature] || 0) + 1;
@@ -114,36 +139,6 @@ Deno.serve(async (req) => {
       .map(([feature, count]) => ({ feature, count }))
       .sort((a, b) => b.count - a.count);
     const questions_solved_today = (toolCounts["mcq"] || 0) + (toolCounts["generate-mcq"] || 0);
-
-    // Rich week view used by the parent report and its printable PDF.
-    const weeklyDays: Record<string, {
-      date: string; minutes: number; sessions: number; missions: number; points: number;
-      questions: number; tools: number; todo_done: number; todo_total: number;
-      subjects: Record<string, number>;
-    }> = {};
-    for (const date of weekDates) {
-      weeklyDays[date] = { date, minutes: 0, sessions: 0, missions: 0, points: 0, questions: 0, tools: 0, todo_done: 0, todo_total: 0, subjects: {} };
-    }
-    const weeklySubjects: Record<string, number> = {};
-    for (const session of (sessions7 ?? []) as any[]) {
-      const date = String(session.created_at).slice(0, 10);
-      const day = weeklyDays[date];
-      if (!day) continue;
-      const minutes = Math.round((Number(session.duration_seconds) || 0) / 60);
-      const subject = String(session.subject || "Other");
-      day.minutes += minutes;
-      day.sessions += 1;
-      day.missions += session.mission_completed ? 1 : 0;
-      day.points += Number(session.points) || 0;
-      day.subjects[subject] = (day.subjects[subject] || 0) + minutes;
-      weeklySubjects[subject] = (weeklySubjects[subject] || 0) + minutes;
-    }
-    for (const row of (weeklyUsageRows ?? []) as any[]) {
-      const day = weeklyDays[String(row.used_on)];
-      if (!day) continue;
-      day.tools += 1;
-      if (row.feature === "mcq" || row.feature === "generate-mcq") day.questions += 1;
-    }
 
     // points total
     const { data: pts } = await admin.from("user_points").select("points").eq("user_id", userId);
@@ -168,18 +163,6 @@ Deno.serve(async (req) => {
       if (!t.day) return true;
       return t.day === todayEn || t.day === todayAr1 || (todayAr2 && t.day === todayAr2);
     });
-    for (const date of weekDates) {
-      const dayDate = new Date(`${date}T12:00:00Z`);
-      const idx = dayDate.getUTCDay();
-      const en = enDays[idx];
-      const ar = arDays[idx];
-      const arAlt = idx === 1 ? "الاثنين" : null;
-      const items = allItems.filter((item) =>
-        (!item.day && date === todayStr) || item.day === en || item.day === ar || (arAlt && item.day === arAlt)
-      );
-      weeklyDays[date].todo_total = items.length;
-      weeklyDays[date].todo_done = items.filter((item) => item.done).length;
-    }
 
     return json({
       student_name: profile?.display_name ?? "Student",
@@ -189,10 +172,6 @@ Deno.serve(async (req) => {
       target_grade: studentProfile?.target_grade ?? null,
       weekly_goal_hours: studentProfile?.weekly_goal_hours ?? null,
       last_7_days: Object.entries(byDay).map(([date, minutes]) => ({ date, minutes })),
-      weekly_days: weekDates.map((date) => weeklyDays[date]),
-      weekly_subjects: Object.entries(weeklySubjects)
-        .map(([subject, minutes]) => ({ subject, minutes }))
-        .sort((a, b) => b.minutes - a.minutes),
       last_report: report ?? null,
       todays_todos: todaysTodos,
       all_todos: allItems,
@@ -201,8 +180,8 @@ Deno.serve(async (req) => {
       today_per_subject: todayPerSubject,
       tools_used_today,
       questions_solved_today,
-      parent_score: Number(scoreBalance?.score ?? 5),
-      parent_score_events: scoreEvents ?? [],
+      parent_scores: parentScores ?? [],
+      parent_score: scoreBalance?.score ?? 5,
       parent_notes: parentNotes ?? [],
       channel: `todos:${userId}`,
     });
