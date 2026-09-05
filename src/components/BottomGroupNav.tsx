@@ -13,7 +13,7 @@ import {
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import org6thDhsLogo from "@/assets/org-6th-dhs.png.asset.json";
-import aiRoboVideo from "@/assets/ai-robo.webm.asset.json";
+import aiRoboAnimation from "@/assets/ai-robo-animated.webp.asset.json";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 
 type NavItem = {
@@ -315,17 +315,13 @@ const BottomGroupNav = ({
                     aria-label={language === "ar" ? "أرشدني" : "Guide me"}
                     className="relative z-20 shrink-0 mx-1 h-16 w-16 -mt-5 inline-flex items-center justify-center overflow-hidden rounded-full border-[5px] border-background bg-transparent"
                   >
-                    <span className="absolute inset-x-0 top-0 h-12 overflow-hidden rounded-t-full">
-                      <video
-                        src={aiRoboVideo.url}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
+                    <span className="absolute inset-x-0 top-0 h-12 overflow-hidden rounded-t-full bg-transparent">
+                      <img
+                        src={aiRoboAnimation.url}
+                        alt=""
                         aria-hidden="true"
-                        onCanPlay={(event) => { void event.currentTarget.play().catch(() => undefined); }}
-                        className="pointer-events-none h-full w-full scale-[1.2] object-cover mix-blend-screen"
+                        draggable={false}
+                        className="pointer-events-none h-full w-full scale-[1.2] select-none object-contain"
                       />
                     </span>
                     <span className="pointer-events-none absolute inset-x-0 bottom-1 whitespace-nowrap text-center text-[9px] font-bold leading-none text-foreground">
