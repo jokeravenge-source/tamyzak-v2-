@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, Eye, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, FileText, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, Eye, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/subjectChapters";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,8 @@ import { ministerialPhysicsCh1 } from "@/data/ministerialPhysicsCh1";
 import { ministerialPhysicsCh1Ar } from "@/data/ministerialPhysicsCh1Ar";
 import { ministerialPhysicsCh2 } from "@/data/ministerialPhysicsCh2";
 import { ministerialPhysicsCh2Ar } from "@/data/ministerialPhysicsCh2Ar";
+import { ministerialPhysicsCh3 } from "@/data/ministerialPhysicsCh3";
+import { ministerialPhysicsCh3Ar } from "@/data/ministerialPhysicsCh3Ar";
 import { ministerialPhysicsCh6 } from "@/data/ministerialPhysicsCh6";
 import { ministerialPhysicsCh6Ar } from "@/data/ministerialPhysicsCh6Ar";
 import { ministerialPhysicsCh7 } from "@/data/ministerialPhysicsCh7";
@@ -49,11 +51,29 @@ const subjectIcons: Record<BankSubject, React.ComponentType<{ className?: string
   math: Sigma,
 };
 
+const lockedSubjects = new Set<BankSubject>(["math", "english", "islamic"]);
+
+const subjectVisuals: Record<BankSubject, { color: string; soft: string; glow: string }> = {
+  physics: { color: "#38bdf8", soft: "rgba(56,189,248,.14)", glow: "rgba(56,189,248,.25)" },
+  chemistry: { color: "#a78bfa", soft: "rgba(167,139,250,.14)", glow: "rgba(167,139,250,.25)" },
+  biology: { color: "#34d399", soft: "rgba(52,211,153,.14)", glow: "rgba(52,211,153,.23)" },
+  english: { color: "#fb7185", soft: "rgba(251,113,133,.10)", glow: "rgba(251,113,133,.18)" },
+  french: { color: "#60a5fa", soft: "rgba(96,165,250,.14)", glow: "rgba(96,165,250,.23)" },
+  arabic: { color: "#f59e0b", soft: "rgba(245,158,11,.14)", glow: "rgba(245,158,11,.23)" },
+  islamic: { color: "#2dd4bf", soft: "rgba(45,212,191,.10)", glow: "rgba(45,212,191,.18)" },
+  math: { color: "#818cf8", soft: "rgba(129,140,248,.10)", glow: "rgba(129,140,248,.18)" },
+};
+
 const copy = {
   en: {
     badge: "Ministerial Questions Bank",
     title: "Ministerial Questions Bank",
     description: "Browse past ministerial questions by subject and chapter.",
+    libraryLabel: "Organized by subject",
+    available: "Available now",
+    comingSoon: "Coming soon",
+    chaptersLabel: "chapters",
+    openSubject: "Open subject",
     chooseChapter: "Choose a Chapter",
     soon: "Questions coming soon",
     soonBody: "Ministerial questions for this chapter will appear here.",
@@ -103,6 +123,11 @@ const copy = {
     badge: "بنك الوزاريات",
     title: "بنك الوزاريات",
     description: "تصفّح الأسئلة الوزارية السابقة حسب المادة والفصل.",
+    libraryLabel: "مرتبة حسب المادة والفصل",
+    available: "متاح الآن",
+    comingSoon: "قريباً",
+    chaptersLabel: "فصول",
+    openSubject: "فتح المادة",
     chooseChapter: "اختر الفصل",
     soon: "الأسئلة قريباً",
     soonBody: "ستظهر الأسئلة الوزارية لهذا الفصل هنا.",
@@ -278,6 +303,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       ? (language === "ar" ? ministerialPhysicsCh1Ar : ministerialPhysicsCh1)
       : subject === "physics" && chapterN === 2
       ? (language === "ar" ? ministerialPhysicsCh2Ar : ministerialPhysicsCh2)
+      : subject === "physics" && chapterN === 3
+      ? (language === "ar" ? ministerialPhysicsCh3Ar : ministerialPhysicsCh3)
       : subject === "physics" && chapterN === 6
       ? (language === "ar" ? ministerialPhysicsCh6Ar : ministerialPhysicsCh6)
       : subject === "physics" && chapterN === 7
@@ -315,27 +342,28 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
   const current = questions[qIndex];
 
   return (
-    <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
+    <main className="min-h-screen px-4 pb-20 pt-8 md:pt-12 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.16),transparent_65%)]" />
+      <div className="pointer-events-none absolute top-40 -left-32 size-72 rounded-full bg-sky-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-80 -right-32 size-72 rounded-full bg-violet-500/10 blur-3xl" />
 
       <button
         onClick={back}
         aria-label="Back"
-        className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+        className={`absolute top-6 z-20 w-11 h-11 rounded-2xl border border-border/70 bg-background/80 shadow-sm backdrop-blur-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 hover:-translate-y-0.5 transition-all ${language === "ar" ? "right-4 md:right-8" : "left-4 md:left-8"}`}
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft className={`w-5 h-5 ${language === "ar" ? "rotate-180" : ""}`} />
       </button>
 
-      <header className="text-center max-w-3xl mx-auto z-10 relative animate-fade-up">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t.badge}</span>
+      <header className="text-center max-w-3xl mx-auto z-10 relative animate-fade-up pt-16 md:pt-12">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/10 backdrop-blur-xl mb-5 shadow-sm">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold tracking-wide text-primary">{subject ? t.chooseChapter : t.libraryLabel}</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-foreground leading-[1.15] mb-4">
           {subject ? (language === "ar" ? subjectMeta?.ar : subjectMeta?.en) : t.title}
         </h1>
-        <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
+        <p className="text-muted-foreground text-sm md:text-lg max-w-xl mx-auto leading-relaxed">
           {subject ? t.chooseChapter : t.description}
         </p>
         <p className="mt-4 flex justify-center">
@@ -344,25 +372,51 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       </header>
 
       {!subject ? (
-        <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative">
+        <section className="max-w-6xl mx-auto mt-10 md:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 z-10 relative">
           {SUBJECTS_ORDER.map((s, i) => {
             const Icon = subjectIcons[s.code];
+            const visual = subjectVisuals[s.code];
+            const isLocked = lockedSubjects.has(s.code);
+            const chapterCount = getChaptersForSubject(s.code).filter((chapter) => !chapter.locked).length;
             return (
               <button
                 key={s.code}
-                onClick={() => setSubject(s.code)}
+                onClick={() => !isLocked && setSubject(s.code)}
+                disabled={isLocked}
+                aria-label={`${language === "ar" ? s.ar : s.en} — ${isLocked ? t.comingSoon : t.openSubject}`}
                 style={{ animationDelay: `${i * 70}ms` }}
-                className="group relative text-left rounded-3xl p-6 h-44 border border-primary/40 bg-secondary/40 backdrop-blur overflow-hidden cursor-pointer shadow-lg hover:-translate-y-2 hover:border-primary hover:shadow-[var(--shadow-glow)] transition-all duration-500 animate-fade-up"
+                className={`group relative min-h-[184px] md:min-h-[218px] rounded-[1.75rem] p-4 md:p-5 border text-start overflow-hidden backdrop-blur-xl transition-all duration-300 animate-fade-up ${isLocked ? "border-border/60 bg-card/35 cursor-not-allowed" : "border-border/70 bg-card/75 cursor-pointer shadow-[0_12px_40px_-26px_rgba(0,0,0,.55)] hover:-translate-y-1.5 hover:border-transparent"}`}
               >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }} />
-                <div className="relative z-10 flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary/15">
-                    <Icon className="w-6 h-6 text-primary" />
+                <div
+                  className={`absolute inset-0 transition-opacity duration-300 ${isLocked ? "opacity-25" : "opacity-60 group-hover:opacity-100"}`}
+                  style={{ background: `linear-gradient(145deg, ${visual.soft}, transparent 58%)` }}
+                />
+                <div
+                  className="absolute -end-10 -top-10 size-28 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: visual.glow }}
+                />
+                <div className="relative z-10 flex items-start justify-between gap-2">
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner" style={{ background: visual.soft }}>
+                    <Icon className="w-6 h-6 md:w-7 md:h-7" style={{ color: visual.color }} />
                   </div>
-                  <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
+                  {isLocked ? (
+                    <div className="size-9 rounded-full border border-border/70 bg-background/65 flex items-center justify-center">
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <div className="size-9 rounded-full border border-border/70 bg-background/65 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <ArrowRight className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} style={{ color: visual.color }} />
+                    </div>
+                  )}
                 </div>
-                <div className="relative z-10 mt-6">
-                  <h3 className="text-2xl font-semibold text-foreground">{language === "ar" ? s.ar : s.en}</h3>
+                <div className="relative z-10 mt-7 md:mt-9">
+                  <h3 className={`text-lg md:text-xl font-bold ${isLocked ? "text-foreground/65" : "text-foreground"}`}>{language === "ar" ? s.ar : s.en}</h3>
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] md:text-xs">
+                    <span className="size-1.5 rounded-full" style={{ background: isLocked ? "hsl(var(--muted-foreground))" : visual.color }} />
+                    <span className={isLocked ? "text-muted-foreground" : "font-medium"} style={!isLocked ? { color: visual.color } : undefined}>
+                      {isLocked ? t.comingSoon : `${chapterCount} ${t.chaptersLabel}`}
+                    </span>
+                  </div>
                 </div>
               </button>
             );
