@@ -67,6 +67,23 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
       if (todoError) return json({ error: "todo_save_failed", detail: todoError.message }, 500);
+
+      // Wake an open student To-Do screen immediately instead of waiting for polling.
+      try {
+        const channel = admin.channel(`todos:${userId}`);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 1500);
+          channel.subscribe(async (status) => {
+            if (status !== "SUBSCRIBED") return;
+            clearTimeout(timeout);
+            await channel.send({ type: "broadcast", event: "todos-changed", payload: { at: Date.now() } });
+            resolve();
+          });
+        });
+        await admin.removeChannel(channel);
+      } catch {
+        // The database write is authoritative; polling remains as a fallback.
+      }
     } else if (action === "add_score") {
       const subject = String(payload?.subject ?? "").trim().slice(0, 80);
       const title = String(payload?.title ?? "").trim().slice(0, 120);
@@ -79,14 +96,14 @@ Deno.serve(async (req) => {
       const { error } = await admin.from("parent_student_scores").insert({
         link_id: link.id, student_user_id: userId, subject, title, score, max_score: maxScore, note,
       });
-      if (error) return json({ error: "score_save_failed" }, 500);
+      if (error) return json({ error: "score_save_failed", detail: error.message }, 500);
     } else if (action === "add_note") {
       const noteText = String(payload?.note_text ?? "").trim().slice(0, 1000);
       if (!noteText) return json({ error: "invalid_note" }, 400);
       const { error } = await admin.from("parent_student_notes").insert({
         link_id: link.id, student_user_id: userId, note_text: noteText,
       });
-      if (error) return json({ error: "note_save_failed" }, 500);
+      if (error) return json({ error: "note_save_failed", detail: error.message }, 500);
     } else if (action && action !== "view") {
       return json({ error: "invalid_action" }, 400);
     }
