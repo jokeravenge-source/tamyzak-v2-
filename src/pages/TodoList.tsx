@@ -87,7 +87,9 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [todos, setTodos] = useState<Todo[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
   });
+  const syncedRef = useRef(false);
   const [input, setInput] = useState("");
+
   const [dayPick, setDayPick] = useState<string>(() => todayKey());
   const [showCongrats, setShowCongrats] = useState(false);
   const [sending, setSending] = useState(false);
