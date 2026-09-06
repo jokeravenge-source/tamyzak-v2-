@@ -36,6 +36,8 @@ import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh5Ar } from "@/data/flashcardsBioCh5Ar";
 import { ministerialPhysicsCh1 } from "@/data/ministerialPhysicsCh1";
 import { ministerialPhysicsCh2 } from "@/data/ministerialPhysicsCh2";
+import { ministerialPhysicsCh7 } from "@/data/ministerialPhysicsCh7";
+import { ministerialPhysicsCh7Ar } from "@/data/ministerialPhysicsCh7Ar";
 import { ministerialPhysicsCh1Ar } from "@/data/ministerialPhysicsCh1Ar";
 import { ministerialPhysicsCh2Ar } from "@/data/ministerialPhysicsCh2Ar";
 import { ministerialChemCh1 } from "@/data/ministerialChemCh1";
@@ -95,8 +97,8 @@ const physicsPool: QA[] = [
   ...flashcardsCh6, ...flashcardsCh7, ...flashcardsCh8,
   ...flashcardsCh1Ar, ...flashcardsCh2Ar, ...flashcardsCh3Ar, ...flashcardsCh4Ar,
   ...flashcardsCh5Ar, ...flashcardsCh6Ar, ...flashcardsCh7Ar, ...flashcardsCh8Ar,
-  ...ministerialPhysicsCh1, ...ministerialPhysicsCh2,
-  ...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar,
+  ...ministerialPhysicsCh1, ...ministerialPhysicsCh2, ...ministerialPhysicsCh7,
+  ...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar, ...ministerialPhysicsCh7Ar,
 ];
 
 const chemistryPool: QA[] = [
