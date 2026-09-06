@@ -1705,6 +1705,120 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_student_notes: {
+        Row: {
+          created_at: string
+          id: string
+          link_id: string
+          note_text: string
+          student_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_id: string
+          note_text: string
+          student_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_id?: string
+          note_text?: string
+          student_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_notes_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "parent_follow_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_student_score_balances: {
+        Row: {
+          created_at: string
+          link_id: string
+          score: number
+          student_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          link_id: string
+          score?: number
+          student_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          link_id?: string
+          score?: number
+          student_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_score_balances_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: true
+            referencedRelation: "parent_follow_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_student_scores: {
+        Row: {
+          created_at: string
+          id: string
+          link_id: string
+          max_score: number
+          note: string | null
+          score: number
+          student_user_id: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_id: string
+          max_score: number
+          note?: string | null
+          score: number
+          student_user_id: string
+          subject: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_id?: string
+          max_score?: number
+          note?: string | null
+          score?: number
+          student_user_id?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_scores_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "parent_follow_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_events: {
         Row: {
           created_at: string
@@ -2897,6 +3011,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_parent_student_score: {
+        Args: { _delta: number; _link_id: string; _student_user_id: string }
+        Returns: number
+      }
       admin_analytics_dropoff: { Args: never; Returns: Json }
       admin_analytics_engagement: { Args: never; Returns: Json }
       admin_analytics_features: {

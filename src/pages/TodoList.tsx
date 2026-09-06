@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { ArrowLeft, Plus, Trash2, CheckCircle2, Circle, PartyPopper, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -87,7 +87,9 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [todos, setTodos] = useState<Todo[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
   });
+  const syncedRef = useRef(false);
   const [input, setInput] = useState("");
+
   const [dayPick, setDayPick] = useState<string>(() => todayKey());
   const [showCongrats, setShowCongrats] = useState(false);
   const [sending, setSending] = useState(false);
@@ -139,15 +141,18 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     let cancelled = false;
     const syncRemote = async () => {
       const remote = await pullTodos();
-      if (cancelled || !remote) return;
+      if (cancelled) return;
+      if (!remote) { syncedRef.current = true; return; }
       const localRaw = localStorage.getItem(STORAGE_KEY);
       const local: Todo[] = (() => { try { return JSON.parse(localRaw || "[]"); } catch { return []; } })();
       // Merge: keep all remote items, append any local items not present remotely (by id).
       const seen = new Set(remote.map((r) => r.id));
       const merged = [...remote, ...local.filter((l) => !seen.has(l.id))] as Todo[];
+      syncedRef.current = true;
       setTodos(merged);
     };
     void syncRemote();
+
     const onFocus = () => { void syncRemote(); };
     const onVisibility = () => { if (!document.hidden) void syncRemote(); };
     const interval = window.setInterval(() => { if (!document.hidden) void syncRemote(); }, 30000);
@@ -163,7 +168,10 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-    pushTodos(todos);
+    // Don't push before the account copy has been pulled, otherwise a fresh
+    // device would wipe tasks added by a parent/admin.
+    if (syncedRef.current) pushTodos(todos);
+
     if (todos.length > 0 && todos.every((t) => t.done)) {
       if (localStorage.getItem(CELEBRATED_KEY) !== "1") {
         setShowCongrats(true);
