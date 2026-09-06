@@ -27,6 +27,8 @@ import { ministerialPhysicsCh6 } from "@/data/ministerialPhysicsCh6";
 import { ministerialPhysicsCh6Ar } from "@/data/ministerialPhysicsCh6Ar";
 import { ministerialPhysicsCh7 } from "@/data/ministerialPhysicsCh7";
 import { ministerialPhysicsCh7Ar } from "@/data/ministerialPhysicsCh7Ar";
+import { ministerialPhysicsCh8 } from "@/data/ministerialPhysicsCh8";
+import { ministerialPhysicsCh8Ar } from "@/data/ministerialPhysicsCh8Ar";
 import { ministerialArabicIstifham } from "@/data/ministerialArabicIstifham";
 import { ministerialArabicMadhDham } from "@/data/ministerialArabicMadhDham";
 import { ministerialArabicTaajjub } from "@/data/ministerialArabicTaajjub";
@@ -280,6 +282,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       ? (language === "ar" ? ministerialPhysicsCh6Ar : ministerialPhysicsCh6)
       : subject === "physics" && chapterN === 7
       ? (language === "ar" ? ministerialPhysicsCh7Ar : ministerialPhysicsCh7)
+      : subject === "physics" && chapterN === 8
+      ? (language === "ar" ? ministerialPhysicsCh8Ar : ministerialPhysicsCh8)
       : subject === "chemistry" && chapterN === 1
       ? (language === "ar" ? ministerialChemCh1Ar : ministerialChemCh1)
       : subject === "chemistry" && chapterN === 2

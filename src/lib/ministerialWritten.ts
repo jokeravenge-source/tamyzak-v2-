@@ -8,6 +8,8 @@ import { ministerialPhysicsCh6 } from "@/data/ministerialPhysicsCh6";
 import { ministerialPhysicsCh6Ar } from "@/data/ministerialPhysicsCh6Ar";
 import { ministerialPhysicsCh7 } from "@/data/ministerialPhysicsCh7";
 import { ministerialPhysicsCh7Ar } from "@/data/ministerialPhysicsCh7Ar";
+import { ministerialPhysicsCh8 } from "@/data/ministerialPhysicsCh8";
+import { ministerialPhysicsCh8Ar } from "@/data/ministerialPhysicsCh8Ar";
 import { ministerialChemCh1 } from "@/data/ministerialChemCh1";
 import { ministerialChemCh1Ar } from "@/data/ministerialChemCh1Ar";
 import { ministerialChemCh2 } from "@/data/ministerialChemCh2";
@@ -35,8 +37,8 @@ function poolFor(subject: BattleSubject, lang: "ar" | "en"): WrittenQuestion[] {
   switch (subject) {
     case "physics":
       return lang === "ar"
-        ? [...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar, ...ministerialPhysicsCh6Ar, ...ministerialPhysicsCh7Ar]
-        : [...ministerialPhysicsCh1, ...ministerialPhysicsCh2, ...ministerialPhysicsCh6, ...ministerialPhysicsCh7];
+        ? [...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar, ...ministerialPhysicsCh6Ar, ...ministerialPhysicsCh7Ar, ...ministerialPhysicsCh8Ar]
+        : [...ministerialPhysicsCh1, ...ministerialPhysicsCh2, ...ministerialPhysicsCh6, ...ministerialPhysicsCh7, ...ministerialPhysicsCh8];
     case "chemistry":
       return lang === "ar"
         ? [...ministerialChemCh1Ar, ...ministerialChemCh2Ar, ...ministerialChemCh3Ar, ...ministerialChemCh4Ar, ...ministerialChemCh5Ar, ...ministerialChemCh6Ar]
