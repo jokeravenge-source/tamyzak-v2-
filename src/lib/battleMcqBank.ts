@@ -97,8 +97,8 @@ const physicsPool: QA[] = [
   ...flashcardsCh6, ...flashcardsCh7, ...flashcardsCh8,
   ...flashcardsCh1Ar, ...flashcardsCh2Ar, ...flashcardsCh3Ar, ...flashcardsCh4Ar,
   ...flashcardsCh5Ar, ...flashcardsCh6Ar, ...flashcardsCh7Ar, ...flashcardsCh8Ar,
-  ...ministerialPhysicsCh1, ...ministerialPhysicsCh2,
-  ...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar,
+  ...ministerialPhysicsCh1, ...ministerialPhysicsCh2, ...ministerialPhysicsCh7,
+  ...ministerialPhysicsCh1Ar, ...ministerialPhysicsCh2Ar, ...ministerialPhysicsCh7Ar,
 ];
 
 const chemistryPool: QA[] = [
