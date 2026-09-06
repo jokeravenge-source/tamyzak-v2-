@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag } from "lucide-react";
+import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag, NotebookPen, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -29,6 +29,7 @@ const T = {
     todoAllDone: "All today's tasks are done. 🎉",
     goal: "Closeness to your goal", goalDesc: "Today's completion + days left to your exam.",
     complete: "complete",
+    parentFeedback: "Parent feedback", parentScore: "Parent score", parentNotes: "Latest notes", noParentNotes: "No notes from your parent yet.",
   },
   ar: {
     title: "تقريري اليومي", back: "رجوع",
@@ -50,6 +51,7 @@ const T = {
     todoAllDone: "أنهيت كل مهام اليوم. 🎉",
     goal: "قربك من هدفك", goalDesc: "نسبة إنجاز اليوم + الأيام المتبقية للامتحان.",
     complete: "مكتمل",
+    parentFeedback: "متابعة ولي الأمر", parentScore: "تقييم ولي الأمر", parentNotes: "آخر الملاحظات", noParentNotes: "لا توجد ملاحظات من ولي الأمر بعد.",
   },
 } as const;
 
@@ -73,6 +75,7 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [parentFeedback, setParentFeedback] = useState<{ score: number; notes: Array<{ id: string; note_text: string; created_at: string }> } | null>(null);
 
   const load = async (force = false) => {
     if (force) setRefreshing(true); else setLoading(true);
@@ -95,7 +98,17 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
     setAccessCode((data as any)?.access_code ?? null);
   };
 
-  useEffect(() => { load(false); loadToken(); }, []);
+  const loadParentFeedback = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const [{ data: balances }, { data: notes }] = await Promise.all([
+      supabase.from("parent_student_score_balances").select("score, updated_at").eq("student_user_id", auth.user.id).order("updated_at", { ascending: false }).limit(1),
+      supabase.from("parent_student_notes").select("id, note_text, created_at").eq("student_user_id", auth.user.id).order("created_at", { ascending: false }).limit(5),
+    ]);
+    setParentFeedback({ score: balances?.[0]?.score ?? 5, notes: notes ?? [] });
+  };
+
+  useEffect(() => { load(false); loadToken(); loadParentFeedback(); }, []);
 
   const enableLink = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -304,6 +317,19 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
                 </div>
               )}
             </Panel>
+
+            {parentFeedback && (
+              <Panel icon={Award} title={t.parentFeedback}>
+                <div className="mb-5 flex items-center justify-between rounded-2xl bg-primary/10 p-4">
+                  <span className="text-sm font-bold">{t.parentScore}</span>
+                  <strong className="font-mono text-3xl text-primary">{parentFeedback.score}</strong>
+                </div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground"><NotebookPen className="h-4 w-4" />{t.parentNotes}</div>
+                {!parentFeedback.notes.length ? <p className="text-sm text-muted-foreground">{t.noParentNotes}</p> : (
+                  <ul className="space-y-2">{parentFeedback.notes.map((note) => <li key={note.id} className="rounded-xl border border-border/60 bg-muted/25 p-3"><p className="whitespace-pre-wrap text-sm">{note.note_text}</p><time className="mt-2 block text-[10px] text-muted-foreground">{new Date(note.created_at).toLocaleString()}</time></li>)}</ul>
+                )}
+              </Panel>
+            )}
 
             {/* Parent link */}
             <Panel icon={Share2} title={t.parent} subtitle={t.parentDesc}>

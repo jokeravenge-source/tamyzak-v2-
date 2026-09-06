@@ -155,12 +155,21 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
     const onFocus = () => { void syncRemote(); };
     const onVisibility = () => { if (!document.hidden) void syncRemote(); };
-    const interval = window.setInterval(() => { if (!document.hidden) void syncRemote(); }, 30000);
+    const interval = window.setInterval(() => { if (!document.hidden) void syncRemote(); }, 15000);
+    let todoChannel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (cancelled || !data.user) return;
+      todoChannel = supabase
+        .channel(`todos:${data.user.id}`)
+        .on("broadcast", { event: "todos-changed" }, () => { void syncRemote(); })
+        .subscribe();
+    });
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      if (todoChannel) void supabase.removeChannel(todoChannel);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };

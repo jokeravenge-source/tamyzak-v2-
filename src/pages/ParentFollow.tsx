@@ -151,7 +151,7 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(false);
   };
 
-  const saveParentEntry = async (action: "adjust_score" | "add_todo" | "add_note", payload: Record<string, unknown>) => {
+  const saveParentEntry = async (action: "adjust_score" | "add_todo" | "add_score" | "add_note", payload: Record<string, unknown>) => {
     setSavingEntry(true);
     setEntryMessage(null);
     try {
@@ -161,12 +161,13 @@ export default function ParentFollow({ token }: { token: string }) {
         body: JSON.stringify({ token, code, action, payload }),
       });
       const next = await res.json().catch(() => null);
-      if (!res.ok || next?.error) throw new Error(next?.error ?? "save_failed");
+      if (!res.ok || next?.error) throw new Error(next?.detail ?? next?.error ?? "save_failed");
       setData(next as Snapshot);
       setLastUpdated(new Date());
       setEntryMessage(action === "adjust_score" ? "Score updated successfully." : action === "add_todo" ? "Task added to the student's To-Do list." : "Note added successfully.");
       if (action === "add_todo") setTodoText("");
       if (action === "add_note") setNoteText("");
+      if (action === "add_score") setScoreForm({ subject: "", title: "", score: "", maxScore: "100", note: "" });
     } catch (error) {
       setEntryMessage(error instanceof Error ? `Could not save: ${error.message}` : "Could not save. Please try again.");
     } finally {
@@ -442,6 +443,7 @@ export default function ParentFollow({ token }: { token: string }) {
         )}
 
         {activeTab === "scores" && (
+          <div className="space-y-6">
           <Panel icon={Award} title="Student score">
             <div className="mx-auto max-w-md text-center">
               <p className="text-sm text-muted-foreground">The score starts at 5. Add or subtract points using the buttons below.</p>
@@ -454,6 +456,39 @@ export default function ParentFollow({ token }: { token: string }) {
               {entryMessage && <p className="mt-4 text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
             </div>
           </Panel>
+          <Panel icon={Trophy} title="Add an academic result">
+            <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => {
+              event.preventDefault();
+              void saveParentEntry("add_score", {
+                subject: scoreForm.subject,
+                title: scoreForm.title,
+                score: Number(scoreForm.score),
+                max_score: Number(scoreForm.maxScore),
+                note: scoreForm.note,
+              });
+            }}>
+              <Field label="Subject"><input required maxLength={80} value={scoreForm.subject} onChange={(event) => setScoreForm((value) => ({ ...value, subject: event.target.value }))} className={PARENT_INPUT} /></Field>
+              <Field label="Exam or assignment"><input required maxLength={120} value={scoreForm.title} onChange={(event) => setScoreForm((value) => ({ ...value, title: event.target.value }))} className={PARENT_INPUT} /></Field>
+              <Field label="Score"><input required min="0" step="0.01" type="number" value={scoreForm.score} onChange={(event) => setScoreForm((value) => ({ ...value, score: event.target.value }))} className={PARENT_INPUT} /></Field>
+              <Field label="Out of"><input required min="0.01" step="0.01" type="number" value={scoreForm.maxScore} onChange={(event) => setScoreForm((value) => ({ ...value, maxScore: event.target.value }))} className={PARENT_INPUT} /></Field>
+              <div className="sm:col-span-2"><Field label="Note (optional)"><input maxLength={500} value={scoreForm.note} onChange={(event) => setScoreForm((value) => ({ ...value, note: event.target.value }))} className={PARENT_INPUT} /></Field></div>
+              <button disabled={savingEntry || !scoreForm.subject.trim() || !scoreForm.title.trim() || !scoreForm.score} className="sm:col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-sm font-bold text-white disabled:opacity-60">
+                {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Save result
+              </button>
+            </form>
+            {entryMessage && <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">{entryMessage}</p>}
+          </Panel>
+          <Panel icon={ListChecks} title="Saved results">
+            {!data.parent_scores?.length ? <EmptyState icon={Award} text="No results yet." /> : (
+              <ul className="space-y-3">{data.parent_scores.map((item) => (
+                <li key={item.id} className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                  <div className="flex items-start justify-between gap-3"><div><p className="font-bold">{item.title}</p><p className="text-xs text-muted-foreground">{item.subject}</p></div><strong className="font-mono text-lg">{item.score}/{item.max_score}</strong></div>
+                  {item.note && <p className="mt-2 text-sm text-muted-foreground">{item.note}</p>}
+                </li>
+              ))}</ul>
+            )}
+          </Panel>
+          </div>
         )}
 
         {activeTab === "notes" && (
