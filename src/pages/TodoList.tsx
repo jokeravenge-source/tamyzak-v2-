@@ -163,7 +163,10 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-    pushTodos(todos);
+    // Don't push before the account copy has been pulled, otherwise a fresh
+    // device would wipe tasks added by a parent/admin.
+    if (syncedRef.current) pushTodos(todos);
+
     if (todos.length > 0 && todos.every((t) => t.done)) {
       if (localStorage.getItem(CELEBRATED_KEY) !== "1") {
         setShowCongrats(true);
