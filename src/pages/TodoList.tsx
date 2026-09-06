@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { ArrowLeft, Plus, Trash2, CheckCircle2, Circle, PartyPopper, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
