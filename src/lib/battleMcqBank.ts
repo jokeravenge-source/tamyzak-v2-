@@ -36,6 +36,8 @@ import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh5Ar } from "@/data/flashcardsBioCh5Ar";
 import { ministerialPhysicsCh1 } from "@/data/ministerialPhysicsCh1";
 import { ministerialPhysicsCh2 } from "@/data/ministerialPhysicsCh2";
+import { ministerialPhysicsCh7 } from "@/data/ministerialPhysicsCh7";
+import { ministerialPhysicsCh7Ar } from "@/data/ministerialPhysicsCh7Ar";
 import { ministerialPhysicsCh1Ar } from "@/data/ministerialPhysicsCh1Ar";
 import { ministerialPhysicsCh2Ar } from "@/data/ministerialPhysicsCh2Ar";
 import { ministerialChemCh1 } from "@/data/ministerialChemCh1";
