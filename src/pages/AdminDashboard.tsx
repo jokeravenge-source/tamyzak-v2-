@@ -985,7 +985,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">Increase streak days</p>
-                            <p className="text-xs text-muted-foreground">Current: {u.current_streak ?? 0} days · {Math.max(1, Math.ceil((streakDrafts[u.user_id] ?? u.current_streak ?? 0) / 20))} streak trees</p>
+                            <p className="text-xs text-muted-foreground">Current: {u.current_streak ?? 0} days · {Math.max(1, Math.ceil((streakDrafts[u.user_id] ?? u.current_streak ?? 0) / 5))} streak trees</p>
                           </div>
                         </div>
                         <span className="min-w-20 rounded-xl border border-orange-400/25 bg-background/70 px-3 py-1.5 text-center font-mono text-lg font-black tabular-nums text-orange-400">
