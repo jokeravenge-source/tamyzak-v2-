@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 const KEY = "streak_state_v1";
 const FULL_DAYS = 20;
+const MAX_STREAK_DAYS = 60;
 
 type StreakState = { days: number; lastDate: string; celebrated?: boolean };
 
@@ -154,7 +155,7 @@ const StreakTree = ({
   compact?: boolean;
 }) => {
   const { state, markCelebrated } = useStreak(daysOverride === undefined);
-  const days = daysOverride ?? state.days;
+  const days = Math.min(MAX_STREAK_DAYS, Math.max(0, daysOverride ?? state.days));
   const treeCount = Math.max(1, Math.ceil(Math.max(days, 1) / FULL_DAYS));
   const visibleTreeCount = Math.min(treeCount, compact ? 4 : 8);
   const hiddenTreeCount = Math.max(0, treeCount - visibleTreeCount);
@@ -353,7 +354,7 @@ const StreakTree = ({
               <input
                 type="range"
                 min={days}
-                max={Math.max(365, days + 100)}
+                max={MAX_STREAK_DAYS}
                 step={1}
                 value={streakDraft}
                 onChange={(event) => setStreakDraft(Number(event.target.value))}
@@ -362,7 +363,7 @@ const StreakTree = ({
               />
               <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>{days}</span>
-                <span>{Math.max(365, days + 100)}</span>
+                <span>{MAX_STREAK_DAYS}</span>
               </div>
               <button
                 type="button"
