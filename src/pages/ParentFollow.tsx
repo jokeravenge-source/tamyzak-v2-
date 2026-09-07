@@ -158,10 +158,11 @@ export default function ParentFollow({ token }: { token: string }) {
     setSavingEntry(true);
     setEntryMessage(null);
     try {
+      const activeCode = code.trim() || sessionStorage.getItem(`pf_code_${token}`)?.trim() || "";
       const res = await fetch(`${SUPABASE_URL}/functions/v1/parent-follow-view`, {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        body: JSON.stringify({ token, code, action, payload }),
+        body: JSON.stringify({ token, code: activeCode, action, payload }),
       });
       const next = await res.json().catch(() => null);
       if (!res.ok || next?.error) throw new Error(next?.detail ?? next?.error ?? "save_failed");

@@ -1,10 +1,10 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const KEY = "streak_state_v1";
+const KEY = "streak_sky_state_v1";
 const FULL_DAYS = 5;
 const MAX_STREAK_DAYS = 60;
 
@@ -38,7 +38,7 @@ function useStreak(enabled = true) {
         const next = {
           days,
           lastDate: progress.last_active_date ?? prev.lastDate,
-          celebrated: prev.celebrated && days >= FULL_DAYS,
+          celebrated: prev.celebrated && days >= MAX_STREAK_DAYS,
         };
         try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
         return next;
@@ -64,84 +64,28 @@ function useStreak(enabled = true) {
   return { state, markCelebrated };
 }
 
-/* Canvas-free SVG tree: reliable in iOS/PWA and when many trees are visible. */
-function TreeIllustration({ progress, variant = 0 }: { progress: number; variant?: number }) {
-  const id = useId().replace(/:/g, "");
-  const growth = Math.max(0.08, Math.min(1, progress));
-  const palettes = [
-    { light: "#a7e66a", mid: "#46a84f", dark: "#176538", edge: "#10552f" },
-    { light: "#b6e76c", mid: "#58aa43", dark: "#216b35", edge: "#15592d" },
-    { light: "#91df72", mid: "#369d58", dark: "#146044", edge: "#0d5138" },
-  ];
-  const palette = palettes[Math.abs(variant) % palettes.length];
-  const applePositions = [
-    [56, 72], [88, 48], [117, 72], [41, 103], [72, 98], [102, 97],
-    [133, 104], [56, 130], [87, 122], [117, 132], [76, 151], [103, 151],
-  ];
-  const appleCount = Math.min(applePositions.length, Math.max(0, Math.ceil(progress * FULL_DAYS)));
+const STAR_POSITIONS = [
+  { left: 13, top: 31, size: 38 }, { left: 35, top: 21, size: 44 },
+  { left: 59, top: 30, size: 39 }, { left: 81, top: 19, size: 45 },
+  { left: 20, top: 55, size: 43 }, { left: 46, top: 52, size: 38 },
+  { left: 70, top: 55, size: 44 }, { left: 89, top: 48, size: 36 },
+  { left: 10, top: 76, size: 37 }, { left: 34, top: 75, size: 42 },
+  { left: 60, top: 76, size: 38 }, { left: 82, top: 73, size: 43 },
+];
 
+function RewardStar({ index, compact }: { index: number; compact: boolean }) {
+  const star = STAR_POSITIONS[index];
+  const size = compact ? Math.round(star.size * 0.72) : star.size;
   return (
-    <svg viewBox="0 0 180 220" className="h-full w-full overflow-visible" aria-hidden="true">
-      <defs>
-        <linearGradient id={`trunk-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#c18043" />
-          <stop offset="0.48" stopColor="#87502c" />
-          <stop offset="1" stopColor="#4c291b" />
-        </linearGradient>
-        <radialGradient id={`leaf-${id}`} cx="34%" cy="21%" r="80%">
-          <stop offset="0" stopColor={palette.light} />
-          <stop offset="0.5" stopColor={palette.mid} />
-          <stop offset="1" stopColor={palette.dark} />
-        </radialGradient>
-        <radialGradient id={`apple-${id}`} cx="30%" cy="23%" r="78%">
-          <stop offset="0" stopColor="#ff9b89" />
-          <stop offset="0.28" stopColor="#f04444" />
-          <stop offset="1" stopColor="#a91528" />
-        </radialGradient>
-        <filter id={`shadow-${id}`} x="-30%" y="-30%" width="160%" height="170%">
-          <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#123524" floodOpacity=".3" />
-        </filter>
-      </defs>
-      <ellipse cx="90" cy="204" rx="55" ry="9" fill="#17452d" opacity=".2" />
-      <g opacity=".75" fill="#4f9d43">
-        <path d="M45 202q3-15 7 0q8-13 6 2z" />
-        <path d="M124 204q4-17 7 0q9-12 6 2z" />
-        <path d="M36 205q3-10 6 0z" />
-      </g>
-      <g
-        style={{ transform: `scale(${growth})`, transformOrigin: "90px 199px", transition: "transform 900ms cubic-bezier(.22,1,.36,1)" }}
-        filter={`url(#shadow-${id})`}
-      >
-        <path d="M70 200c8-32 10-60 8-91h24c-3 34 0 62 10 91-12 5-29 5-42 0z" fill={`url(#trunk-${id})`} stroke="#4d2a1b" strokeWidth="2" />
-        <path d="M89 171c0-26-1-47-3-63M85 143 53 109M94 133l31-38M86 159l-35-22M97 159l34-25" fill="none" stroke="#714026" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M80 193c8-22 10-46 8-70" fill="none" stroke="#d19a5b" strokeWidth="3.5" strokeLinecap="round" opacity=".62" />
-        <path d="M101 191c-4-17-3-34-2-48" fill="none" stroke="#4a2719" strokeWidth="2.2" strokeLinecap="round" opacity=".65" />
-        <g transform="translate(-9 0)" fill={`url(#leaf-${id})`} stroke={palette.edge} strokeWidth="2.3" strokeLinejoin="round">
-          <path d="M31 118c-4-18 6-34 23-40-3-19 12-35 31-34 8-20 37-23 49-5 20-2 34 14 32 32 17 8 22 30 11 44 8 20-8 40-29 40-9 18-33 23-49 11-15 13-40 6-45-13-20 0-32-18-23-35z" />
-          <path d="M49 92c3-18 20-28 37-23 8-17 33-17 43 0 17-2 30 12 28 29 11 10 8 29-5 36-12-12-32-17-47-8-12-13-35-13-48-2-11-8-15-22-8-32z" opacity=".5" />
-        </g>
-        <g transform="translate(-9 0)" fill="none" stroke="#d8f6a8" strokeWidth="4" strokeLinecap="round" opacity=".5">
-          <path d="M48 104c5-20 20-31 36-35" />
-          <path d="M91 54c14-8 32-3 41 8" />
-          <path d="M116 139c14-9 28-9 39-3" />
-        </g>
-        <g transform="translate(-9 0)" fill="#b8e779" opacity=".85">
-          <ellipse cx="45" cy="123" rx="4" ry="8" transform="rotate(-38 45 123)" />
-          <ellipse cx="68" cy="58" rx="4" ry="8" transform="rotate(44 68 58)" />
-          <ellipse cx="145" cy="93" rx="4" ry="8" transform="rotate(35 145 93)" />
-          <ellipse cx="132" cy="148" rx="4" ry="8" transform="rotate(55 132 148)" />
-          <ellipse cx="55" cy="149" rx="4" ry="8" transform="rotate(-55 55 149)" />
-        </g>
-        {applePositions.slice(0, appleCount).map(([cx, cy], index) => (
-          <g key={index} className="animate-apple-pop" style={{ transformOrigin: `${cx}px ${cy}px` }}>
-            <path d={`M${cx} ${cy - 6}q1-6 5-9`} fill="none" stroke="#4b2d1c" strokeWidth="2" strokeLinecap="round" />
-            <ellipse cx={cx + 6} cy={cy - 10} rx="4.5" ry="2.6" fill="#8fd14f" transform={`rotate(-25 ${cx + 6} ${cy - 10})`} />
-            <circle cx={cx} cy={cy} r="7.2" fill={`url(#apple-${id})`} stroke="#8f1724" strokeWidth="1.5" />
-            <ellipse cx={cx - 2.4} cy={cy - 2.6} rx="2" ry="2.8" fill="#ffd2ca" opacity=".9" />
-          </g>
-        ))}
-      </g>
-    </svg>
+    <span
+      className="streak-star absolute z-20 -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${star.left}%`, top: `${star.top}%`, width: size, height: size, animationDelay: `${260 + index * 90}ms` }}
+    >
+      <svg viewBox="0 0 48 48" className="h-full w-full overflow-visible" aria-hidden="true">
+        <path d="M24 3.5 30.1 16l13.8 2-10 9.7 2.4 13.8L24 35l-12.3 6.5 2.4-13.8-10-9.7 13.8-2z" fill="#FFE796" stroke="#F5B94C" strokeWidth="2.5" strokeLinejoin="round" />
+        <path d="M17 18.5c2.4-5.1 5.8-7.3 10.2-7.1" fill="none" stroke="#FFF9D9" strokeWidth="3" strokeLinecap="round" opacity=".9" />
+      </svg>
+    </span>
   );
 }
 
@@ -156,16 +100,13 @@ const StreakTree = ({
 }) => {
   const { state, markCelebrated } = useStreak(daysOverride === undefined);
   const days = Math.min(MAX_STREAK_DAYS, Math.max(0, daysOverride ?? state.days));
-  const treeCount = Math.max(1, Math.ceil(Math.max(days, 1) / FULL_DAYS));
-  const visibleTreeCount = Math.min(treeCount, 12);
-  const hiddenTreeCount = Math.max(0, treeCount - visibleTreeCount);
-  const activeTreeDays = days > 0 && days % FULL_DAYS === 0 ? FULL_DAYS : days % FULL_DAYS;
-  const progress = Math.min(activeTreeDays / FULL_DAYS, 1);
-  const pct = Math.round(progress * 100);
+  const earnedStars = Math.min(12, Math.floor(days / FULL_DAYS));
+  const daysIntoNextStar = days >= MAX_STREAK_DAYS ? FULL_DAYS : days % FULL_DAYS;
+  const daysToNextStar = days >= MAX_STREAK_DAYS ? 0 : FULL_DAYS - daysIntoNextStar;
+  const nextStarPct = days >= MAX_STREAK_DAYS ? 100 : Math.round((daysIntoNextStar / FULL_DAYS) * 100);
 
-  const treeBoxRef = useRef<HTMLDivElement | null>(null);
-  const prevAppleCountRef = useRef<number>(-1);
-  const [popKey, setPopKey] = useState(0);
+  const skyBoxRef = useRef<HTMLDivElement | null>(null);
+  const prevStarCountRef = useRef<number>(-1);
   const [isAdmin, setIsAdmin] = useState(false);
   const [streakDraft, setStreakDraft] = useState(days);
   const [savingStreak, setSavingStreak] = useState(false);
@@ -215,22 +156,18 @@ const StreakTree = ({
     }
   };
 
-  // Sparkle + pop when a new apple appears (roughly one per streak day).
+  // Celebrate only when another five-day reward star is earned.
   useEffect(() => {
-    const appleCount = days; // 1 apple per day, up to FULL_DAYS
-    const prev = prevAppleCountRef.current;
+    const prev = prevStarCountRef.current;
     if (prev === -1) {
-      prevAppleCountRef.current = appleCount;
+      prevStarCountRef.current = earnedStars;
       return;
     }
-    if (appleCount > prev) {
-      const bursts = appleCount - prev;
-      const box = treeBoxRef.current?.getBoundingClientRect();
+    if (earnedStars > prev) {
+      const bursts = earnedStars - prev;
+      const box = skyBoxRef.current?.getBoundingClientRect();
       for (let i = 0; i < bursts; i++) {
         setTimeout(() => {
-          // Pop the tree slightly
-          setPopKey((k) => k + 1);
-          // Sparkle burst near a random spot in the canopy
           if (box) {
             const x = (box.left + box.width * (0.25 + Math.random() * 0.5)) / window.innerWidth;
             const y = (box.top + box.height * (0.2 + Math.random() * 0.4)) / window.innerHeight;
@@ -249,11 +186,11 @@ const StreakTree = ({
         }, i * 220);
       }
     }
-    prevAppleCountRef.current = appleCount;
-  }, [days]);
+    prevStarCountRef.current = earnedStars;
+  }, [earnedStars]);
 
   useEffect(() => {
-    if (daysOverride === undefined && days >= FULL_DAYS && !state.celebrated) {
+    if (daysOverride === undefined && days >= MAX_STREAK_DAYS && !state.celebrated) {
       const end = Date.now() + 4000;
       const burst = () => {
         confetti({ particleCount: 80, spread: 80, origin: { y: 0.7 } });
@@ -267,87 +204,66 @@ const StreakTree = ({
   }, [days, daysOverride, state.celebrated, markCelebrated]);
 
   const T = language === "ar"
-    ? { days: days === 1 ? "يوم" : "يوماً", label: "حقل المثابرة", trees: treeCount === 1 ? "شجرة" : "أشجار", next: "لإكمال الشجرة القادمة" }
-    : { days: days === 1 ? "day" : "days", label: "Streak forest", trees: treeCount === 1 ? "tree" : "trees", next: "to grow the next tree" };
+    ? { days: days === 1 ? "يوم" : "يوماً", label: "سماء المثابرة", stars: earnedStars === 1 ? "نجمة" : "نجوم", next: "للنجمة القادمة", complete: "اكتملت سماء المثابرة" }
+    : { days: days === 1 ? "day" : "days", label: "Streak sky", stars: earnedStars === 1 ? "star" : "stars", next: "until your next star", complete: "Your streak sky is complete" };
 
   return (
     <section dir={language === "ar" ? "rtl" : "ltr"} className={`w-full ${compact ? "my-0" : "mt-12 mb-6"}`}>
       <div className={`mx-auto rounded-2xl border border-border bg-card overflow-hidden ${compact ? "p-3" : "max-w-lg p-5 sm:p-6"}`}>
-        <div
-          ref={treeBoxRef}
-          className={`relative overflow-hidden rounded-xl border border-emerald-500/15 bg-gradient-to-b from-sky-400/10 via-emerald-400/5 to-amber-700/10 ${compact ? (visibleTreeCount > 4 ? "h-48" : "h-36") : "h-72"}`}
-        >
-          <div aria-hidden="true" className="pointer-events-none absolute end-5 top-5 h-10 w-10 rounded-full bg-amber-300/50 shadow-[0_0_35px_rgba(251,191,36,0.35)]" />
-          <div aria-hidden="true" className="pointer-events-none absolute start-[9%] top-[13%] h-5 w-20 rounded-full bg-white/35 blur-[1px] before:absolute before:-top-2 before:start-3 before:h-6 before:w-7 before:rounded-full before:bg-white/35 after:absolute after:-top-3 after:end-3 after:h-7 after:w-9 after:rounded-full after:bg-white/35" />
-          <div aria-hidden="true" className="pointer-events-none absolute end-[18%] top-[28%] h-3 w-14 rounded-full bg-white/25 blur-[1px]" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-14 -start-16 h-36 w-[70%] rounded-[50%] bg-emerald-600/10" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-20 h-40 w-[72%] rounded-[50%] bg-lime-600/10" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] bg-gradient-to-t from-emerald-700/25 via-emerald-600/10 to-transparent" />
-          <div className={`relative z-10 grid h-full items-end justify-items-center ${compact
-            ? visibleTreeCount > 8
-              ? "grid-cols-4 grid-rows-3 gap-0 px-1 py-2"
-              : visibleTreeCount > 4
-                ? "grid-cols-4 grid-rows-2 gap-0 px-1 py-2"
-                : "grid-cols-4 gap-0 px-1 pb-2 pt-3"
-            : visibleTreeCount > 8
-              ? "grid-cols-4 grid-rows-3 gap-x-1 gap-y-0 px-3 pb-2 pt-4 sm:px-6"
-              : visibleTreeCount > 4
-                ? "grid-cols-4 grid-rows-2 gap-x-1 gap-y-0 px-3 pb-2 pt-5 sm:px-6"
-                : "grid-cols-4 gap-1 px-3 pb-3 pt-6 sm:px-7"
-          }`}>
-            {Array.from({ length: visibleTreeCount }, (_, index) => {
-              const actualIndex = treeCount - visibleTreeCount + index;
-              const treeProgress = Math.max(0, Math.min(1, (days - actualIndex * FULL_DAYS) / FULL_DAYS));
-              const isActive = actualIndex === treeCount - 1;
-              return (
-                <div
-                  key={`${actualIndex}-${isActive ? popKey : 0}`}
-                  className={`${compact
-                    ? visibleTreeCount > 8
-                      ? "h-14 w-12"
-                      : visibleTreeCount > 4
-                        ? "h-20 w-16"
-                        : "h-[5.25rem] w-[4.25rem]"
-                    : visibleTreeCount > 8
-                      ? "h-20 w-[4.25rem] sm:w-20"
-                      : visibleTreeCount > 4
-                        ? "h-24 w-20 sm:h-28 sm:w-24"
-                        : "h-36 w-28 sm:h-40 sm:w-32"
-                  } origin-bottom ${isActive ? "animate-apple-pop" : ""}`}
-                  style={{
-                    transform: `scale(${0.82 + (actualIndex % 3) * 0.06})`,
-                    filter: isActive ? "none" : "saturate(.88)",
-                  }}
-                >
-                  <TreeIllustration progress={treeProgress} variant={actualIndex} />
-                </div>
-              );
-            })}
-          </div>
-          {hiddenTreeCount > 0 && (
-            <div className="absolute start-2 top-2 z-20 rounded-full border border-emerald-500/20 bg-background/80 px-2 py-1 text-[10px] font-bold text-emerald-600 backdrop-blur">
-              +{hiddenTreeCount} {T.trees}
+        <div className={`mb-3 flex items-center justify-between gap-3 rounded-xl border border-indigo-400/20 bg-indigo-500/10 ${compact ? "px-3 py-2" : "px-4 py-3"}`}>
+          <div className="min-w-0 text-start">
+            <p className={`${compact ? "text-[10px]" : "text-xs"} font-semibold text-indigo-600 dark:text-indigo-200`}>
+              {days >= MAX_STREAK_DAYS
+                ? T.complete
+                : language === "ar"
+                  ? `متبقي ${daysToNextStar} ${daysToNextStar === 1 ? "يوم" : "أيام"} للنجمة القادمة`
+                  : `${daysToNextStar} ${daysToNextStar === 1 ? "day" : "days"} until your next star`}
+            </p>
+            <div className="mt-2 flex gap-1" aria-hidden="true">
+              {Array.from({ length: FULL_DAYS }, (_, index) => (
+                <span key={index} className={`h-1.5 w-5 rounded-full transition-colors ${index < daysIntoNextStar ? "bg-amber-300" : "bg-indigo-300/25"}`} />
+              ))}
             </div>
-          )}
+          </div>
+          <div className="shrink-0 text-center">
+            <p className={`${compact ? "text-lg" : "text-2xl"} font-black tabular-nums text-amber-500`}>{earnedStars}<span className="text-xs text-muted-foreground">/12</span></p>
+            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{T.stars}</p>
+          </div>
+        </div>
+        <div
+          ref={skyBoxRef}
+          className={`relative overflow-hidden rounded-xl border border-indigo-300/20 bg-[radial-gradient(circle_at_50%_48%,rgba(159,122,234,0.55),transparent_48%),linear-gradient(180deg,#5578d8_0%,#6465c9_48%,#313b8d_100%)] ${compact ? "h-44" : "h-72"}`}
+        >
+          <style>{`
+            @keyframes streak-star-reveal { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.15) rotate(-28deg); } 70% { opacity: 1; transform: translate(-50%,-50%) scale(1.18) rotate(5deg); } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(0); } }
+            @keyframes streak-star-glow { 0%,100% { filter: drop-shadow(0 0 5px rgba(255,220,120,.65)); } 50% { filter: drop-shadow(0 0 14px rgba(255,229,145,.95)); } }
+            .streak-star { opacity: 0; animation: streak-star-reveal .7s cubic-bezier(.22,1,.36,1) forwards, streak-star-glow 2.8s ease-in-out 1.1s infinite; }
+            @media (prefers-reduced-motion: reduce) { .streak-star { opacity: 1; animation: none; } }
+          `}</style>
+          <div aria-hidden="true" className="absolute end-[7%] top-[8%] h-14 w-14 rounded-full bg-amber-100 shadow-[0_0_28px_rgba(255,232,161,.65)] after:absolute after:-start-2 after:-top-2 after:h-14 after:w-14 after:rounded-full after:bg-[#5873d2]" />
+          <div aria-hidden="true" className="absolute start-[8%] top-[15%] h-5 w-20 rounded-full bg-indigo-200/25 before:absolute before:-top-3 before:start-4 before:h-8 before:w-9 before:rounded-full before:bg-indigo-200/25 after:absolute after:-top-2 after:end-3 after:h-7 after:w-10 after:rounded-full after:bg-indigo-200/25" />
+          <div aria-hidden="true" className="absolute end-[25%] top-[30%] h-3 w-14 rounded-full bg-violet-200/20" />
+          {[7,16,27,39,49,62,74,86,94,22,55,80].map((left, index) => (
+            <span key={left} aria-hidden="true" className="absolute z-10 rounded-full bg-amber-100/80" style={{ left: `${left}%`, top: `${10 + (index * 17) % 56}%`, width: index % 3 === 0 ? 3 : 2, height: index % 3 === 0 ? 3 : 2 }} />
+          ))}
+          <div aria-hidden="true" className="absolute -bottom-[22%] -start-[12%] h-[48%] w-[70%] rounded-[50%] bg-[#344c9c]" />
+          <div aria-hidden="true" className="absolute -bottom-[25%] start-[24%] h-[43%] w-[65%] rounded-[50%] bg-[#4654ae]" />
+          <div aria-hidden="true" className="absolute -bottom-[23%] -end-[18%] h-[52%] w-[65%] rounded-[50%] bg-[#263a83]" />
+          {Array.from({ length: earnedStars }, (_, index) => <RewardStar key={index} index={index} compact={compact} />)}
         </div>
         <div className={`${compact ? "mt-2" : "mt-4"} text-center`}>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{T.label}</p>
           <p className={`${compact ? "text-xl" : "text-3xl"} font-semibold text-foreground mt-1`}>
             {days} <span className={`${compact ? "text-xs" : "text-base"} font-normal text-muted-foreground`}>{T.days}</span>
             <span className="mx-2 text-muted-foreground/40">·</span>
-            <span className={`${compact ? "text-xs" : "text-sm"} font-medium text-emerald-600`}>{treeCount} {T.trees}</span>
+            <span className={`${compact ? "text-xs" : "text-sm"} font-medium text-amber-500`}>{earnedStars}/12 {T.stars}</span>
           </p>
           <div className={`${compact ? "mt-2" : "mt-4"} h-1.5 w-full rounded-full bg-muted overflow-hidden`}>
             <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-lime-400 transition-all duration-700"
-              style={{ width: `${pct}%` }}
+              className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-400 transition-all duration-700"
+              style={{ width: `${nextStarPct}%` }}
             />
           </div>
-          {!compact && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {`${pct}% · ${Math.max(0, FULL_DAYS - activeTreeDays)} ${language === "ar" ? "يوم" : "days"} ${T.next}`}
-            </p>
-          )}
           {isAdmin && !compact && daysOverride === undefined && (
             <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-start">
               <div className="mb-3 flex items-center justify-between gap-3">

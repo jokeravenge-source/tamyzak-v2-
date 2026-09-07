@@ -71,22 +71,33 @@ Deno.serve(async (req) => {
           items = items.filter((_: unknown, index: number) => index !== todoIndex);
         } else {
           const current = items[todoIndex] as Record<string, unknown>;
-          items[todoIndex] = {
+          const editedTodo: Record<string, unknown> = {
             ...current,
             text,
-            ...(day ? { day } : {}),
-            ...(!day ? { day: undefined } : {}),
             updated_at: new Date().toISOString(),
           };
+          if (day) editedTodo.day = day;
+          else delete editedTodo.day;
+          items[todoIndex] = editedTodo;
         }
       }
-      const { error: todoError } = await admin.from("student_todos").upsert({
+      const { data: savedTodos, error: todoError } = await admin.from("student_todos").upsert({
         user_id: userId,
         items,
         week_key: currentTodos?.week_key ?? null,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+      }, { onConflict: "user_id" }).select("items").single();
       if (todoError) return json({ error: "todo_save_failed", detail: todoError.message }, 500);
+
+      // Never report success unless the database returned the exact edited value.
+      if (action === "edit_todo") {
+        const savedItems = Array.isArray(savedTodos?.items) ? savedTodos.items : [];
+        const savedItem = savedItems.find((item: any) => String(item?.id ?? "") === todoId);
+        const savedDay = String(savedItem?.day ?? "").trim();
+        if (!savedItem || String(savedItem?.text ?? "").trim() !== text || savedDay !== (day ?? "")) {
+          return json({ error: "todo_save_verification_failed" }, 500);
+        }
+      }
 
       // Wake an open student To-Do screen immediately instead of waiting for polling.
       try {

@@ -3,10 +3,10 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.20.1";
 
 // src/lib/mcp/tools/echo.ts
-import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineTool } from "npm:@lovable.dev/mcp-js@0.20.1";
 import { z } from "npm:zod@^4.4.3";
 var echo_default = defineTool({
   name: "echo",
@@ -18,7 +18,7 @@ var echo_default = defineTool({
 });
 
 // src/lib/mcp/tools/list-subjects.ts
-import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.20.1";
 var SUBJECTS = [
   { id: "physics", en: "Physics", ar: "\u0627\u0644\u0641\u064A\u0632\u064A\u0627\u0621" },
   { id: "chemistry", en: "Chemistry", ar: "\u0627\u0644\u0643\u064A\u0645\u064A\u0627\u0621" },
@@ -42,7 +42,7 @@ var list_subjects_default = defineTool2({
 
 // src/lib/mcp/tools/list-chapters.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.106.1";
-import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.1";
 import { z as z2 } from "npm:zod@^4.4.3";
 var list_chapters_default = defineTool3({
   name: "list_chapters",
@@ -76,7 +76,7 @@ var list_chapters_default = defineTool3({
 
 // src/lib/mcp/tools/get-my-points.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.106.1";
-import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.1";
 var get_my_points_default = defineTool4({
   name: "get_my_points",
   title: "Get my points",
@@ -107,7 +107,7 @@ var get_my_points_default = defineTool4({
 
 // src/lib/mcp/tools/get-my-todos.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.106.1";
-import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.1";
 var get_my_todos_default = defineTool5({
   name: "get_my_todos",
   title: "Get my todos",
@@ -151,5 +151,5 @@ var mcp_default = defineMcp({
 });
 
 // lovable-mcp-supabase-entry.ts
-import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.20.0/stacks/supabase";
+import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.20.1/stacks/supabase";
 Deno.serve(createSupabaseHandler(mcp_default, { functionName: "mcp" }));
