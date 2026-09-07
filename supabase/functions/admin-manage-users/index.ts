@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
             banned_until,
             is_premium: !!activeSub,
             premium_expires_at: activeSub?.current_period_end ?? null,
-            current_streak: Math.max(0, Number(progressRows?.[0]?.current_streak ?? 0)),
+            current_streak: Math.min(60, Math.max(0, Number(progressRows?.[0]?.current_streak ?? 0))),
           };
         }),
       );
@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (!Number.isInteger(requestedDays) || requestedDays < 0 || requestedDays > 3650) {
-        return new Response(JSON.stringify({ error: "streak_must_be_between_0_and_3650" }), {
+      if (!Number.isInteger(requestedDays) || requestedDays < 0 || requestedDays > 60) {
+        return new Response(JSON.stringify({ error: "streak_must_be_between_0_and_60" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -125,8 +125,8 @@ Deno.serve(async (req) => {
         { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } },
       );
       const currentRows: { current_streak?: number; longest_streak?: number }[] = await currentRes.json().catch(() => []);
-      const current = Math.max(0, Number(currentRows?.[0]?.current_streak ?? 0));
-      const longest = Math.max(0, Number(currentRows?.[0]?.longest_streak ?? 0));
+      const current = Math.min(60, Math.max(0, Number(currentRows?.[0]?.current_streak ?? 0)));
+      const longest = Math.min(60, Math.max(0, Number(currentRows?.[0]?.longest_streak ?? 0)));
       if (requestedDays < current) {
         return new Response(JSON.stringify({ error: "streak_can_only_be_increased", current_streak: current }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
