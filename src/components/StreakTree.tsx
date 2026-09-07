@@ -115,16 +115,16 @@ function TreeIllustration({ progress, variant = 0 }: { progress: number; variant
         <path d="M89 171c0-26-1-47-3-63M85 143 53 109M94 133l31-38M86 159l-35-22M97 159l34-25" fill="none" stroke="#714026" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M80 193c8-22 10-46 8-70" fill="none" stroke="#d19a5b" strokeWidth="3.5" strokeLinecap="round" opacity=".62" />
         <path d="M101 191c-4-17-3-34-2-48" fill="none" stroke="#4a2719" strokeWidth="2.2" strokeLinecap="round" opacity=".65" />
-        <g fill={`url(#leaf-${id})`} stroke={palette.edge} strokeWidth="2.3" strokeLinejoin="round">
+        <g transform="translate(-9 0)" fill={`url(#leaf-${id})`} stroke={palette.edge} strokeWidth="2.3" strokeLinejoin="round">
           <path d="M31 118c-4-18 6-34 23-40-3-19 12-35 31-34 8-20 37-23 49-5 20-2 34 14 32 32 17 8 22 30 11 44 8 20-8 40-29 40-9 18-33 23-49 11-15 13-40 6-45-13-20 0-32-18-23-35z" />
           <path d="M49 92c3-18 20-28 37-23 8-17 33-17 43 0 17-2 30 12 28 29 11 10 8 29-5 36-12-12-32-17-47-8-12-13-35-13-48-2-11-8-15-22-8-32z" opacity=".5" />
         </g>
-        <g fill="none" stroke="#d8f6a8" strokeWidth="4" strokeLinecap="round" opacity=".5">
+        <g transform="translate(-9 0)" fill="none" stroke="#d8f6a8" strokeWidth="4" strokeLinecap="round" opacity=".5">
           <path d="M48 104c5-20 20-31 36-35" />
           <path d="M91 54c14-8 32-3 41 8" />
           <path d="M116 139c14-9 28-9 39-3" />
         </g>
-        <g fill="#b8e779" opacity=".85">
+        <g transform="translate(-9 0)" fill="#b8e779" opacity=".85">
           <ellipse cx="45" cy="123" rx="4" ry="8" transform="rotate(-38 45 123)" />
           <ellipse cx="68" cy="58" rx="4" ry="8" transform="rotate(44 68 58)" />
           <ellipse cx="145" cy="93" rx="4" ry="8" transform="rotate(35 145 93)" />
