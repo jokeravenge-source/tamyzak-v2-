@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const KEY = "streak_state_v1";
-const FULL_DAYS = 20;
+const FULL_DAYS = 5;
 const MAX_STREAK_DAYS = 60;
 
 type StreakState = { days: number; lastDate: string; celebrated?: boolean };
@@ -78,7 +78,7 @@ function TreeIllustration({ progress, variant = 0 }: { progress: number; variant
     [56, 72], [88, 48], [117, 72], [41, 103], [72, 98], [102, 97],
     [133, 104], [56, 130], [87, 122], [117, 132], [76, 151], [103, 151],
   ];
-  const appleCount = Math.min(applePositions.length, Math.max(0, Math.ceil(progress * applePositions.length)));
+  const appleCount = Math.min(applePositions.length, Math.max(0, Math.ceil(progress * FULL_DAYS)));
 
   return (
     <svg viewBox="0 0 180 220" className="h-full w-full overflow-visible" aria-hidden="true">
@@ -157,7 +157,7 @@ const StreakTree = ({
   const { state, markCelebrated } = useStreak(daysOverride === undefined);
   const days = Math.min(MAX_STREAK_DAYS, Math.max(0, daysOverride ?? state.days));
   const treeCount = Math.max(1, Math.ceil(Math.max(days, 1) / FULL_DAYS));
-  const visibleTreeCount = Math.min(treeCount, compact ? 4 : 8);
+  const visibleTreeCount = Math.min(treeCount, 12);
   const hiddenTreeCount = Math.max(0, treeCount - visibleTreeCount);
   const activeTreeDays = days > 0 && days % FULL_DAYS === 0 ? FULL_DAYS : days % FULL_DAYS;
   const progress = Math.min(activeTreeDays / FULL_DAYS, 1);
@@ -275,7 +275,7 @@ const StreakTree = ({
       <div className={`mx-auto rounded-2xl border border-border bg-card overflow-hidden ${compact ? "p-3" : "max-w-lg p-5 sm:p-6"}`}>
         <div
           ref={treeBoxRef}
-          className={`relative overflow-hidden rounded-xl border border-emerald-500/15 bg-gradient-to-b from-sky-400/10 via-emerald-400/5 to-amber-700/10 ${compact ? "h-36" : "h-72"}`}
+          className={`relative overflow-hidden rounded-xl border border-emerald-500/15 bg-gradient-to-b from-sky-400/10 via-emerald-400/5 to-amber-700/10 ${compact ? (visibleTreeCount > 4 ? "h-48" : "h-36") : "h-72"}`}
         >
           <div aria-hidden="true" className="pointer-events-none absolute end-5 top-5 h-10 w-10 rounded-full bg-amber-300/50 shadow-[0_0_35px_rgba(251,191,36,0.35)]" />
           <div aria-hidden="true" className="pointer-events-none absolute start-[9%] top-[13%] h-5 w-20 rounded-full bg-white/35 blur-[1px] before:absolute before:-top-2 before:start-3 before:h-6 before:w-7 before:rounded-full before:bg-white/35 after:absolute after:-top-3 after:end-3 after:h-7 after:w-9 after:rounded-full after:bg-white/35" />
@@ -284,10 +284,16 @@ const StreakTree = ({
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-20 h-40 w-[72%] rounded-[50%] bg-lime-600/10" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] bg-gradient-to-t from-emerald-700/25 via-emerald-600/10 to-transparent" />
           <div className={`relative z-10 grid h-full items-end justify-items-center ${compact
-            ? "grid-cols-4 gap-0 px-1 pb-2 pt-3"
-            : visibleTreeCount > 4
-              ? "grid-cols-4 grid-rows-2 gap-x-1 gap-y-0 px-3 pb-2 pt-5 sm:px-6"
-              : "grid-cols-4 gap-1 px-3 pb-3 pt-6 sm:px-7"
+            ? visibleTreeCount > 8
+              ? "grid-cols-4 grid-rows-3 gap-0 px-1 py-2"
+              : visibleTreeCount > 4
+                ? "grid-cols-4 grid-rows-2 gap-0 px-1 py-2"
+                : "grid-cols-4 gap-0 px-1 pb-2 pt-3"
+            : visibleTreeCount > 8
+              ? "grid-cols-4 grid-rows-3 gap-x-1 gap-y-0 px-3 pb-2 pt-4 sm:px-6"
+              : visibleTreeCount > 4
+                ? "grid-cols-4 grid-rows-2 gap-x-1 gap-y-0 px-3 pb-2 pt-5 sm:px-6"
+                : "grid-cols-4 gap-1 px-3 pb-3 pt-6 sm:px-7"
           }`}>
             {Array.from({ length: visibleTreeCount }, (_, index) => {
               const actualIndex = treeCount - visibleTreeCount + index;
@@ -297,10 +303,16 @@ const StreakTree = ({
                 <div
                   key={`${actualIndex}-${isActive ? popKey : 0}`}
                   className={`${compact
-                    ? "h-[5.25rem] w-[4.25rem]"
-                    : visibleTreeCount > 4
-                      ? "h-24 w-20 sm:h-28 sm:w-24"
-                      : "h-36 w-28 sm:h-40 sm:w-32"
+                    ? visibleTreeCount > 8
+                      ? "h-14 w-12"
+                      : visibleTreeCount > 4
+                        ? "h-20 w-16"
+                        : "h-[5.25rem] w-[4.25rem]"
+                    : visibleTreeCount > 8
+                      ? "h-20 w-[4.25rem] sm:w-20"
+                      : visibleTreeCount > 4
+                        ? "h-24 w-20 sm:h-28 sm:w-24"
+                        : "h-36 w-28 sm:h-40 sm:w-32"
                   } origin-bottom ${isActive ? "animate-apple-pop" : ""}`}
                   style={{
                     transform: `scale(${0.82 + (actualIndex % 3) * 0.06})`,
