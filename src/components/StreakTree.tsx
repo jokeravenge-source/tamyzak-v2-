@@ -282,7 +282,12 @@ const StreakTree = ({
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-14 -start-16 h-36 w-[70%] rounded-[50%] bg-emerald-600/10" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-20 h-40 w-[72%] rounded-[50%] bg-lime-600/10" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] bg-gradient-to-t from-emerald-700/25 via-emerald-600/10 to-transparent" />
-          <div className={`relative z-10 grid h-full items-end justify-items-center ${compact ? "grid-cols-4 gap-0 px-1 pb-1" : "grid-cols-4 gap-1 px-3 pb-2 sm:px-7"}`}>
+          <div className={`relative z-10 grid h-full items-end justify-items-center ${compact
+            ? "grid-cols-4 gap-0 px-1 pb-2 pt-3"
+            : visibleTreeCount > 4
+              ? "grid-cols-4 grid-rows-2 gap-x-1 gap-y-0 px-3 pb-2 pt-5 sm:px-6"
+              : "grid-cols-4 gap-1 px-3 pb-3 pt-6 sm:px-7"
+          }`}>
             {Array.from({ length: visibleTreeCount }, (_, index) => {
               const actualIndex = treeCount - visibleTreeCount + index;
               const treeProgress = Math.max(0, Math.min(1, (days - actualIndex * FULL_DAYS) / FULL_DAYS));
@@ -290,7 +295,12 @@ const StreakTree = ({
               return (
                 <div
                   key={`${actualIndex}-${isActive ? popKey : 0}`}
-                  className={`${compact ? "h-24 w-[4.75rem]" : "h-36 w-28 sm:h-40 sm:w-32"} origin-bottom ${isActive ? "animate-apple-pop" : ""}`}
+                  className={`${compact
+                    ? "h-[5.25rem] w-[4.25rem]"
+                    : visibleTreeCount > 4
+                      ? "h-24 w-20 sm:h-28 sm:w-24"
+                      : "h-36 w-28 sm:h-40 sm:w-32"
+                  } origin-bottom ${isActive ? "animate-apple-pop" : ""}`}
                   style={{
                     transform: `scale(${0.82 + (actualIndex % 3) * 0.06})`,
                     filter: isActive ? "none" : "saturate(.88)",
