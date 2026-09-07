@@ -84,6 +84,11 @@ Deno.serve(async (req) => {
           );
           const subs: any[] = await subRes.json().catch(() => []);
           const activeSub = (subs ?? []).find((s) => !s.current_period_end || new Date(s.current_period_end).getTime() > Date.now());
+          const progressRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/user_progress?user_id=eq.${p.user_id}&select=current_streak&limit=1`,
+            { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } },
+          );
+          const progressRows: { current_streak?: number }[] = await progressRes.json().catch(() => []);
           return {
             user_id: p.user_id,
             display_name: p.display_name,
@@ -92,10 +97,66 @@ Deno.serve(async (req) => {
             banned_until,
             is_premium: !!activeSub,
             premium_expires_at: activeSub?.current_period_end ?? null,
+            current_streak: Math.max(0, Number(progressRows?.[0]?.current_streak ?? 0)),
           };
         }),
       );
       return new Response(JSON.stringify({ users }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "set_streak") {
+      const targetId = String(body?.user_id || "");
+      const requestedDays = Number(body?.days);
+      if (!targetId) {
+        return new Response(JSON.stringify({ error: "missing user_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!Number.isInteger(requestedDays) || requestedDays < 0 || requestedDays > 3650) {
+        return new Response(JSON.stringify({ error: "streak_must_be_between_0_and_3650" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const currentRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/user_progress?user_id=eq.${targetId}&select=current_streak,longest_streak&limit=1`,
+        { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } },
+      );
+      const currentRows: { current_streak?: number; longest_streak?: number }[] = await currentRes.json().catch(() => []);
+      const current = Math.max(0, Number(currentRows?.[0]?.current_streak ?? 0));
+      const longest = Math.max(0, Number(currentRows?.[0]?.longest_streak ?? 0));
+      if (requestedDays < current) {
+        return new Response(JSON.stringify({ error: "streak_can_only_be_increased", current_streak: current }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const baghdadToday = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const saveRes = await fetch(`${SUPABASE_URL}/rest/v1/user_progress?on_conflict=user_id`, {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE,
+          Authorization: `Bearer ${SERVICE_ROLE}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=representation",
+        },
+        body: JSON.stringify({
+          user_id: targetId,
+          current_streak: requestedDays,
+          longest_streak: Math.max(longest, requestedDays),
+          last_active_date: baghdadToday,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+      if (!saveRes.ok) {
+        const detail = await saveRes.text();
+        return new Response(JSON.stringify({ error: detail || "failed_to_update_streak" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ ok: true, current_streak: requestedDays, longest_streak: Math.max(longest, requestedDays) }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

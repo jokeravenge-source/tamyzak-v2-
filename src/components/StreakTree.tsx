@@ -3,6 +3,8 @@ import confetti from "canvas-confetti";
 import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
 import treeLottie from "@/assets/tree_growth.lottie?url";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const KEY = "streak_state_v1";
 const FULL_DAYS = 20;
@@ -147,6 +149,54 @@ const StreakTree = ({
   const treeBoxRef = useRef<HTMLDivElement | null>(null);
   const prevAppleCountRef = useRef<number>(-1);
   const [popKey, setPopKey] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [streakDraft, setStreakDraft] = useState(days);
+  const [savingStreak, setSavingStreak] = useState(false);
+
+  useEffect(() => {
+    setStreakDraft(days);
+  }, [days]);
+
+  useEffect(() => {
+    if (compact || daysOverride !== undefined) return;
+    let active = true;
+    void (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) return;
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (active) setIsAdmin(Boolean(data));
+    })();
+    return () => { active = false; };
+  }, [compact, daysOverride]);
+
+  const saveOwnStreak = async () => {
+    if (streakDraft <= days) {
+      toast.error(language === "ar" ? "حرّك المؤشر لزيادة أيام المثابرة" : "Move the slider to increase your streak");
+      return;
+    }
+    setSavingStreak(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user?.id) throw new Error("Not signed in");
+      const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+        body: { action: "set_streak", user_id: auth.user.id, days: streakDraft },
+      });
+      if (error || (data as any)?.error) throw error ?? new Error((data as any).error);
+      window.dispatchEvent(new CustomEvent("app:progress-updated"));
+      toast.success(language === "ar" ? `تم تحديث المثابرة إلى ${streakDraft} يوم` : `Streak updated to ${streakDraft} days`);
+    } catch (error) {
+      console.error("Failed to update admin streak", error);
+      toast.error(language === "ar" ? "تعذّر تحديث أيام المثابرة" : "Couldn't update streak days");
+    } finally {
+      setSavingStreak(false);
+    }
+  };
 
   // Sparkle + pop when a new apple appears (roughly one per streak day).
   useEffect(() => {
@@ -253,6 +303,47 @@ const StreakTree = ({
             <p className="text-xs text-muted-foreground mt-2">
               {`${pct}% · ${Math.max(0, FULL_DAYS - activeTreeDays)} ${language === "ar" ? "يوم" : "days"} ${T.next}`}
             </p>
+          )}
+          {isAdmin && !compact && daysOverride === undefined && (
+            <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-start">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {language === "ar" ? "تعديل أيام المثابرة" : "Adjust streak days"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {language === "ar" ? "خاص بحساب الإدارة" : "Admin account only"}
+                  </p>
+                </div>
+                <span className="min-w-16 rounded-lg bg-amber-500/15 px-3 py-1.5 text-center text-lg font-black text-amber-600 dark:text-amber-300">
+                  {streakDraft}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={days}
+                max={Math.max(365, days + 100)}
+                step={1}
+                value={streakDraft}
+                onChange={(event) => setStreakDraft(Number(event.target.value))}
+                className="h-2 w-full cursor-pointer accent-amber-500"
+                aria-label={language === "ar" ? "أيام المثابرة" : "Streak days"}
+              />
+              <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>{days}</span>
+                <span>{Math.max(365, days + 100)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={saveOwnStreak}
+                disabled={savingStreak || streakDraft === days}
+                className="mt-3 h-10 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingStreak
+                  ? (language === "ar" ? "جاري الحفظ..." : "Saving...")
+                  : (language === "ar" ? "حفظ أيام المثابرة" : "Save streak days")}
+              </button>
+            </div>
           )}
         </div>
       </div>

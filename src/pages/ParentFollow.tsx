@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award } from "lucide-react";
+import { CalendarDays, GraduationCap, Brain, ListChecks, CheckCircle2, Circle, Lock, Wrench, Clock3, Trophy, Target, RefreshCw, Eye, ShieldCheck, Activity, NotebookPen, Plus, Loader2, Award, Pencil, Trash2, Save, X, ChevronDown } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -58,6 +58,9 @@ export default function ParentFollow({ token }: { token: string }) {
   const [noteText, setNoteText] = useState("");
   const [todoText, setTodoText] = useState("");
   const [todoDay, setTodoDay] = useState("");
+  const [editingTodo, setEditingTodo] = useState<{ id: string; text: string; day: string } | null>(null);
+  const [deletingTodoId, setDeletingTodoId] = useState<string | null>(null);
+  const [expandedTodoDays, setExpandedTodoDays] = useState<Record<string, boolean>>({});
 
   const fetchSnapshot = async (codeArg?: string) => {
     const c = codeArg ?? code;
@@ -151,7 +154,7 @@ export default function ParentFollow({ token }: { token: string }) {
     setRefreshing(false);
   };
 
-  const saveParentEntry = async (action: "adjust_score" | "add_todo" | "add_score" | "add_note", payload: Record<string, unknown>) => {
+  const saveParentEntry = async (action: "adjust_score" | "add_todo" | "edit_todo" | "delete_todo" | "add_score" | "add_note", payload: Record<string, unknown>) => {
     setSavingEntry(true);
     setEntryMessage(null);
     try {
@@ -164,8 +167,16 @@ export default function ParentFollow({ token }: { token: string }) {
       if (!res.ok || next?.error) throw new Error(next?.detail ?? next?.error ?? "save_failed");
       setData(next as Snapshot);
       setLastUpdated(new Date());
-      setEntryMessage(action === "adjust_score" ? "Score updated successfully." : action === "add_todo" ? "Task added to the student's To-Do list." : "Note added successfully.");
+      setEntryMessage(
+        action === "adjust_score" ? "Score updated successfully."
+          : action === "add_todo" ? "Task added to the student's To-Do list."
+            : action === "edit_todo" ? "Task updated successfully."
+              : action === "delete_todo" ? "Task deleted successfully."
+                : "Note added successfully."
+      );
       if (action === "add_todo") setTodoText("");
+      if (action === "edit_todo") setEditingTodo(null);
+      if (action === "delete_todo") setDeletingTodoId(null);
       if (action === "add_note") setNoteText("");
       if (action === "add_score") setScoreForm({ subject: "", title: "", score: "", maxScore: "100", note: "" });
     } catch (error) {
@@ -249,6 +260,18 @@ export default function ParentFollow({ token }: { token: string }) {
   const todoDone = data.todays_todos?.filter((todo) => todo.done).length ?? 0;
   const todoPct = todoTotal ? Math.round((todoDone / todoTotal) * 100) : 0;
   const weekMinutes = data.last_7_days.reduce((sum, day) => sum + day.minutes, 0);
+  const todoDayOrder = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Any day'];
+  const todoGroups = Object.entries(
+    (data.all_todos ?? []).reduce<Record<string, NonNullable<Snapshot["all_todos"]>>>((groups, item) => {
+      const day = item.day || "Any day";
+      (groups[day] ??= []).push(item);
+      return groups;
+    }, {}),
+  ).sort(([dayA], [dayB]) => {
+    const a = todoDayOrder.indexOf(dayA);
+    const b = todoDayOrder.indexOf(dayB);
+    return (a < 0 ? 99 : a) - (b < 0 ? 99 : b);
+  });
 
   return (
     <main className={PARCHMENT} style={FONT_STYLE}>
@@ -436,7 +459,102 @@ export default function ParentFollow({ token }: { token: string }) {
             </Panel>
             <Panel icon={CheckCircle2} title="Student To-Do list">
               {!data.all_todos?.length ? <EmptyState icon={ListChecks} text="No tasks yet." /> : (
-                <ul className="space-y-2">{data.all_todos.map((item) => <li key={item.id} className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 p-3"><span className={item.done ? "text-emerald-500" : "text-muted-foreground"}>{item.done ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</span><span className={`min-w-0 flex-1 text-sm ${item.done ? "text-muted-foreground line-through" : "font-medium"}`}>{item.text}</span>{item.day && <span className="text-[10px] font-semibold text-muted-foreground">{item.day}</span>}</li>)}</ul>
+                <div className="space-y-3">{todoGroups.map(([day, items]) => {
+                  const isExpanded = expandedTodoDays[day] ?? false;
+                  const completedCount = items.filter((item) => item.done).length;
+                  return (
+                  <section key={day} className="overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedTodoDays((current) => ({ ...current, [day]: !isExpanded }))}
+                      aria-expanded={isExpanded}
+                      className="flex w-full items-center gap-3 p-4 text-start transition hover:bg-muted/50"
+                    >
+                      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">
+                        <CalendarDays className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-bold text-foreground">{day}</span>
+                        <span className="mt-0.5 block text-[11px] text-muted-foreground">{items.length} {items.length === 1 ? "task" : "tasks"} · {completedCount} completed</span>
+                      </span>
+                      <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                    {isExpanded && (
+                    <ul className="space-y-2 border-t border-border/60 p-3">{items.map((item) => (
+                  <li key={item.id} className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                    {editingTodo?.id === item.id ? (
+                      <div className="space-y-3">
+                        <input
+                          autoFocus
+                          maxLength={300}
+                          value={editingTodo.text}
+                          onChange={(event) => setEditingTodo((current) => current ? { ...current, text: event.target.value } : current)}
+                          className={PARENT_INPUT}
+                        />
+                        <select
+                          value={editingTodo.day}
+                          onChange={(event) => setEditingTodo((current) => current ? { ...current, day: event.target.value } : current)}
+                          className={PARENT_INPUT}
+                        >
+                          <option value="">Any day</option>
+                          {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((day) => <option key={day} value={day}>{day}</option>)}
+                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            disabled={savingEntry || !editingTodo.text.trim()}
+                            onClick={() => void saveParentEntry("edit_todo", { id: item.id, text: editingTodo.text, day: editingTodo.day })}
+                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 text-xs font-bold text-white disabled:opacity-50"
+                          >
+                            {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save changes
+                          </button>
+                          <button type="button" disabled={savingEntry} onClick={() => setEditingTodo(null)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background text-xs font-bold">
+                            <X className="h-4 w-4" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <span className={item.done ? "text-emerald-500" : "text-muted-foreground"}>{item.done ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className={`break-words text-sm ${item.done ? "text-muted-foreground line-through" : "font-medium"}`}>{item.text}</p>
+                          {item.day && <span className="mt-1 inline-block text-[10px] font-semibold text-muted-foreground">{item.day}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={savingEntry}
+                          onClick={() => { setDeletingTodoId(null); setEditingTodo({ id: item.id, text: item.text, day: item.day ?? "" }); }}
+                          aria-label="Edit task"
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 transition hover:bg-indigo-500/20 disabled:opacity-50 dark:text-indigo-300"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        {deletingTodoId === item.id ? (
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button type="button" disabled={savingEntry} onClick={() => void saveParentEntry("delete_todo", { id: item.id })} className="h-9 rounded-lg bg-destructive px-2.5 text-[11px] font-bold text-destructive-foreground disabled:opacity-50">
+                              {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+                            </button>
+                            <button type="button" disabled={savingEntry} onClick={() => setDeletingTodoId(null)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background"><X className="h-4 w-4" /></button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={savingEntry}
+                            onClick={() => { setEditingTodo(null); setDeletingTodoId(item.id); }}
+                            aria-label="Delete task"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-600 transition hover:bg-rose-500/20 disabled:opacity-50 dark:text-rose-300"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                    ))}</ul>
+                    )}
+                  </section>
+                  );
+                })}</div>
               )}
             </Panel>
           </div>

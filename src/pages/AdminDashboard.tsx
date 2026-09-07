@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles } from "lucide-react";
+import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SUMMARY_SUBJECTS } from "./Summaries";
@@ -264,19 +264,39 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   };
 
   // Users / Bans state
-  type UserRow = { user_id: string; display_name: string; email: string | null; banned: boolean; banned_until: string | null; is_premium?: boolean; premium_expires_at?: string | null };
+  type UserRow = { user_id: string; display_name: string; email: string | null; banned: boolean; banned_until: string | null; is_premium?: boolean; premium_expires_at?: string | null; current_streak: number };
   const [userQuery, setUserQuery] = useState("");
   const [userResults, setUserResults] = useState<UserRow[]>([]);
   const [userBusy, setUserBusy] = useState(false);
   const [userActionId, setUserActionId] = useState<string | null>(null);
   const [premiumBusyId, setPremiumBusyId] = useState<string | null>(null);
+  const [streakBusyId, setStreakBusyId] = useState<string | null>(null);
+  const [streakDrafts, setStreakDrafts] = useState<Record<string, number>>({});
   const searchUsers = async () => {
     if (!userQuery.trim()) { setUserResults([]); return; }
     setUserBusy(true);
     const { data, error } = await supabase.functions.invoke("admin-manage-users", { body: { action: "search", q: userQuery.trim() } });
     setUserBusy(false);
     if (error) return toast.error(error.message);
-    setUserResults(((data as any)?.users ?? []) as UserRow[]);
+    const users = ((data as any)?.users ?? []) as UserRow[];
+    setUserResults(users);
+    setStreakDrafts(Object.fromEntries(users.map((u) => [u.user_id, Math.max(0, u.current_streak ?? 0)])));
+  };
+
+  const increaseStreak = async (u: UserRow) => {
+    const days = Math.floor(streakDrafts[u.user_id] ?? u.current_streak ?? 0);
+    if (days < u.current_streak) return toast.error("Streak can only be increased");
+    if (days === u.current_streak) return toast("Move the slider to increase the streak");
+    setStreakBusyId(u.user_id);
+    const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+      body: { action: "set_streak", user_id: u.user_id, days },
+    });
+    setStreakBusyId(null);
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any)?.error ?? "Failed");
+    const savedDays = Number((data as any)?.current_streak ?? days);
+    setUserResults((rows) => rows.map((row) => row.user_id === u.user_id ? { ...row, current_streak: savedDays } : row));
+    setStreakDrafts((drafts) => ({ ...drafts, [u.user_id]: savedDays }));
+    toast.success(`Streak increased to ${savedDays} days`);
   };
   const toggleBan = async (u: UserRow) => {
     const action = u.banned ? "unban" : "ban";
@@ -956,6 +976,42 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                         {userActionId === u.user_id ? <Loader2 className="w-4 h-4 animate-spin" /> : (u.banned ? <RotateCcw className="w-4 h-4" /> : <Ban className="w-4 h-4" />)}
                         {u.banned ? "Unban" : "Ban"}
                       </button>
+                    </div>
+                    <div className="mt-4 rounded-xl border border-orange-400/20 bg-orange-500/5 p-4">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
+                            <Flame className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">Increase streak days</p>
+                            <p className="text-xs text-muted-foreground">Current: {u.current_streak ?? 0} days · {Math.max(1, Math.ceil((streakDrafts[u.user_id] ?? u.current_streak ?? 0) / 20))} streak trees</p>
+                          </div>
+                        </div>
+                        <span className="min-w-20 rounded-xl border border-orange-400/25 bg-background/70 px-3 py-1.5 text-center font-mono text-lg font-black tabular-nums text-orange-400">
+                          {streakDrafts[u.user_id] ?? u.current_streak ?? 0}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <input
+                          type="range"
+                          min={u.current_streak ?? 0}
+                          max={Math.max(365, (u.current_streak ?? 0) + 100)}
+                          step={1}
+                          value={streakDrafts[u.user_id] ?? u.current_streak ?? 0}
+                          onChange={(e) => setStreakDrafts((drafts) => ({ ...drafts, [u.user_id]: Number(e.target.value) }))}
+                          className="h-2 flex-1 cursor-pointer accent-orange-500"
+                          aria-label={`Streak days for ${u.display_name}`}
+                        />
+                        <button
+                          onClick={() => increaseStreak(u)}
+                          disabled={streakBusyId === u.user_id || (streakDrafts[u.user_id] ?? u.current_streak ?? 0) <= (u.current_streak ?? 0)}
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          {streakBusyId === u.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
+                          Save streak
+                        </button>
+                      </div>
                     </div>
                     {openSessionsFor === u.user_id && (
                       <div className="mt-4 pt-4 border-t border-white/10">

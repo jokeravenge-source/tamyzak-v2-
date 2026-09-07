@@ -39,10 +39,13 @@ Deno.serve(async (req) => {
         _delta: delta,
       });
       if (error) return json({ error: "score_adjust_failed", detail: error.message }, 500);
-    } else if (action === "add_todo") {
+    } else if (action === "add_todo" || action === "edit_todo" || action === "delete_todo") {
       const text = String(payload?.text ?? "").trim().slice(0, 300);
       const day = String(payload?.day ?? "").trim().slice(0, 30) || undefined;
-      if (!text) return json({ error: "invalid_todo" }, 400);
+      const todoId = String(payload?.id ?? "").trim().slice(0, 150);
+      if (action === "add_todo" && !text) return json({ error: "invalid_todo" }, 400);
+      if (action !== "add_todo" && !todoId) return json({ error: "invalid_todo_id" }, 400);
+      if (action === "edit_todo" && !text) return json({ error: "invalid_todo" }, 400);
 
       const { data: currentTodos, error: readError } = await admin
         .from("student_todos")
@@ -51,15 +54,32 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (readError) return json({ error: "todo_read_failed", detail: readError.message }, 500);
 
-      const items = Array.isArray(currentTodos?.items) ? [...currentTodos.items] : [];
-      items.push({
-        id: `parent-${crypto.randomUUID()}`,
-        text,
-        done: false,
-        ...(day ? { day } : {}),
-        source: "parent",
-        created_at: new Date().toISOString(),
-      });
+      let items = Array.isArray(currentTodos?.items) ? [...currentTodos.items] : [];
+      if (action === "add_todo") {
+        items.push({
+          id: `parent-${crypto.randomUUID()}`,
+          text,
+          done: false,
+          ...(day ? { day } : {}),
+          source: "parent",
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        const todoIndex = items.findIndex((item: any) => String(item?.id ?? "") === todoId);
+        if (todoIndex < 0) return json({ error: "todo_not_found" }, 404);
+        if (action === "delete_todo") {
+          items = items.filter((_: unknown, index: number) => index !== todoIndex);
+        } else {
+          const current = items[todoIndex] as Record<string, unknown>;
+          items[todoIndex] = {
+            ...current,
+            text,
+            ...(day ? { day } : {}),
+            ...(!day ? { day: undefined } : {}),
+            updated_at: new Date().toISOString(),
+          };
+        }
+      }
       const { error: todoError } = await admin.from("student_todos").upsert({
         user_id: userId,
         items,
