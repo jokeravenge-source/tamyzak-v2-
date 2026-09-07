@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import confetti from "canvas-confetti";
-import { DotLottieReact, type DotLottie } from "@lottiefiles/dotlottie-react";
-import treeLottie from "@/assets/tree_growth.lottie?url";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -65,66 +63,62 @@ function useStreak(enabled = true) {
   return { state, markCelebrated };
 }
 
-/* ----- Lottie tree growth ----- */
-function LottieTree({ progress }: { progress: number }) {
-  const [dotLottie, setDotLottie] = useState<DotLottie | null>(null);
-
-  useEffect(() => {
-    if (!dotLottie) return;
-    let raf = 0;
-    let cancelled = false;
-    let currentFrame = 0;
-
-    const run = () => {
-      const total = dotLottie.totalFrames || 0;
-      if (!total) return;
-      const target = Math.max(0, Math.min(total - 1, Math.round(total * progress)));
-      const startFrame = currentFrame;
-      const growMs = 1600; // smooth grow-in tween
-      const t0 = performance.now();
-
-      try { dotLottie.pause(); } catch {}
-
-      const tick = (now: number) => {
-        if (cancelled) return;
-        const elapsed = now - t0;
-        const k = Math.min(1, elapsed / growMs);
-        // easeOutCubic
-        const eased = 1 - Math.pow(1 - k, 3);
-        let f = startFrame + (target - startFrame) * eased;
-
-        if (k >= 1) {
-          // After growth: gentle apple sway by oscillating ±1.5 frames around target
-          const sway = Math.sin((now - t0) / 600) * 1.5;
-          f = target + sway;
-        }
-
-        const clamped = Math.max(0, Math.min(total - 1, f));
-        try { dotLottie.setFrame(clamped); } catch {}
-        currentFrame = clamped;
-        raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
-    };
-
-    if (dotLottie.isLoaded) run();
-    else dotLottie.addEventListener("load", run);
-
-    return () => {
-      cancelled = true;
-      if (raf) cancelAnimationFrame(raf);
-      try { dotLottie.removeEventListener("load", run); } catch {}
-    };
-  }, [dotLottie, progress]);
+/* Canvas-free SVG tree: reliable in iOS/PWA and when many trees are visible. */
+function TreeIllustration({ progress }: { progress: number }) {
+  const id = useId().replace(/:/g, "");
+  const growth = Math.max(0.08, Math.min(1, progress));
+  const applePositions = [
+    [55, 70], [82, 48], [108, 70], [43, 98], [72, 91], [99, 100],
+    [122, 98], [58, 123], [88, 120], [112, 128], [73, 145], [100, 149],
+  ];
+  const appleCount = Math.min(applePositions.length, Math.max(0, Math.ceil(progress * applePositions.length)));
 
   return (
-    <DotLottieReact
-      src={treeLottie}
-      autoplay={false}
-      loop={false}
-      dotLottieRefCallback={setDotLottie}
-      style={{ width: "100%", height: "100%" }}
-    />
+    <svg viewBox="0 0 160 210" className="h-full w-full overflow-visible" aria-hidden="true">
+      <defs>
+        <linearGradient id={`trunk-${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#9a5b2f" />
+          <stop offset="1" stopColor="#5b321d" />
+        </linearGradient>
+        <radialGradient id={`leaf-${id}`} cx="35%" cy="25%" r="75%">
+          <stop offset="0" stopColor="#86d34d" />
+          <stop offset="0.52" stopColor="#3f9f42" />
+          <stop offset="1" stopColor="#176534" />
+        </radialGradient>
+        <filter id={`shadow-${id}`} x="-30%" y="-30%" width="160%" height="170%">
+          <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#123524" floodOpacity=".25" />
+        </filter>
+      </defs>
+      <ellipse cx="80" cy="193" rx="48" ry="9" fill="#14532d" opacity=".18" />
+      <g
+        style={{ transform: `scale(${growth})`, transformOrigin: "80px 188px", transition: "transform 900ms cubic-bezier(.22,1,.36,1)" }}
+        filter={`url(#shadow-${id})`}
+      >
+        <path d="M67 188c5-27 7-49 6-72l14-1c-1 27 2 49 8 73z" fill={`url(#trunk-${id})`} />
+        <path d="M78 142 54 112M83 133l25-31M76 157l-28-19M87 157l29-21" fill="none" stroke="#6f4226" strokeWidth="7" strokeLinecap="round" />
+        <g fill={`url(#leaf-${id})`} stroke="#126232" strokeWidth="2.2">
+          <circle cx="48" cy="110" r="31" />
+          <circle cx="66" cy="76" r="37" />
+          <circle cx="96" cy="68" r="38" />
+          <circle cx="120" cy="105" r="31" />
+          <circle cx="86" cy="112" r="46" />
+          <circle cx="63" cy="133" r="31" />
+          <circle cx="106" cy="134" r="32" />
+        </g>
+        <g fill="none" stroke="#b8ef76" strokeWidth="3" strokeLinecap="round" opacity=".55">
+          <path d="M48 94c8-12 16-17 25-18" />
+          <path d="M90 50c10 0 19 4 27 12" />
+          <path d="M96 117c11-8 20-9 28-6" />
+        </g>
+        {applePositions.slice(0, appleCount).map(([cx, cy], index) => (
+          <g key={index} className="animate-apple-pop" style={{ transformOrigin: `${cx}px ${cy}px` }}>
+            <circle cx={cx} cy={cy} r="6.5" fill="#ef4444" stroke="#991b1b" strokeWidth="1.5" />
+            <circle cx={cx - 2} cy={cy - 2} r="1.6" fill="#fecaca" />
+            <path d={`M${cx} ${cy - 6}q2-6 6-7`} fill="none" stroke="#5b321d" strokeWidth="1.6" strokeLinecap="round" />
+          </g>
+        ))}
+      </g>
+    </svg>
   );
 }
 
@@ -275,7 +269,7 @@ const StreakTree = ({
                     filter: isActive ? "none" : "saturate(.88)",
                   }}
                 >
-                  <LottieTree progress={treeProgress} />
+                  <TreeIllustration progress={treeProgress} />
                 </div>
               );
             })}
