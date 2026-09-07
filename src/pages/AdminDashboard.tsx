@@ -279,8 +279,8 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     setUserBusy(false);
     if (error) return toast.error(error.message);
     const users = ((data as any)?.users ?? []) as UserRow[];
-    setUserResults(users);
-    setStreakDrafts(Object.fromEntries(users.map((u) => [u.user_id, Math.max(0, u.current_streak ?? 0)])));
+    setStreakDrafts(Object.fromEntries(users.map((u) => [u.user_id, Math.min(60, Math.max(0, u.current_streak ?? 0))])));
+    setUserResults(users.map((u) => ({ ...u, current_streak: Math.min(60, Math.max(0, u.current_streak ?? 0)) })));
   };
 
   const increaseStreak = async (u: UserRow) => {
@@ -996,7 +996,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                         <input
                           type="range"
                           min={u.current_streak ?? 0}
-                          max={Math.max(365, (u.current_streak ?? 0) + 100)}
+                          max={60}
                           step={1}
                           value={streakDrafts[u.user_id] ?? u.current_streak ?? 0}
                           onChange={(e) => setStreakDrafts((drafts) => ({ ...drafts, [u.user_id]: Number(e.target.value) }))}
