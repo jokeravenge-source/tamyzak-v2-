@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { newRoomCode, setPendingBattle, CHALLENGE_SUBJECTS, CHALLENGE_COUNTS, type ChallengeSubject } from "@/lib/battleInvite";
 import { getChaptersForSubject } from "@/data/subjectChapters";
+import StreakTree from "./StreakTree";
 
 type Socials = { telegram?: string; instagram?: string; tiktok?: string; facebook?: string };
 
@@ -112,7 +113,7 @@ export default function StudentProfileDialog({
 
   return (
     <Dialog open={!!userId} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-sm" dir={isAr ? "rtl" : "ltr"}>
+      <DialogContent className="max-h-[90dvh] max-w-sm overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{isAr ? "ملف الطالب" : "Student profile"}</DialogTitle>
         </DialogHeader>
@@ -186,6 +187,8 @@ export default function StudentProfileDialog({
                 )}
               </div>
             </div>
+
+            <StreakTree language={language} daysOverride={data.current_streak} compact />
 
             {meId && meId !== userId && !setupOpen && (
               <Button onClick={() => setSetupOpen(true)} className="w-full">
