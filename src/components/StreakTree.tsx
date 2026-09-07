@@ -126,10 +126,22 @@ function LottieTree({ progress }: { progress: number }) {
   );
 }
 
-const StreakTree = ({ language = "en", daysOverride }: { language?: "en" | "ar"; daysOverride?: number }) => {
+const StreakTree = ({
+  language = "en",
+  daysOverride,
+  compact = false,
+}: {
+  language?: "en" | "ar";
+  daysOverride?: number;
+  compact?: boolean;
+}) => {
   const { state, markCelebrated } = useStreak(daysOverride === undefined);
   const days = daysOverride ?? state.days;
-  const progress = Math.min(days / FULL_DAYS, 1);
+  const treeCount = Math.max(1, Math.ceil(Math.max(days, 1) / FULL_DAYS));
+  const visibleTreeCount = Math.min(treeCount, compact ? 4 : 8);
+  const hiddenTreeCount = Math.max(0, treeCount - visibleTreeCount);
+  const activeTreeDays = days > 0 && days % FULL_DAYS === 0 ? FULL_DAYS : days % FULL_DAYS;
+  const progress = Math.min(activeTreeDays / FULL_DAYS, 1);
   const pct = Math.round(progress * 100);
 
   const treeBoxRef = useRef<HTMLDivElement | null>(null);
@@ -174,7 +186,7 @@ const StreakTree = ({ language = "en", daysOverride }: { language?: "en" | "ar";
   }, [days]);
 
   useEffect(() => {
-    if (days >= FULL_DAYS && !state.celebrated) {
+    if (daysOverride === undefined && days >= FULL_DAYS && !state.celebrated) {
       const end = Date.now() + 4000;
       const burst = () => {
         confetti({ particleCount: 80, spread: 80, origin: { y: 0.7 } });
@@ -185,34 +197,63 @@ const StreakTree = ({ language = "en", daysOverride }: { language?: "en" | "ar";
       burst();
       markCelebrated();
     }
-  }, [days, state.celebrated, markCelebrated]);
+  }, [days, daysOverride, state.celebrated, markCelebrated]);
 
   const T = language === "ar"
-    ? { days: days === 1 ? "يوم" : "يوماً", label: "سلسلة المثابرة", full: "اكتملت الشجرة! 🎉" }
-    : { days: days === 1 ? "day" : "days", label: "Your streak", full: "Tree fully grown! 🎉" };
+    ? { days: days === 1 ? "يوم" : "يوماً", label: "حقل المثابرة", trees: treeCount === 1 ? "شجرة" : "أشجار", next: "لإكمال الشجرة القادمة" }
+    : { days: days === 1 ? "day" : "days", label: "Streak forest", trees: treeCount === 1 ? "tree" : "trees", next: "to grow the next tree" };
 
   return (
-    <section dir={language === "ar" ? "rtl" : "ltr"} className="w-full mt-12 mb-6">
-      <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6">
-        <div ref={treeBoxRef} className="relative h-72 rounded-lg overflow-hidden flex items-center justify-center">
-          <div key={popKey} className="w-full h-full animate-apple-pop">
-            <LottieTree progress={progress} />
+    <section dir={language === "ar" ? "rtl" : "ltr"} className={`w-full ${compact ? "my-0" : "mt-12 mb-6"}`}>
+      <div className={`mx-auto rounded-2xl border border-border bg-card overflow-hidden ${compact ? "p-3" : "max-w-lg p-5 sm:p-6"}`}>
+        <div
+          ref={treeBoxRef}
+          className={`relative overflow-hidden rounded-xl border border-emerald-500/15 bg-gradient-to-b from-sky-400/10 via-emerald-400/5 to-amber-700/10 ${compact ? "h-36" : "h-72"}`}
+        >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[28%] bg-gradient-to-t from-emerald-700/20 to-transparent" />
+          <div className={`relative z-10 grid h-full items-end justify-items-center ${compact ? "grid-cols-4 gap-0 px-1 pb-1" : "grid-cols-4 gap-1 px-3 pb-2 sm:px-7"}`}>
+            {Array.from({ length: visibleTreeCount }, (_, index) => {
+              const actualIndex = treeCount - visibleTreeCount + index;
+              const treeProgress = Math.max(0, Math.min(1, (days - actualIndex * FULL_DAYS) / FULL_DAYS));
+              const isActive = actualIndex === treeCount - 1;
+              return (
+                <div
+                  key={`${actualIndex}-${isActive ? popKey : 0}`}
+                  className={`${compact ? "h-24 w-[4.75rem]" : "h-36 w-28 sm:h-40 sm:w-32"} origin-bottom ${isActive ? "animate-apple-pop" : ""}`}
+                  style={{
+                    transform: `scale(${0.82 + (actualIndex % 3) * 0.06})`,
+                    filter: isActive ? "none" : "saturate(.88)",
+                  }}
+                >
+                  <LottieTree progress={treeProgress} />
+                </div>
+              );
+            })}
           </div>
+          {hiddenTreeCount > 0 && (
+            <div className="absolute start-2 top-2 z-20 rounded-full border border-emerald-500/20 bg-background/80 px-2 py-1 text-[10px] font-bold text-emerald-600 backdrop-blur">
+              +{hiddenTreeCount} {T.trees}
+            </div>
+          )}
         </div>
-        <div className="mt-4 text-center">
+        <div className={`${compact ? "mt-2" : "mt-4"} text-center`}>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{T.label}</p>
-          <p className="text-3xl font-semibold text-foreground mt-1">
-            {days} <span className="text-base font-normal text-muted-foreground">{T.days}</span>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-semibold text-foreground mt-1`}>
+            {days} <span className={`${compact ? "text-xs" : "text-base"} font-normal text-muted-foreground`}>{T.days}</span>
+            <span className="mx-2 text-muted-foreground/40">·</span>
+            <span className={`${compact ? "text-xs" : "text-sm"} font-medium text-emerald-600`}>{treeCount} {T.trees}</span>
           </p>
-          <div className="mt-4 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className={`${compact ? "mt-2" : "mt-4"} h-1.5 w-full rounded-full bg-muted overflow-hidden`}>
             <div
-              className="h-full bg-foreground transition-all duration-700"
+              className="h-full bg-gradient-to-r from-emerald-500 to-lime-400 transition-all duration-700"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {progress >= 1 ? T.full : `${pct}% · ${Math.max(0, FULL_DAYS - days)} ${language === "ar" ? "يوم متبقي" : "days to go"}`}
-          </p>
+          {!compact && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {`${pct}% · ${Math.max(0, FULL_DAYS - activeTreeDays)} ${language === "ar" ? "يوم" : "days"} ${T.next}`}
+            </p>
+          )}
         </div>
       </div>
     </section>
