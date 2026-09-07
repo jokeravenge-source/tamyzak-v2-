@@ -64,57 +64,79 @@ function useStreak(enabled = true) {
 }
 
 /* Canvas-free SVG tree: reliable in iOS/PWA and when many trees are visible. */
-function TreeIllustration({ progress }: { progress: number }) {
+function TreeIllustration({ progress, variant = 0 }: { progress: number; variant?: number }) {
   const id = useId().replace(/:/g, "");
   const growth = Math.max(0.08, Math.min(1, progress));
+  const palettes = [
+    { light: "#a7e66a", mid: "#46a84f", dark: "#176538", edge: "#10552f" },
+    { light: "#b6e76c", mid: "#58aa43", dark: "#216b35", edge: "#15592d" },
+    { light: "#91df72", mid: "#369d58", dark: "#146044", edge: "#0d5138" },
+  ];
+  const palette = palettes[Math.abs(variant) % palettes.length];
   const applePositions = [
-    [55, 70], [82, 48], [108, 70], [43, 98], [72, 91], [99, 100],
-    [122, 98], [58, 123], [88, 120], [112, 128], [73, 145], [100, 149],
+    [56, 72], [88, 48], [117, 72], [41, 103], [72, 98], [102, 97],
+    [133, 104], [56, 130], [87, 122], [117, 132], [76, 151], [103, 151],
   ];
   const appleCount = Math.min(applePositions.length, Math.max(0, Math.ceil(progress * applePositions.length)));
 
   return (
-    <svg viewBox="0 0 160 210" className="h-full w-full overflow-visible" aria-hidden="true">
+    <svg viewBox="0 0 180 220" className="h-full w-full overflow-visible" aria-hidden="true">
       <defs>
         <linearGradient id={`trunk-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#9a5b2f" />
-          <stop offset="1" stopColor="#5b321d" />
+          <stop offset="0" stopColor="#c18043" />
+          <stop offset="0.48" stopColor="#87502c" />
+          <stop offset="1" stopColor="#4c291b" />
         </linearGradient>
-        <radialGradient id={`leaf-${id}`} cx="35%" cy="25%" r="75%">
-          <stop offset="0" stopColor="#86d34d" />
-          <stop offset="0.52" stopColor="#3f9f42" />
-          <stop offset="1" stopColor="#176534" />
+        <radialGradient id={`leaf-${id}`} cx="34%" cy="21%" r="80%">
+          <stop offset="0" stopColor={palette.light} />
+          <stop offset="0.5" stopColor={palette.mid} />
+          <stop offset="1" stopColor={palette.dark} />
+        </radialGradient>
+        <radialGradient id={`apple-${id}`} cx="30%" cy="23%" r="78%">
+          <stop offset="0" stopColor="#ff9b89" />
+          <stop offset="0.28" stopColor="#f04444" />
+          <stop offset="1" stopColor="#a91528" />
         </radialGradient>
         <filter id={`shadow-${id}`} x="-30%" y="-30%" width="160%" height="170%">
-          <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#123524" floodOpacity=".25" />
+          <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#123524" floodOpacity=".3" />
         </filter>
       </defs>
-      <ellipse cx="80" cy="193" rx="48" ry="9" fill="#14532d" opacity=".18" />
+      <ellipse cx="90" cy="204" rx="55" ry="9" fill="#17452d" opacity=".2" />
+      <g opacity=".75" fill="#4f9d43">
+        <path d="M45 202q3-15 7 0q8-13 6 2z" />
+        <path d="M124 204q4-17 7 0q9-12 6 2z" />
+        <path d="M36 205q3-10 6 0z" />
+      </g>
       <g
-        style={{ transform: `scale(${growth})`, transformOrigin: "80px 188px", transition: "transform 900ms cubic-bezier(.22,1,.36,1)" }}
+        style={{ transform: `scale(${growth})`, transformOrigin: "90px 199px", transition: "transform 900ms cubic-bezier(.22,1,.36,1)" }}
         filter={`url(#shadow-${id})`}
       >
-        <path d="M67 188c5-27 7-49 6-72l14-1c-1 27 2 49 8 73z" fill={`url(#trunk-${id})`} />
-        <path d="M78 142 54 112M83 133l25-31M76 157l-28-19M87 157l29-21" fill="none" stroke="#6f4226" strokeWidth="7" strokeLinecap="round" />
-        <g fill={`url(#leaf-${id})`} stroke="#126232" strokeWidth="2.2">
-          <circle cx="48" cy="110" r="31" />
-          <circle cx="66" cy="76" r="37" />
-          <circle cx="96" cy="68" r="38" />
-          <circle cx="120" cy="105" r="31" />
-          <circle cx="86" cy="112" r="46" />
-          <circle cx="63" cy="133" r="31" />
-          <circle cx="106" cy="134" r="32" />
+        <path d="M70 200c8-32 10-60 8-91h24c-3 34 0 62 10 91-12 5-29 5-42 0z" fill={`url(#trunk-${id})`} stroke="#4d2a1b" strokeWidth="2" />
+        <path d="M89 171c0-26-1-47-3-63M85 143 53 109M94 133l31-38M86 159l-35-22M97 159l34-25" fill="none" stroke="#714026" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M80 193c8-22 10-46 8-70" fill="none" stroke="#d19a5b" strokeWidth="3.5" strokeLinecap="round" opacity=".62" />
+        <path d="M101 191c-4-17-3-34-2-48" fill="none" stroke="#4a2719" strokeWidth="2.2" strokeLinecap="round" opacity=".65" />
+        <g fill={`url(#leaf-${id})`} stroke={palette.edge} strokeWidth="2.3" strokeLinejoin="round">
+          <path d="M31 118c-4-18 6-34 23-40-3-19 12-35 31-34 8-20 37-23 49-5 20-2 34 14 32 32 17 8 22 30 11 44 8 20-8 40-29 40-9 18-33 23-49 11-15 13-40 6-45-13-20 0-32-18-23-35z" />
+          <path d="M49 92c3-18 20-28 37-23 8-17 33-17 43 0 17-2 30 12 28 29 11 10 8 29-5 36-12-12-32-17-47-8-12-13-35-13-48-2-11-8-15-22-8-32z" opacity=".5" />
         </g>
-        <g fill="none" stroke="#b8ef76" strokeWidth="3" strokeLinecap="round" opacity=".55">
-          <path d="M48 94c8-12 16-17 25-18" />
-          <path d="M90 50c10 0 19 4 27 12" />
-          <path d="M96 117c11-8 20-9 28-6" />
+        <g fill="none" stroke="#d8f6a8" strokeWidth="4" strokeLinecap="round" opacity=".5">
+          <path d="M48 104c5-20 20-31 36-35" />
+          <path d="M91 54c14-8 32-3 41 8" />
+          <path d="M116 139c14-9 28-9 39-3" />
+        </g>
+        <g fill="#b8e779" opacity=".85">
+          <ellipse cx="45" cy="123" rx="4" ry="8" transform="rotate(-38 45 123)" />
+          <ellipse cx="68" cy="58" rx="4" ry="8" transform="rotate(44 68 58)" />
+          <ellipse cx="145" cy="93" rx="4" ry="8" transform="rotate(35 145 93)" />
+          <ellipse cx="132" cy="148" rx="4" ry="8" transform="rotate(55 132 148)" />
+          <ellipse cx="55" cy="149" rx="4" ry="8" transform="rotate(-55 55 149)" />
         </g>
         {applePositions.slice(0, appleCount).map(([cx, cy], index) => (
           <g key={index} className="animate-apple-pop" style={{ transformOrigin: `${cx}px ${cy}px` }}>
-            <circle cx={cx} cy={cy} r="6.5" fill="#ef4444" stroke="#991b1b" strokeWidth="1.5" />
-            <circle cx={cx - 2} cy={cy - 2} r="1.6" fill="#fecaca" />
-            <path d={`M${cx} ${cy - 6}q2-6 6-7`} fill="none" stroke="#5b321d" strokeWidth="1.6" strokeLinecap="round" />
+            <path d={`M${cx} ${cy - 6}q1-6 5-9`} fill="none" stroke="#4b2d1c" strokeWidth="2" strokeLinecap="round" />
+            <ellipse cx={cx + 6} cy={cy - 10} rx="4.5" ry="2.6" fill="#8fd14f" transform={`rotate(-25 ${cx + 6} ${cy - 10})`} />
+            <circle cx={cx} cy={cy} r="7.2" fill={`url(#apple-${id})`} stroke="#8f1724" strokeWidth="1.5" />
+            <ellipse cx={cx - 2.4} cy={cy - 2.6} rx="2" ry="2.8" fill="#ffd2ca" opacity=".9" />
           </g>
         ))}
       </g>
@@ -254,7 +276,12 @@ const StreakTree = ({
           ref={treeBoxRef}
           className={`relative overflow-hidden rounded-xl border border-emerald-500/15 bg-gradient-to-b from-sky-400/10 via-emerald-400/5 to-amber-700/10 ${compact ? "h-36" : "h-72"}`}
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[28%] bg-gradient-to-t from-emerald-700/20 to-transparent" />
+          <div aria-hidden="true" className="pointer-events-none absolute end-5 top-5 h-10 w-10 rounded-full bg-amber-300/50 shadow-[0_0_35px_rgba(251,191,36,0.35)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute start-[9%] top-[13%] h-5 w-20 rounded-full bg-white/35 blur-[1px] before:absolute before:-top-2 before:start-3 before:h-6 before:w-7 before:rounded-full before:bg-white/35 after:absolute after:-top-3 after:end-3 after:h-7 after:w-9 after:rounded-full after:bg-white/35" />
+          <div aria-hidden="true" className="pointer-events-none absolute end-[18%] top-[28%] h-3 w-14 rounded-full bg-white/25 blur-[1px]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-14 -start-16 h-36 w-[70%] rounded-[50%] bg-emerald-600/10" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-20 h-40 w-[72%] rounded-[50%] bg-lime-600/10" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] bg-gradient-to-t from-emerald-700/25 via-emerald-600/10 to-transparent" />
           <div className={`relative z-10 grid h-full items-end justify-items-center ${compact ? "grid-cols-4 gap-0 px-1 pb-1" : "grid-cols-4 gap-1 px-3 pb-2 sm:px-7"}`}>
             {Array.from({ length: visibleTreeCount }, (_, index) => {
               const actualIndex = treeCount - visibleTreeCount + index;
@@ -269,7 +296,7 @@ const StreakTree = ({
                     filter: isActive ? "none" : "saturate(.88)",
                   }}
                 >
-                  <TreeIllustration progress={treeProgress} />
+                  <TreeIllustration progress={treeProgress} variant={actualIndex} />
                 </div>
               );
             })}
