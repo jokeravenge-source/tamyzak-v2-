@@ -396,9 +396,10 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                   style={{ background: visual.glow }}
                 />
                 <div className="relative z-10 flex items-start justify-between gap-2">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner" style={{ background: visual.soft }}>
-                    <Icon className="w-6 h-6 md:w-7 md:h-7" style={{ color: visual.color }} />
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner" style={{ background: visual.soft, color: visual.color }}>
+                    <Icon className="w-6 h-6 md:w-7 md:h-7" />
                   </div>
+
                   {isLocked ? (
                     <div className="size-9 rounded-full border border-border/70 bg-background/65 flex items-center justify-center">
                       <Lock className="w-4 h-4 text-muted-foreground" />
