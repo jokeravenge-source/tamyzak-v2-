@@ -506,8 +506,8 @@ const App = () => {
   }, [authed, authRole]);
   const [language, setLanguage] = useState<AppLanguage | null>(() => {
     if (typeof window === "undefined") return null;
-    // Deep link /teachers?lang=en&lec=1 — honour the language from the URL.
-    if (window.location.pathname.startsWith("/teachers")) {
+    // Deep link /teachers?lang=en&lec=1 or /flashcards/7?subject=physics&lang=ar
+    if (window.location.pathname.startsWith("/teachers") || window.location.pathname.startsWith("/flashcards")) {
       const l = new URLSearchParams(window.location.search).get("lang");
       if (l === "ar" || l === "en") {
         localStorage.setItem(LANGUAGE_STORAGE_KEY, l);
@@ -516,9 +516,21 @@ const App = () => {
     }
     return localStorage.getItem(LANGUAGE_STORAGE_KEY) as AppLanguage | null;
   });
-  const [subject, setSubject] = useState<AppSubject | null>(
-    () => (typeof window !== "undefined" ? (localStorage.getItem(SUBJECT_STORAGE_KEY) as AppSubject | null) : null)
-  );
+  const [subject, setSubject] = useState<AppSubject | null>(() => {
+    if (typeof window === "undefined") return null;
+    if (window.location.pathname.startsWith("/flashcards")) {
+      const s = new URLSearchParams(window.location.search).get("subject") as AppSubject | null;
+      if (s) {
+        try {
+          localStorage.setItem(SUBJECT_STORAGE_KEY, s);
+          if (s === "physics") sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, "haydar-diwan");
+        } catch { /* ignore */ }
+        return s;
+      }
+    }
+    return localStorage.getItem(SUBJECT_STORAGE_KEY) as AppSubject | null;
+  });
+
   useEffect(() => {
     const handler = (e: Event) => {
       const s = (e as CustomEvent).detail?.subject as AppSubject | null;
