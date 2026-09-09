@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star } from "lucide-react";
 import { Brain } from "lucide-react";
-import { Plus, X, Loader2 } from "lucide-react";
+import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { setRedoRequired, clearRedoAndZombie } from "@/components/ZombieGuard";
 import { awardPoints } from "@/lib/points";
