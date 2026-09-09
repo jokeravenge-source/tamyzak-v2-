@@ -990,6 +990,8 @@ export type Database = {
           chapter: string
           created_at: string
           created_by: string | null
+          delete_requested_at: string | null
+          delete_requested_by: string | null
           id: string
           language: string
           question: string
@@ -1001,6 +1003,8 @@ export type Database = {
           chapter: string
           created_at?: string
           created_by?: string | null
+          delete_requested_at?: string | null
+          delete_requested_by?: string | null
           id?: string
           language?: string
           question: string
@@ -1012,6 +1016,8 @@ export type Database = {
           chapter?: string
           created_at?: string
           created_by?: string | null
+          delete_requested_at?: string | null
+          delete_requested_by?: string | null
           id?: string
           language?: string
           question?: string
