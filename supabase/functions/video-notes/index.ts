@@ -39,6 +39,45 @@ const isDailyOrDisabledQuota = (payload: any) => {
   return text.includes("PerDay") || text.includes("limit: 0");
 };
 
+const hasArabicLetters = (value: string) => /[\u0600-\u06ff]/.test(value);
+
+const formatEnglishCurriculumParts = (input: any[]) => {
+  const formatted: { title: string; notes: string }[] = [];
+  for (const part of input) {
+    const questions = Array.isArray(part?.review_questions)
+      ? part.review_questions.map((q: unknown) => String(q || "").trim()).filter(Boolean)
+      : [];
+    // Never save an English-curriculum result unless every review question
+    // has actually been returned in English.
+    if (questions.length < 3 || questions.some(hasArabicLetters)) return null;
+
+    let insideReviewSection = false;
+    const cleanNotes = String(part?.notes || "")
+      .split(/\r?\n/)
+      .flatMap((line) => {
+        const trimmed = line.trim();
+        if (/^#{1,4}\s+.*(?:Review Questions|أسئلة مراجعة)/i.test(trimmed)) {
+          if (/خلاصة/.test(trimmed)) return ["## 🧠 الخلاصة"];
+          insideReviewSection = true;
+          return [];
+        }
+        if (insideReviewSection && /^#{1,4}\s+/.test(trimmed)) insideReviewSection = false;
+        if (insideReviewSection) return [];
+        if (/^(?:[-*]\s*)?(?:س|سؤال)\s*\d*\s*[:.)-]/.test(trimmed) || trimmed.includes("؟")) return [];
+        return [line];
+      })
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    formatted.push({
+      title: String(part?.title || "Lecture notes"),
+      notes: `${cleanNotes}\n\n### Review Questions\n${questions.map((question, index) => `${index + 1}. ${question}`).join("\n")}`,
+    });
+  }
+  return formatted.length ? formatted : null;
+};
+
 const extractYouTubeId = (value: string) => {
   try {
     const parsed = new URL(value);
@@ -276,6 +315,7 @@ Deno.serve(async (req) => {
 - اكتب كل مصطلح علمي أو أحيائي باللغتين معاً في كل مرة يظهر فيها، بهذه الصيغة: الاسم العربي (English Term). لا تكتب مصطلحاً علمياً بالعربية وحدها أو بالإنجليزية وحدها.
 - حافظ على الكلمات والمصطلحات الأصلية للمنهج الإنجليزي بدقة، ولا تغيّر معناها العلمي.
 - اكتب أسئلة المراجعة نفسها باللغة الإنجليزية فقط، من دون ترجمة عربية داخل السؤال. ضعها تحت عنوان: ### Review Questions
+- لا تضع أسئلة المراجعة داخل حقل notes. أعدها حصراً في مصفوفة review_questions، ويجب أن تحتوي على 3–6 أسئلة إنجليزية خالية تماماً من الحروف العربية.
 - لا تجعل فقرات الشرح العامة إنجليزية، ولا تجعل أسئلة المراجعة عربية.
 `
       : "";
@@ -361,8 +401,20 @@ ${curriculumLanguageRules}
                 properties: {
                   title: { type: "string", description: "Short title for this segment" },
                   notes: { type: "string", description: "Detailed markdown notes for this segment" },
+                  review_questions: {
+                    type: "array",
+                    description: arabicEnglishCurriculum
+                      ? "Three to six review questions written in English only. Do not use any Arabic letters."
+                      : "Optional review questions.",
+                    items: { type: "string" },
+                    minItems: arabicEnglishCurriculum ? 3 : 0,
+                    maxItems: 6,
+                  },
                 },
-                required: ["title", "notes"], additionalProperties: false,
+                required: arabicEnglishCurriculum
+                  ? ["title", "notes", "review_questions"]
+                  : ["title", "notes"],
+                additionalProperties: false,
               },
             },
           },
@@ -421,7 +473,21 @@ ${curriculumLanguageRules}
             try {
               const args = JSON.parse(toolCall.function.arguments);
               if (Array.isArray(args?.parts) && args.parts.length) {
-                parts = args.parts.filter((p: any) => p?.title && p?.notes);
+                const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
+                const checkedParts = arabicEnglishCurriculum
+                  ? formatEnglishCurriculumParts(candidateParts)
+                  : candidateParts;
+                if (!checkedParts) {
+                  lastGeminiError = {
+                    status: 422,
+                    payload: { error: "Model returned Arabic review questions" },
+                    text,
+                    model: `lovable:${model}`,
+                  };
+                  console.error("Rejected notes with non-English review questions", model);
+                  continue;
+                }
+                parts = checkedParts;
                 notes = parts.map((p) => `# ${p.title}\n\n${p.notes}`).join("\n\n---\n\n");
                 break;
               }
@@ -442,7 +508,7 @@ ${curriculumLanguageRules}
     }
 
     // 2) Direct Gemini fallback using the extracted transcript.
-    if (!notes.trim() && GEMINI_API_KEY && transcriptText) for (const model of geminiDirectModels) {
+    if (!notes.trim() && GEMINI_API_KEY && transcriptText && !arabicEnglishCurriculum) for (const model of geminiDirectModels) {
       const userParts = [{ text: userPrompt }];
       let geminiRes: Response | null = null;
       let text = "";
