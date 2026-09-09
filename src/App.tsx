@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound.tsx";
 import { useState, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
-import Subjects, { SUBJECT_STORAGE_KEY, type AppSubject } from "./pages/Subjects";
+import Subjects, { SUBJECT_STORAGE_KEY, PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, type AppSubject } from "./pages/Subjects";
 import { applyTheme, getInitialTheme } from "./components/ThemePicker";
 import { useEffect } from "react";
 import Auth from "./pages/Auth";
