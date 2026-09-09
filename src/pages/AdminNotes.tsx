@@ -40,12 +40,12 @@ const writeUnknown = (nbId: string, ids: string[]) =>
   localStorage.setItem(storeKey(nbId), JSON.stringify(Array.from(new Set(ids))));
 
 const NOTE_COVER_GRADIENTS = [
-  "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
-  "linear-gradient(135deg, #0f766e 0%, #0891b2 100%)",
-  "linear-gradient(135deg, #be123c 0%, #ea580c 100%)",
-  "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
-  "linear-gradient(135deg, #047857 0%, #65a30d 100%)",
-  "linear-gradient(135deg, #a21caf 0%, #db2777 100%)",
+  "radial-gradient(circle at 18% 16%, rgba(255,255,255,0.32), transparent 30%), linear-gradient(140deg, #172554 0%, #4338ca 52%, #7c3aed 100%)",
+  "radial-gradient(circle at 82% 18%, rgba(255,255,255,0.28), transparent 31%), linear-gradient(140deg, #064e3b 0%, #0f766e 48%, #0891b2 100%)",
+  "radial-gradient(circle at 20% 22%, rgba(255,255,255,0.3), transparent 32%), linear-gradient(140deg, #881337 0%, #be185d 50%, #f97316 100%)",
+  "radial-gradient(circle at 78% 20%, rgba(255,255,255,0.3), transparent 30%), linear-gradient(140deg, #78350f 0%, #d97706 52%, #f59e0b 100%)",
+  "radial-gradient(circle at 16% 18%, rgba(255,255,255,0.3), transparent 30%), linear-gradient(140deg, #14532d 0%, #059669 50%, #65a30d 100%)",
+  "radial-gradient(circle at 82% 18%, rgba(255,255,255,0.3), transparent 30%), linear-gradient(140deg, #4a044e 0%, #86198f 50%, #db2777 100%)",
 ] as const;
 
 const noteCoverGradient = (id: string) => {
@@ -53,6 +53,13 @@ const noteCoverGradient = (id: string) => {
   for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) | 0;
   return NOTE_COVER_GRADIENTS[(hash >>> 0) % NOTE_COVER_GRADIENTS.length];
 };
+
+const hasVisibleBlocks = (blocks: AdminNoteBlock[]) =>
+  blocks.some((block) => {
+    if ("text" in block) return block.text.trim().length > 0;
+    if ("items" in block) return block.items.some((item) => item.trim().length > 0);
+    return false;
+  });
 
 const NoteCard = ({
   note,
@@ -73,6 +80,7 @@ const NoteCard = ({
   const noOpacity = useTransform(x, [-160, -40], [1, 0]);
   const coverUrl = note.background_image_url || fallbackCoverUrl;
   const coverGradient = noteCoverGradient(note.id);
+  const hasContent = hasVisibleBlocks(note.blocks);
 
   return (
     <motion.article
@@ -88,7 +96,7 @@ const NoteCard = ({
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="relative mx-auto flex aspect-[4/5] w-full max-w-xl flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing touch-pan-y"
+      className="relative mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.45)] cursor-grab active:cursor-grabbing touch-pan-y"
     >
       <motion.div
         style={{ opacity: yesOpacity }}
@@ -104,7 +112,7 @@ const NoteCard = ({
       </motion.div>
 
       <div
-        className="relative h-[52%] shrink-0 overflow-hidden"
+        className="relative h-56 shrink-0 overflow-hidden sm:h-64"
         style={{ background: coverUrl ? "hsl(var(--card))" : coverGradient }}
       >
         {coverUrl && (
@@ -117,9 +125,11 @@ const NoteCard = ({
         </div>
       </div>
 
-      <div className="relative flex-1 overflow-y-auto bg-card p-5 md:p-6">
-        <AdminNoteRenderer blocks={note.blocks} language={language} />
-      </div>
+      {hasContent && (
+        <div className="relative max-h-[min(42svh,24rem)] overflow-y-auto bg-card p-5 md:p-6">
+          <AdminNoteRenderer blocks={note.blocks} language={language} />
+        </div>
+      )}
     </motion.article>
   );
 };
@@ -255,7 +265,10 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                       onClick={() => openNotebook(nb)}
                       className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:bg-secondary/50 transition-colors text-start"
                     >
-                      <span className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center text-3xl shrink-0">
+                      <span
+                        className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center text-3xl text-white shadow-inner shrink-0"
+                        style={nb.cover_image_url ? undefined : { background: noteCoverGradient(nb.id) }}
+                      >
                         {nb.cover_image_url ? (
                           <img src={nb.cover_image_url} alt="" className="w-full h-full object-cover" />
                         ) : (
