@@ -816,9 +816,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               </div>
               <textarea value={fcForm.question} onChange={(e) => setFcForm({ ...fcForm, question: e.target.value })} placeholder="Question" rows={2} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
               <textarea value={fcForm.answer} onChange={(e) => setFcForm({ ...fcForm, answer: e.target.value })} placeholder="Answer" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
-              <button onClick={addFc} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
-                <Plus className="w-4 h-4" /> Add flashcard
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={addFc} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
+                  <Plus className="w-4 h-4" /> Add flashcard
+                </button>
+                <button onClick={importCh8Deck} disabled={importingCh8} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-secondary border border-white/10 hover:bg-secondary/80 text-sm disabled:opacity-50">
+                  {importingCh8 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Import Physics Ch8 deck (EN + AR)
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setFcFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs border ${fcFilter === "pending" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground"}`}>
