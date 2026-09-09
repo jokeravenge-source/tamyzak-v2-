@@ -54,10 +54,6 @@ import { ministerialChemCh5Ar } from "@/data/ministerialChemCh5Ar";
 import { ministerialChemCh6Ar } from "@/data/ministerialChemCh6Ar";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { flashcardsArabicIstifhamAr } from "@/data/flashcardsArabicIstifhamAr";
-import { flashcardsArabicLit1Ar } from "@/data/flashcardsArabicLit1Ar";
-import { flashcardsArabicLit1HeritageAr } from "@/data/flashcardsArabicLit1HeritageAr";
-import { flashcardsArabicLit1MeaningsAr } from "@/data/flashcardsArabicLit1MeaningsAr";
-import { flashcardsArabicLit1YearsAr } from "@/data/flashcardsArabicLit1YearsAr";
 import { flashcardsArabicNidaAr } from "@/data/flashcardsArabicNidaAr";
 import { flashcardsArabicTaajjubAr } from "@/data/flashcardsArabicTaajjubAr";
 import { flashcardsArabicTaqdimAr } from "@/data/flashcardsArabicTaqdimAr";
@@ -119,8 +115,7 @@ const biologyPool: QA[] = [
 ];
 
 const arabicPool: QA[] = [
-  ...flashcardsArabicIstifhamAr, ...flashcardsArabicLit1Ar, ...flashcardsArabicLit1HeritageAr,
-  ...flashcardsArabicLit1MeaningsAr, ...flashcardsArabicLit1YearsAr, ...flashcardsArabicNidaAr,
+  ...flashcardsArabicIstifhamAr, ...flashcardsArabicNidaAr,
   ...flashcardsArabicTaajjubAr, ...flashcardsArabicTaqdimAr, ...flashcardsArabicTawkeedAr,
   ...ministerialArabicIstifham, ...ministerialArabicMadhDham, ...ministerialArabicNida,
   ...ministerialArabicTaajjub,

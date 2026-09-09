@@ -67,20 +67,25 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   useEffect(() => { fetchRows(); }, [tab]);
 
   // Flashcards state
-  type FC = { id: string; subject: string; chapter: string; language: string; question: string; answer: string; created_at: string; approved: boolean; created_by: string | null };
+  type FC = { id: string; subject: string; chapter: string; language: string; question: string; answer: string; created_at: string; approved: boolean; created_by: string | null; delete_requested_at: string | null; delete_requested_by: string | null };
   const [fcs, setFcs] = useState<FC[]>([]);
   const [fcLoading, setFcLoading] = useState(false);
+  const [fcActionId, setFcActionId] = useState<string | null>(null);
+  const [fcSearch, setFcSearch] = useState("");
   const [fcForm, setFcForm] = useState({ subject: "physics", chapter: "1", language: "en", question: "", answer: "" });
-  const [fcFilter, setFcFilter] = useState<"pending" | "approved" | "all">("all");
+  const [fcFilter, setFcFilter] = useState<"pending" | "approved" | "deletion" | "all">("all");
   const [fcSubjectFilter, setFcSubjectFilter] = useState<string>("all");
   const [fcChapterFilter, setFcChapterFilter] = useState<string>("all");
   const loadFcs = async () => {
     setFcLoading(true);
     let q = supabase.from("custom_flashcards").select("*").order("created_at", { ascending: false });
-    if (fcFilter !== "all") q = q.eq("approved", fcFilter === "approved");
+    if (fcFilter === "pending") q = q.eq("approved", false);
+    if (fcFilter === "approved") q = q.eq("approved", true);
+    if (fcFilter === "deletion") q = q.not("delete_requested_at", "is", null);
     if (fcSubjectFilter !== "all") q = q.eq("subject", fcSubjectFilter);
     if (fcChapterFilter !== "all") q = q.eq("chapter", fcChapterFilter);
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) toast.error(error.message);
     setFcs((data ?? []) as FC[]);
     setFcLoading(false);
   };
@@ -116,12 +121,51 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     toast.success("Approved");
     setFcs((r) => r.filter((x) => x.id !== id));
   };
-  const delFc = async (id: string) => {
-    if (!confirm("Delete this flashcard?")) return;
-    const { error } = await supabase.from("custom_flashcards").delete().eq("id", id);
+  const requestFcDeletion = async (id: string) => {
+    if (!confirm("Send this flashcard for deletion approval? It will not be deleted yet.")) return;
+    setFcActionId(id);
+    const { data: authData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("custom_flashcards")
+      .update({ delete_requested_at: new Date().toISOString(), delete_requested_by: authData.user?.id ?? null })
+      .eq("id", id);
+    setFcActionId(null);
     if (error) return toast.error(error.message);
+    toast.success("Deletion request submitted. Approval is still required.");
+    loadFcs();
+  };
+  const cancelFcDeletion = async (id: string) => {
+    setFcActionId(id);
+    const { error } = await supabase
+      .from("custom_flashcards")
+      .update({ delete_requested_at: null, delete_requested_by: null })
+      .eq("id", id);
+    setFcActionId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Deletion request cancelled");
+    loadFcs();
+  };
+  const approveFcDeletion = async (id: string) => {
+    const card = fcs.find((item) => item.id === id);
+    if (!card?.delete_requested_at) return toast.error("A deletion request is required first");
+    if (!confirm("Approve this deletion? The flashcard will be permanently deleted.")) return;
+    setFcActionId(id);
+    const { error } = await supabase
+      .from("custom_flashcards")
+      .delete()
+      .eq("id", id)
+      .not("delete_requested_at", "is", null);
+    setFcActionId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Deletion approved and flashcard deleted");
     setFcs((r) => r.filter((x) => x.id !== id));
   };
+
+  const normalizedFcSearch = fcSearch.trim().toLowerCase();
+  const visibleFcs = normalizedFcSearch
+    ? fcs.filter((f) => [f.question, f.answer, f.subject, f.chapter, f.language].some((value) => value.toLowerCase().includes(normalizedFcSearch)))
+    : fcs;
+  const pendingDeletionCount = fcs.filter((f) => Boolean(f.delete_requested_at)).length;
 
   // Notifications state
   type Notif = { id: string; title: string; body: string; link: string | null; created_at: string };
@@ -719,6 +763,20 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <AdminNotesTab />
         ) : tab === "flashcards" ? (
           <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-white/10 bg-secondary/40 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Loaded flashcards</p>
+                <p className="mt-1 text-2xl font-bold">{fcs.length}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-secondary/40 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Awaiting review</p>
+                <p className="mt-1 text-2xl font-bold text-amber-400">{fcs.filter((f) => !f.approved).length}</p>
+              </div>
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Deletion requests</p>
+                <p className="mt-1 text-2xl font-bold text-red-400">{pendingDeletionCount}</p>
+              </div>
+            </div>
             <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur space-y-3">
               <h3 className="font-semibold flex items-center gap-2"><Plus className="w-4 h-4 text-primary" /> Add flashcard</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -737,7 +795,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                 <Plus className="w-4 h-4" /> Add flashcard
               </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => setFcFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs border ${fcFilter === "pending" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground"}`}>
                 <Clock className="w-3 h-3 inline mr-1" /> Pending review
               </button>
@@ -746,6 +804,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               </button>
               <button onClick={() => setFcFilter("all")} className={`px-3 py-1.5 rounded-full text-xs border ${fcFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground"}`}>
                 <Layers className="w-3 h-3 inline mr-1" /> All
+              </button>
+              <button onClick={() => setFcFilter("deletion")} className={`px-3 py-1.5 rounded-full text-xs border ${fcFilter === "deletion" ? "bg-red-600 text-white border-red-600" : "border-red-500/20 bg-red-500/5 text-red-400"}`}>
+                <Trash2 className="w-3 h-3 inline mr-1" /> Deletion requests
               </button>
               <select value={fcSubjectFilter} onChange={(e) => setFcSubjectFilter(e.target.value)} className="ml-auto h-8 px-3 rounded-full bg-secondary/40 border border-white/10 text-xs">
                 <option value="all">All subjects</option>
@@ -756,32 +817,61 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                 {fcChapters.map((c) => <option key={c} value={c}>Ch {c}</option>)}
               </select>
             </div>
+            <label className="relative block">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={fcSearch}
+                onChange={(e) => setFcSearch(e.target.value)}
+                placeholder="Search question, answer, subject, chapter, or language..."
+                className="h-11 w-full rounded-xl border border-white/10 bg-secondary/40 pl-10 pr-10 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/10"
+              />
+              {fcSearch && (
+                <button type="button" onClick={() => setFcSearch("")} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </label>
             {fcLoading ? (
               <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-            ) : fcs.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10">{fcFilter === "pending" ? "No pending submissions." : fcSubjectFilter === "all" ? "No flashcards yet." : `No ${fcSubjectFilter} flashcards found.`}</p>
+            ) : visibleFcs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-10">{fcSearch ? "No flashcards match your search." : fcFilter === "deletion" ? "No deletion requests are waiting." : fcFilter === "pending" ? "No pending submissions." : fcSubjectFilter === "all" ? "No flashcards yet." : `No ${fcSubjectFilter} flashcards found.`}</p>
             ) : (
               <div className="grid gap-3">
-                {fcs.map((f) => (
-                  <article key={f.id} className="rounded-2xl p-4 border border-white/10 bg-secondary/40 backdrop-blur flex flex-wrap items-start gap-4">
+                {visibleFcs.map((f) => (
+                  <article key={f.id} className={`rounded-2xl p-4 border backdrop-blur flex flex-wrap items-start gap-4 ${f.delete_requested_at ? "border-red-500/40 bg-red-500/5" : "border-white/10 bg-secondary/40"}`}>
                     <div className="flex-1 min-w-[200px]">
                       <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground mb-1">
                         <span className="px-2 py-0.5 rounded-full border border-primary/30 text-primary">{f.subject}</span>
                         <span>Ch {f.chapter}</span>
                         <span>· {f.language.toUpperCase()}</span>
                         {!f.approved && <span className="px-2 py-0.5 rounded-full border border-amber-500/40 text-amber-400">Pending</span>}
+                        {f.delete_requested_at && <span className="px-2 py-0.5 rounded-full border border-red-500/40 bg-red-500/10 text-red-400">Deletion requested</span>}
                       </div>
                       <p className="font-medium">{f.question}</p>
                       <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                      {f.delete_requested_at && (
+                        <p className="mt-2 text-xs text-red-300/80">Requested {new Date(f.delete_requested_at).toLocaleString()}</p>
+                      )}
                     </div>
                     {!f.approved && (
                       <button onClick={() => approveFc(f.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
                         <Check className="w-4 h-4" /> Approve
                       </button>
                     )}
-                    <button onClick={() => delFc(f.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 text-sm">
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
+                    {f.delete_requested_at ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button disabled={fcActionId === f.id} onClick={() => cancelFcDeletion(f.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-white/15 text-muted-foreground hover:bg-white/5 hover:text-foreground text-sm disabled:opacity-50">
+                          <RotateCcw className="w-4 h-4" /> Keep card
+                        </button>
+                        <button disabled={fcActionId === f.id} onClick={() => approveFcDeletion(f.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-red-600 text-white hover:bg-red-500 text-sm disabled:opacity-50">
+                          {fcActionId === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Approve & delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button disabled={fcActionId === f.id} onClick={() => requestFcDeletion(f.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 text-sm disabled:opacity-50">
+                        {fcActionId === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Request deletion
+                      </button>
+                    )}
                   </article>
                 ))}
               </div>

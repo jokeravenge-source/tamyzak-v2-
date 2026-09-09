@@ -7,7 +7,7 @@ import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-type Todo = { id: string; text: string; done: boolean; day?: string };
+type Todo = { id: string; text: string; done: boolean; day?: string; source?: string; created_at?: string; updated_at?: string };
 
 const STORAGE_KEY = "app_todos_v1";
 const CELEBRATED_KEY = "app_todos_celebrated_v1";

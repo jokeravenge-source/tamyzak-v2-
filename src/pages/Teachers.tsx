@@ -176,15 +176,20 @@ const Teachers = ({
   };
 
   return (
-    <main className="min-h-screen px-4 py-10 md:py-14 pb-32" dir={isRTL ? "rtl" : "ltr"}>
+    <main
+      className={`min-h-screen px-3 pb-32 sm:px-4 ${view.kind === "topics" && view.teacher.id.startsWith("mohammed-anzi") ? "py-4 md:py-6" : "py-10 md:py-14"}`}
+      dir={isRTL ? "rtl" : "ltr"}
+    >
       <div className="max-w-5xl mx-auto">
-        <button
-          onClick={goBackTop}
-          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-8"
-        >
-          <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
-          {L.back}
-        </button>
+        {!(view.kind === "topics" && view.teacher.id.startsWith("mohammed-anzi")) && (
+          <button
+            onClick={goBackTop}
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold hover:border-primary/40 hover:bg-secondary transition-colors mb-8"
+          >
+            <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
+            {L.back}
+          </button>
+        )}
 
         <AnimatePresence mode="wait">
           {view.kind === "list" && (
@@ -253,6 +258,7 @@ const Teachers = ({
                 teacher={view.teacher}
                 isAdmin={!!isAdmin}
                 ch={view.teacher.id === "mohammed-anzi-ch4" ? 4 : 3}
+                onExit={() => setView({ kind: "list" })}
               />
             ) : (
               <TopicsView
@@ -881,7 +887,7 @@ type AnziStage =
   | { s: "lectures"; lang: AnziLang }
   | { s: "lecture"; lang: AnziLang; n: number };
 
-function AnziFlow({ teacher, isAdmin, ch = 3 }: { teacher: Teacher; isAdmin: boolean; ch?: number }) {
+function AnziFlow({ teacher, isAdmin, ch = 3, onExit }: { teacher: Teacher; isAdmin: boolean; ch?: number; onExit: () => void }) {
   const cfg = chapterCfg(ch);
   const langs = (["ar", "en"] as const).filter((l) => !!cfg.playlists[l]);
   const [stage, setStage] = useState<AnziStage>({ s: "language" });
@@ -903,6 +909,10 @@ function AnziFlow({ teacher, isAdmin, ch = 3 }: { teacher: Teacher; isAdmin: boo
   }, []);
 
   const back = () => {
+    if (stage.s === "language") {
+      onExit();
+      return;
+    }
     setStage((cur) => {
       switch (cur.s) {
         case "language": return cur;
@@ -939,30 +949,30 @@ function AnziFlow({ teacher, isAdmin, ch = 3 }: { teacher: Teacher; isAdmin: boo
       animate={{ opacity: 1, y: 0 }}
       dir={isRTL ? "rtl" : "ltr"}
     >
-      <header className="mb-8">
-        <div className="flex items-center gap-4">
+      <header className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/80 p-3 shadow-sm backdrop-blur md:p-4">
+        <div className="flex min-w-0 items-center gap-3">
           <img
             src={teacher.photo}
             alt={teacher.nameEn}
-            className="w-16 h-16 rounded-2xl object-cover border border-primary/30"
+            className="h-12 w-12 shrink-0 rounded-xl border border-primary/25 object-cover shadow-sm md:h-14 md:w-14"
           />
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.25em] text-primary">Biology</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">Biology</p>
+            <h1 className="truncate text-lg font-bold text-foreground md:text-2xl">
               {isRTL ? teacher.nameAr : teacher.nameEn}
             </h1>
+            <p className="text-xs text-muted-foreground">
+              {isRTL ? `الفصل ${ch}` : `Chapter ${ch}`}
+            </p>
           </div>
         </div>
-      </header>
-
-      {stage.s !== "language" && (
         <button
           onClick={back}
-          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-6"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-semibold transition-all hover:border-primary/40 hover:bg-secondary active:scale-[0.98] md:px-4"
         >
           <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} /> {tr.back}
         </button>
-      )}
+      </header>
 
       {stage.s === "language" && (
         <section>
@@ -1248,21 +1258,28 @@ function AnziLectureView({
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"}>
-      <header className="mb-4">
-        <p className="text-[11px] uppercase tracking-[0.25em] text-primary">
-          {lang === "ar" ? `الفصل ${ch}` : `Chapter ${ch}`}
-        </p>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{label}</h1>
+      <header className="mb-4 flex items-end justify-between gap-4 px-1">
+        <div>
+          <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold text-primary">
+            <span>{lang === "ar" ? `الفصل ${ch}` : `Chapter ${ch}`}</span>
+            <span className="h-1 w-1 rounded-full bg-border" />
+            <span>{lang === "ar" ? "درس فيديو" : "Video lesson"}</span>
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground md:text-3xl">{label}</h1>
+        </div>
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-lg font-extrabold text-primary-foreground shadow-sm md:h-12 md:w-12">
+          {n}
+        </div>
       </header>
 
-      <div className="aspect-video rounded-2xl overflow-hidden border border-border bg-black mb-6">
+      <div className="group relative mb-5 aspect-video overflow-hidden rounded-2xl border border-border/80 bg-black shadow-lg shadow-black/10 md:rounded-3xl">
         <iframe
           key={videoId || `pl-${n}`}
           className="w-full h-full"
           src={
             videoId
               ? `https://www.youtube.com/embed/${videoId}?rel=0`
-              : `https://www.youtube.com/embed/videoseries?list=${playlist}&index=${n}`
+              : `https://www.youtube.com/embed/videoseries?list=${playlist}&index=${Math.max(0, n - 1)}&rel=0`
           }
           title={label}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1270,7 +1287,7 @@ function AnziLectureView({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-6">
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card/70 p-1.5 shadow-sm">
         {(["notes", "exam"] as const).map((k) => {
           const active = tab === k;
           const label =
@@ -1281,12 +1298,13 @@ function AnziLectureView({
             <button
               key={k}
               onClick={() => setTab(k)}
-              className={`h-11 rounded-xl border text-sm font-semibold transition-all ${
+              className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-all active:scale-[0.99] ${
                 active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card hover:border-primary/40 hover:bg-secondary/50"
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-transparent bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >
+              {k === "notes" ? <FileText className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
               {label}
             </button>
           );

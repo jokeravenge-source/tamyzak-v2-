@@ -40,10 +40,6 @@ import { flashcardsChemCh3Ar } from "@/data/flashcardsChemCh3Ar";
 import { flashcardsChemCh4Ar } from "@/data/flashcardsChemCh4Ar";
 import { flashcardsChemCh5Ar } from "@/data/flashcardsChemCh5Ar";
 import { flashcardsChemCh6Ar } from "@/data/flashcardsChemCh6Ar";
-import { flashcardsArabicLit1Ar } from "@/data/flashcardsArabicLit1Ar";
-import { flashcardsArabicLit1YearsAr } from "@/data/flashcardsArabicLit1YearsAr";
-import { flashcardsArabicLit1MeaningsAr } from "@/data/flashcardsArabicLit1MeaningsAr";
-import { flashcardsArabicLit1HeritageAr } from "@/data/flashcardsArabicLit1HeritageAr";
 import { flashcardsArabicTaajjubAr } from "@/data/flashcardsArabicTaajjubAr";
 import { flashcardsArabicTawkeedAr } from "@/data/flashcardsArabicTawkeedAr";
 import { flashcardsArabicTaqdimAr } from "@/data/flashcardsArabicTaqdimAr";
@@ -124,6 +120,10 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     localStorage.setItem(SAVED_KEY, JSON.stringify(next));
   };
   useEffect(() => {
+    if (subject === "arabic" && (chapter === "1" || chapter === "7")) {
+      setExtraCards([]);
+      return;
+    }
     let active = true;
     supabase
       .from("custom_flashcards")
@@ -196,7 +196,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         return {
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "العربية · الأدب" : "Arabic · Literature",
-          cards: flashcardsArabicLit1Ar,
+          cards: [],
         };
       }
 
@@ -246,11 +246,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           eyebrow: language === "ar"
             ? "العربية · الأدب · سنوات · معاني · تراث أدبي"
             : "Arabic · Literature · Years · Meanings · Heritage",
-          cards: [
-            ...flashcardsArabicLit1YearsAr,
-            ...flashcardsArabicLit1MeaningsAr,
-            ...flashcardsArabicLit1HeritageAr,
-          ],
+          cards: [],
         };
       }
 
@@ -340,49 +336,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
-    if (subject === "arabic" && chapter === "7") {
-      return [
-        {
-          key: "lit1-years",
-          label: language === "ar" ? "سنوات" : "Years",
-          cards: flashcardsArabicLit1YearsAr,
-        },
-        {
-          key: "lit1-meanings",
-          label: language === "ar" ? "معاني" : "Meanings",
-          cards: flashcardsArabicLit1MeaningsAr,
-        },
-        {
-          key: "lit1-heritage",
-          label: language === "ar" ? "تراث أدبي" : "Heritage",
-          cards: flashcardsArabicLit1HeritageAr,
-        },
-      ];
-    }
-    if (subject === "arabic" && chapter === "1") {
-      return [
-        {
-          key: "lit1-poems",
-          label: language === "ar" ? "القصائد" : "Poems",
-          cards: flashcardsArabicLit1Ar,
-        },
-        {
-          key: "lit1-years",
-          label: language === "ar" ? "سنوات" : "Years",
-          cards: flashcardsArabicLit1YearsAr,
-        },
-        {
-          key: "lit1-meanings",
-          label: language === "ar" ? "معاني" : "Meanings",
-          cards: flashcardsArabicLit1MeaningsAr,
-        },
-        {
-          key: "lit1-heritage",
-          label: language === "ar" ? "تراث أدبي" : "Heritage",
-          cards: flashcardsArabicLit1HeritageAr,
-        },
-      ];
-    }
     return null;
   }, [subject, chapter, language]);
 

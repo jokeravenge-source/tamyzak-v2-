@@ -1,4 +1,4 @@
-import { GraduationCap, ArrowRight, Sparkles, PlayCircle } from "lucide-react";
+import { GraduationCap, ArrowRight, Sparkles, PlayCircle, Shield } from "lucide-react";
 
 export type AuthRole = "student" | "admin" | "guest";
 
@@ -53,6 +53,13 @@ export const RoleGate = ({ onSelect }: { onSelect: (role: AuthRole) => void }) =
             </div>
             <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
           </div>
+        </button>
+        <button
+          onClick={() => choose("admin")}
+          className="mx-auto mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card/60 px-5 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:bg-card hover:text-primary sm:w-auto"
+        >
+          <Shield className="h-4 w-4 text-primary" />
+          Admin access
         </button>
       </section>
     </main>
