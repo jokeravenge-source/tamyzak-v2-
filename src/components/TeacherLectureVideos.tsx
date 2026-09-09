@@ -109,29 +109,74 @@ async function getFunctionError(error: any, fallback: string) {
   return /non-2xx/i.test(String(error?.message || "")) ? fallback : String(error?.message || fallback);
 }
 
-// ---- Tiny markdown-ish renderer for the raw notes text -----------------
+function renderInline(text: string) {
+  return text
+    .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+    .filter(Boolean)
+    .map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={index} className="font-extrabold text-foreground">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return <code key={index} dir="ltr" className="mx-1 inline-block rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[0.9em] text-primary">{part.slice(1, -1)}</code>;
+      }
+      return <span key={index}>{part}</span>;
+    });
+}
+
+// ---- Safe, lightweight markdown renderer for lecture summaries --------
 function renderMd(md: string, isRTL: boolean) {
   const lines = md.split(/\r?\n/);
   const out: JSX.Element[] = [];
   let buf: string[] = [];
   const flush = (key: string) => {
     if (!buf.length) return;
-    out.push(<p key={key} className="text-sm leading-7 my-2 whitespace-pre-wrap">{buf.join("\n")}</p>);
+    out.push(
+      <p key={key} className="my-2 min-w-0 whitespace-pre-line break-words text-[15px] leading-8 text-foreground/85 [overflow-wrap:anywhere]">
+        {renderInline(buf.join("\n"))}
+      </p>,
+    );
     buf = [];
   };
   lines.forEach((raw, i) => {
-    const line = raw.replace(/\s+$/,"");
-    if (/^#\s+/.test(line)) { flush(`p${i}`); out.push(<h2 key={i} className="text-2xl font-bold mt-6 mb-2 gradient-text">{line.replace(/^#\s+/,"")}</h2>); }
-    else if (/^##\s+/.test(line)) { flush(`p${i}`); out.push(<h3 key={i} className="text-xl font-semibold mt-5 mb-2 text-primary">{line.replace(/^##\s+/,"")}</h3>); }
-    else if (/^###\s+/.test(line)) { flush(`p${i}`); out.push(<h4 key={i} className="text-base font-semibold mt-4 mb-1">{line.replace(/^###\s+/,"")}</h4>); }
-    else if (/^---+$/.test(line)) { flush(`p${i}`); out.push(<hr key={i} className="my-4 border-border" />); }
-    else if (/^[-*•]\s+/.test(line)) { flush(`p${i}`); out.push(<li key={i} className="ml-6 list-disc text-sm leading-7">{line.replace(/^[-*•]\s+/,"")}</li>); }
-    else if (/^\d+\.\s+/.test(line)) { flush(`p${i}`); out.push(<li key={i} className="ml-6 list-decimal text-sm leading-7">{line.replace(/^\d+\.\s+/,"")}</li>); }
-    else if (!line.trim()) flush(`p${i}`);
-    else buf.push(line);
+    const line = raw.replace(/\s+$/, "");
+    if (/^###\s+/.test(line)) {
+      flush(`p${i}`);
+      out.push(<h4 key={i} className="mb-2 mt-6 break-words text-lg font-extrabold text-foreground">{renderInline(line.replace(/^###\s+/, ""))}</h4>);
+    } else if (/^##\s+/.test(line)) {
+      flush(`p${i}`);
+      out.push(<h3 key={i} className="mb-3 mt-7 border-s-4 border-primary ps-3 text-xl font-extrabold text-primary">{renderInline(line.replace(/^##\s+/, ""))}</h3>);
+    } else if (/^#\s+/.test(line)) {
+      flush(`p${i}`);
+      out.push(<h2 key={i} className="mb-4 mt-2 break-words text-2xl font-black leading-tight text-primary md:text-3xl">{renderInline(line.replace(/^#\s+/, ""))}</h2>);
+    } else if (/^---+$/.test(line)) {
+      flush(`p${i}`);
+      out.push(<hr key={i} className="my-5 border-border" />);
+    } else if (/^[-*•]\s+/.test(line)) {
+      flush(`p${i}`);
+      out.push(
+        <div key={i} className="my-2 flex min-w-0 items-start gap-3 rounded-xl bg-secondary/45 px-3 py-2.5 text-[15px] leading-7 text-foreground/90">
+          <span className="mt-[0.65rem] h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+          <p className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{renderInline(line.replace(/^[-*•]\s+/, ""))}</p>
+        </div>,
+      );
+    } else if (/^\d+[.)]\s+/.test(line)) {
+      flush(`p${i}`);
+      const match = line.match(/^(\d+)[.)]\s+(.*)$/);
+      out.push(
+        <div key={i} className="my-2 flex min-w-0 items-start gap-3 rounded-xl border border-border/70 px-3 py-2.5 text-[15px] leading-7 text-foreground/90">
+          <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-lg bg-primary/10 px-1 text-xs font-bold text-primary">{match?.[1]}</span>
+          <p className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{renderInline(match?.[2] || line)}</p>
+        </div>,
+      );
+    } else if (!line.trim()) {
+      flush(`p${i}`);
+    } else {
+      buf.push(line);
+    }
   });
   flush("p-end");
-  return <div dir={isRTL ? "rtl" : "ltr"}>{out}</div>;
+  return <div dir={isRTL ? "rtl" : "ltr"} className="min-w-0 max-w-full overflow-hidden text-start">{out}</div>;
 }
 
 // ---- Main component ----------------------------------------------------
@@ -461,18 +506,23 @@ function VideoNotesModal({
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background/85 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 overflow-x-hidden overflow-y-auto bg-background/90 p-0 backdrop-blur-sm sm:p-4"
       onClick={onClose}
       dir={isRTL ? "rtl" : "ltr"}
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
-        className="max-w-4xl mx-auto my-6 rounded-3xl border border-primary/30 bg-card shadow-2xl"
+        className="mx-auto min-h-screen w-full max-w-4xl overflow-hidden bg-card shadow-2xl sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-primary/30"
       >
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold truncate">{video.title || T.videos}</h3>
-          <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-lg hover:bg-secondary">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-card/95 p-4 backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+              {language === "ar" ? "تلخيص المحاضرة" : "Lecture summary"}
+            </p>
+            <h3 className="truncate font-bold">{video.title || T.videos}</h3>
+          </div>
+          <button onClick={onClose} aria-label={T.close} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border hover:bg-secondary">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -489,7 +539,7 @@ function VideoNotesModal({
           </div>
         )}
 
-        <div className="p-5">
+        <div className="p-3 sm:p-6">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {!pretty ? (
               <button
@@ -525,12 +575,15 @@ function VideoNotesModal({
               <PrettyBlocks blocks={pretty.blocks} images={pretty.images} title={video.title || ""} T={T} />
             </div>
           ) : (
-            <article className="prose prose-invert max-w-none">
+            <article className="max-w-none overflow-hidden rounded-2xl border border-border bg-background/45 shadow-sm">
               {video.notes_parts.map((p, i) => (
-                <div key={i} className="mb-6">
-                  <h3 className="text-lg font-bold text-primary mb-2">{p.title}</h3>
+                <section key={i} className="min-w-0 border-b border-border p-4 last:border-b-0 sm:p-7">
+                  <div className="mb-5 flex min-w-0 items-start gap-3">
+                    <span className="grid h-8 min-w-8 shrink-0 place-items-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">{i + 1}</span>
+                    <h3 className="min-w-0 break-words text-xl font-black leading-tight text-primary sm:text-2xl">{p.title}</h3>
+                  </div>
                   {renderMd(p.notes, isRTL)}
-                </div>
+                </section>
               ))}
             </article>
           )}
