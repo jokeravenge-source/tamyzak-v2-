@@ -6,6 +6,7 @@ import {
   BookOpen, Download, ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensureSession";
 import type { AppLanguage } from "@/components/LanguageGate";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -459,6 +460,13 @@ function VideoNotesModal({
     setBusy(true);
     try {
       const source = (video.transcript?.trim() || rawText).slice(0, 7500);
+      if (!(await ensureFreshSession())) {
+        throw new Error(
+          language === "ar"
+            ? "انتهت الجلسة. سجّل الخروج ثم الدخول مرة أخرى."
+            : "Your session expired. Please sign out and sign in again.",
+        );
+      }
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: { topic: source, language },
       });
