@@ -3,6 +3,7 @@ import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGat
 
 export const SUBJECT_STORAGE_KEY = "app_subject_v1";
 export const PREVIOUS_SUBJECT_STORAGE_KEY = "app_previous_subject_v1";
+export const PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY = "physics_flashcard_teacher_v1";
 
 export type AppSubject = "physics" | "english" | "chemistry" | "biology" | "french" | "arabic" | "islamic" | "revision";
 
@@ -80,6 +81,9 @@ const Subjects = ({
     const previousSubject = localStorage.getItem(SUBJECT_STORAGE_KEY) as AppSubject | null;
     if (previousSubject && previousSubject !== s.code) {
       localStorage.setItem(PREVIOUS_SUBJECT_STORAGE_KEY, previousSubject);
+    }
+    if (s.code === "physics") {
+      sessionStorage.removeItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY);
     }
     localStorage.setItem(SUBJECT_STORAGE_KEY, s.code);
     onSelectSubject(s.code);

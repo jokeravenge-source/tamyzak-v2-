@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
-import { SUBJECT_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
+import {
+  SUBJECT_STORAGE_KEY,
+  PREVIOUS_SUBJECT_STORAGE_KEY,
+  PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
+} from "@/pages/Subjects";
 import SubjectAgent from "@/components/SubjectAgent";
 import { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "@/pages/EnglishCategory";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
 import SeoHead from "@/components/SeoHead";
+import haydarDiwanImage from "@/assets/teachers/haydar-diwan-flashcards.png";
 
 
 const physicsChapters = [
@@ -97,6 +103,10 @@ const teacherBadge: Partial<Record<AppSubject, { ar: string; en: string }>> = {
 const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLanguage; subject: AppSubject; onChangeLanguage: () => void }) => {
   const navigate = useNavigate();
   const text = copy[language];
+  const [physicsTeacherSelected, setPhysicsTeacherSelected] = useState(() =>
+    subject !== "physics" || sessionStorage.getItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY) === "haydar-diwan"
+  );
+  const showPhysicsTeacherPicker = subject === "physics" && !physicsTeacherSelected;
   const badge = (teacherBadge[subject] ?? { ar: "", en: "" })[language];
   const englishCategory = (typeof window !== "undefined"
     ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null)
@@ -114,7 +124,13 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
 
   const handleChangeLanguage = () => {
     localStorage.removeItem(SUBJECT_STORAGE_KEY);
+    sessionStorage.removeItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY);
     onChangeLanguage();
+  };
+
+  const chooseHaydarDiwan = () => {
+    sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, "haydar-diwan");
+    setPhysicsTeacherSelected(true);
   };
 
   const handleClick = (chapter: typeof chapters[number]) => {
@@ -156,16 +172,53 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
       <header className="text-center max-w-3xl mx-auto z-10 relative animate-fade-up">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{badge}</span>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {showPhysicsTeacherPicker ? (language === "ar" ? "الفيزياء" : "Physics") : badge}
+          </span>
         </div>
         <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">
-          {text.title}
+          {showPhysicsTeacherPicker
+            ? (language === "ar" ? "اختر المدرّس" : "Choose your teacher")
+            : text.title}
         </h1>
         <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
-          {text.description}
+          {showPhysicsTeacherPicker
+            ? (language === "ar"
+                ? "اختر المدرّس لعرض فصول الفيزياء وبطاقاتها التعليمية."
+                : "Choose a teacher to view all eight physics chapters and their flashcards.")
+            : text.description}
         </p>
       </header>
 
+      {showPhysicsTeacherPicker ? (
+        <section className="relative z-10 mx-auto mt-12 flex max-w-5xl justify-center md:mt-16">
+          <button
+            type="button"
+            onClick={chooseHaydarDiwan}
+            className="group relative aspect-square w-full max-w-[390px] overflow-hidden rounded-[2rem] border border-primary/40 bg-secondary text-start shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-primary hover:shadow-[var(--shadow-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+            aria-label={language === "ar" ? "فتح بطاقات حيدر ديوان" : "Open Haydar Diwan flashcards"}
+          >
+            <img
+              src={haydarDiwanImage}
+              alt="حيدر ديوان"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-6 text-white md:p-7" dir="rtl">
+              <div>
+                <span className="mb-2 inline-flex rounded-full border border-white/25 bg-black/25 px-3 py-1 text-[11px] font-bold backdrop-blur-md">
+                  8 {language === "ar" ? "فصول" : "Chapters"}
+                </span>
+                <h2 className="text-3xl font-black drop-shadow-lg">حيدر ديوان</h2>
+                <p className="mt-1 text-sm font-medium text-white/80">Hydar Diwan · Physics Teacher</p>
+              </div>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 backdrop-blur-md transition-transform duration-300 group-hover:-translate-x-1">
+                <ArrowRight className="h-5 w-5 rotate-180" />
+              </span>
+            </div>
+          </button>
+        </section>
+      ) : (
       <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
         {chapters.map((c, i) => {
           const isAvailable = !c.locked;
@@ -223,11 +276,12 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
           );
         })}
       </section>
+      )}
 
       <footer className="text-center mt-16 text-xs text-muted-foreground tracking-widest z-10 relative">
         {"\n"}
       </footer>
-      <SubjectAgent subject={subject} language={language} />
+      {!showPhysicsTeacherPicker && <SubjectAgent subject={subject} language={language} />}
     </main>
     </>
   );
