@@ -14,6 +14,8 @@ import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
+import { flashcardsCh8 } from "@/data/flashcardsCh8";
+import { flashcardsCh8Ar } from "@/data/flashcardsCh8Ar";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -159,6 +161,29 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     if (error) return toast.error(error.message);
     toast.success("Deletion approved and flashcard deleted");
     setFcs((r) => r.filter((x) => x.id !== id));
+  };
+
+  const [importingCh8, setImportingCh8] = useState(false);
+  const importCh8Deck = async () => {
+    if (!confirm("Import the built-in Physics Chapter 8 flashcards (English + Arabic) into the admin-managed list? Existing cards will be skipped.")) return;
+    setImportingCh8(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { data: existing } = await supabase.from("custom_flashcards").select("question, language").eq("subject", "physics").eq("chapter", "8");
+    const seen = new Set((existing ?? []).map((r: any) => `${r.language}::${(r.question ?? "").trim().toLowerCase()}`));
+    const rows = [
+      ...flashcardsCh8.map((c) => ({ subject: "physics", chapter: "8", language: "en", question: c.q, answer: c.a })),
+      ...flashcardsCh8Ar.map((c) => ({ subject: "physics", chapter: "8", language: "ar", question: c.q, answer: c.a })),
+    ].filter((r) => !seen.has(`${r.language}::${r.question.trim().toLowerCase()}`))
+      .map((r) => ({ ...r, created_by: u.user?.id ?? null, approved: true }));
+    if (rows.length === 0) {
+      setImportingCh8(false);
+      return toast.success("All Chapter 8 cards are already imported.");
+    }
+    const { error } = await supabase.from("custom_flashcards").insert(rows);
+    setImportingCh8(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Imported ${rows.length} Chapter 8 flashcards (EN + AR)`);
+    loadFcs();
   };
 
   const normalizedFcSearch = fcSearch.trim().toLowerCase();
