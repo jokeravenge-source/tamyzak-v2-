@@ -142,16 +142,16 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
   const animClass = direction === "right" ? "animate-card-slide-in-right" : "animate-card-slide-in-left";
 
   return (
-    <div key={index} className={`perspective w-full max-w-2xl overflow-hidden will-change-transform ${animClass} flex flex-col gap-3`}>
+    <div key={index} className={`perspective flex w-full max-w-2xl flex-col gap-3 overflow-hidden will-change-transform ${animClass}`}>
       <button
         onClick={() => setFlipped((f) => !f)}
         aria-label="Flip card"
-        className="relative w-full h-[420px] md:h-[480px] preserve-3d transition-transform duration-700 ease-[cubic-bezier(0.4,0.0,0.2,1)] focus:outline-none group"
+        className="group relative h-[360px] w-full preserve-3d transition-transform duration-700 ease-[cubic-bezier(0.4,0.0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-[400px] md:h-[440px]"
         style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
       >
         {/* Front */}
         <div
-          className="absolute inset-0 backface-hidden rounded-[var(--radius)] p-8 md:p-12 flex flex-col justify-between border border-border"
+          className="absolute inset-0 flex backface-hidden flex-col justify-between rounded-3xl border border-border p-6 sm:p-8 md:p-10"
           style={{ background: "var(--gradient-card-front)", boxShadow: "var(--shadow-card)", color: "hsl(var(--card-front-fg))" }}
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] opacity-60">
@@ -159,7 +159,7 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             <span className="font-mono">{String(index + 1).padStart(2, "0")} / {total}</span>
           </div>
           <div className="flex-1 flex items-center justify-center px-2">
-            <p className="text-2xl md:text-3xl font-semibold text-center leading-snug">
+            <p className="text-center text-xl font-semibold leading-relaxed sm:text-2xl md:text-3xl">
               {question}
             </p>
           </div>
@@ -170,7 +170,7 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
 
         {/* Back */}
         <div
-          className="absolute inset-0 backface-hidden rotate-y-180 rounded-[var(--radius)] p-8 md:p-12 flex flex-col justify-between border border-border"
+          className="absolute inset-0 flex backface-hidden rotate-y-180 flex-col justify-between rounded-3xl border border-border p-6 sm:p-8 md:p-10"
           style={{ background: "var(--gradient-card-back)", boxShadow: "var(--shadow-card)", color: "hsl(var(--card-back-fg))" }}
         >
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] opacity-70">
@@ -178,7 +178,7 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             <span className="font-mono">{String(index + 1).padStart(2, "0")} / {total}</span>
           </div>
           <div className="flex-1 flex items-center justify-center px-2">
-            <p className="text-2xl md:text-3xl font-semibold text-center leading-snug">
+            <p className="text-center text-xl font-semibold leading-relaxed sm:text-2xl md:text-3xl">
               {answer}
             </p>
           </div>
@@ -188,7 +188,7 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
         </div>
       </button>
 
-      <div className="flex flex-wrap items-center justify-center gap-2" dir={language === "ar" ? "rtl" : "ltr"}>
+      <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur" dir={language === "ar" ? "rtl" : "ltr"}>
         {onRate && flipped && (
           <div className="w-full grid grid-cols-4 gap-2 mb-1">
             {([

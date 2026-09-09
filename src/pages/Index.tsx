@@ -68,7 +68,7 @@ import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
-import { useTodos, topicProgress } from "@/lib/todoTopicProgress";
+import { useTodos } from "@/lib/todoTopicProgress";
 import {
   cardKey as srsCardKey,
   defaultState,
@@ -527,7 +527,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     setDirection("right");
   };
   const reset = () => {
-    setCards(deck.cards);
+    setCards(activeTopicCards);
     setIndex(0);
     setDirection("left");
   };
@@ -571,16 +571,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
   const card = cards[index];
   const cardProgress = cards.length ? ((index + 1) / cards.length) * 100 : 0;
-  // Tie the main progress indicator directly to the user's To-Do List —
-  // overall completion of the weekly tasks. Falls back to card position
-  // only when no todos exist.
+  // Keep deck progress and weekly to-do progress separate. Mixing them made
+  // the card counter appear to jump when an unrelated task was completed.
   const totalTodos = todos.length;
   const doneTodos = todos.filter((t) => t.done).length;
-  const todoPct = totalTodos > 0 ? (doneTodos / totalTodos) * 100 : 0;
-  const usingTodos = totalTodos > 0;
-  const progress = usingTodos ? todoPct : cardProgress;
-  const todoDone = doneTodos;
-  const todoMatched = totalTodos;
+  const progress = cardProgress;
   const isSaved = !!card && saved.some((s) => s.q === card.q && s.a === card.a);
   const toggleSave = () => {
     if (!card) return;
@@ -669,7 +664,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-between px-4 py-8 md:py-12 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
+    <main className="relative min-h-screen overflow-x-hidden bg-background px-3 pb-12 pt-4 sm:px-6 md:pt-6" dir={language === "ar" ? "rtl" : "ltr"}>
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
@@ -685,13 +680,13 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-secondary/60 backdrop-blur text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 hover:-translate-x-0.5 transition-all duration-300 animate-fade-up"
+        className="fixed left-4 top-4 z-30 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/90 px-3 text-sm font-semibold text-foreground shadow-sm backdrop-blur-xl transition-colors hover:border-primary/40 hover:bg-secondary sm:left-6 sm:top-6"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="hidden sm:inline">{text.chapters}</span>
       </Link>
 
-      <header className="text-center z-10 animate-fade-up">
+      <header className="relative z-10 mx-auto w-full max-w-3xl rounded-3xl border border-border bg-card/80 px-4 pb-4 pt-14 text-center shadow-sm backdrop-blur-xl animate-fade-up sm:px-6 sm:pt-5">
         <SeoHead
           path={chapter ? `/flashcards/${chapter}` : "/flashcards"}
           title={`${deck.title}${SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""} | ${language === "ar" ? "فلاش كاردات تميزك" : "Tamayzak flashcards"}`}
@@ -699,9 +694,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             ? `فلاش كاردات ${deck.title} لطلاب السادس العلمي في العراق مع مراجعة متباعدة ومتابعة تقدم على منصة تميزك.`
             : `${deck.title} flashcards for Iraq's Sixth Scientific students, with spaced repetition and progress tracking on Tamayzak.`}
         />
-        <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
-        <h1 className="text-4xl md:text-5xl font-bold gradient-text">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
-        <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-secondary/60 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.24em] text-primary">{deck.eyebrow}</p>
+        <h1 className="text-2xl font-black text-foreground sm:text-3xl">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
           <span className="text-foreground">
             {(language === "ar"
               ? { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", revision: "المراجعة" }
@@ -714,60 +709,53 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         <div className="mt-3 flex justify-center">
           <PointsHint action="flashcard_session" language={language === "ar" ? "ar" : "en"} />
         </div>
+        <div className="mt-4 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-background/60 rtl:divide-x-reverse">
+          <div className="px-2 py-3">
+            <strong className="block text-lg font-black tabular-nums text-foreground">{cards.length}</strong>
+            <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "بطاقة" : "Cards"}</span>
+          </div>
+          <div className="px-2 py-3">
+            <strong className="block text-lg font-black tabular-nums text-primary">{queueSize}</strong>
+            <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "مراجعة اليوم" : "Due today"}</span>
+          </div>
+          <div className="px-2 py-3">
+            <strong className="block text-lg font-black tabular-nums text-foreground">{totalTodos ? `${doneTodos}/${totalTodos}` : saved.length}</strong>
+            <span className="text-[10px] font-semibold text-muted-foreground">
+              {totalTodos ? (language === "ar" ? "المهام" : "To-dos") : (language === "ar" ? "محفوظة" : "Saved")}
+            </span>
+          </div>
+        </div>
       </header>
 
       {hasTopics && !savedView && (
         <nav
-          className="w-full max-w-3xl z-10 overflow-x-auto whitespace-nowrap px-1 mt-4 [scrollbar-width:thin]"
+          className="relative z-10 mx-auto mt-4 w-full max-w-3xl rounded-2xl border border-border bg-card/75 p-3 shadow-sm backdrop-blur-xl"
           aria-label={language === "ar" ? "المواضيع" : "Topics"}
         >
-          <div className="inline-flex gap-2">
+          <div className="mb-2 flex items-center justify-between gap-3 px-1">
+            <span className="text-xs font-bold text-foreground">
+              {language === "ar" ? "اختر الموضوع" : "Choose a topic"}
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {topicResult.topics.length} {language === "ar" ? "مواضيع" : "topics"}
+            </span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
             {topicResult.topics.map((t) => {
               const active = t.key === topicKey;
-              const ctx = `${subject} ${deck.eyebrow}`;
-              const { matched, done } = topicProgress(t.label, todos, ctx);
-              const pct = matched > 0 ? Math.round((done / matched) * 100) : 0;
               return (
                 <button
                   key={t.key}
                   onClick={() => setTopicKey(t.key)}
                   className={
-                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 flex flex-col items-stretch gap-1 min-w-[88px] " +
+                    "shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200 " +
                     (active
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-secondary/60 border-white/10 text-muted-foreground hover:text-foreground hover:border-primary/40")
-                  }
-                  title={
-                    matched > 0
-                      ? (language === "ar"
-                          ? `${done}/${matched} مهمة منجزة`
-                          : `${done}/${matched} todos done`)
-                      : (language === "ar" ? "لا توجد مهام مرتبطة" : "No related todos")
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-border bg-background/70 text-muted-foreground hover:border-primary/40 hover:text-foreground")
                   }
                 >
-                  <span className="leading-tight">
-                    {t.label}
-                    <span className="ms-1 opacity-70">· {t.cards.length}</span>
-                  </span>
-                  <span
-                    className={
-                      "h-1 rounded-full overflow-hidden " +
-                      (active ? "bg-primary-foreground/25" : "bg-white/10")
-                    }
-                    aria-label={
-                      matched > 0
-                        ? `${done} of ${matched} related todos done`
-                        : "no related todos"
-                    }
-                  >
-                    <span
-                      className={
-                        "block h-full transition-all duration-500 " +
-                        (active ? "bg-primary-foreground" : "bg-primary")
-                      }
-                      style={{ width: `${pct}%` }}
-                    />
-                  </span>
+                  {t.label}
+                  <span className="ms-1 opacity-65">{t.cards.length}</span>
                 </button>
               );
             })}
@@ -776,7 +764,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       )}
 
       <section
-        className="w-full flex flex-col items-center gap-8 z-10 my-8 overflow-hidden"
+        className="relative z-10 mx-auto my-5 flex w-full max-w-3xl flex-col items-center gap-4 overflow-hidden"
         style={(() => {
           // Subject-tinted flashcard back. Overrides only the back gradient
           // and ensures readable foreground, while keeping the user's chosen
@@ -794,106 +782,85 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           } as React.CSSProperties;
         })()}
       >
-        <Flashcard
-          question={card.q}
-          answer={card.a}
-          index={index}
-          total={cards.length}
-          direction={direction}
-          language={language}
-          onRate={savedView ? undefined : handleRate}
-          intervalHints={intervalHints}
-        />
+        {card ? (
+          <Flashcard
+            question={card.q}
+            answer={card.a}
+            index={index}
+            total={cards.length}
+            direction={direction}
+            language={language}
+            onRate={savedView ? undefined : handleRate}
+            intervalHints={intervalHints}
+          />
+        ) : (
+          <div className="flex min-h-72 w-full flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/70 px-6 text-center shadow-sm">
+            <Bookmark className="mb-3 size-8 text-muted-foreground" />
+            <h2 className="font-bold text-foreground">
+              {language === "ar" ? "لا توجد بطاقات هنا بعد" : "No cards here yet"}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {language === "ar" ? "ارجع إلى كل البطاقات أو أضف بطاقة جديدة." : "Return to all cards or submit a new one."}
+            </p>
+          </div>
+        )}
 
         {/* Controls */}
-        <div className="flex items-center gap-4 md:gap-6" dir="ltr">
+        <div className="flex w-full max-w-xl items-center gap-3 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur-xl" dir="ltr">
           <button
             onClick={prev}
+            disabled={!card}
             aria-label="Previous card"
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-secondary/60 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-primary hover:scale-110 hover:-translate-x-1 transition-all duration-300 group"
+            className="group flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronLeft className="w-6 h-6 group-hover:text-primary-foreground" />
+            <ChevronLeft className="size-5" />
           </button>
 
-          <div className="relative w-20 h-20 flex items-center justify-center">
-            <svg className="absolute inset-0 -rotate-90" viewBox="0 0 36 36" aria-hidden>
-              <circle
-                cx="18" cy="18" r="16"
-                fill="none"
-                stroke="hsl(var(--secondary))"
-                strokeWidth="2.5"
-                className="opacity-60"
+          <div className="min-w-0 flex-1 px-1 text-center">
+            <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+              <span>{language === "ar" ? "تقدم البطاقات" : "Card progress"}</span>
+              <span className="font-mono tabular-nums text-foreground">
+                {card ? index + 1 : 0} / {cards.length}
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%`, background: "var(--gradient-primary)" }}
               />
-              <circle
-                cx="18" cy="18" r="16"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeDasharray={`${(progress / 100) * 100.53} 100.53`}
-                style={{ transition: "stroke-dasharray 500ms ease-out" }}
-              />
-            </svg>
-            <div className="text-center leading-tight">
-              <div className="text-lg font-mono font-bold gradient-text">
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <div className="text-[10px] text-muted-foreground tracking-widest">
-                {usingTodos
-                  ? `${todoDone}/${todoMatched}`
-                  : `${text.of} ${cards.length}`}
-              </div>
             </div>
           </div>
 
           <button
             onClick={next}
+            disabled={!card}
             aria-label="Next card"
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-secondary/60 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-primary hover:scale-110 hover:translate-x-1 transition-all duration-300 group"
+            className="group flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground transition-colors hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronRight className="w-6 h-6 group-hover:text-primary-foreground" />
+            <ChevronRight className="size-5" />
           </button>
-        </div>
-
-        {/* Linear progress mirrors the circle (todo-driven when available) */}
-        <div className="w-full max-w-2xl flex flex-col items-center gap-1">
-          <div className="w-full h-1 bg-secondary/60 rounded-full overflow-hidden">
-            <div
-              className="h-full transition-all duration-500 ease-out rounded-full"
-              style={{ width: `${progress}%`, background: "var(--gradient-primary)" }}
-            />
-          </div>
-          <div className="text-[10px] text-muted-foreground tracking-wider">
-            {usingTodos
-              ? (language === "ar"
-                  ? `تقدم المهام: ${todoDone}/${todoMatched}`
-                  : `Todos: ${todoDone}/${todoMatched}`)
-              : (language === "ar"
-                  ? `بطاقة ${index + 1} من ${cards.length}`
-                  : `Card ${index + 1} of ${cards.length}`)}
-          </div>
         </div>
       </section>
 
-      <footer className="w-full max-w-2xl overflow-x-auto overflow-y-hidden flex items-center gap-3 z-10 animate-fade-up whitespace-nowrap px-1 pb-1 [scrollbar-width:thin]">
+      <footer className="relative z-10 mx-auto grid w-full max-w-3xl grid-cols-2 gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur-xl sm:flex sm:flex-wrap sm:justify-center">
         <Button
           variant={reviewMode ? "default" : "ghost"}
           size="sm"
           onClick={reviewMode ? exitReview : startReview}
-          className="gap-2 shrink-0"
+          className="col-span-2 gap-2 sm:col-span-1"
         >
           <Brain className="w-4 h-4" />
           {reviewMode
             ? (language === "ar" ? `إنهاء المراجعة (${cards.length})` : `Exit review (${cards.length})`)
             : (language === "ar" ? `مراجعة اليوم (${queueSize})` : `Review today (${queueSize})`)}
         </Button>
-        <Button variant="ghost" size="sm" onClick={shuffle} className="gap-2 shrink-0">
+        <Button variant="ghost" size="sm" onClick={shuffle} className="gap-2" disabled={!card}>
           <Shuffle className="w-4 h-4" /> {text.shuffle}
         </Button>
-        <Button variant="ghost" size="sm" onClick={reset} className="gap-2 shrink-0">
+        <Button variant="ghost" size="sm" onClick={reset} className="gap-2" disabled={!card}>
           <RotateCcw className="w-4 h-4" /> {text.reset}
         </Button>
-        <Button variant="ghost" size="sm" onClick={toggleSave} className="gap-2 shrink-0" disabled={!card}>
+        <Button variant="ghost" size="sm" onClick={toggleSave} className="gap-2" disabled={!card}>
           {isSaved ? <BookmarkCheck className="w-4 h-4 text-primary" /> : <Bookmark className="w-4 h-4" />}
           {language === "ar" ? (isSaved ? "محفوظة" : "حفظ") : (isSaved ? "Saved" : "Save")}
         </Button>
@@ -901,14 +868,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           variant={savedView ? "default" : "ghost"}
           size="sm"
           onClick={() => setSavedView((v) => !v)}
-          className="gap-2 shrink-0"
+          className="gap-2"
         >
           <Star className="w-4 h-4" />
           {language === "ar"
             ? (savedView ? "كل البطاقات" : `المحفوظة (${saved.length})`)
             : (savedView ? "All cards" : `Saved (${saved.length})`)}
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setShowSubmit(true)} className="gap-2 shrink-0">
+        <Button variant="ghost" size="sm" onClick={() => setShowSubmit(true)} className="gap-2">
           <Plus className="w-4 h-4" />
           {language === "ar" ? "أضف بطاقة" : "Submit card"}
         </Button>
