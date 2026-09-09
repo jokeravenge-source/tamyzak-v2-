@@ -901,6 +901,19 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           <Plus className="w-4 h-4" />
           {language === "ar" ? "أضف بطاقة" : "Submit card"}
         </Button>
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={deleteCard}
+            disabled={!deletableRow || deleting}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {language === "ar" ? "حذف البطاقة" : "Delete card"}
+          </Button>
+        )}
+
       </footer>
 
       {showSubmit && (
