@@ -708,6 +708,13 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
     }
     setAiLoading(true);
     try {
+      if (!(await ensureFreshSession())) {
+        throw new Error(
+          language === "ar"
+            ? "انتهت الجلسة. سجّل الخروج ثم الدخول مرة أخرى."
+            : "Your session expired. Please sign out and sign in again.",
+        );
+      }
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: { topic, language },
       });
