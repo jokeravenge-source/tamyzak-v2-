@@ -709,7 +709,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         <div className="mt-3 flex justify-center">
           <PointsHint action="flashcard_session" language={language === "ar" ? "ar" : "en"} />
         </div>
-        <div className="mt-4 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-background/60 rtl:divide-x-reverse">
+        <div className="mt-4 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-background/60 rtl:divide-x-reverse">
           <div className="px-2 py-3">
             <strong className="block text-lg font-black tabular-nums text-foreground">{cards.length}</strong>
             <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "بطاقة" : "Cards"}</span>
@@ -717,12 +717,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           <div className="px-2 py-3">
             <strong className="block text-lg font-black tabular-nums text-primary">{queueSize}</strong>
             <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "مراجعة اليوم" : "Due today"}</span>
-          </div>
-          <div className="px-2 py-3">
-            <strong className="block text-lg font-black tabular-nums text-foreground">{totalTodos ? `${doneTodos}/${totalTodos}` : saved.length}</strong>
-            <span className="text-[10px] font-semibold text-muted-foreground">
-              {totalTodos ? (language === "ar" ? "المهام" : "To-dos") : (language === "ar" ? "محفوظة" : "Saved")}
-            </span>
           </div>
         </div>
       </header>
