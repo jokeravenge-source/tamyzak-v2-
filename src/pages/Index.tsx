@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star } from "lucide-react";
 import { Brain } from "lucide-react";
-import { Plus, X, Loader2 } from "lucide-react";
+import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { setRedoRequired, clearRedoAndZombie } from "@/components/ZombieGuard";
 import { awardPoints } from "@/lib/points";
@@ -108,7 +108,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   useFeatureUsed("flashcards");
   const { chapter = "3" } = useParams();
   const baseDeck = decks[chapter] ?? decks["3"];
-  const [extraCards, setExtraCards] = useState<typeof flashcards>([]);
+  const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
+  const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const SAVED_KEY = "saved_flashcards_v1";
   type SavedCard = { q: string; a: string; subject: string; chapter: string };
   const [saved, setSaved] = useState<SavedCard[]>(() => {
@@ -120,14 +122,24 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     localStorage.setItem(SAVED_KEY, JSON.stringify(next));
   };
   useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
+      if (active) setIsAdmin(!!data);
+    })();
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
     if (subject === "arabic" && (chapter === "1" || chapter === "7")) {
-      setExtraCards([]);
+      setExtraRows([]);
       return;
     }
     let active = true;
     supabase
       .from("custom_flashcards")
-      .select("question, answer")
+      .select("id, question, answer")
       .eq("subject", subject)
       .eq("chapter", String(chapter))
       .eq("language", language)
@@ -135,10 +147,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       .order("created_at", { ascending: true })
       .then(({ data }) => {
         if (!active) return;
-        setExtraCards((data ?? []).map((r) => ({ q: r.question, a: r.answer })));
+        setExtraRows((data ?? []).map((r) => ({ id: r.id, q: r.question, a: r.answer })));
       });
     return () => { active = false; };
   }, [subject, chapter, language]);
+
   const loading = false;
   const useRemote = false;
 
@@ -586,6 +599,21 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     }
   };
 
+  // Admin-only: remove a user-submitted card from this deck.
+  const deletableRow = card ? extraRows.find((r) => r.q === card.q && r.a === card.a) : undefined;
+  const [deleting, setDeleting] = useState(false);
+  const deleteCard = async () => {
+    if (!deletableRow) return;
+    if (!window.confirm(language === "ar" ? "حذف هذه البطاقة نهائياً؟" : "Delete this flashcard permanently?")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("custom_flashcards").delete().eq("id", deletableRow.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    setExtraRows((rows) => rows.filter((r) => r.id !== deletableRow.id));
+    toast.success(language === "ar" ? "تم حذف البطاقة" : "Flashcard deleted");
+  };
+
+
   // User-submitted flashcards (await admin approval)
   const [showSubmit, setShowSubmit] = useState(false);
   const [showRating, setShowRating] = useState(false);
@@ -873,6 +901,19 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           <Plus className="w-4 h-4" />
           {language === "ar" ? "أضف بطاقة" : "Submit card"}
         </Button>
+        {isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={deleteCard}
+            disabled={!deletableRow || deleting}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {language === "ar" ? "حذف البطاقة" : "Delete card"}
+          </Button>
+        )}
+
       </footer>
 
       {showSubmit && (
