@@ -34,7 +34,7 @@ export const AdminNoteRenderer = ({
   return (
     <article
       dir={isRTL ? "rtl" : "ltr"}
-      className="prose prose-invert max-w-none space-y-4 text-foreground"
+      className="max-w-none space-y-4 text-foreground"
     >
       {blocks.map((b, i) => {
         if (b.type === "callout") {
@@ -103,7 +103,7 @@ export const AdminNoteRenderer = ({
           );
         }
         if (b.type === "divider") {
-          return <hr key={i} className="border-white/10 my-6" />;
+          return <hr key={i} className="my-6 border-border" />;
         }
         return null;
       })}
