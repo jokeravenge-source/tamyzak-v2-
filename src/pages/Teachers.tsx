@@ -1063,8 +1063,8 @@ function AnziBulkNotesGenerator({
 }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
-  const [summary, setSummary] = useState<{ created: number; skipped: number; failed: number } | null>(null);
-  const label = lang === "ar" ? "توليد ملاحظات لكل المحاضرات" : "Generate notes for all lectures";
+  const [summary, setSummary] = useState<{ created: number; updated: number; skipped: number; failed: number } | null>(null);
+  const label = lang === "ar" ? "توليد ملاحظات لكل المحاضرات" : "Regenerate bilingual notes";
   const running = lang === "ar" ? "جاري التوليد" : "Generating";
   const noFetch = lang === "ar" ? "تعذّر جلب قائمة الفيديوهات." : "Could not fetch playlist videos.";
 
@@ -1083,30 +1083,40 @@ function AnziBulkNotesGenerator({
       const videos: { id: string; title: string }[] = Array.isArray(listJson?.videos) ? listJson.videos : [];
       if (!videos.length) { toast.error(noFetch); return; }
 
-      // 2) Existing rows so we skip lectures that already have a video saved
+      // Arabic keeps the existing skip behaviour. English notes are regenerated
+      // so previously saved Al-Anzi lectures receive the new bilingual format.
       const total = Math.min(chapterCfg(ch).counts[lang], videos.length);
       const topicKeys = Array.from({ length: total }, (_, i) => `anzi-${lang}-ch${ch}-lec${i + 1}-study`);
       const { data: existing } = await supabase
         .from("teacher_topic_videos")
-        .select("topic_key")
+        .select("id, topic_key")
         .eq("teacher_id", teacherId)
         .in("topic_key", topicKeys);
-      const already = new Set((existing ?? []).map((r: any) => r.topic_key));
+      const existingByTopic = new Map((existing ?? []).map((r: any) => [r.topic_key, r.id]));
 
       const { data: u } = await supabase.auth.getUser();
-      let created = 0, skipped = 0, failed = 0;
+      let created = 0, updated = 0, skipped = 0, failed = 0;
       setProgress({ done: 0, total, label: "…" });
 
       for (let i = 0; i < total; i++) {
         const n = i + 1;
         const topicKey = topicKeys[i];
         setProgress({ done: i, total, label: `${lang === "ar" ? "المحاضرة" : "Lecture"} ${n}` });
-        if (already.has(topicKey)) { skipped++; continue; }
+        const existingId = existingByTopic.get(topicKey);
+        if (existingId && lang === "ar") { skipped++; continue; }
         const v = videos[i];
         const url = `https://www.youtube.com/watch?v=${v.id}`;
         try {
           const { data, error } = await supabase.functions.invoke("video-notes", {
-            body: { url, language: lang, mode: "notes", adminGeneration: true },
+            body: {
+              url,
+              language: lang,
+              mode: "notes",
+              adminGeneration: true,
+              notesStyle: lang === "en"
+                ? "arabic-explanation-english-curriculum"
+                : "default",
+            },
           });
           if (error) throw error;
           if (data?.error) throw new Error(data.error);
@@ -1114,7 +1124,7 @@ function AnziBulkNotesGenerator({
             ? data.parts
             : (data?.notes ? [{ title: v.title || `Lecture ${n}`, notes: data.notes }] : []);
           if (!parts.length) throw new Error("empty");
-          const { error: insErr } = await supabase.from("teacher_topic_videos").insert({
+          const row = {
             teacher_id: teacherId,
             topic_key: topicKey,
             youtube_url: url,
@@ -1124,20 +1134,30 @@ function AnziBulkNotesGenerator({
             notes_parts: parts as any,
             approved: true,
             created_by: u.user?.id,
-          });
-          if (insErr) throw insErr;
-          created++;
+          };
+          if (existingId) {
+            const { error: updateErr } = await supabase
+              .from("teacher_topic_videos")
+              .update(row)
+              .eq("id", existingId);
+            if (updateErr) throw updateErr;
+            updated++;
+          } else {
+            const { error: insertErr } = await supabase.from("teacher_topic_videos").insert(row);
+            if (insertErr) throw insertErr;
+            created++;
+          }
         } catch (e: any) {
           failed++;
           console.error("bulk gen failed", n, e);
         }
       }
       setProgress({ done: total, total, label: "" });
-      setSummary({ created, skipped, failed });
+      setSummary({ created, updated, skipped, failed });
       toast.success(
         lang === "ar"
-          ? `تم: ${created} · متخطاة: ${skipped} · فاشلة: ${failed}`
-          : `Done: ${created} · Skipped: ${skipped} · Failed: ${failed}`,
+          ? `تم: ${created} · محدّثة: ${updated} · متخطاة: ${skipped} · فاشلة: ${failed}`
+          : `Created: ${created} · Updated: ${updated} · Failed: ${failed}`,
       );
     } finally {
       setBusy(false);
@@ -1150,7 +1170,7 @@ function AnziBulkNotesGenerator({
         <div className="text-xs text-muted-foreground">
           {lang === "ar"
             ? "شغّل مولّد ملاحظات الفيديو لكل المحاضرات دفعة واحدة (يتجاوز أي محاضرة لها ملاحظات مسبقاً)."
-            : "Run the video-to-notes generator for every lecture at once (skips lectures that already have notes)."}
+            : "Regenerate all English-curriculum lectures with Arabic explanations, bilingual terms, and English-only questions."}
         </div>
         <button
           onClick={run}
@@ -1177,8 +1197,8 @@ function AnziBulkNotesGenerator({
       {summary && !busy && (
         <div className="mt-2 text-[11px] text-muted-foreground">
           {lang === "ar"
-            ? `تم إنشاء ${summary.created} · متخطاة ${summary.skipped} · فاشلة ${summary.failed}`
-            : `Created ${summary.created} · Skipped ${summary.skipped} · Failed ${summary.failed}`}
+            ? `تم إنشاء ${summary.created} · محدّثة ${summary.updated} · متخطاة ${summary.skipped} · فاشلة ${summary.failed}`
+            : `Created ${summary.created} · Updated ${summary.updated} · Failed ${summary.failed}`}
         </div>
       )}
     </div>

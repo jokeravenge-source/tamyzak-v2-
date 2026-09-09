@@ -6,7 +6,6 @@ import {
   BookOpen, Download, ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureFreshSession } from "@/lib/ensureSession";
 import type { AppLanguage } from "@/components/LanguageGate";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -191,6 +190,8 @@ export default function TeacherLectureVideos({
 }) {
   const T = L[language];
   const isRTL = language === "ar";
+  const usesArabicEnglishCurriculumStyle =
+    language === "en" && teacherId.startsWith("mohammed-anzi");
   const [videos, setVideos] = useState<LectureVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -300,6 +301,7 @@ export default function TeacherLectureVideos({
           <VideoNotesModal
             video={openVideo}
             language={language}
+            usesArabicEnglishCurriculumStyle={usesArabicEnglishCurriculumStyle}
             T={T}
             onClose={() => setOpenVideo(null)}
           />
@@ -332,7 +334,15 @@ function AdminAddVideo({
     setBusy("gen");
     try {
       const { data, error } = await supabase.functions.invoke("video-notes", {
-        body: { url, language, mode: "notes", adminGeneration: true },
+        body: {
+          url,
+          language,
+          mode: "notes",
+          adminGeneration: true,
+          notesStyle: language === "en" && teacherId.startsWith("mohammed-anzi")
+            ? "arabic-explanation-english-curriculum"
+            : "default",
+        },
       });
       if (error) throw new Error(await getFunctionError(error, language === "ar" ? "تعذّر توليد الملاحظات. حاول مجدداً." : "Failed to generate notes. Please try again."));
       if (data?.error) throw new Error(data.error);
@@ -438,14 +448,15 @@ function AdminAddVideo({
 
 // ---- Notes viewer + beautiful/PDF export ------------------------------
 function VideoNotesModal({
-  video, language, T, onClose,
+  video, language, usesArabicEnglishCurriculumStyle, T, onClose,
 }: {
   video: LectureVideo;
   language: AppLanguage;
+  usesArabicEnglishCurriculumStyle: boolean;
   T: (typeof L)[AppLanguage];
   onClose: () => void;
 }) {
-  const isRTL = language === "ar";
+  const isRTL = language === "ar" || usesArabicEnglishCurriculumStyle;
   const [pretty, setPretty] = useState<{ blocks: PrettyBlock[]; images: PrettyImage[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -460,15 +471,14 @@ function VideoNotesModal({
     setBusy(true);
     try {
       const source = (video.transcript?.trim() || rawText).slice(0, 7500);
-      if (!(await ensureFreshSession())) {
-        throw new Error(
-          language === "ar"
-            ? "انتهت الجلسة. سجّل الخروج ثم الدخول مرة أخرى."
-            : "Your session expired. Please sign out and sign in again.",
-        );
-      }
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
-        body: { topic: source, language },
+        body: {
+          topic: source,
+          language,
+          notesStyle: usesArabicEnglishCurriculumStyle
+            ? "arabic-explanation-english-curriculum"
+            : "default",
+        },
       });
       if (error) {
         throw new Error(await getFunctionError(
