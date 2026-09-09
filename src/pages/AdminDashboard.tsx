@@ -14,6 +14,8 @@ import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
+import { flashcardsCh8 } from "@/data/flashcardsCh8";
+import { flashcardsCh8Ar } from "@/data/flashcardsCh8Ar";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -159,6 +161,29 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     if (error) return toast.error(error.message);
     toast.success("Deletion approved and flashcard deleted");
     setFcs((r) => r.filter((x) => x.id !== id));
+  };
+
+  const [importingCh8, setImportingCh8] = useState(false);
+  const importCh8Deck = async () => {
+    if (!confirm("Import the built-in Physics Chapter 8 flashcards (English + Arabic) into the admin-managed list? Existing cards will be skipped.")) return;
+    setImportingCh8(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { data: existing } = await supabase.from("custom_flashcards").select("question, language").eq("subject", "physics").eq("chapter", "8");
+    const seen = new Set((existing ?? []).map((r: any) => `${r.language}::${(r.question ?? "").trim().toLowerCase()}`));
+    const rows = [
+      ...flashcardsCh8.map((c) => ({ subject: "physics", chapter: "8", language: "en", question: c.q, answer: c.a })),
+      ...flashcardsCh8Ar.map((c) => ({ subject: "physics", chapter: "8", language: "ar", question: c.q, answer: c.a })),
+    ].filter((r) => !seen.has(`${r.language}::${r.question.trim().toLowerCase()}`))
+      .map((r) => ({ ...r, created_by: u.user?.id ?? null, approved: true }));
+    if (rows.length === 0) {
+      setImportingCh8(false);
+      return toast.success("All Chapter 8 cards are already imported.");
+    }
+    const { error } = await supabase.from("custom_flashcards").insert(rows);
+    setImportingCh8(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Imported ${rows.length} Chapter 8 flashcards (EN + AR)`);
+    loadFcs();
   };
 
   const normalizedFcSearch = fcSearch.trim().toLowerCase();
@@ -791,9 +816,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               </div>
               <textarea value={fcForm.question} onChange={(e) => setFcForm({ ...fcForm, question: e.target.value })} placeholder="Question" rows={2} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
               <textarea value={fcForm.answer} onChange={(e) => setFcForm({ ...fcForm, answer: e.target.value })} placeholder="Answer" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
-              <button onClick={addFc} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
-                <Plus className="w-4 h-4" /> Add flashcard
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={addFc} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
+                  <Plus className="w-4 h-4" /> Add flashcard
+                </button>
+                <button onClick={importCh8Deck} disabled={importingCh8} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-secondary border border-white/10 hover:bg-secondary/80 text-sm disabled:opacity-50">
+                  {importingCh8 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Import Physics Ch8 deck (EN + AR)
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setFcFilter("pending")} className={`px-3 py-1.5 rounded-full text-xs border ${fcFilter === "pending" ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground"}`}>
