@@ -39,6 +39,21 @@ const readUnknown = (nbId: string): string[] => {
 const writeUnknown = (nbId: string, ids: string[]) =>
   localStorage.setItem(storeKey(nbId), JSON.stringify(Array.from(new Set(ids))));
 
+const NOTE_COVER_GRADIENTS = [
+  "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+  "linear-gradient(135deg, #0f766e 0%, #0891b2 100%)",
+  "linear-gradient(135deg, #be123c 0%, #ea580c 100%)",
+  "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
+  "linear-gradient(135deg, #047857 0%, #65a30d 100%)",
+  "linear-gradient(135deg, #a21caf 0%, #db2777 100%)",
+] as const;
+
+const noteCoverGradient = (id: string) => {
+  let hash = 0;
+  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return NOTE_COVER_GRADIENTS[(hash >>> 0) % NOTE_COVER_GRADIENTS.length];
+};
+
 const NoteCard = ({
   note,
   language,
@@ -57,6 +72,7 @@ const NoteCard = ({
   const yesOpacity = useTransform(x, [40, 160], [0, 1]);
   const noOpacity = useTransform(x, [-160, -40], [1, 0]);
   const coverUrl = note.background_image_url || fallbackCoverUrl;
+  const coverGradient = noteCoverGradient(note.id);
 
   return (
     <motion.article
@@ -87,7 +103,10 @@ const NoteCard = ({
         ✕
       </motion.div>
 
-      <div className="relative h-[52%] shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary/75 to-accent">
+      <div
+        className="relative h-[52%] shrink-0 overflow-hidden"
+        style={{ background: coverUrl ? "hsl(var(--card))" : coverGradient }}
+      >
         {coverUrl && (
           <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
@@ -205,16 +224,16 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-4">
                 <StickyNote className="w-3.5 h-3.5 text-primary" />
                 <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  {t("دفاتر الملاحظات", "Notebooks")}
+                  {t("إثرائيات", "Enrichments")}
                 </span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold gradient-text leading-tight mb-3">
-                {t("ملاحظات دراسية", "Study Notes")}
+                {t("إثرائيات", "Enrichments")}
               </h1>
               <p className="text-muted-foreground max-w-lg mx-auto">
                 {t(
-                  "افتح دفتراً وراجع ملاحظاته بنظام السحب: يمين إذا فهمت، يسار إذا لم تفهم.",
-                  "Open a notebook and review its notes: swipe right if you understood, left if not.",
+                  "افتح مجموعة وراجع إثرائياتها بنظام السحب: يمين إذا فهمت، يسار إذا لم تفهم.",
+                  "Open a collection and review its enrichment cards: swipe right if understood, left if not.",
                 )}
               </p>
             </header>
