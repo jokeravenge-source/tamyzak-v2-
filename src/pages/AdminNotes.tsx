@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX } from "lucide-react";
+import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX, Sparkles, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { markAllAdminNotesSeen } from "@/lib/unseenAdminNotes";
@@ -81,6 +81,8 @@ const NoteCard = ({
   const coverUrl = note.background_image_url || fallbackCoverUrl;
   const coverGradient = noteCoverGradient(note.id);
   const hasContent = hasVisibleBlocks(note.blocks);
+  const cardLabel = language === "ar" ? "إثرائية" : "Enrichment";
+  const openLabel = language === "ar" ? "افتح للتفاصيل" : "Open details";
 
   return (
     <motion.article
@@ -96,17 +98,18 @@ const NoteCard = ({
       initial={{ opacity: 0, scale: 0.96, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="relative mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_24px_70px_-24px_hsl(var(--primary)/0.45)] cursor-grab active:cursor-grabbing touch-pan-y"
+      className="group relative mx-auto flex w-full max-w-xl cursor-grab touch-pan-y flex-col overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-[0_28px_80px_-30px_hsl(var(--primary)/0.55),0_8px_24px_-18px_rgba(15,23,42,0.45)] ring-1 ring-black/5 transition-[border-color,box-shadow] duration-300 hover:border-primary/35 hover:shadow-[0_34px_90px_-30px_hsl(var(--primary)/0.65),0_12px_30px_-18px_rgba(15,23,42,0.5)] active:cursor-grabbing"
     >
+      <div className="pointer-events-none absolute inset-x-10 top-0 z-20 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
       <motion.div
         style={{ opacity: yesOpacity }}
-        className="absolute top-5 start-5 z-10 px-3 py-1 rounded-lg border-2 border-emerald-400 text-emerald-400 font-bold text-sm rotate-[-8deg]"
+        className="absolute top-5 start-5 z-30 grid h-14 w-14 rotate-[-8deg] place-items-center rounded-2xl border-2 border-emerald-300 bg-emerald-500/25 text-2xl font-bold text-white shadow-lg backdrop-blur-md"
       >
         ✓
       </motion.div>
       <motion.div
         style={{ opacity: noOpacity }}
-        className="absolute top-5 end-5 z-10 px-3 py-1 rounded-lg border-2 border-red-400 text-red-400 font-bold text-sm rotate-[8deg]"
+        className="absolute top-5 end-5 z-30 grid h-14 w-14 rotate-[8deg] place-items-center rounded-2xl border-2 border-rose-300 bg-rose-500/25 text-2xl font-bold text-white shadow-lg backdrop-blur-md"
       >
         ✕
       </motion.div>
@@ -116,17 +119,51 @@ const NoteCard = ({
         style={{ background: coverUrl ? "hsl(var(--card))" : coverGradient }}
       >
         {coverUrl && (
-          <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={coverUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
+          />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/70" />
-        <div className="absolute inset-x-0 bottom-0 p-5 text-primary-foreground">
-          <div className="mb-2 text-5xl drop-shadow-lg">{note.cover_emoji || "📘"}</div>
-          <h2 className="line-clamp-2 text-2xl font-bold leading-tight drop-shadow-md md:text-3xl">{note.title}</h2>
+        <div className="pointer-events-none absolute -start-12 -top-16 h-44 w-44 rounded-full bg-white/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -end-12 h-52 w-52 rounded-full bg-black/30 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_12%,rgba(255,255,255,0.16)_42%,transparent_68%)] opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/75" />
+
+        <div className="absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/25 bg-black/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-sm backdrop-blur-md">
+          <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+          {cardLabel}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-5 text-white sm:p-6">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 text-4xl shadow-[0_12px_30px_-16px_rgba(0,0,0,0.75)] backdrop-blur-md">
+            {note.cover_emoji || "📘"}
+          </div>
+          <div className="min-w-0 flex-1 pb-0.5">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">
+              {language === "ar" ? "بطاقة معرفية" : "Knowledge card"}
+            </p>
+            <h2 className="line-clamp-2 text-2xl font-extrabold leading-tight drop-shadow-md md:text-3xl">
+              {note.title}
+            </h2>
+          </div>
         </div>
       </div>
 
       {hasContent && (
-        <div className="relative max-h-[min(42svh,24rem)] overflow-y-auto bg-card p-5 md:p-6">
+        <div className="relative max-h-[min(42svh,24rem)] overflow-y-auto border-t border-border/60 bg-gradient-to-b from-card via-card to-secondary/30 p-5 md:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-primary">
+                <StickyNote className="h-3.5 w-3.5" />
+              </span>
+              {language === "ar" ? "ملخص الإثرائية" : "Enrichment summary"}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+              {openLabel}
+              <ArrowUpRight className="h-3.5 w-3.5 rtl:-rotate-90" />
+            </span>
+          </div>
           <AdminNoteRenderer blocks={note.blocks} language={language} />
         </div>
       )}
@@ -263,10 +300,14 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                   >
                     <button
                       onClick={() => openNotebook(nb)}
-                      className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:bg-secondary/50 transition-colors text-start"
+                      className="group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-secondary/45 p-4 text-start shadow-[0_12px_34px_-28px_rgba(15,23,42,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_42px_-26px_hsl(var(--primary)/0.4)]"
                     >
                       <span
-                        className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center text-3xl text-white shadow-inner shrink-0"
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -end-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-2xl transition-transform duration-500 group-hover:scale-125"
+                      />
+                      <span
+                        className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-primary/10 text-3xl text-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.75)]"
                         style={nb.cover_image_url ? undefined : { background: noteCoverGradient(nb.id) }}
                       >
                         {nb.cover_image_url ? (
@@ -275,14 +316,16 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                           nb.cover_emoji || "📚"
                         )}
                       </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="font-semibold block truncate">{nb.title}</span>
-                        <span className="text-xs text-muted-foreground block truncate">
+                      <span className="relative z-10 min-w-0 flex-1">
+                        <span className="block truncate font-bold tracking-tight">{nb.title}</span>
+                        <span className="mt-1 block truncate text-xs text-muted-foreground">
                           {nb.description ||
                             `${notes.filter((n) => n.notebook_id === nb.id).length} ${t("ملاحظة", "notes")}`}
                         </span>
                       </span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground rtl:rotate-180" />
+                      <span className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border/70 bg-background/60 text-muted-foreground transition-all group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                        <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                      </span>
                     </button>
                   </motion.li>
                 ))}
