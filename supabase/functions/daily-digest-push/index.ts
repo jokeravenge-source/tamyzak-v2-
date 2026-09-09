@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             title: "صباح الخير 🌞",
             body: "ماكو مهام مسجلة لليوم. افتح قائمة المهام وأضف خطتك حتى تبدأ يومك بترتيب!",
-            link: "/todo",
+            link: "/",
           });
         } else {
           const preview = todays
@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             title: `صباح الخير 🌞 عندك ${todays.length} مهمة اليوم`,
             body: `${preview}${extra}`,
-            link: "/todo",
+            link: "/",
           });
         }
       }
