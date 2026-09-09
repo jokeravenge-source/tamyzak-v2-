@@ -6,6 +6,7 @@ import {
   BookOpen, Download, ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensureSession";
 import type { AppLanguage } from "@/components/LanguageGate";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
