@@ -599,6 +599,21 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     }
   };
 
+  // Admin-only: remove a user-submitted card from this deck.
+  const deletableRow = card ? extraRows.find((r) => r.q === card.q && r.a === card.a) : undefined;
+  const [deleting, setDeleting] = useState(false);
+  const deleteCard = async () => {
+    if (!deletableRow) return;
+    if (!window.confirm(language === "ar" ? "حذف هذه البطاقة نهائياً؟" : "Delete this flashcard permanently?")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("custom_flashcards").delete().eq("id", deletableRow.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    setExtraRows((rows) => rows.filter((r) => r.id !== deletableRow.id));
+    toast.success(language === "ar" ? "تم حذف البطاقة" : "Flashcard deleted");
+  };
+
+
   // User-submitted flashcards (await admin approval)
   const [showSubmit, setShowSubmit] = useState(false);
   const [showRating, setShowRating] = useState(false);
