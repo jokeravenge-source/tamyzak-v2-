@@ -460,6 +460,13 @@ function VideoNotesModal({
     setBusy(true);
     try {
       const source = (video.transcript?.trim() || rawText).slice(0, 7500);
+      if (!(await ensureFreshSession())) {
+        throw new Error(
+          language === "ar"
+            ? "انتهت الجلسة. سجّل الخروج ثم الدخول مرة أخرى."
+            : "Your session expired. Please sign out and sign in again.",
+        );
+      }
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: { topic: source, language },
       });
