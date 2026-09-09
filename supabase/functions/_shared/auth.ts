@@ -16,9 +16,25 @@ export async function requireUser(req: Request): Promise<AuthResult> {
     { global: { headers: { Authorization: authHeader } } },
   );
   const token = authHeader.replace("Bearer ", "").trim();
-  const { data, error } = await supabase.auth.getClaims(token);
-  const userId = data?.claims?.sub as string | undefined;
-  if (error || !userId) return { ok: false, status: 401, error: "Invalid session." };
+
+  // Primary: verify via signing keys (JWKS).
+  let userId: string | undefined;
+  try {
+    const { data } = await supabase.auth.getClaims(token);
+    userId = data?.claims?.sub as string | undefined;
+  } catch (_e) { /* fall through */ }
+
+  // Fallback: legacy/HS256 tokens or a transient JWKS failure.
+  if (!userId) {
+    try {
+      const { data } = await supabase.auth.getUser(token);
+      userId = data?.user?.id;
+    } catch (_e) { /* fall through */ }
+  }
+
+  if (!userId) {
+    return { ok: false, status: 401, error: "Your session expired. Please sign out and sign in again." };
+  }
   return { ok: true, userId };
 }
 
