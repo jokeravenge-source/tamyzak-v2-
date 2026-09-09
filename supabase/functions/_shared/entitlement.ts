@@ -24,10 +24,19 @@ export async function claimFeature(req: Request, feature: string, dailyLimit?: n
   );
 
   const token = authHeader.replace("Bearer ", "").trim();
-  const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
-  const userId = claimsData?.claims?.sub as string | undefined;
-  if (claimsErr || !userId) {
-    return { ok: false, status: 401, error: "Invalid session." };
+  let userId: string | undefined;
+  try {
+    const { data: claimsData } = await supabase.auth.getClaims(token);
+    userId = claimsData?.claims?.sub as string | undefined;
+  } catch (_e) { /* fall through */ }
+  if (!userId) {
+    try {
+      const { data } = await supabase.auth.getUser(token);
+      userId = data?.user?.id;
+    } catch (_e) { /* fall through */ }
+  }
+  if (!userId) {
+    return { ok: false, status: 401, error: "Your session expired. Please sign out and sign in again." };
   }
 
   const { data: allowed, error } = dailyLimit == null
