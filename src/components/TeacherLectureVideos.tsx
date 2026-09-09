@@ -462,9 +462,20 @@ function VideoNotesModal({
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: { topic: source, language },
       });
-      if (error) throw error;
+      if (error) {
+        throw new Error(await getFunctionError(
+          error,
+          language === "ar"
+            ? "تعذّر إنشاء التصميم الجميل. حاول مجدداً بعد قليل."
+            : "Could not generate the beautiful design. Please try again shortly.",
+        ));
+      }
       if (data?.error) throw new Error(data.error);
-      setPretty({ blocks: data.blocks || [], images: data.images || [] });
+      const blocks = Array.isArray(data?.blocks) ? data.blocks : [];
+      if (!blocks.length) {
+        throw new Error(language === "ar" ? "لم يتم إنشاء محتوى صالح." : "No valid content was generated.");
+      }
+      setPretty({ blocks, images: Array.isArray(data?.images) ? data.images : [] });
     } catch (e: any) {
       toast.error(e.message || "Failed");
     } finally { setBusy(false); }

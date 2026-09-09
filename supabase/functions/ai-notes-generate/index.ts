@@ -10,6 +10,14 @@ const corsHeaders = {
 const json = (b: Record<string, unknown>, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+const parseJsonMaybe = (text: string) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
 type GenBlock = {
   type: "h1" | "h2" | "h3" | "text" | "bullet" | "numbered" | "todo" | "quote" | "divider";
   text: string;
@@ -38,60 +46,92 @@ Deno.serve(async (req) => {
 
     const userMsg = `TOPIC / SOURCE TEXT:\n${topic.slice(0, 8000)}\n\nGenerate the structured notes now.`;
 
-    const chatRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: sys }, { role: "user", content: userMsg }],
-        tools: [{
-          type: "function",
-          function: {
-            name: "submit_notes",
-            description: "Submit structured study notes and image prompts",
-            parameters: {
-              type: "object",
-              properties: {
-                blocks: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      type: { type: "string", enum: ["h1","h2","h3","text","bullet","numbered","todo","quote","divider"] },
-                      text: { type: "string" },
-                    },
-                    required: ["type", "text"], additionalProperties: false,
-                  },
+    const notesTool = {
+      type: "function",
+      function: {
+        name: "submit_notes",
+        description: "Submit structured study notes and image prompts",
+        parameters: {
+          type: "object",
+          properties: {
+            blocks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string", enum: ["h1","h2","h3","text","bullet","numbered","todo","quote","divider"] },
+                  text: { type: "string" },
                 },
-                image_prompts: { type: "array", items: { type: "string" } },
+                required: ["type", "text"], additionalProperties: false,
               },
-              required: ["blocks", "image_prompts"], additionalProperties: false,
             },
+            image_prompts: { type: "array", items: { type: "string" } },
           },
-        }],
-        tool_choice: { type: "function", function: { name: "submit_notes" } },
-      }),
-    });
+          required: ["blocks", "image_prompts"], additionalProperties: false,
+        },
+      },
+    };
 
-    if (!chatRes.ok) {
-      const txt = await chatRes.text();
-      if (chatRes.status === 429) return json({ error: lang === "ar" ? "الذكاء الاصطناعي مشغول. حاول مجدداً." : "AI busy. Try again." }, 429);
-      if (chatRes.status === 402) return json({ error: lang === "ar" ? "نفدت رصيد الذكاء الاصطناعي." : "AI credits exhausted." }, 402);
-      return json({ error: `AI error: ${txt}` }, 500);
+    // The Lovable gateway requires its dedicated API-key headers. The old
+    // Bearer authorization format returns a non-2xx FunctionsHttpError.
+    const models = ["google/gemini-3.5-flash", "google/gemini-2.5-flash"];
+    let parsed: any = null;
+    let lastStatus = 500;
+    for (const model of models) {
+      const chatRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Lovable-API-Key": LOVABLE_API_KEY,
+          "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: sys }, { role: "user", content: userMsg }],
+          tools: [notesTool],
+          tool_choice: { type: "function", function: { name: "submit_notes" } },
+        }),
+      });
+
+      lastStatus = chatRes.status;
+      const responseText = await chatRes.text();
+      const data = parseJsonMaybe(responseText);
+      if (!chatRes.ok) {
+        console.error("Beautiful notes AI error", chatRes.status, model, responseText.slice(0, 500));
+        if (chatRes.status === 429 || chatRes.status === 503) continue;
+        break;
+      }
+
+      const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        parsed = parseJsonMaybe(toolCall.function.arguments);
+        if (parsed) break;
+      }
     }
-    const data = await chatRes.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return json({ error: "No notes generated" }, 500);
-    const parsed = JSON.parse(toolCall.function.arguments);
+
+    if (!parsed) {
+      if (lastStatus === 429) return json({ error: lang === "ar" ? "الذكاء الاصطناعي مشغول حالياً. حاول مجدداً بعد قليل." : "AI is busy right now. Please try again shortly." }, 429);
+      if (lastStatus === 402) return json({ error: lang === "ar" ? "نفد رصيد الذكاء الاصطناعي في التطبيق." : "The app's AI credits have run out." }, 402);
+      if (lastStatus === 503) return json({ error: lang === "ar" ? "خدمة الذكاء الاصطناعي غير متاحة مؤقتاً. حاول مجدداً." : "The AI service is temporarily unavailable. Please try again." }, 503);
+      return json({ error: lang === "ar" ? "تعذّر إنشاء التصميم الجميل. حاول مجدداً." : "Could not generate the beautiful design. Please try again." }, 502);
+    }
     const blocks: GenBlock[] = (parsed.blocks || []).filter((b: any) => b?.type && typeof b.text === "string");
     const imagePrompts: string[] = (parsed.image_prompts || []).slice(0, 2);
+
+    if (!blocks.length) {
+      return json({ error: lang === "ar" ? "لم يُنشئ الذكاء الاصطناعي محتوى صالحاً. حاول مجدداً." : "The AI did not return valid content. Please try again." }, 502);
+    }
 
     // Generate up to 2 illustrations in parallel
     const images = await Promise.all(imagePrompts.map(async (p) => {
       try {
         const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+          headers: {
+            "Content-Type": "application/json",
+            "Lovable-API-Key": LOVABLE_API_KEY,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+          },
           body: JSON.stringify({
             model: "google/gemini-2.5-flash-image",
             messages: [{ role: "user", content: `Educational infographic-style illustration, clean flat vector, soft pastel colors, no text, no labels, no watermarks. Subject: ${p}` }],

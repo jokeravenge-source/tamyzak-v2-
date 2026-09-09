@@ -710,7 +710,19 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: { topic, language },
       });
-      if (error) throw error;
+      if (error) {
+        const response = (error as any)?.context;
+        let message = language === "ar"
+          ? "تعذّر إنشاء الملاحظات. حاول مجدداً بعد قليل."
+          : "Could not generate notes. Please try again shortly.";
+        if (response && typeof response.clone === "function") {
+          try {
+            const payload = await response.clone().json();
+            message = String(payload?.error || payload?.message || message);
+          } catch { /* keep the friendly fallback */ }
+        }
+        throw new Error(message);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
       const blocks = ((data as any).blocks || []) as { type: BlockType; text: string }[];
       const images = ((data as any).images || []) as { prompt: string; dataUrl: string }[];
