@@ -26,6 +26,7 @@ import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
+import petCat from "@/assets/pet-cat.png";
 
 export type Gender = "male" | "female";
 
@@ -45,6 +46,7 @@ export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ff
 export type NecklaceKind = "gold" | "pearl" | null;
 export type HatKind = "straw" | "red-cap" | "kitty-ears" | null;
 export type ChainKind = "gold" | null;
+export type PetKind = "cat" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -60,6 +62,7 @@ export type CharacterTraits = {
   necklace?: NecklaceKind;
   hat?: HatKind;
   chain?: ChainKind;
+  pet?: PetKind;
   variant?: CharacterVariant;
 };
 
@@ -78,6 +81,7 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
     necklace: null,
     hat: null,
     chain: null,
+    pet: null,
     variant: 1,
   };
 }
@@ -245,6 +249,25 @@ export function CharacterAvatar({
           }}
         />
       )}
+      {traits?.pet === "cat" && (
+        <img
+          src={petCat}
+          alt=""
+          aria-hidden
+          draggable={false}
+          style={{
+            position: "absolute",
+            zIndex: 6,
+            top: "35%",
+            left: "10%",
+            width: "27%",
+            height: "auto",
+            imageRendering: "pixelated",
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.35))",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -335,38 +358,3 @@ function isCoreSkinPixel(r: number, g: number, b: number, a: number): boolean {
 
 function isNearbySkinPixel(r: number, g: number, b: number, a: number): boolean {
   if (a < 32) return false;
-  const sum = r + g + b;
-  return r >= 120 && sum >= 300 && sum <= 765 && r >= g - 12 && r >= b - 8 && r - Math.min(g, b) >= 2 && g - b >= -45;
-}
-
-function clamp(v: number) {
-  return Math.max(0, Math.min(255, Math.round(v)));
-}
-
-function useSkinTinted(src: string, skinHex: string): string | null {
-  const [out, setOut] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    let cancelled = false;
-    const cacheKey = `${src}|${skinHex}`;
-    if (tintCache.has(cacheKey)) {
-      setOut(tintCache.get(cacheKey)!);
-      return;
-    }
-    const img = new Image();
-    img.onload = () => {
-      if (cancelled) return;
-      try {
-        const url = tintSkin(img, skinHex);
-        tintCache.set(cacheKey, url);
-        setOut(url);
-      } catch {
-        setOut(null);
-      }
-    };
-    img.src = src;
-    return () => { cancelled = true; };
-  }, [src, skinHex]);
-  return out;
-}
-
-const tintCache = new Map<string, string>();

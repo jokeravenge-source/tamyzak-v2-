@@ -17,6 +17,7 @@ import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
+import petCat from "@/assets/pet-cat.png";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -40,8 +41,8 @@ import {
 } from "@/components/CharacterAvatar";
 
 const t = {
-  en: { title: "Account Center", subtitle: "Manage your profile and username.", username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
-  ar: { title: "مركز الحساب", subtitle: "أدر ملفك الشخصي واسم المستخدم.", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
+  en: { title: "Account Center", subtitle: "Manage your profile and username.", username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", pets: "Pets", cat: "Cat", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
+  ar: { title: "مركز الحساب", subtitle: "أدر ملفك الشخصي واسم المستخدم.", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", pets: "الحيوانات", cat: "قطة", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
 } as const;
 
 const uxText = {
@@ -100,7 +101,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories">("appearance");
+  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories" | "pets">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
@@ -327,7 +328,7 @@ const AccountCenter = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-background/30 p-1.5">
+                <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-background/30 p-1.5">
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
@@ -351,6 +352,14 @@ const AccountCenter = ({
                     className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "accessories" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {text.accessories}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCharacterTab("pets")}
+                    aria-pressed={characterTab === "pets"}
+                    className={`h-10 rounded-xl text-[10px] font-bold transition sm:text-xs ${characterTab === "pets" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {text.pets}
                   </button>
                 </div>
 
@@ -453,7 +462,7 @@ const AccountCenter = ({
                       </button>
                     </div>
                   </div>
-                ) : (
+                ) : characterTab === "accessories" ? (
                   <div className="space-y-5">
                     <div>
                       <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -507,6 +516,32 @@ const AccountCenter = ({
                           </span>
                         </button>
                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {language === "ar" ? "اختر حيوانك الأليف" : "Choose your pet"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ pet: null })}
+                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.pet ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
+                      >
+                        {text.none}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ pet: "cat" })}
+                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-3 transition ${effective?.pet === "cat" ? "scale-[1.03] border-primary bg-primary/10" : "border-white/10 hover:border-white/30"}`}
+                        aria-label={text.cat}
+                      >
+                        <img src={petCat} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                          {text.cat}
+                        </span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -663,118 +698,3 @@ const AccountCenter = ({
             <span className="inline-flex items-center gap-2"><Globe className="w-4 h-4 text-primary" />{text.changeLanguage}</span>
             <span className="text-xs text-muted-foreground uppercase">{language}</span>
           </button>
-          <button
-            onClick={async () => { await supabase.auth.signOut(); }}
-            className="w-full inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-destructive/40 text-destructive text-sm font-semibold hover:bg-destructive/10 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            {text.signOut}
-          </button>
-            </div>
-          </div>
-        </details>
-
-        <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
-          <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
-            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-primary" />
-            </div>
-            <h2 className="flex-1 text-lg font-semibold">{ux.services}</h2>
-            <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t border-white/10 p-4 space-y-4">
-            <ReferralCard language={language} />
-            <TelegramLinkCard language={language} />
-            <PushNotificationsCard language={language} />
-
-            <a
-              href="https://t.me/ias404"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl border border-white/10 bg-background/30 p-5 hover:border-primary/40 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold">{text.support}</h2>
-                  <p className="text-xs text-muted-foreground mt-1">{text.supportDesc}</p>
-                </div>
-              </div>
-            </a>
-          </div>
-        </details>
-      </section>
-      
-    </main>
-  );
-};
-
-export default AccountCenter;
-
-function CountdownSettings({ language }: { language: AppLanguage }) {
-  const isAr = language === "ar";
-  const DEFAULT_ISO = "2026-06-13T07:00";
-  const [name, setName] = useState<string>(() => localStorage.getItem("custom_countdown_name_v1") || "");
-  const [dateIso, setDateIso] = useState<string>(() => localStorage.getItem("custom_countdown_date_v1") || DEFAULT_ISO);
-  const save = () => {
-    if (name.trim()) localStorage.setItem("custom_countdown_name_v1", name.trim());
-    else localStorage.removeItem("custom_countdown_name_v1");
-    if (dateIso) localStorage.setItem("custom_countdown_date_v1", dateIso);
-    localStorage.removeItem("countdown_hidden_v1");
-    window.dispatchEvent(new Event("app:countdown-changed"));
-    toast.success(isAr ? "تم حفظ العد التنازلي" : "Countdown saved");
-  };
-  const reset = () => {
-    localStorage.removeItem("custom_countdown_name_v1");
-    localStorage.removeItem("custom_countdown_date_v1");
-    localStorage.removeItem("countdown_hidden_v1");
-    setName("");
-    setDateIso(DEFAULT_ISO);
-    window.dispatchEvent(new Event("app:countdown-changed"));
-    toast.success(isAr ? "تمت إعادة الضبط" : "Reset to default");
-  };
-  return (
-    <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-          <CalendarClock className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold">{isAr ? "العد التنازلي" : "Countdown"}</h2>
-          <p className="text-sm text-muted-foreground">{isAr ? "اختر تاريخك واسم المناسبة الخاصة بك." : "Pick your own date and event name."}</p>
-        </div>
-      </div>
-      <div className="space-y-3">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">{isAr ? "اسم المناسبة" : "Event name"}</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={isAr ? "مثال: امتحان الفيزياء" : "e.g. Physics Exam"}
-            className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">{isAr ? "التاريخ والوقت" : "Date & time"}</label>
-          <input
-            type="datetime-local"
-            value={dateIso}
-            onChange={(e) => setDateIso(e.target.value)}
-            className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={save} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
-            {isAr ? "حفظ" : "Save"}
-          </button>
-          <button onClick={reset} className="h-10 px-4 rounded-xl border border-white/10 text-muted-foreground text-sm hover:text-foreground transition">
-            {isAr ? "إعادة الضبط" : "Reset"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
