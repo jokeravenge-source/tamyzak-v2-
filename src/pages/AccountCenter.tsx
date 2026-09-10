@@ -15,6 +15,8 @@ import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
+import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
+import goldChain from "@/assets/gold-chain.png.asset.json";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -98,7 +100,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const [characterTab, setCharacterTab] = useState<"appearance" | "hats">("appearance");
+  const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
   const [pendingRequest, setPendingRequest] = useState<{ id: string; requested_name: string } | null>(null);
@@ -325,7 +327,7 @@ const AccountCenter = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-background/30 p-1.5">
+                <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-background/30 p-1.5">
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
@@ -341,6 +343,14 @@ const AccountCenter = ({
                     className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "hats" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {language === "ar" ? "القبعات" : "Hats"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCharacterTab("accessories")}
+                    aria-pressed={characterTab === "accessories"}
+                    className={`h-10 rounded-xl text-xs font-bold transition ${characterTab === "accessories" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {text.accessories}
                   </button>
                 </div>
 
@@ -406,7 +416,7 @@ const AccountCenter = ({
                   </div>
                 </div>
                   </>
-                ) : (
+                ) : characterTab === "hats" ? (
                   <div>
                     <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
                       {language === "ar" ? "اختر قبعتك" : "Choose your hat"}
@@ -441,6 +451,62 @@ const AccountCenter = ({
                           {language === "ar" ? "القبعة الحمراء" : "Red cap"}
                         </span>
                       </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div>
+                      <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        {text.glasses}
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (effective?.accessory === "glasses") updateTraits({ accessory: null });
+                          }}
+                          className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${effective?.accessory !== "glasses" ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
+                        >
+                          {text.none}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateTraits({ accessory: "glasses" })}
+                          className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-3 transition ${effective?.accessory === "glasses" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
+                          aria-label={text.glasses}
+                        >
+                          <img src={pixelSunglasses.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                          <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                            {text.glasses}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        {language === "ar" ? "القلادات" : "Necklaces"}
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => updateTraits({ chain: null })}
+                          className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.chain ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
+                        >
+                          {text.none}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateTraits({ chain: "gold" })}
+                          className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-3 transition ${effective?.chain === "gold" ? "border-primary bg-primary/10 scale-[1.03]" : "border-white/10 hover:border-white/30"}`}
+                          aria-label={text.necklaceGold}
+                        >
+                          <img src={goldChain.url} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
+                          <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
+                            {text.necklaceGold}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
