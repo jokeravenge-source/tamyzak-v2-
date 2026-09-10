@@ -108,7 +108,7 @@ const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"
 import TelegramGate from "./components/TelegramGate";
 const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
-const BottomGroupNav = lazy(() => import("./components/BottomGroupNav"));
+import BottomGroupNav from "./components/BottomGroupNav";
 import { startAnalyticsSession, captureSignupSource } from "@/lib/analytics";
 import { captureReferralCode, redeemPendingReferral } from "@/lib/referral";
 

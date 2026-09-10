@@ -16,6 +16,12 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       sessionStorage.removeItem(RELOAD_KEY);
       return mod;
     } catch (err) {
+      // one silent retry: transient network blips shouldn't reload the page
+      try {
+        const mod = await factory();
+        sessionStorage.removeItem(RELOAD_KEY);
+        return mod;
+      } catch { /* fall through to reload */ }
       const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
       // only reload once per 10s to avoid infinite loops
       if (Date.now() - last > 10_000) {
