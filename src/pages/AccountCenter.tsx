@@ -355,10 +355,12 @@ const AccountCenter = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCharacterTab("pets")}
+                    disabled
                     aria-pressed={characterTab === "pets"}
-                    className={`h-10 rounded-xl text-[10px] font-bold transition sm:text-xs ${characterTab === "pets" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label={language === "ar" ? "الحيوانات مقفلة حالياً" : "Pets are currently locked"}
+                    className="flex h-10 cursor-not-allowed items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-muted-foreground opacity-55 sm:text-xs"
                   >
+                    <Lock className="h-3 w-3" aria-hidden />
                     {text.pets}
                   </button>
                 </div>
