@@ -358,3 +358,38 @@ function isCoreSkinPixel(r: number, g: number, b: number, a: number): boolean {
 
 function isNearbySkinPixel(r: number, g: number, b: number, a: number): boolean {
   if (a < 32) return false;
+  const sum = r + g + b;
+  return r >= 120 && sum >= 300 && sum <= 765 && r >= g - 12 && r >= b - 8 && r - Math.min(g, b) >= 2 && g - b >= -45;
+}
+
+function clamp(v: number) {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+function useSkinTinted(src: string, skinHex: string): string | null {
+  const [out, setOut] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    const cacheKey = `${src}|${skinHex}`;
+    if (tintCache.has(cacheKey)) {
+      setOut(tintCache.get(cacheKey)!);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const url = tintSkin(img, skinHex);
+        tintCache.set(cacheKey, url);
+        setOut(url);
+      } catch {
+        setOut(null);
+      }
+    };
+    img.src = src;
+    return () => { cancelled = true; };
+  }, [src, skinHex]);
+  return out;
+}
+
+const tintCache = new Map<string, string>();
