@@ -23,6 +23,8 @@ function loadAdminCredentials(): Record<string, string> {
   return {};
 }
 
+const FLASHCARD_ADMIN_EMAILS = new Set(["dania28hanna@gmail.com"]);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const guard = await protect(req, "admin-auth", { max: 5, windowSeconds: 60 });
@@ -49,11 +51,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const credentials = loadAdminCredentials();
-    const expected = credentials[email];
-    // Constant-time-ish: always do a comparison even if email unknown
-    const isMatch = !!expected && expected === password;
-    if (!isMatch) {
+    const isFlashcardAdmin = FLASHCARD_ADMIN_EMAILS.has(email);
+    let userId: string | null = null;
+
+    if (isFlashcardAdmin) {
+      // Restricted flashcard admins authenticate against their existing Supabase
+      // account. Their password is never stored in source or edge-function secrets.
+      const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const verifyData = await verifyRes.json().catch(() => ({}));
+      if (verifyRes.ok) userId = verifyData?.user?.id ?? null;
+    } else {
+      const credentials = loadAdminCredentials();
+      const expected = credentials[email];
+      if (expected === password) userId = "provision-admin";
+    }
+
+    if (!userId) {
       // Small artificial delay to slow brute force
       await new Promise((r) => setTimeout(r, 400));
       return new Response(JSON.stringify({ error: "invalid_credentials" }), {
@@ -62,44 +82,48 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ensure auth user exists and password is set correctly (idempotent)
-    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: {
-        apikey: SERVICE_ROLE,
-        Authorization: `Bearer ${SERVICE_ROLE}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password, email_confirm: true }),
-    });
-    const createData = await createRes.json().catch(() => ({}));
-    let userId: string | null = createData?.id ?? null;
+    // Full admins are provisioned from the protected credential secret. Restricted
+    // flashcard admins already proved ownership of an existing Supabase account.
+    if (!isFlashcardAdmin) {
+      userId = null;
+      const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE,
+          Authorization: `Bearer ${SERVICE_ROLE}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, email_confirm: true }),
+      });
+      const createData = await createRes.json().catch(() => ({}));
+      userId = createData?.id ?? null;
 
-    if (!userId) {
-      // User likely exists — look it up and force password
-      let page = 1;
-      while (!userId && page <= 50) {
-        const listRes = await fetch(
-          `${SUPABASE_URL}/auth/v1/admin/users?page=${page}&per_page=1000`,
-          { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } },
-        );
-        const listData = await listRes.json();
-        const users: any[] = listData?.users ?? [];
-        if (users.length === 0) break;
-        const found = users.find((u: any) => u.email?.toLowerCase() === email);
-        if (found) { userId = found.id; break; }
-        page += 1;
-      }
-      if (userId) {
-        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-          method: "PUT",
-          headers: {
-            apikey: SERVICE_ROLE,
-            Authorization: `Bearer ${SERVICE_ROLE}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ password, email_confirm: true }),
-        });
+      if (!userId) {
+        // User likely exists — look it up and force password
+        let page = 1;
+        while (!userId && page <= 50) {
+          const listRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users?page=${page}&per_page=1000`,
+            { headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` } },
+          );
+          const listData = await listRes.json();
+          const users: any[] = listData?.users ?? [];
+          if (users.length === 0) break;
+          const found = users.find((u: any) => u.email?.toLowerCase() === email);
+          if (found) { userId = found.id; break; }
+          page += 1;
+        }
+        if (userId) {
+          await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+            method: "PUT",
+            headers: {
+              apikey: SERVICE_ROLE,
+              Authorization: `Bearer ${SERVICE_ROLE}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ password, email_confirm: true }),
+          });
+        }
       }
     }
 
@@ -110,7 +134,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ensure admin role
+    // Restricted accounts receive the least-privileged database role. The UI and
+    // RLS policies expose only flashcard management to moderators.
+    const role = isFlashcardAdmin ? "moderator" : "admin";
+    if (isFlashcardAdmin) {
+      await fetch(`${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.admin`, {
+        method: "DELETE",
+        headers: {
+          apikey: SERVICE_ROLE,
+          Authorization: `Bearer ${SERVICE_ROLE}`,
+        },
+      });
+    }
     await fetch(`${SUPABASE_URL}/rest/v1/user_roles`, {
       method: "POST",
       headers: {
@@ -119,10 +154,10 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         Prefer: "resolution=ignore-duplicates",
       },
-      body: JSON.stringify({ user_id: userId, role: "admin" }),
+      body: JSON.stringify({ user_id: userId, role }),
     });
 
-    return new Response(JSON.stringify({ ok: true, email }), {
+    return new Response(JSON.stringify({ ok: true, email, scope: isFlashcardAdmin ? "flashcards" : "all" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

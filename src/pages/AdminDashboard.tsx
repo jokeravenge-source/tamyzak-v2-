@@ -37,19 +37,27 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   // and only see acceptance/review-related tabs (summaries pending, flashcards
   // approvals, username requests, AI files uploads).
   const OWNER_EMAIL = "majs11@gmail.com";
+  const FLASHCARD_ADMIN_EMAILS = new Set(["dania28hanna@gmail.com"]);
   const [isOwner, setIsOwner] = useState(false);
+  const [isFlashcardOnlyAdmin, setIsFlashcardOnlyAdmin] = useState(false);
+  const [accessReady, setAccessReady] = useState(false);
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
-      setIsOwner((data.user?.email ?? "").toLowerCase() === OWNER_EMAIL);
+      const email = (data.user?.email ?? "").trim().toLowerCase();
+      const flashcardOnly = FLASHCARD_ADMIN_EMAILS.has(email);
+      setIsOwner(email === OWNER_EMAIL);
+      setIsFlashcardOnlyAdmin(flashcardOnly);
+      if (flashcardOnly) setTab("flashcards");
+      setAccessReady(true);
     })();
   }, []);
   const MOD_TABS: Tab[] = ["pending", "flashcards", "usernames", "aifiles"];
-  const canSee = (t: Tab) => isOwner || MOD_TABS.includes(t);
+  const canSee = (t: Tab) => isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
   useEffect(() => {
-    if (!canSee(tab)) setTab("pending");
+    if (accessReady && !canSee(tab)) setTab(isFlashcardOnlyAdmin ? "flashcards" : "pending");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner]);
+  }, [accessReady, isOwner, isFlashcardOnlyAdmin]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -677,6 +685,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const subjLabel = (code: string) => SUMMARY_SUBJECTS.find((s) => s.code === code)?.en ?? code;
   const subjTag = (code: string) => SUMMARY_SUBJECTS.find((s) => s.code === code)?.tag ?? `#${code}`;
 
+  if (!accessReady) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen px-4 py-10 relative overflow-hidden">
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
@@ -703,17 +719,21 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="flex gap-2 border-b border-white/10 mb-6 overflow-x-auto no-scrollbar">
-          <button onClick={() => setTab("pending")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "pending" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <Clock className="w-4 h-4 inline mr-1.5" />Summaries — Pending
-          </button>
+          {canSee("pending") && (
+            <button onClick={() => setTab("pending")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "pending" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Clock className="w-4 h-4 inline mr-1.5" />Summaries — Pending
+            </button>
+          )}
           {canSee("approved") && (
             <button onClick={() => setTab("approved")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "approved" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Check className="w-4 h-4 inline mr-1.5" />Summaries — Approved
             </button>
           )}
-          <button onClick={() => setTab("flashcards")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "flashcards" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <Layers className="w-4 h-4 inline mr-1.5" />Flashcards
-          </button>
+          {canSee("flashcards") && (
+            <button onClick={() => setTab("flashcards")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "flashcards" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Layers className="w-4 h-4 inline mr-1.5" />Flashcards
+            </button>
+          )}
           {canSee("notifications") && (
             <button onClick={() => setTab("notifications")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "notifications" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Bell className="w-4 h-4 inline mr-1.5" />Notifications
@@ -729,12 +749,16 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <UsersIcon className="w-4 h-4 inline mr-1.5" />Users
             </button>
           )}
-          <button onClick={() => setTab("usernames")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "usernames" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <UserCog className="w-4 h-4 inline mr-1.5" />Username Requests
-          </button>
-          <button onClick={() => setTab("aifiles")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "aifiles" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <BookOpen className="w-4 h-4 inline mr-1.5" />AI Files
-          </button>
+          {canSee("usernames") && (
+            <button onClick={() => setTab("usernames")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "usernames" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <UserCog className="w-4 h-4 inline mr-1.5" />Username Requests
+            </button>
+          )}
+          {canSee("aifiles") && (
+            <button onClick={() => setTab("aifiles")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "aifiles" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <BookOpen className="w-4 h-4 inline mr-1.5" />AI Files
+            </button>
+          )}
           {canSee("notes") && (
             <button onClick={() => setTab("notes")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "notes" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <StickyNote className="w-4 h-4 inline mr-1.5" />Notes
@@ -755,9 +779,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <Coins className="w-4 h-4 inline mr-1.5" />Points
             </button>
           )}
-          <button onClick={() => setTab("bank")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "bank" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            <BookOpen className="w-4 h-4 inline mr-1.5" />Question Bank
-          </button>
+          {canSee("bank") && (
+            <button onClick={() => setTab("bank")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "bank" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <BookOpen className="w-4 h-4 inline mr-1.5" />Question Bank
+            </button>
+          )}
           {isOwner && (
             <button onClick={() => setTab("announcements")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "announcements" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Sparkles className="w-4 h-4 inline mr-1.5" />Announcements

@@ -15,6 +15,7 @@ import girl6 from "@/assets/character-girl-6.png";
 import girl7 from "@/assets/character-girl-7.png";
 import girl8 from "@/assets/character-girl-8.png.asset.json";
 import girl9 from "@/assets/character-girl-9.png.asset.json";
+import girl10 from "@/assets/character-girl-10.png";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
@@ -24,8 +25,8 @@ import goldChain from "@/assets/gold-chain.png.asset.json";
 export type Gender = "male" | "female";
 
 export const MALE_VARIANTS = [boy1, boy2, boy3, boy4, boy5, boy6, boy7] as const;
-export const FEMALE_VARIANTS = [girl1, girl2, girl3, girl4, girl5, girl6, girl7, girl8.url, girl9.url] as const;
-export type CharacterVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export const FEMALE_VARIANTS = [girl1, girl2, girl3, girl4, girl5, girl6, girl7, girl8.url, girl9.url, girl10] as const;
+export type CharacterVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 // Kept for API compatibility with AccountCenter / Leaderboard.
 export const SKIN_COLORS = ["#fff6f1", "#feede6", "#ffe6d5", "#f1cfc5", "#d2b0a2", "#a17c6a"] as const;

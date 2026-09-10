@@ -398,7 +398,8 @@ const App = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .eq("role", "admin")
+          .in("role", ["admin", "moderator"])
+          .limit(1)
           .maybeSingle()
           .then(({ data }) => setIsAdmin(!!data));
         setTgLoading(true);
@@ -445,7 +446,8 @@ const App = () => {
           .from("user_roles")
           .select("role")
           .eq("user_id", data.session.user.id)
-          .eq("role", "admin")
+          .in("role", ["admin", "moderator"])
+          .limit(1)
           .maybeSingle()
           .then(({ data: r }) => setIsAdmin(!!r));
         setTgLoading(true);
