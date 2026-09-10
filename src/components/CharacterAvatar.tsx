@@ -6,6 +6,7 @@ import boy4 from "@/assets/character-boy-4.png";
 import boy5 from "@/assets/character-boy-5.png";
 import boy6 from "@/assets/character-boy-6.png";
 import boy7 from "@/assets/character-boy-7.png";
+import boy8 from "@/assets/character-boy-8.png";
 import girl1 from "@/assets/character-girl-1.png";
 import girl2 from "@/assets/character-girl-2.png";
 import girl3 from "@/assets/character-girl-3.png";
@@ -27,7 +28,7 @@ import goldChain from "@/assets/gold-chain.png.asset.json";
 
 export type Gender = "male" | "female";
 
-export const MALE_VARIANTS = [boy1, boy2, boy3, boy4, boy5, boy6, boy7] as const;
+export const MALE_VARIANTS = [boy1, boy2, boy3, boy4, boy5, boy6, boy7, boy8] as const;
 export const FEMALE_VARIANTS = [girl1, girl2, girl3, girl4, girl5, girl6, girl7, girl8.url, girl9.url, girl10, girl11, girl12, girl13] as const;
 export type CharacterVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
