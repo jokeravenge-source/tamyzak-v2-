@@ -411,14 +411,16 @@ function NotebookEditor({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Notebook title"
-          className="w-full h-14 px-4 rounded-xl bg-background border border-white/10 text-2xl font-semibold"
+          dir="rtl"
+          className="w-full h-14 px-4 rounded-xl bg-background border border-white/10 text-right text-2xl font-semibold"
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
           placeholder="Short description"
-          className="w-full px-3 py-2 rounded-xl bg-background border border-white/10 text-sm"
+          dir="rtl"
+          className="w-full px-3 py-2 rounded-xl bg-background border border-white/10 text-right text-sm"
         />
         <div className="pt-2 border-t border-white/10 flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground inline-flex items-center gap-2">
@@ -614,7 +616,8 @@ function NoteEditor({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Note title"
-              className="w-full h-14 px-4 rounded-xl bg-background border border-white/10 text-2xl font-semibold"
+              dir="rtl"
+              className="w-full h-14 px-4 rounded-xl bg-background border border-white/10 text-right text-2xl font-semibold"
             />
             <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -743,7 +746,8 @@ function BlockEditor({
             value={block.text}
             onChange={(e) => onChange({ ...block, text: e.target.value })}
             rows={2}
-            className="flex-1 px-3 py-2 rounded-lg bg-background border border-white/10 text-sm"
+            dir="rtl"
+            className="flex-1 px-3 py-2 rounded-lg bg-background border border-white/10 text-right text-sm"
           />
         </div>
       )}
@@ -763,7 +767,8 @@ function BlockEditor({
           <input
             value={block.text}
             onChange={(e) => onChange({ ...block, text: e.target.value })}
-            className="flex-1 h-10 px-3 rounded-lg bg-background border border-white/10 text-sm font-semibold"
+            dir="rtl"
+            className="flex-1 h-10 px-3 rounded-lg bg-background border border-white/10 text-right text-sm font-semibold"
           />
         </div>
       )}
@@ -772,7 +777,8 @@ function BlockEditor({
           value={block.text}
           onChange={(e) => onChange({ ...block, text: e.target.value })}
           rows={3}
-          className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm"
+          dir="rtl"
+          className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-right text-sm"
         />
       )}
       {(block.type === "bullets" || block.type === "numbered") && (
@@ -781,12 +787,13 @@ function BlockEditor({
             <div key={j} className="flex gap-2">
               <input
                 value={it}
+                dir="rtl"
                 onChange={(e) => {
                   const items = [...block.items];
                   items[j] = e.target.value;
                   onChange({ ...block, items });
                 }}
-                className="flex-1 h-9 px-3 rounded-lg bg-background border border-white/10 text-sm"
+                className="flex-1 h-9 px-3 rounded-lg bg-background border border-white/10 text-right text-sm"
               />
               <button
                 onClick={() => {
@@ -812,7 +819,8 @@ function BlockEditor({
           value={block.text}
           onChange={(e) => onChange({ ...block, text: e.target.value })}
           rows={2}
-          className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm italic"
+          dir="rtl"
+          className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-right text-sm italic"
         />
       )}
       {block.type === "divider" && (
