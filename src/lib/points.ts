@@ -27,10 +27,10 @@ export function showAward(source: PointSource, points: number) {
 }
 
 /** Insert a point row and show the congratulation card. Safe to call repeatedly — unique constraint dedupes when refId is given. */
-export async function awardPoints(source: PointSource, refId?: string) {
+export async function awardPoints(source: PointSource, refId?: string): Promise<number> {
   const points = POINT_VALUES[source];
   const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return;
+  if (!u.user) return 0;
   const { data, error } = await supabase.rpc("award_points_safe", {
     _source: source,
     _points: points,
@@ -38,11 +38,13 @@ export async function awardPoints(source: PointSource, refId?: string) {
   });
   if (error) {
     // server-side validation failed or duplicate — silent
-    return;
+    return 0;
   }
-  if (data) markSeen([data as string]);
+  if (!data) return 0;
+  markSeen([data as string]);
   trackPointsEarned(source, points);
   showAward(source, points);
+  return points;
 }
 
 /** Check for unseen point awards (e.g. summary approved while offline) and surface them. */
