@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { showAward } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 
 type Row = {
   id: string;
@@ -92,7 +93,10 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const chapterTwoFallback = getBuiltInPhysicsCh2(lang).filter(
         (row) => !existingQuestions.has(row.question.trim()),
       );
-      setRows([...databaseRows, ...chapterTwoFallback]);
+      const literatureFallback = getBuiltInEnglishLiteratureSection1(lang).filter(
+        (row) => !existingQuestions.has(row.question.trim()),
+      );
+      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback]);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();
