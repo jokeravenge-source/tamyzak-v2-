@@ -17,14 +17,6 @@ const SECTION_1: Array<readonly [string, readonly string[], number]> = [
   ["Why does Mrs Bennet want Mr Bennet to visit Mr Bingley?", ["So she can visit him with her daughters", "So Mr Bennet can ask him for money", "So Lizzy can visit him alone", "So Sir William can meet him"], 0],
   ["Why does Mr Bennet think Lizzy is different from her sisters?", ["Lizzy is more beautiful than her sisters", "Lizzy is richer than her sisters", "Lizzy is quicker than her sisters", "Lizzy is younger than her sisters"], 2],
   ["According to Mr Bennet, how are Lizzy's sisters described?", ["Friendly and good-humoured", "Silly and ignorant like other girls", "Quick and well educated", "Extraordinary and beautiful"], 1],
-  ["Mrs Bennet wants her daughters to marry into _____.", ["sympathy", "fortune", "nonsense", "preference"], 1],
-  ["Mr Bennet is not _____ to visit Mr Bingley.", ["grown-up", "extraordinary", "likely", "good-humoured"], 2],
-  ["Mrs Bennet thinks Mr Bennet gives Lizzy the _____.", ["fortune", "sympathy", "share", "preference"], 3],
-  ["Mr Bennet wants to _____ Lizzy to Mr Bingley.", ["consider", "mention", "flatter", "visit"], 1],
-  ["The five Bennet daughters are all _____.", ["newcomers", "grown-ups", "good-humoured", "extraordinary"], 1],
-  ["Sir William and Lady Lucas's visiting a new neighbour is _____.", ["likely", "ordinary", "extraordinary", "ignorant"], 2],
-  ["Mr Bennet is _____.", ["good-humoured", "ignorant", "jealous", "extraordinary"], 0],
-  ["Mrs Bennet wants Mr Bingley to _____ Jane and Lydia as well.", ["mention", "flatter", "consider", "visit"], 2],
 ];
 
 export const getBuiltInEnglishLiteratureSection1 = (language: "ar" | "en"): BuiltInMcqRow[] =>
