@@ -6,6 +6,7 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 import { rankFor, RANKS } from "@/lib/points";
 import { CharacterAvatar, type Gender, type CharacterTraits } from "@/components/CharacterAvatar";
 import { readDaily, writeDaily } from "@/lib/dailyCache";
+import StudentProfileDialog from "@/components/StudentProfileDialog";
 
 type Row = { user_id: string; name: string; points: number; gender: Gender | null; traits: Partial<CharacterTraits> | null };
 
@@ -24,6 +25,7 @@ const Leaderboard = ({
   const [me, setMe] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [openProfile, setOpenProfile] = useState<string | null>(null);
 
   const load = useCallback(async (force = false) => {
     const { data: u } = await supabase.auth.getUser();
@@ -165,8 +167,14 @@ const Leaderboard = ({
                 return (
                   <li
                     key={r.user_id}
+                    onClick={() => setOpenProfile(r.user_id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") setOpenProfile(r.user_id);
+                    }}
+                    role="button"
+                    tabIndex={0}
                     className={`flex items-center gap-4 rounded-2xl p-3 md:p-4 border transition ${
-                      isMe ? "border-primary bg-primary/10" : "border-white/5 bg-background/30"
+                      isMe ? "border-primary bg-primary/10" : "cursor-pointer border-white/5 bg-background/30 hover:border-primary/40"
                     }`}
                   >
                     <div className="w-9 text-center text-lg font-bold text-muted-foreground">
@@ -211,6 +219,8 @@ const Leaderboard = ({
           )}
 
         </div>
+
+        <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-4">
           <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("Ranks", "المراتب")}</p>

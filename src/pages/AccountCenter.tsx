@@ -17,7 +17,8 @@ import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
-import petCat from "@/assets/pet-cat.png";
+import { PET_DEFINITIONS, getSelectedPets, isPetUnlocked, type PetDefinition } from "@/lib/pets";
+import { RANKS, rankFor } from "@/lib/points";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -101,6 +102,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
+  const [lifetimePoints, setLifetimePoints] = useState(0);
   const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories" | "pets">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
@@ -127,6 +129,8 @@ const AccountCenter = ({
       setSavedName(p?.display_name ?? "");
       setGender((p?.gender as Gender) ?? null);
       setTraits(((p as any)?.character as CharacterTraits) ?? null);
+      const { data: publicProfile } = await supabase.rpc("public_student_profile", { _user_id: u.user.id });
+      setLifetimePoints(Number((publicProfile as any)?.lifetime_points ?? 0));
       const { data: pend } = await supabase
         .from("username_requests")
         .select("id, requested_name")
@@ -229,6 +233,25 @@ const AccountCenter = ({
     ? { ...getAvatarStyle(userId || "anon", gender), ...(traits ?? {}) }
     : null;
   const hairOptions = gender === "female" ? FEMALE_HAIRSTYLES : MALE_HAIRSTYLES;
+  const currentRank = rankFor(lifetimePoints);
+  const selectedPets = getSelectedPets(effective);
+
+  const togglePet = (pet: PetDefinition) => {
+    if (!isPetUnlocked(pet, currentRank.key)) {
+      const requiredRank = RANKS.find((rank) => rank.key === pet.rank);
+      toast.error(language === "ar" ? `تُفتح عند رتبة ${requiredRank?.label.ar ?? ""}` : `Unlocks at ${requiredRank?.label.en ?? ""} rank`);
+      return;
+    }
+    if (selectedPets.includes(pet.key)) {
+      updateTraits({ pets: selectedPets.filter((key) => key !== pet.key), pet: null });
+      return;
+    }
+    if (selectedPets.length >= 3) {
+      toast.error(language === "ar" ? "يمكنك اختيار 3 حيوانات كحد أقصى" : "You can select up to 3 pets");
+      return;
+    }
+    updateTraits({ pets: [...selectedPets, pet.key], pet: null });
+  };
 
 
   return (
@@ -355,12 +378,10 @@ const AccountCenter = ({
                   </button>
                   <button
                     type="button"
-                    disabled
+                    onClick={() => setCharacterTab("pets")}
                     aria-pressed={characterTab === "pets"}
-                    aria-label={language === "ar" ? "الحيوانات مقفلة حالياً" : "Pets are currently locked"}
-                    className="flex h-10 cursor-not-allowed items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-muted-foreground opacity-55 sm:text-xs"
+                    className={`h-10 rounded-xl text-[10px] font-bold transition sm:text-xs ${characterTab === "pets" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
-                    <Lock className="h-3 w-3" aria-hidden />
                     {text.pets}
                   </button>
                 </div>
@@ -521,29 +542,52 @@ const AccountCenter = ({
                     </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {language === "ar" ? "اختر حيوانك الأليف" : "Choose your pet"}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-background/40 p-3">
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{language === "ar" ? "إظهار الحيوانات في ملفك" : "Show pets on your profile"}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{language === "ar" ? `${selectedPets.length} من 3 مختارة` : `${selectedPets.length} of 3 selected`}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => updateTraits({ showPets: effective?.showPets === false })}
+                        aria-pressed={effective?.showPets !== false}
+                        className={`inline-flex h-10 min-w-20 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${effective?.showPets !== false ? "border-primary bg-primary/15 text-primary" : "border-white/10 text-muted-foreground"}`}
+                      >
+                        {effective?.showPets !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                        {effective?.showPets !== false ? text.on : text.off}
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {language === "ar" ? "اختر حتى 3 حيوانات — تُفتح حسب الرتبة" : "Choose up to 3 pets — unlocked by rank"}
                     </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ pet: null })}
-                        className={`aspect-square rounded-2xl border-2 bg-background/40 p-3 text-xs font-bold transition ${!effective?.pet ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-muted-foreground hover:border-white/30"}`}
-                      >
-                        {text.none}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateTraits({ pet: "cat" })}
-                        className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-3 transition ${effective?.pet === "cat" ? "scale-[1.03] border-primary bg-primary/10" : "border-white/10 hover:border-white/30"}`}
-                        aria-label={text.cat}
-                      >
-                        <img src={petCat} alt="" className="h-full w-full object-contain [image-rendering:pixelated]" draggable={false} />
-                        <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/80 px-1 py-1 text-[10px] font-bold text-foreground backdrop-blur-sm">
-                          {text.cat}
-                        </span>
-                      </button>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PET_DEFINITIONS.map((pet) => {
+                        const unlocked = isPetUnlocked(pet, currentRank.key);
+                        const selected = selectedPets.includes(pet.key);
+                        const requiredRank = RANKS.find((rank) => rank.key === pet.rank);
+                        return (
+                          <button
+                            key={pet.key}
+                            type="button"
+                            onClick={() => togglePet(pet)}
+                            aria-pressed={selected}
+                            className={`relative aspect-square overflow-hidden rounded-2xl border-2 bg-background/40 p-2 transition ${selected ? "scale-[1.03] border-primary bg-primary/10" : unlocked ? "border-white/10 hover:border-white/30" : "border-white/5 opacity-55"}`}
+                          >
+                            <img src={pet.image} alt="" className={`h-full w-full object-contain [image-rendering:pixelated] ${unlocked ? "" : "grayscale"}`} draggable={false} />
+                            {!unlocked && (
+                              <span className="absolute end-1 top-1 rounded-full bg-background/85 p-1 text-muted-foreground">
+                                <Lock className="h-3 w-3" />
+                              </span>
+                            )}
+                            <span className="absolute inset-x-1 bottom-1 rounded-lg bg-background/85 px-1 py-1 text-[9px] font-bold text-foreground backdrop-blur-sm">
+                              {pet.name[language]}
+                              {!unlocked && <span className="block text-[8px] text-muted-foreground">{requiredRank?.label[language]}</span>}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

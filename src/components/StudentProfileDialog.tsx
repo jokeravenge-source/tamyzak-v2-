@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import RankStone, { rankFromPoints, RANK_LABELS } from "./RankStone";
+import RankStone from "./RankStone";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
+import ProfilePets from "./ProfilePets";
+import { rankFor } from "@/lib/points";
 import { Flame, Clock, Trophy, EyeOff, Swords, Loader2, Instagram, Send, Music2, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -71,7 +73,7 @@ export default function StudentProfileDialog({
   }, [userId]);
 
   const points = data?.lifetime_points ?? 0;
-  const rank = rankFromPoints(points);
+  const rank = rankFor(points);
   const hoursHidden = data ? data.show_study_hours === false || data.total_seconds === null : false;
   const hours = ((data?.total_seconds ?? 0) / 3600).toFixed(1);
   const socials = (data?.socials ?? {}) as Socials;
@@ -128,11 +130,13 @@ export default function StudentProfileDialog({
               <div className="min-w-0">
                 <p className="truncate text-lg font-bold text-foreground">{data.display_name}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  {RANK_LABELS[rank][language]}
+                  {rank.label[language]}
                 </p>
               </div>
-              <RankStone rank={rank} size={56} className="ms-auto" />
+              <RankStone rank={rank.key} size={56} className="ms-auto" />
             </div>
+
+            <ProfilePets traits={data.character} language={language} />
 
             {data.bio && (
               <p className="rounded-xl border border-border bg-card p-3 text-sm leading-relaxed text-foreground">

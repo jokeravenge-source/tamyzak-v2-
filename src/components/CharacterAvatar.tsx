@@ -26,7 +26,7 @@ import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
-import petCat from "@/assets/pet-cat.png";
+import type { PetKind } from "@/lib/pets";
 
 export type Gender = "male" | "female";
 
@@ -46,7 +46,6 @@ export const HEADBAND_COLORS = ["#ef4444", "#3b82f6", "#10b981", "#1a1a1a", "#ff
 export type NecklaceKind = "gold" | "pearl" | null;
 export type HatKind = "straw" | "red-cap" | "kitty-ears" | null;
 export type ChainKind = "gold" | null;
-export type PetKind = "cat" | null;
 
 export type CharacterTraits = {
   skin: string;
@@ -62,7 +61,10 @@ export type CharacterTraits = {
   necklace?: NecklaceKind;
   hat?: HatKind;
   chain?: ChainKind;
-  pet?: PetKind;
+  /** Legacy single-pet value; kept so existing profiles migrate automatically. */
+  pet?: PetKind | null;
+  pets?: PetKind[];
+  showPets?: boolean;
   variant?: CharacterVariant;
 };
 
@@ -82,6 +84,8 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
     hat: null,
     chain: null,
     pet: null,
+    pets: [],
+    showPets: true,
     variant: 1,
   };
 }
@@ -245,25 +249,6 @@ export function CharacterAvatar({
             transform: "translateX(-50%)",
             imageRendering: "pixelated",
             filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {traits?.pet === "cat" && (
-        <img
-          src={petCat}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 6,
-            top: "35%",
-            left: "10%",
-            width: "27%",
-            height: "auto",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.35))",
             pointerEvents: "none",
           }}
         />
