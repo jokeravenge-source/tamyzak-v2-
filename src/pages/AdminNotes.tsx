@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX, Sparkles, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX, Sparkles, ArrowUpRight, Atom } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { markAllAdminNotesSeen } from "@/lib/unseenAdminNotes";
@@ -48,6 +48,12 @@ const NOTE_COVER_GRADIENTS = [
   "radial-gradient(circle at 82% 18%, rgba(255,255,255,0.3), transparent 30%), linear-gradient(140deg, #4a044e 0%, #86198f 50%, #db2777 100%)",
 ] as const;
 
+const PHYSICS_COVER_GRADIENT =
+  "radial-gradient(circle at 18% 14%, rgba(125,211,252,0.48), transparent 30%), radial-gradient(circle at 86% 18%, rgba(59,130,246,0.42), transparent 34%), linear-gradient(140deg, #071a3d 0%, #075985 48%, #2563eb 100%)";
+
+const isPhysicsNotebook = (title: string) =>
+  /physics|فيزياء|الفيزياء/i.test(title.trim());
+
 const noteCoverGradient = (id: string) => {
   let hash = 0;
   for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) | 0;
@@ -65,12 +71,14 @@ const NoteCard = ({
   note,
   language,
   fallbackCoverUrl,
+  isPhysics,
   onOpen,
   onSwipe,
 }: {
   note: NoteRow;
   language: AppLanguage;
   fallbackCoverUrl?: string | null;
+  isPhysics?: boolean;
   onOpen: () => void;
   onSwipe: (understood: boolean) => void;
 }) => {
@@ -79,7 +87,7 @@ const NoteCard = ({
   const yesOpacity = useTransform(x, [40, 160], [0, 1]);
   const noOpacity = useTransform(x, [-160, -40], [1, 0]);
   const coverUrl = note.background_image_url || fallbackCoverUrl;
-  const coverGradient = noteCoverGradient(note.id);
+  const coverGradient = isPhysics ? PHYSICS_COVER_GRADIENT : noteCoverGradient(note.id);
   const hasContent = hasVisibleBlocks(note.blocks);
   const cardLabel = language === "ar" ? "إثرائية" : "Enrichment";
   const openLabel = language === "ar" ? "افتح للتفاصيل" : "Open details";
@@ -127,6 +135,9 @@ const NoteCard = ({
         )}
         <div className="pointer-events-none absolute -start-12 -top-16 h-44 w-44 rounded-full bg-white/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -end-12 h-52 w-52 rounded-full bg-black/30 blur-3xl" />
+        {isPhysics && coverUrl && (
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-950/75 via-blue-700/55 to-cyan-500/35 mix-blend-multiply" />
+        )}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_12%,rgba(255,255,255,0.16)_42%,transparent_68%)] opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/75" />
 
@@ -136,8 +147,8 @@ const NoteCard = ({
         </div>
 
         <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-5 text-white sm:p-6">
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 text-4xl shadow-[0_12px_30px_-16px_rgba(0,0,0,0.75)] backdrop-blur-md">
-            {note.cover_emoji || "📘"}
+          <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl border text-4xl shadow-[0_12px_30px_-16px_rgba(0,0,0,0.75)] backdrop-blur-md ${isPhysics ? "border-sky-200/45 bg-sky-400/20 text-sky-50" : "border-white/25 bg-white/15"}`}>
+            {isPhysics ? <Atom className="h-9 w-9" strokeWidth={2.1} /> : (note.cover_emoji || "📘")}
           </div>
           <div className="min-w-0 flex-1 pb-0.5">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">
@@ -300,17 +311,19 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                   >
                     <button
                       onClick={() => openNotebook(nb)}
-                      className="group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-secondary/45 p-4 text-start shadow-[0_12px_34px_-28px_rgba(15,23,42,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_42px_-26px_hsl(var(--primary)/0.4)]"
+                      className={`group relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border p-4 text-start shadow-[0_12px_34px_-28px_rgba(15,23,42,0.7)] transition-all duration-300 hover:-translate-y-0.5 ${isPhysicsNotebook(nb.title) ? "border-sky-400/35 bg-gradient-to-br from-sky-950 via-blue-900 to-sky-700 text-white hover:border-sky-300/60 hover:shadow-[0_18px_44px_-24px_rgba(14,165,233,0.72)]" : "border-border/70 bg-gradient-to-br from-card via-card to-secondary/45 hover:border-primary/35 hover:shadow-[0_18px_42px_-26px_hsl(var(--primary)/0.4)]"}`}
                     >
                       <span
                         aria-hidden="true"
-                        className="pointer-events-none absolute -end-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-2xl transition-transform duration-500 group-hover:scale-125"
+                        className={`pointer-events-none absolute -end-12 -top-12 h-32 w-32 rounded-full blur-2xl transition-transform duration-500 group-hover:scale-125 ${isPhysicsNotebook(nb.title) ? "bg-cyan-300/25" : "bg-primary/10"}`}
                       />
                       <span
-                        className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-primary/10 text-3xl text-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.75)]"
-                        style={nb.cover_image_url ? undefined : { background: noteCoverGradient(nb.id) }}
+                        className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border text-3xl text-white shadow-[0_10px_24px_-14px_rgba(15,23,42,0.75)] ${isPhysicsNotebook(nb.title) ? "border-sky-200/40 bg-sky-400/20" : "border-white/20 bg-primary/10"}`}
+                        style={nb.cover_image_url || isPhysicsNotebook(nb.title) ? undefined : { background: noteCoverGradient(nb.id) }}
                       >
-                        {nb.cover_image_url ? (
+                        {isPhysicsNotebook(nb.title) ? (
+                          <Atom className="h-8 w-8" strokeWidth={2.1} />
+                        ) : nb.cover_image_url ? (
                           <img src={nb.cover_image_url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           nb.cover_emoji || "📚"
@@ -318,12 +331,12 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                       </span>
                       <span className="relative z-10 min-w-0 flex-1">
                         <span className="block truncate font-bold tracking-tight">{nb.title}</span>
-                        <span className="mt-1 block truncate text-xs text-muted-foreground">
+                        <span className={`mt-1 block truncate text-xs ${isPhysicsNotebook(nb.title) ? "text-sky-100/75" : "text-muted-foreground"}`}>
                           {nb.description ||
                             `${notes.filter((n) => n.notebook_id === nb.id).length} ${t("ملاحظة", "notes")}`}
                         </span>
                       </span>
-                      <span className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border/70 bg-background/60 text-muted-foreground transition-all group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary">
+                      <span className={`relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition-all ${isPhysicsNotebook(nb.title) ? "border-sky-200/30 bg-white/10 text-sky-100 group-hover:border-sky-200/55 group-hover:bg-white/15" : "border-border/70 bg-background/60 text-muted-foreground group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:text-primary"}`}>
                         <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                       </span>
                     </button>
@@ -413,6 +426,7 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                     note={queue[index]}
                     language={language}
                     fallbackCoverUrl={notebook.cover_image_url}
+                    isPhysics={isPhysicsNotebook(notebook.title)}
                     onOpen={() => setSelectedNote(queue[index])}
                     onSwipe={swipe}
                   />
