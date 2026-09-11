@@ -1,7 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, X, Loader2, HelpCircle, Trophy, Frown, RotateCcw, CalendarClock, Sparkles, Layers3 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Atom,
+  BookOpenText,
+  CalendarClock,
+  Check,
+  Dna,
+  FlaskConical,
+  Frown,
+  HelpCircle,
+  Languages,
+  Layers3,
+  Loader2,
+  Microscope,
+  MoonStar,
+  RotateCcw,
+  Sigma,
+  Sparkles,
+  Trophy,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
@@ -22,28 +43,40 @@ type Row = {
   explanation: string | null;
 };
 
-const SUBJECT_LABELS: Record<string, { ar: string; en: string; emoji: string }> = {
-  physics: { ar: "الفيزياء", en: "Physics", emoji: "🧲" },
-  chemistry: { ar: "الكيمياء", en: "Chemistry", emoji: "⚗️" },
-  biology: { ar: "الأحياء", en: "Biology", emoji: "🧬" },
-  english: { ar: "الإنجليزية", en: "English", emoji: "🔤" },
-  english_literature: { ar: "الأدب الإنكليزي", en: "English Literature", emoji: "📚" },
-  french: { ar: "الفرنسية", en: "French", emoji: "🇫🇷" },
-  arabic: { ar: "العربية", en: "Arabic", emoji: "📖" },
-  islamic: { ar: "التربية الإسلامية", en: "Islamic", emoji: "🕌" },
-  math: { ar: "الرياضيات", en: "Math", emoji: "➗" },
+const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
+  physics: { ar: "الفيزياء", en: "Physics" },
+  chemistry: { ar: "الكيمياء", en: "Chemistry" },
+  biology: { ar: "الأحياء", en: "Biology" },
+  english: { ar: "الإنجليزية", en: "English" },
+  english_literature: { ar: "الأدب الإنكليزي", en: "English Literature" },
+  french: { ar: "الفرنسية", en: "French" },
+  arabic: { ar: "العربية", en: "Arabic" },
+  islamic: { ar: "التربية الإسلامية", en: "Islamic" },
+  math: { ar: "الرياضيات", en: "Math" },
 };
 
-const SUBJECT_STYLES: Record<string, { card: string; icon: string; glow: string }> = {
-  physics: { card: "border-sky-500/25 bg-sky-500/10 hover:border-sky-400/60", icon: "bg-sky-500/15 text-sky-500", glow: "bg-sky-500/15" },
-  chemistry: { card: "border-orange-500/25 bg-orange-500/10 hover:border-orange-400/60", icon: "bg-orange-500/15 text-orange-500", glow: "bg-orange-500/15" },
-  biology: { card: "border-lime-500/25 bg-lime-500/10 hover:border-lime-400/60", icon: "bg-lime-500/15 text-lime-600 dark:text-lime-400", glow: "bg-lime-500/15" },
-  english: { card: "border-blue-500/25 bg-blue-500/10 hover:border-blue-400/60", icon: "bg-blue-500/15 text-blue-500", glow: "bg-blue-500/15" },
-  english_literature: { card: "border-cyan-500/25 bg-cyan-500/10 hover:border-cyan-400/60", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300", glow: "bg-cyan-500/15" },
-  french: { card: "border-violet-500/25 bg-violet-500/10 hover:border-violet-400/60", icon: "bg-violet-500/15 text-violet-500", glow: "bg-violet-500/15" },
-  arabic: { card: "border-rose-500/25 bg-rose-500/10 hover:border-rose-400/60", icon: "bg-rose-500/15 text-rose-500", glow: "bg-rose-500/15" },
-  islamic: { card: "border-emerald-500/25 bg-emerald-500/10 hover:border-emerald-400/60", icon: "bg-emerald-500/15 text-emerald-500", glow: "bg-emerald-500/15" },
-  math: { card: "border-indigo-500/25 bg-indigo-500/10 hover:border-indigo-400/60", icon: "bg-indigo-500/15 text-indigo-500", glow: "bg-indigo-500/15" },
+const SUBJECT_ICONS: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  physics: Atom,
+  chemistry: FlaskConical,
+  biology: Dna,
+  english: Languages,
+  english_literature: BookOpenText,
+  french: Languages,
+  arabic: BookOpenText,
+  islamic: MoonStar,
+  math: Sigma,
+};
+
+const SUBJECT_STYLES: Record<string, { card: string; icon: string; iconRing: string; glow: string }> = {
+  physics: { card: "border-sky-500/25 bg-sky-500/10 hover:border-sky-400/60", icon: "bg-sky-500 text-white shadow-sky-500/30", iconRing: "border-sky-400/35 bg-sky-400/10", glow: "bg-sky-500/20" },
+  chemistry: { card: "border-orange-500/25 bg-orange-500/10 hover:border-orange-400/60", icon: "bg-orange-500 text-white shadow-orange-500/30", iconRing: "border-orange-400/35 bg-orange-400/10", glow: "bg-orange-500/20" },
+  biology: { card: "border-lime-500/25 bg-lime-500/10 hover:border-lime-400/60", icon: "bg-lime-600 text-white shadow-lime-500/30", iconRing: "border-lime-400/35 bg-lime-400/10", glow: "bg-lime-500/20" },
+  english: { card: "border-blue-500/25 bg-blue-500/10 hover:border-blue-400/60", icon: "bg-blue-500 text-white shadow-blue-500/30", iconRing: "border-blue-400/35 bg-blue-400/10", glow: "bg-blue-500/20" },
+  english_literature: { card: "border-cyan-500/25 bg-cyan-500/10 hover:border-cyan-400/60", icon: "bg-cyan-600 text-white shadow-cyan-500/30", iconRing: "border-cyan-400/35 bg-cyan-400/10", glow: "bg-cyan-500/20" },
+  french: { card: "border-violet-500/25 bg-violet-500/10 hover:border-violet-400/60", icon: "bg-violet-500 text-white shadow-violet-500/30", iconRing: "border-violet-400/35 bg-violet-400/10", glow: "bg-violet-500/20" },
+  arabic: { card: "border-rose-500/25 bg-rose-500/10 hover:border-rose-400/60", icon: "bg-rose-500 text-white shadow-rose-500/30", iconRing: "border-rose-400/35 bg-rose-400/10", glow: "bg-rose-500/20" },
+  islamic: { card: "border-emerald-500/25 bg-emerald-500/10 hover:border-emerald-400/60", icon: "bg-emerald-500 text-white shadow-emerald-500/30", iconRing: "border-emerald-400/35 bg-emerald-400/10", glow: "bg-emerald-500/20" },
+  math: { card: "border-indigo-500/25 bg-indigo-500/10 hover:border-indigo-400/60", icon: "bg-indigo-500 text-white shadow-indigo-500/30", iconRing: "border-indigo-400/35 bg-indigo-400/10", glow: "bg-indigo-500/20" },
 };
 
 const subjectLabel = (s: string, isAr: boolean) => {
@@ -259,17 +292,23 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             {subjects.map(([s, count]) => {
-              const style = SUBJECT_STYLES[s] ?? { card: "border-primary/25 bg-primary/10 hover:border-primary/60", icon: "bg-primary/15 text-primary", glow: "bg-primary/15" };
+              const style = SUBJECT_STYLES[s] ?? { card: "border-primary/25 bg-primary/10 hover:border-primary/60", icon: "bg-primary text-primary-foreground shadow-primary/30", iconRing: "border-primary/30 bg-primary/10", glow: "bg-primary/20" };
+              const SubjectIcon = SUBJECT_ICONS[s] ?? Microscope;
               return (
               <motion.button
                 key={s}
                 whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => { setSubject(s); setChapter(null); }}
-                className={`group relative min-h-40 overflow-hidden rounded-2xl border p-4 text-start shadow-sm backdrop-blur transition-all hover:shadow-lg md:p-5 ${style.card}`}
+                className={`group relative min-h-40 overflow-hidden rounded-2xl border p-4 text-start shadow-sm backdrop-blur transition-all duration-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:p-5 ${style.card}`}
               >
                 <span aria-hidden="true" className={`absolute -end-7 -top-7 h-24 w-24 rounded-full blur-2xl ${style.glow}`} />
-                <div className={`relative mb-5 grid h-12 w-12 place-items-center rounded-2xl text-2xl shadow-sm ${style.icon}`}>{SUBJECT_LABELS[s]?.emoji ?? "📚"}</div>
+                <div className={`relative mb-5 grid h-14 w-14 place-items-center rounded-[1.15rem] border transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-105 ${style.iconRing}`}>
+                  <span className={`grid h-10 w-10 place-items-center rounded-[0.85rem] shadow-lg transition-transform duration-300 group-hover:rotate-3 ${style.icon}`}>
+                    <SubjectIcon className="h-5 w-5" strokeWidth={2.25} />
+                  </span>
+                  <span aria-hidden="true" className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full border-2 border-background bg-current opacity-70" />
+                </div>
                 <div className="relative font-extrabold">{subjectLabel(s, isAr)}</div>
                 <div className="relative mt-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
