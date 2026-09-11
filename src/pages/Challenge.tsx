@@ -163,7 +163,10 @@ const ChallengePage = ({
   }
 
   return (
-    <main className="min-h-screen bg-background pb-32" dir={language === "ar" ? "rtl" : "ltr"}>
+    <main
+      className="min-h-screen bg-background pb-[calc(env(safe-area-inset-bottom,0px)+13rem)]"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
         <button onClick={onBack} className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-6">
           <ArrowLeft className="h-4 w-4" /> {T(language, "رجوع", "Back")}
@@ -486,7 +489,10 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
   };
 
   return (
-    <main className="min-h-screen bg-background pb-32" dir={language === "ar" ? "rtl" : "ltr"}>
+    <main
+      className="min-h-screen bg-background pb-[calc(env(safe-area-inset-bottom,0px)+13rem)]"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
         <button onClick={onDone} className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium mb-6">
           <ArrowLeft className="h-4 w-4" /> {T(language, "رجوع", "Back")}
@@ -847,7 +853,10 @@ const ChallengeRunner = ({
   }
 
   return (
-    <main className="min-h-screen bg-background pb-32 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
+    <main
+      className="min-h-screen bg-background pb-[calc(env(safe-area-inset-bottom,0px)+13rem)] relative overflow-hidden"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
         <button onClick={onBack} className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium mb-6">
           <ArrowLeft className="h-4 w-4" /> {T(language, "رجوع", "Back")}
