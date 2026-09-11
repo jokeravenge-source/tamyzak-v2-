@@ -3,12 +3,6 @@ import type { BuiltInMcqRow } from "@/lib/physicsChapter2Mcqs";
 // Built-in fallback so the section stays available before a hosting deployment
 // applies the matching Supabase seed migration.
 const SECTION_1: Array<readonly [string, readonly string[], number]> = [
-  ["What does “nonsense” mean?", ["Something important", "Something silly or crazy", "Something expensive", "Something acceptable"], 1],
-  ["What does the verb “flatter” mean?", ["To visit someone", "To disagree with someone", "To compliment something or someone", "To understand someone's feelings"], 2],
-  ["What does “share” mean?", ["A large amount of money", "The amount of something acceptable for one person", "Something likely to happen", "A group of newcomers"], 1],
-  ["Who are “newcomers”?", ["People who are new to a place", "People who live in an estate", "People who are well educated", "People who visit their neighbours"], 0],
-  ["What does “ignorant” mean?", ["Friendly and good-humoured", "Rich and successful", "Not educated or does not know much", "Unfairly treated"], 2],
-  ["What does “sympathy” mean?", ["Understanding someone's feelings", "Thinking about someone's beauty", "Complimenting someone", "Giving someone preference"], 0],
   ["According to the exercise, “Mr Bingley is looking to live in the Bennets’ estate” is:", ["True", "False", "Not mentioned", "Partly true"], 1],
   ["According to the exercise, “Mr Bennet is jealous of Mrs Bennet and Mr Bingley” is:", ["True", "False", "Not mentioned", "Partly true"], 1],
   ["According to the exercise, “Mr Bennet wants to visit Mr Bingley” is:", ["True", "False", "Not mentioned", "Partly true"], 1],
@@ -23,14 +17,6 @@ const SECTION_1: Array<readonly [string, readonly string[], number]> = [
   ["Why does Mrs Bennet want Mr Bennet to visit Mr Bingley?", ["So she can visit him with her daughters", "So Mr Bennet can ask him for money", "So Lizzy can visit him alone", "So Sir William can meet him"], 0],
   ["Why does Mr Bennet think Lizzy is different from her sisters?", ["Lizzy is more beautiful than her sisters", "Lizzy is richer than her sisters", "Lizzy is quicker than her sisters", "Lizzy is younger than her sisters"], 2],
   ["According to Mr Bennet, how are Lizzy's sisters described?", ["Friendly and good-humoured", "Silly and ignorant like other girls", "Quick and well educated", "Extraordinary and beautiful"], 1],
-  ["Which word means “a large amount of money”?", ["Share", "Preference", "Fortune", "Sympathy"], 2],
-  ["Which word means “something that has a good chance of happening”?", ["Extraordinary", "Likely", "Ignorant", "Grown-up"], 1],
-  ["Which word or phrase means “adult”?", ["Newcomer", "Good-humoured", "Grown-up", "Likely"], 2],
-  ["Which word means “unusual”?", ["Extraordinary", "Likely", "Ignorant", "Friendly"], 0],
-  ["Which word means “think about”?", ["Mention", "Consider", "Flatter", "Prefer"], 1],
-  ["What is the word for unfairly treating one person better than others?", ["Sympathy", "Fortune", "Preference", "Nonsense"], 2],
-  ["Which word means “friendly”?", ["Grown-up", "Good-humoured", "Extraordinary", "Likely"], 1],
-  ["Which word means “refer”?", ["Mention", "Consider", "Prefer", "Flatter"], 0],
   ["Mrs Bennet wants her daughters to marry into _____.", ["sympathy", "fortune", "nonsense", "preference"], 1],
   ["Mr Bennet is not _____ to visit Mr Bingley.", ["grown-up", "extraordinary", "likely", "good-humoured"], 2],
   ["Mrs Bennet thinks Mr Bennet gives Lizzy the _____.", ["fortune", "sympathy", "share", "preference"], 3],
