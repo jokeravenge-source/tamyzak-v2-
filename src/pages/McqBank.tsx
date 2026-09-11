@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, X, Loader2, HelpCircle, Trophy, Frown, Ro
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
-import { showAward } from "@/lib/points";
+import { awardPoints, showAward } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
@@ -173,7 +173,15 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       setAnswerIndex(current.answer_index);
       setExplanation(current.explanation);
       setScore((s) => ({ right: s.right + (ok ? 1 : 0), wrong: s.wrong + (ok ? 0 : 1) }));
-      if (ok) celebrate(); else saveMistake(current.answer_index);
+      if (ok) {
+        celebrate();
+        if (current.id.startsWith("builtin-")) {
+          const awarded = await awardPoints("mcq", `mcq-bank:${current.id}`);
+          setDelta(awarded);
+        }
+      } else {
+        saveMistake(current.answer_index);
+      }
       return;
     }
     setAnswerIndex(res.answer_index);
