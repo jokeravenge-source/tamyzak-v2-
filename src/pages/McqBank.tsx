@@ -25,6 +25,7 @@ const SUBJECT_LABELS: Record<string, { ar: string; en: string; emoji: string }> 
   chemistry: { ar: "الكيمياء", en: "Chemistry", emoji: "⚗️" },
   biology: { ar: "الأحياء", en: "Biology", emoji: "🧬" },
   english: { ar: "الإنجليزية", en: "English", emoji: "🔤" },
+  english_literature: { ar: "الأدب الإنكليزي", en: "English Literature", emoji: "📚" },
   french: { ar: "الفرنسية", en: "French", emoji: "🇫🇷" },
   arabic: { ar: "العربية", en: "Arabic", emoji: "📖" },
   islamic: { ar: "التربية الإسلامية", en: "Islamic", emoji: "🕌" },
@@ -36,6 +37,7 @@ const SUBJECT_STYLES: Record<string, { card: string; icon: string; glow: string 
   chemistry: { card: "border-orange-500/25 bg-orange-500/10 hover:border-orange-400/60", icon: "bg-orange-500/15 text-orange-500", glow: "bg-orange-500/15" },
   biology: { card: "border-lime-500/25 bg-lime-500/10 hover:border-lime-400/60", icon: "bg-lime-500/15 text-lime-600 dark:text-lime-400", glow: "bg-lime-500/15" },
   english: { card: "border-blue-500/25 bg-blue-500/10 hover:border-blue-400/60", icon: "bg-blue-500/15 text-blue-500", glow: "bg-blue-500/15" },
+  english_literature: { card: "border-cyan-500/25 bg-cyan-500/10 hover:border-cyan-400/60", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300", glow: "bg-cyan-500/15" },
   french: { card: "border-violet-500/25 bg-violet-500/10 hover:border-violet-400/60", icon: "bg-violet-500/15 text-violet-500", glow: "bg-violet-500/15" },
   arabic: { card: "border-rose-500/25 bg-rose-500/10 hover:border-rose-400/60", icon: "bg-rose-500/15 text-rose-500", glow: "bg-rose-500/15" },
   islamic: { card: "border-emerald-500/25 bg-emerald-500/10 hover:border-emerald-400/60", icon: "bg-emerald-500/15 text-emerald-500", glow: "bg-emerald-500/15" },
@@ -268,6 +270,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
 
   // ---- Chapter picker ----
   if (chapter === null && !reviewing) {
+    const usesSections = subject === "english_literature";
     return (
       <main className="relative min-h-screen overflow-hidden px-4 py-6 pb-28 md:py-10" dir={isAr ? "rtl" : "ltr"}>
         <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
@@ -275,8 +278,14 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         {header(subjectLabel(subject, isAr), () => setSubject(null))}
         <div className="mb-5 rounded-2xl border border-border/70 bg-card/70 p-5">
           <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Layers3 className="h-5 w-5" /></span>
-          <h2 className="text-xl font-black">{isAr ? "اختار الفصل" : "Choose a chapter"}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{isAr ? "كل فصل مرتب وعدد أسئلته واضح قبل ما تبدأ." : "See each chapter and its question count before you begin."}</p>
+          <h2 className="text-xl font-black">
+            {usesSections ? (isAr ? "اختار القسم" : "Choose a section") : (isAr ? "اختار الفصل" : "Choose a chapter")}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {usesSections
+              ? (isAr ? "اختر القسم الذي تريد التدرب على أسئلته." : "Choose the section you want to practise.")
+              : (isAr ? "كل فصل مرتب وعدد أسئلته واضح قبل ما تبدأ." : "See each chapter and its question count before you begin.")}
+          </p>
         </div>
         <div className="grid gap-3">
           {chapters.map((c) => (
@@ -289,8 +298,10 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 font-mono text-lg font-black text-primary">{c.chapter}</span>
               <span className="min-w-0 flex-1">
-                <span className="block font-extrabold">{isAr ? `الفصل ${c.chapter}` : `Chapter ${c.chapter}`}</span>
-                {c.title ? <span className="mt-0.5 block truncate text-sm text-muted-foreground">{c.title}</span> : null}
+                <span className="block font-extrabold">
+                  {usesSections ? (c.title ?? `${isAr ? "القسم" : "Section"} ${c.chapter}`) : (isAr ? `الفصل ${c.chapter}` : `Chapter ${c.chapter}`)}
+                </span>
+                {!usesSections && c.title ? <span className="mt-0.5 block truncate text-sm text-muted-foreground">{c.title}</span> : null}
               </span>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground">{c.count} {isAr ? "سؤال" : "Q"}</span>
               <ArrowRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
@@ -312,7 +323,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       {header(
         reviewing
           ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
-          : `${subjectLabel(subject!, isAr)} · ${isAr ? `الفصل ${chapter}` : `Chapter ${chapter}`}`,
+          : subject === "english_literature"
+            ? `${subjectLabel(subject, isAr)} · ${chapters.find((item) => item.chapter === chapter)?.title ?? `${isAr ? "القسم" : "Section"} ${chapter}`}`
+            : `${subjectLabel(subject!, isAr)} · ${isAr ? `الفصل ${chapter}` : `Chapter ${chapter}`}`,
         () => {
           if (reviewing) setReviewing(false);
           else setChapter(null);
