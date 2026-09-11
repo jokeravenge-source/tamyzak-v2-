@@ -9,6 +9,7 @@ import { showAward } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
+import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
 
 type Row = {
   id: string;
@@ -89,14 +90,19 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         (supabase as any).rpc("get_due_mcq_bank_reviews"),
       ]);
       const databaseRows = (data ?? []) as Row[];
-      const existingQuestions = new Set(databaseRows.map((row) => row.question.trim()));
+      const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
+        `${row.subject}\u0000${row.chapter}\u0000${row.question.trim()}`;
+      const existingQuestions = new Set(databaseRows.map(rowKey));
       const chapterTwoFallback = getBuiltInPhysicsCh2(lang).filter(
-        (row) => !existingQuestions.has(row.question.trim()),
+        (row) => !existingQuestions.has(rowKey(row)),
       );
       const literatureFallback = getBuiltInEnglishLiteratureSection1(lang).filter(
-        (row) => !existingQuestions.has(row.question.trim()),
+        (row) => !existingQuestions.has(rowKey(row)),
       );
-      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback]);
+      const literatureSectionTwoFallback = getBuiltInEnglishLiteratureSection2(lang).filter(
+        (row) => !existingQuestions.has(rowKey(row)),
+      );
+      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback]);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();
