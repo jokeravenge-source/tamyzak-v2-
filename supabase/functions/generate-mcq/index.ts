@@ -425,7 +425,7 @@ Deno.serve(async (req) => {
       // Fallback path: free-text response recovered by the tolerant parser.
       try {
         return await withRetry(async () => {
-          const { text } = await generateText({ model, system, messages });
+          const { text } = await generateText({ model: model as any, system, messages: messages as any });
           const questions = parseQuestionsFromText(text);
           if (!questions.length) throw new Error("no parsable questions");
           return questions;
