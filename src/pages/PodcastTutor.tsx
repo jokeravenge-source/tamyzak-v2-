@@ -130,6 +130,7 @@ export default function PodcastTutor({
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
   const speechVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const autoSpokenSegmentRef = useRef<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -276,10 +277,19 @@ export default function PodcastTutor({
     speakNext();
   }, [selectArabicVoice]);
 
-  const playNarration = () => {
+  const playNarration = useCallback(() => {
     if (!current) return;
     speakArabic(`${current.narration_text}. ${current.checkpoint_prompt}`, "narration", () => setPhase("listening"));
-  };
+  }, [current, speakArabic]);
+
+  useEffect(() => {
+    if (!session || !current || current.completed_at || phase !== "idle") return;
+    if (session.status !== "ready" && session.status !== "in_progress") return;
+    if (autoSpokenSegmentRef.current === current.id) return;
+    autoSpokenSegmentRef.current = current.id;
+    const timer = window.setTimeout(playNarration, 350);
+    return () => window.clearTimeout(timer);
+  }, [session, current, phase, playNarration]);
 
   const advance = async () => {
     if (!session) return;
@@ -542,7 +552,9 @@ function SessionView(props: {
           : phase === "recording" ? <StateIcon icon={<Mic className="h-9 w-9" />} pulse label={`جاري التسجيل · ${props.recordingSeconds} ث`} danger />
           : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
           : phase === "correction" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="استمع إلى التصحيح" />
-          : <StateIcon icon={answered ? <Check className="h-9 w-9" /> : <Podcast className="h-9 w-9" />} label={answered ? "اكتمل هذا المقطع" : "جاهز للمقطع التالي"} />}
+          : <StateIcon icon={answered ? <Check className="h-9 w-9" /> : <Podcast className="h-9 w-9" />} label={answered ? "اكتمل هذا المقطع" : "اضغط لتسمع شرح المقطع"} />}
+
+          {phase === "idle" && !answered && <button onClick={props.onPlay} className="mx-auto mt-5 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-7 py-3.5 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110"><Play className="h-5 w-5 fill-current" /> تشغيل الشرح الصوتي</button>}
 
           <p className="mx-auto mt-6 max-w-2xl text-right text-base leading-8 text-slate-200 sm:text-lg">{current.narration_text}</p>
           {(phase === "listening" || phase === "recording") && <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>}
@@ -550,9 +562,8 @@ function SessionView(props: {
           {props.error && <div className="mt-5"><ErrorBanner message={props.error} /></div>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            {phase === "idle" && !answered && <button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-black text-slate-950"><Play className="h-5 w-5 fill-current" /> تشغيل الشرح</button>}
             {phase === "narration" && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" /> استمع حتى نهاية المقطع</span>}
-            {phase === "listening" && <button disabled={!props.recordingSupported} onClick={props.onRecord} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-rose-400 to-fuchsia-500 px-6 py-3 font-black shadow-lg shadow-rose-500/20 disabled:opacity-40"><Mic className="h-5 w-5" /> ابدأ التلخيص بصوتك</button>}
+            {phase === "listening" && <><button disabled={!props.recordingSupported} onClick={props.onRecord} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-rose-400 to-fuchsia-500 px-6 py-3 font-black shadow-lg shadow-rose-500/20 disabled:opacity-40"><Mic className="h-5 w-5" /> ابدأ التلخيص بصوتك</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
             {phase === "recording" && <button onClick={props.onStop} className="flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-black text-rose-600"><Square className="h-4 w-4 fill-current" /> إنهاء وإرسال</button>}
             {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_text && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
           </div>
