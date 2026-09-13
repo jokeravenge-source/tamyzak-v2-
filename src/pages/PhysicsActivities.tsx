@@ -6,6 +6,7 @@ import * as THREE from "three";
 import type { AppLanguage } from "@/components/LanguageGate";
 import CapacitorDischarge from "@/components/physics/CapacitorDischarge";
 import DaniellCell from "@/components/physics/DaniellCell";
+import SelfInductionActivity from "@/components/physics/SelfInductionActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -437,6 +438,9 @@ const PhysicsActivities = ({
             <TabsTrigger value="daniell">
               {isRTL ? "خلية دانييل" : "Daniell Cell"}
             </TabsTrigger>
+            <TabsTrigger value="self-induction">
+              {isRTL ? "الحث الذاتي" : "Self-Induction"}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dielectric">
@@ -538,6 +542,10 @@ const PhysicsActivities = ({
 
           <TabsContent value="daniell">
             <DaniellCell language={language} />
+          </TabsContent>
+
+          <TabsContent value="self-induction">
+            <SelfInductionActivity language={language} />
           </TabsContent>
         </Tabs>
       </div>
