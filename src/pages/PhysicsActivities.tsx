@@ -5,7 +5,6 @@ import { ArrowLeft, Atom, RotateCcw, Zap } from "lucide-react";
 import * as THREE from "three";
 import type { AppLanguage } from "@/components/LanguageGate";
 import CapacitorDischarge from "@/components/physics/CapacitorDischarge";
-import DaniellCell from "@/components/physics/DaniellCell";
 import SelfInductionActivity from "@/components/physics/SelfInductionActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -435,9 +434,6 @@ const PhysicsActivities = ({
             <TabsTrigger value="discharge">
               {isRTL ? "تفريغ المكثف" : "Discharging a Capacitor"}
             </TabsTrigger>
-            <TabsTrigger value="daniell">
-              {isRTL ? "خلية دانييل" : "Daniell Cell"}
-            </TabsTrigger>
             <TabsTrigger value="self-induction">
               {isRTL ? "الحث الذاتي" : "Self-Induction"}
             </TabsTrigger>
@@ -539,10 +535,6 @@ const PhysicsActivities = ({
 
           <TabsContent value="discharge">
             <CapacitorDischarge language={language} />
-          </TabsContent>
-
-          <TabsContent value="daniell">
-            <DaniellCell language={language} />
           </TabsContent>
 
           <TabsContent value="self-induction">

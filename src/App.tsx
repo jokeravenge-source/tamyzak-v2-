@@ -85,6 +85,7 @@ const FrenchSynonyms = lazy(() => import("./pages/FrenchSynonyms"));
 const FrenchAntonyms = lazy(() => import("./pages/FrenchAntonyms"));
 const ToolPlaceholder = lazy(() => import("./pages/ToolPlaceholder"));
 const PhysicsActivities = lazy(() => import("./pages/PhysicsActivities"));
+const ChemistryExperiments = lazy(() => import("./pages/ChemistryExperiments"));
 const OurCourses = lazy(() => import("./pages/OurCourses"));
 const ExamGenerator = lazy(() => import("./pages/ExamGenerator"));
 const Teachers = lazy(() => import("./pages/Teachers"));
@@ -904,6 +905,8 @@ const App = () => {
         <ToolPlaceholder language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsActivities" ? (
         <PhysicsActivities language={language} onBack={resetMenu} />
+      ) : menuChoice === "chemistryExperiments" ? (
+        <ChemistryExperiments language={language} onBack={resetMenu} />
       ) : menuChoice === "ourCourses" ? (
         <OurCourses language={language} onBack={resetMenu} />
       ) : menuChoice === "examGenerator" ? (
