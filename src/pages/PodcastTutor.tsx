@@ -27,6 +27,31 @@ type Verdict = "correct" | "partial" | "incorrect";
 type TutorPhase = "idle" | "preparing_audio" | "narration" | "listening" | "recording" | "grading" | "correction";
 type StudyPlaybackItem = { kind: "speech"; text: string } | { kind: "audio"; url: string };
 
+type BrowserSpeechRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: {
+    resultIndex: number;
+    results: ArrayLike<{ isFinal: boolean; 0?: { transcript?: string } }>;
+  }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+};
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+function getSpeechRecognition(): BrowserSpeechRecognitionConstructor | null {
+  const browserWindow = window as typeof window & {
+    SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  };
+  return browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition ?? null;
+}
+
 type PodcastSession = {
   id: string;
   youtube_url: string;
@@ -131,6 +156,8 @@ export default function PodcastTutor({
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const browserTranscriptRef = useRef("");
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -147,6 +174,8 @@ export default function PodcastTutor({
 
   useEffect(() => () => {
     stopStream();
+    recognitionRef.current?.abort();
+    recognitionRef.current = null;
     recordAudioRef.current?.pause();
     ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
@@ -293,7 +322,7 @@ export default function PodcastTutor({
     setPhase("idle");
   };
 
-  const submitRecording = async (blob: Blob) => {
+  const submitRecording = async (blob: Blob, recognizedText: string) => {
     if (!current) return;
     setPhase("grading");
     setError(null);
@@ -301,6 +330,7 @@ export default function PodcastTutor({
       const form = new FormData();
       form.append("segment_id", current.id);
       form.append("audio", new File([blob], "answer.webm", { type: blob.type || "audio/webm" }));
+      if (recognizedText.trim()) form.append("student_answer_text", recognizedText.trim());
       const { data, error: fnError } = await supabase.functions.invoke("submit-checkpoint-answer", { body: form });
       if (fnError) {
         let message = fnError.message;
@@ -333,6 +363,33 @@ export default function PodcastTutor({
     if (!recordingSupported) return;
     try {
       setError(null);
+      browserTranscriptRef.current = "";
+      const Recognition = getSpeechRecognition();
+      if (Recognition) {
+        const recognition = new Recognition();
+        recognition.lang = "ar-IQ";
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.onresult = (event) => {
+          const additions: string[] = [];
+          for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            const result = event.results[index];
+            const transcript = result?.[0]?.transcript?.trim();
+            if (result?.isFinal && transcript) additions.push(transcript);
+          }
+          if (additions.length) {
+            browserTranscriptRef.current = `${browserTranscriptRef.current} ${additions.join(" ")}`.trim();
+          }
+        };
+        recognition.onerror = () => { /* the server transcription fallback remains available */ };
+        recognition.onend = () => {
+          if (recognitionRef.current === recognition) recognitionRef.current = null;
+        };
+        try {
+          recognition.start();
+          recognitionRef.current = recognition;
+        } catch { /* use server transcription fallback */ }
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
@@ -342,13 +399,17 @@ export default function PodcastTutor({
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         stopStream();
-        void submitRecording(blob);
+        window.setTimeout(() => {
+          void submitRecording(blob, browserTranscriptRef.current);
+        }, 450);
       };
       setRecordingSeconds(0);
       timerRef.current = window.setInterval(() => setRecordingSeconds((value) => value + 1), 1000);
       recorder.start();
       setPhase("recording");
     } catch {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
       stopStream();
       setError("لم نتمكن من استخدام الميكروفون. اسمح بالوصول إليه ثم حاول مرة أخرى.");
       setPhase("listening");
@@ -356,6 +417,7 @@ export default function PodcastTutor({
   };
 
   const stopRecording = () => {
+    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   };
 
@@ -405,6 +467,8 @@ export default function PodcastTutor({
   };
 
   const resetHome = () => {
+    recognitionRef.current?.abort();
+    recognitionRef.current = null;
     recordAudioRef.current?.pause();
     ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
