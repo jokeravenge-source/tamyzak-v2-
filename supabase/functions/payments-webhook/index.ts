@@ -29,7 +29,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     });
     return;
   }
-  await getSupabase().from('subscriptions').upsert({
+  await (getSupabase().from('subscriptions' as any).upsert({
     user_id: userId,
     paddle_subscription_id: id,
     paddle_customer_id: customerId,
@@ -40,7 +40,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     current_period_end: currentBillingPeriod?.endsAt,
     environment: env,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'paddle_subscription_id' });
+  }, { onConflict: 'paddle_subscription_id' }) as any);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
