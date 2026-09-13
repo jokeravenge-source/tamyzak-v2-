@@ -71,7 +71,7 @@ async function waitForGeminiFile(apiKey: string, ref: GeminiFileRef): Promise<Ge
   return null;
 }
 
-async function uploadStoragePdfToGemini(admin: ReturnType<typeof createClient>, path: string, displayName: string, mimeType: string, size: number, cacheKey: string): Promise<GeminiFileRef | null> {
+async function uploadStoragePdfToGemini(admin: any, path: string, displayName: string, mimeType: string, size: number, cacheKey: string): Promise<GeminiFileRef | null> {
   const cached = geminiFileCache.get(cacheKey);
   if (cached && Date.now() - cached.at < GEMINI_FILE_CACHE_TTL_MS) return cached.ref;
 
