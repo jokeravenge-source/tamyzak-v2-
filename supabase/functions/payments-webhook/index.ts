@@ -29,7 +29,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     });
     return;
   }
-  await (getSupabase().from('subscriptions' as any).upsert({
+  await ((getSupabase().from('subscriptions' as any) as any).upsert({
     user_id: userId,
     paddle_subscription_id: id,
     paddle_customer_id: customerId,
