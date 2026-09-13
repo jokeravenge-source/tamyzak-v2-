@@ -150,8 +150,67 @@ async function getFallbackAudio(youtubeUrl: string, videoId: string): Promise<Bl
 }
 
 export async function transcribeAudio(audio: Blob, filename = "answer.webm"): Promise<string> {
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  if (geminiKey) {
+    try {
+      const bytes = new Uint8Array(await audio.arrayBuffer());
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45_000);
+      const model = Deno.env.get("PODCAST_STT_MODEL") ?? "gemini-2.5-flash-lite";
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              role: "user",
+              parts: [
+                {
+                  text: "فرّغ هذا التسجيل الصوتي إلى نص عربي فقط. حافظ على المصطلحات العلمية والأرقام كما نطقها الطالب. أرجع النص المنسوخ فقط بلا مقدمة أو شرح.",
+                },
+                {
+                  inlineData: {
+                    mimeType: (audio.type || "audio/webm").split(";")[0],
+                    data: btoa(binary),
+                  },
+                },
+              ],
+            }],
+            generationConfig: { temperature: 0, maxOutputTokens: 2048 },
+          }),
+        },
+      ).finally(() => clearTimeout(timeout));
+      const payload = await response.json().catch(() => null);
+      if (response.ok) {
+        const text = (payload?.candidates?.[0]?.content?.parts ?? [])
+          .map((part: { text?: unknown }) => typeof part?.text === "string" ? part.text : "")
+          .join("")
+          .trim()
+          .replace(/^```(?:text)?\s*/i, "")
+          .replace(/\s*```$/, "")
+          .trim();
+        if (text) return text;
+      } else {
+        console.error("Gemini podcast transcription failed", response.status, JSON.stringify(payload).slice(0, 400));
+      }
+    } catch (error) {
+      console.error("Gemini podcast transcription error", error);
+    }
+  }
+
   const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("خدمة تحويل الصوت إلى نص غير مهيأة.");
+  if (!apiKey) {
+    throw new Error(geminiKey
+      ? "تعذّر تحويل التسجيل إلى نص. حاول التسجيل مرة أخرى بوضوح."
+      : "خدمة تحويل الصوت إلى نص غير مهيأة. أضف GEMINI_API_KEY إلى أسرار المشروع.");
+  }
   const form = new FormData();
   form.append("file", audio, filename);
   form.append("model", Deno.env.get("WHISPER_MODEL") ?? "whisper-1");
