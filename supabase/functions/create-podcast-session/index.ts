@@ -7,18 +7,14 @@ import {
   fetchVideoTitle,
   generateScript,
   json,
-  textToSpeech,
   transcriptFor,
-  uploadPodcastAudio,
 } from "../_shared/podcast.ts";
 
 async function processSession(
   sessionId: string,
-  userId: string,
   youtubeUrl: string,
   videoId: string,
   subject: string | undefined,
-  voiceId: string,
 ) {
   const admin = adminClient();
   try {
@@ -30,22 +26,11 @@ async function processSession(
     const rows = [];
     for (let index = 0; index < segments.length; index += 1) {
       const segment = segments[index];
-      // Speaking the checkpoint with the narration preserves one continuous
-      // tutor voice and ensures the recording starts only after the prompt.
-      const audio = await textToSpeech(`${segment.narration_text}\n\n${segment.checkpoint_prompt}`, voiceId);
-      const path = await uploadPodcastAudio(
-        admin,
-        userId,
-        sessionId,
-        `segment-${index + 1}-narration.mp3`,
-        audio,
-        "audio/mpeg",
-      );
       rows.push({
         session_id: sessionId,
         segment_order: index + 1,
         narration_text: segment.narration_text,
-        narration_audio_url: path,
+        narration_audio_url: null,
         checkpoint_prompt: segment.checkpoint_prompt,
         answer_key: segment.answer_key,
       });
@@ -104,9 +89,6 @@ Deno.serve(async (req) => {
   const videoId = extractYouTubeId(youtubeUrl);
   if (!videoId || videoId.length > 32) return json({ error: "أدخل رابط يوتيوب صالحاً." }, 400);
   const subject = typeof body.subject === "string" ? body.subject.trim().slice(0, 80) : undefined;
-  const voiceId = Deno.env.get("ELEVENLABS_VOICE_ID");
-  if (!voiceId) return json({ error: "صوت المعلّم غير مهيأ حالياً." }, 503);
-
   const { data: session, error } = await admin
     .from("podcast_sessions")
     .insert({
@@ -114,13 +96,13 @@ Deno.serve(async (req) => {
       youtube_url: youtubeUrl,
       subject: subject || null,
       status: "processing",
-      voice_id: voiceId,
+      voice_id: "browser-arabic",
     })
     .select("id, status")
     .single();
   if (error || !session) return json({ error: "تعذّر إنشاء الجلسة." }, 500);
 
-  const work = processSession(session.id, user.userId, youtubeUrl, videoId, subject, voiceId);
+  const work = processSession(session.id, youtubeUrl, videoId, subject);
   const edgeRuntime = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime;
   if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(work);
   else await work;

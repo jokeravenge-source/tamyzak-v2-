@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 type SessionStatus = "processing" | "ready" | "in_progress" | "completed" | "failed";
 type Verdict = "correct" | "partial" | "incorrect";
 type TutorPhase = "idle" | "narration" | "listening" | "recording" | "grading" | "correction";
+type StudyPlaybackItem = { kind: "speech"; text: string } | { kind: "audio"; url: string };
 
 type PodcastSession = {
   id: string;
@@ -59,6 +60,25 @@ const verdictCopy: Record<Verdict, { label: string; style: string }> = {
   partial: { label: "إجابة جزئية", style: "border-amber-400/30 bg-amber-500/15 text-amber-100" },
   incorrect: { label: "تحتاج مراجعة", style: "border-rose-400/30 bg-rose-500/15 text-rose-100" },
 };
+
+function speechChunks(text: string, maxLength = 220): string[] {
+  const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!؟؛:])\s+/);
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of sentences) {
+    if (!sentence) continue;
+    if (current && `${current} ${sentence}`.length > maxLength) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current = current ? `${current} ${sentence}` : sentence;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks.flatMap((chunk) => chunk.length <= maxLength
+    ? [chunk]
+    : chunk.match(new RegExp(`.{1,${maxLength}}(?:\\s|$)`, "g"))?.map((part) => part.trim()).filter(Boolean) ?? [chunk]);
+}
 
 async function invoke<T>(name: string, options?: { body?: unknown }): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, options);
@@ -107,8 +127,9 @@ export default function PodcastTutor({
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordingSupported, setRecordingSupported] = useState(true);
   const [recordPlaying, setRecordPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
+  const speechRunRef = useRef(0);
+  const speechVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -126,8 +147,9 @@ export default function PodcastTutor({
 
   useEffect(() => () => {
     stopStream();
-    audioRef.current?.pause();
     recordAudioRef.current?.pause();
+    speechRunRef.current += 1;
+    window.speechSynthesis?.cancel();
   }, [stopStream]);
 
   const loadHistory = useCallback(async () => {
@@ -192,31 +214,72 @@ export default function PodcastTutor({
     }
   };
 
-  const playAudio = async (url: string | null, nextPhase: TutorPhase) => {
-    if (!url) {
-      setError("ملف الصوت غير متاح حالياً.");
+  const selectArabicVoice = useCallback(() => {
+    if (speechVoiceRef.current) return speechVoiceRef.current;
+    const voices = window.speechSynthesis.getVoices();
+    let saved = "";
+    try { saved = localStorage.getItem("tamyzak_podcast_voice_v1") ?? ""; } catch { /* unavailable */ }
+    const voice = voices.find((item) => item.voiceURI === saved)
+      ?? voices.find((item) => item.lang.toLowerCase() === "ar-iq")
+      ?? voices.find((item) => item.lang.toLowerCase().startsWith("ar"))
+      ?? null;
+    speechVoiceRef.current = voice;
+    if (voice) {
+      try { localStorage.setItem("tamyzak_podcast_voice_v1", voice.voiceURI); } catch { /* unavailable */ }
+    }
+    return voice;
+  }, []);
+
+  const speakArabic = useCallback((
+    text: string,
+    speakingPhase: TutorPhase | null,
+    onEnd: () => void,
+    onFailure?: () => void,
+  ) => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setError("هذا المتصفح لا يدعم الصوت العربي المدمج. افتح Tamyzak في Chrome أو Safari محدث.");
+      setPhase("idle");
+      onFailure?.();
       return;
     }
-    setError(null);
-    const audio = audioRef.current ?? new Audio();
-    audioRef.current = audio;
-    audio.pause();
-    audio.src = url;
-    audio.onended = () => setPhase(nextPhase);
-    audio.onerror = () => {
-      setPhase("idle");
-      setError("تعذّر تشغيل الصوت. أعد فتح الجلسة لتحديث الرابط.");
-    };
-    setPhase(nextPhase === "listening" ? "narration" : "correction");
-    try {
-      await audio.play();
-    } catch {
-      setPhase("idle");
-      setError("اضغط تشغيل للسماح للمتصفح بتشغيل الصوت.");
+    const chunks = speechChunks(text);
+    if (!chunks.length) {
+      onEnd();
+      return;
     }
-  };
+    const runId = ++speechRunRef.current;
+    window.speechSynthesis.cancel();
+    setError(null);
+    if (speakingPhase) setPhase(speakingPhase);
+    const voice = selectArabicVoice();
+    let index = 0;
+    const speakNext = () => {
+      if (runId !== speechRunRef.current) return;
+      if (index >= chunks.length) {
+        onEnd();
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+      utterance.lang = voice?.lang || "ar-IQ";
+      utterance.rate = 0.92;
+      utterance.pitch = 1;
+      if (voice) utterance.voice = voice;
+      utterance.onend = speakNext;
+      utterance.onerror = (event) => {
+        if (runId !== speechRunRef.current || event.error === "canceled" || event.error === "interrupted") return;
+        setPhase("idle");
+        setError("تعذّر تشغيل صوت الجهاز. تأكد من تثبيت صوت عربي ثم حاول مجدداً.");
+        onFailure?.();
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+    speakNext();
+  }, [selectArabicVoice]);
 
-  const playNarration = () => void playAudio(current?.narration_audio_url ?? null, "listening");
+  const playNarration = () => {
+    if (!current) return;
+    speakArabic(`${current.narration_text}. ${current.checkpoint_prompt}`, "narration", () => setPhase("listening"));
+  };
 
   const advance = async () => {
     if (!session) return;
@@ -255,9 +318,8 @@ export default function PodcastTutor({
         correction_audio_url: data.correction_audio_url,
         completed_at: new Date().toISOString(),
       } : item));
-      if (data.correction_audio_url) {
-        await playAudio(data.correction_audio_url, "idle");
-        if (audioRef.current) audioRef.current.onended = () => { void advance(); };
+      if (data.correction_text) {
+        speakArabic(data.correction_text, "correction", () => { void advance(); });
       } else {
         await advance();
       }
@@ -297,39 +359,53 @@ export default function PodcastTutor({
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   };
 
-  const studyRecordUrls = useMemo(() => segments.flatMap((item) => [
-    item.narration_audio_url,
-    item.student_answer_audio_url,
-    item.correction_audio_url,
-  ]).filter((url): url is string => !!url), [segments]);
+  const studyRecord = useMemo<StudyPlaybackItem[]>(() => segments.flatMap((item) => {
+    const items: StudyPlaybackItem[] = [
+      { kind: "speech", text: `${item.narration_text}. ${item.checkpoint_prompt}` },
+    ];
+    if (item.student_answer_audio_url) items.push({ kind: "audio", url: item.student_answer_audio_url });
+    if (item.correction_text) items.push({ kind: "speech", text: item.correction_text });
+    return items;
+  }), [segments]);
 
   const playStudyRecord = () => {
-    if (!studyRecordUrls.length) return;
+    if (!studyRecord.length) return;
     recordAudioRef.current?.pause();
-    let index = 0;
-    const audio = new Audio(studyRecordUrls[index]);
-    recordAudioRef.current = audio;
+    speechRunRef.current += 1;
+    window.speechSynthesis?.cancel();
     setRecordPlaying(true);
-    audio.onended = () => {
-      index += 1;
-      if (index >= studyRecordUrls.length) {
+    const playNext = (index: number) => {
+      if (index >= studyRecord.length) {
         setRecordPlaying(false);
         return;
       }
-      audio.src = studyRecordUrls[index];
-      void audio.play();
+      const item = studyRecord[index];
+      if (item.kind === "speech") {
+        speakArabic(item.text, null, () => playNext(index + 1), () => setRecordPlaying(false));
+        return;
+      }
+      const audio = new Audio(item.url);
+      recordAudioRef.current = audio;
+      audio.onended = () => playNext(index + 1);
+      audio.onerror = () => setRecordPlaying(false);
+      void audio.play().catch(() => {
+        setError("تعذّر تشغيل تسجيل الطالب.");
+        setRecordPlaying(false);
+      });
     };
-    audio.onerror = () => setRecordPlaying(false);
-    void audio.play().catch(() => setRecordPlaying(false));
+    playNext(0);
   };
 
   const stopStudyRecord = () => {
     recordAudioRef.current?.pause();
+    speechRunRef.current += 1;
+    window.speechSynthesis?.cancel();
     setRecordPlaying(false);
   };
 
   const resetHome = () => {
-    audioRef.current?.pause();
+    speechRunRef.current += 1;
+    window.speechSynthesis?.cancel();
     setSession(null);
     setSegments([]);
     setPhase("idle");
@@ -416,7 +492,7 @@ export default function PodcastTutor({
             onPlay={playNarration}
             onRecord={startRecording}
             onStop={stopRecording}
-            onReplayCorrection={() => void playAudio(current?.correction_audio_url ?? null, "idle")}
+            onReplayCorrection={() => current?.correction_text && speakArabic(current.correction_text, "correction", () => setPhase("idle"))}
             onAdvance={() => void advance()}
           />
         )}
@@ -430,7 +506,7 @@ function ErrorBanner({ message }: { message: string }) {
 }
 
 function ProcessingCard({ title }: { title: string | null }) {
-  const steps = ["استخراج محتوى المحاضرة", "تقسيم الأفكار وكتابة الشرح", "تجهيز صوت المعلّم العربي"];
+  const steps = ["استخراج محتوى المحاضرة", "تقسيم الأفكار وكتابة الشرح", "تحضير مقاطع المراجعة التفاعلية"];
   return <GlassCard className="mx-auto max-w-2xl p-7 sm:p-10">
     <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-[28px] bg-cyan-400/15"><Loader2 className="h-10 w-10 animate-spin text-cyan-300" /></div>
     <h2 className="text-center text-2xl font-black">نجهّز جلستك الصوتية</h2>
@@ -478,7 +554,7 @@ function SessionView(props: {
             {phase === "narration" && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" /> استمع حتى نهاية المقطع</span>}
             {phase === "listening" && <button disabled={!props.recordingSupported} onClick={props.onRecord} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-rose-400 to-fuchsia-500 px-6 py-3 font-black shadow-lg shadow-rose-500/20 disabled:opacity-40"><Mic className="h-5 w-5" /> ابدأ التلخيص بصوتك</button>}
             {phase === "recording" && <button onClick={props.onStop} className="flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-black text-rose-600"><Square className="h-4 w-4 fill-current" /> إنهاء وإرسال</button>}
-            {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_audio_url && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
+            {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_text && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
           </div>
           {!props.recordingSupported && <p className="mt-4 text-xs text-rose-200">هذا المتصفح لا يدعم التسجيل الصوتي. افتح Tamyzak في Chrome أو Safari محدث.</p>}
         </motion.div>

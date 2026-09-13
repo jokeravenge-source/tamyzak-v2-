@@ -5,8 +5,6 @@ import {
   callClaudeJson,
   corsHeaders,
   json,
-  signedAudioUrl,
-  textToSpeech,
   transcribeAudio,
   uploadPodcastAudio,
 } from "../_shared/podcast.ts";
@@ -49,7 +47,7 @@ Deno.serve(async (req) => {
     if (!segment) return json({ error: "المقطع غير موجود." }, 404);
     const { data: session } = await admin
       .from("podcast_sessions")
-      .select("id, user_id, status, voice_id")
+      .select("id, user_id, status")
       .eq("id", segment.session_id)
       .maybeSingle();
     if (!session || session.user_id !== user.userId) return json({ error: "غير مسموح." }, 403);
@@ -76,25 +74,13 @@ Deno.serve(async (req) => {
 إجابة الطالب المنسوخة: ${studentText}
 `, 900));
 
-    let correctionPath: string | null = null;
-    if (grade.verdict !== "correct" && grade.correction_text) {
-      const correctionAudio = await textToSpeech(grade.correction_text, session.voice_id);
-      correctionPath = await uploadPodcastAudio(
-        admin,
-        user.userId,
-        session.id,
-        `segment-${segment.segment_order}-correction-${Date.now()}.mp3`,
-        correctionAudio,
-        "audio/mpeg",
-      );
-    }
     const completedAt = new Date().toISOString();
     const { error: updateError } = await admin.from("podcast_segments").update({
       student_answer_text: studentText,
       student_answer_audio_url: audioPath,
       verdict: grade.verdict,
       correction_text: grade.correction_text,
-      correction_audio_url: correctionPath,
+      correction_audio_url: null,
       completed_at: completedAt,
     }).eq("id", segment.id);
     if (updateError) throw updateError;
@@ -115,7 +101,7 @@ Deno.serve(async (req) => {
       student_answer_text: studentText,
       verdict: grade.verdict,
       correction_text: grade.correction_text,
-      correction_audio_url: await signedAudioUrl(admin, correctionPath),
+      correction_audio_url: null,
       session_completed: finished,
     });
   } catch (error) {

@@ -207,25 +207,6 @@ ${limited}
   });
 }
 
-export async function textToSpeech(text: string, voiceId: string): Promise<Uint8Array> {
-  const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
-  if (!apiKey) throw new Error("خدمة الصوت العربي غير مهيأة.");
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "xi-api-key": apiKey },
-      body: JSON.stringify({
-        text,
-        model_id: Deno.env.get("ELEVENLABS_MODEL_ID") ?? "eleven_multilingual_v2",
-        voice_settings: { stability: 0.58, similarity_boost: 0.78, style: 0.18, use_speaker_boost: true },
-      }),
-    },
-  );
-  if (!response.ok) throw new Error("تعذّر إنشاء الصوت العربي.");
-  return new Uint8Array(await response.arrayBuffer());
-}
-
 export async function uploadPodcastAudio(
   admin: SupabaseClient,
   userId: string,
