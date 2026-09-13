@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type SessionStatus = "processing" | "ready" | "in_progress" | "completed" | "failed";
 type Verdict = "correct" | "partial" | "incorrect";
-type TutorPhase = "idle" | "narration" | "listening" | "recording" | "grading" | "correction";
+type TutorPhase = "idle" | "preparing_audio" | "narration" | "listening" | "recording" | "grading" | "correction";
 type StudyPlaybackItem = { kind: "speech"; text: string } | { kind: "audio"; url: string };
 
 type PodcastSession = {
@@ -61,7 +61,7 @@ const verdictCopy: Record<Verdict, { label: string; style: string }> = {
   incorrect: { label: "تحتاج مراجعة", style: "border-rose-400/30 bg-rose-500/15 text-rose-100" },
 };
 
-function speechChunks(text: string, maxLength = 220): string[] {
+function speechChunks(text: string, maxLength = 1800): string[] {
   const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!؟؛:])\s+/);
   const chunks: string[] = [];
   let current = "";
@@ -128,9 +128,8 @@ export default function PodcastTutor({
   const [recordingSupported, setRecordingSupported] = useState(true);
   const [recordPlaying, setRecordPlaying] = useState(false);
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
-  const speechVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
-  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -149,9 +148,9 @@ export default function PodcastTutor({
   useEffect(() => () => {
     stopStream();
     recordAudioRef.current?.pause();
+    ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
-    window.speechSynthesis?.cancel();
-    activeUtteranceRef.current = null;
+    ttsAudioRef.current = null;
   }, [stopStream]);
 
   const loadHistory = useCallback(async () => {
@@ -216,86 +215,66 @@ export default function PodcastTutor({
     }
   };
 
-  const selectArabicVoice = useCallback(() => {
-    if (speechVoiceRef.current) return speechVoiceRef.current;
-    const voices = window.speechSynthesis.getVoices();
-    let saved = "";
-    try { saved = localStorage.getItem("tamyzak_podcast_voice_v1") ?? ""; } catch { /* unavailable */ }
-    const voice = voices.find((item) => item.voiceURI === saved)
-      ?? voices.find((item) => item.lang.toLowerCase() === "ar-iq")
-      ?? voices.find((item) => item.lang.toLowerCase().startsWith("ar"))
-      ?? null;
-    speechVoiceRef.current = voice;
-    if (voice) {
-      try { localStorage.setItem("tamyzak_podcast_voice_v1", voice.voiceURI); } catch { /* unavailable */ }
-    }
-    return voice;
-  }, []);
-
-  useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
-    const refreshVoice = () => {
-      speechVoiceRef.current = null;
-      selectArabicVoice();
-    };
-    refreshVoice();
-    window.speechSynthesis.addEventListener("voiceschanged", refreshVoice);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", refreshVoice);
-  }, [selectArabicVoice]);
-
   const speakArabic = useCallback((
     text: string,
     speakingPhase: TutorPhase | null,
     onEnd: () => void,
     onFailure?: () => void,
   ) => {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-      setError("هذا المتصفح لا يدعم الصوت العربي المدمج. افتح Tamyzak في Chrome أو Safari محدث.");
-      setPhase("idle");
-      onFailure?.();
-      return;
-    }
     const chunks = speechChunks(text);
     if (!chunks.length) {
       onEnd();
       return;
     }
     const runId = ++speechRunRef.current;
-    window.speechSynthesis.cancel();
-    activeUtteranceRef.current = null;
+    ttsAudioRef.current?.pause();
+    const audio = new Audio();
+    audio.preload = "auto";
+    ttsAudioRef.current = audio;
     setError(null);
-    if (speakingPhase) setPhase(speakingPhase);
-    const voice = selectArabicVoice();
+    if (speakingPhase) setPhase("preparing_audio");
     let index = 0;
-    const speakNext = () => {
+    let started = false;
+    let failed = false;
+
+    const fail = () => {
+      if (failed || runId !== speechRunRef.current) return;
+      failed = true;
+      audio.pause();
+      if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
+      if (speakingPhase) setPhase("idle");
+      setError("تعذّر تجهيز الصوت الآن. تحقق من الاتصال ثم اضغط تشغيل مرة أخرى.");
+      onFailure?.();
+    };
+
+    const speakNext = async () => {
       if (runId !== speechRunRef.current) return;
       if (index >= chunks.length) {
-        activeUtteranceRef.current = null;
+        if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
         onEnd();
         return;
       }
-      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
-      utterance.lang = voice?.lang || "ar-IQ";
-      utterance.rate = 0.92;
-      utterance.pitch = 1;
-      if (voice) utterance.voice = voice;
-      activeUtteranceRef.current = utterance;
-      utterance.onend = () => {
+
+      try {
+        const result = await invoke<{ audio?: string; mime?: string }>("tts-speak", {
+          body: { text: chunks[index++], language: "ar", voice: "shimmer", speed: 1.05 },
+        });
         if (runId !== speechRunRef.current) return;
-        activeUtteranceRef.current = null;
-        speakNext();
-      };
-      utterance.onerror = (event) => {
-        if (runId !== speechRunRef.current || event.error === "canceled" || event.error === "interrupted") return;
-        activeUtteranceRef.current = null;
-        setPhase("idle");
-        setError("تعذّر تشغيل صوت الجهاز. تأكد من تثبيت صوت عربي ثم حاول مجدداً.");
-        onFailure?.();
-      };
-      window.speechSynthesis.speak(utterance);
+        if (!result.audio) throw new Error("No audio returned");
+        audio.onended = () => { void speakNext(); };
+        audio.onerror = fail;
+        audio.src = `data:${result.mime || "audio/mpeg"};base64,${result.audio}`;
+        await audio.play();
+        if (!started && runId === speechRunRef.current) {
+          started = true;
+          if (speakingPhase) setPhase(speakingPhase);
+        }
+      } catch {
+        fail();
+      }
     };
-    speakNext();
-  }, [selectArabicVoice]);
+    void speakNext();
+  }, []);
 
   const playNarration = useCallback(() => {
     if (!current) return;
@@ -392,8 +371,8 @@ export default function PodcastTutor({
   const playStudyRecord = () => {
     if (!studyRecord.length) return;
     recordAudioRef.current?.pause();
+    ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
-    window.speechSynthesis?.cancel();
     setRecordPlaying(true);
     const playNext = (index: number) => {
       if (index >= studyRecord.length) {
@@ -419,16 +398,17 @@ export default function PodcastTutor({
 
   const stopStudyRecord = () => {
     recordAudioRef.current?.pause();
+    ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
-    window.speechSynthesis?.cancel();
-    activeUtteranceRef.current = null;
+    ttsAudioRef.current = null;
     setRecordPlaying(false);
   };
 
   const resetHome = () => {
+    recordAudioRef.current?.pause();
+    ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
-    window.speechSynthesis?.cancel();
-    activeUtteranceRef.current = null;
+    ttsAudioRef.current = null;
     setSession(null);
     setSegments([]);
     setPhase("idle");
@@ -561,7 +541,8 @@ function SessionView(props: {
       <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
       <AnimatePresence mode="wait">
         <motion.div key={`${current.id}-${phase}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
-          {phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
+          {phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
+          : phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
           : phase === "recording" ? <StateIcon icon={<Mic className="h-9 w-9" />} pulse label={`جاري التسجيل · ${props.recordingSeconds} ث`} danger />
           : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
           : phase === "correction" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="استمع إلى التصحيح" />
