@@ -351,7 +351,7 @@ const BlockRow = ({
     />
   );
 
-  const wrapperBase = "group flex items-start gap-2 rounded-md px-2 py-0.5 hover:bg-secondary/40 transition-colors";
+  const wrapperBase = "group relative flex items-start gap-2 rounded-xl px-3 py-1.5 hover:bg-primary/[0.045] focus-within:bg-primary/[0.055] transition-colors before:absolute before:inset-y-2 before:start-0 before:w-0.5 before:rounded-full before:bg-primary before:opacity-0 focus-within:before:opacity-70";
   const indentPad = { paddingInlineStart: `${indent * 1.5}rem` };
 
   if (block.type === "bullet") {
@@ -474,10 +474,10 @@ const TreeItem = ({
         onDragLeave={() => { /* handled at root */ }}
         onDrop={(e) => { e.stopPropagation(); onPageDrop(e, node.id); }}
         onDragEnd={onPageDragEnd}
-        className={`group relative flex items-center gap-1 rounded-md px-1 py-1 cursor-pointer transition-all ${
+        className={`group relative flex min-h-9 items-center gap-1.5 rounded-xl px-2 py-1.5 cursor-pointer transition-all ${
           active
-            ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary shadow-sm"
-            : "text-foreground/80 hover:bg-secondary hover:translate-x-0.5"
+            ? "bg-gradient-to-r from-primary/20 via-primary/10 to-transparent text-primary shadow-sm ring-1 ring-primary/10"
+            : "text-foreground/75 hover:bg-white/60 dark:hover:bg-white/[0.06] hover:text-foreground"
         } ${isDragTarget ? "ring-2 ring-primary/60" : ""}`}
         style={{ paddingInlineStart: `${depth * 0.75 + 0.25}rem` }}
         onClick={() => { if (!editing) onSelect(node.id); }}
@@ -582,7 +582,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" ? true : window.innerWidth >= 768);
   const [search, setSearch] = useState("");
   const [slash, setSlash] = useState<{ blockId: string; x: number; y: number } | null>(null);
   const [iconPickerFor, setIconPickerFor] = useState<string | null>(null);
@@ -1165,6 +1165,20 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
     setSlash(null);
   };
 
+  const insertBlock = (type: BlockType) => {
+    const block = blankBlock(type);
+    setBlocks((blocks) => [...blocks, block]);
+    setFocusBlockId(block.id);
+  };
+
+  const quickBlocks = [
+    { type: "text" as const, label: language === "ar" ? "نص" : "Text", Icon: Type },
+    { type: "h2" as const, label: language === "ar" ? "عنوان" : "Heading", Icon: Heading2 },
+    { type: "bullet" as const, label: language === "ar" ? "قائمة" : "List", Icon: List },
+    { type: "todo" as const, label: language === "ar" ? "مهمة" : "To-do", Icon: CheckSquare },
+    { type: "quote" as const, label: language === "ar" ? "اقتباس" : "Quote", Icon: Quote },
+  ];
+
   const tree = useMemo(() => {
     let filtered = notes;
     if (search.trim()) {
@@ -1223,20 +1237,31 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
   }, [active, notes]);
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground flex" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground flex" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_85%_5%,hsl(var(--primary)/.12),transparent_30%),radial-gradient(circle_at_10%_90%,hsl(var(--primary)/.07),transparent_34%)]" />
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.button
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm md:hidden"
+            aria-label={language === "ar" ? "إغلاق القائمة" : "Close sidebar"}
+          />
+        )}
+      </AnimatePresence>
       {/* Sidebar */}
       <AnimatePresence initial={false}>
         {sidebarOpen && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
+            animate={{ width: 300, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-r border-border bg-gradient-to-b from-secondary/40 via-secondary/20 to-background backdrop-blur-xl flex flex-col h-screen sticky top-0 overflow-hidden"
+            className="fixed inset-y-0 start-0 z-50 border-e border-border/70 bg-background/92 shadow-2xl backdrop-blur-2xl flex flex-col h-screen overflow-hidden md:sticky md:top-0 md:shadow-none"
             style={{ minWidth: 0 }}
           >
-            <div className="w-[280px] flex flex-col h-full">
-              <div className="p-3 border-b border-border/60 flex items-center gap-2">
+            <div className="w-[300px] flex flex-col h-full">
+              <div className="p-4 border-b border-border/60 flex items-center gap-2.5">
                 <button
                   onClick={async () => { await flushSaves(); onBack(); }}
                   className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
@@ -1245,10 +1270,13 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                   <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 </button>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="w-7 h-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                    <NotebookPen className="w-4 h-4" />
+                  <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/15 text-primary flex items-center justify-center shrink-0 shadow-sm">
+                    <NotebookPen className="w-[18px] h-[18px]" />
                   </span>
-                  <span className="text-sm font-bold truncate tracking-tight">{t.title}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black truncate tracking-tight">{t.title}</span>
+                    <span className="block text-[10px] text-muted-foreground">{notes.length} {language === "ar" ? "صفحة" : "pages"}</span>
+                  </span>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
@@ -1258,14 +1286,14 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                   <PanelLeftClose className="w-4 h-4" />
                 </button>
               </div>
-              <div className="p-2">
+              <div className="p-3">
                 <div className="relative">
                   <Search className={`w-3.5 h-3.5 absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-2.5" : "left-2.5"} text-muted-foreground`} />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={t.search}
-                    className={`w-full h-8 ${isRTL ? "pr-8 pl-2" : "pl-8 pr-2"} rounded-md bg-card border border-border text-sm outline-none focus:border-primary/40`}
+                    className={`w-full h-10 ${isRTL ? "pr-9 pl-3" : "pl-9 pr-3"} rounded-xl bg-secondary/45 border border-border/70 text-sm outline-none focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 transition-all`}
                   />
                 </div>
               </div>
@@ -1275,8 +1303,8 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                 ) : notebooks.length === 0 && notes.length === 0 ? (
                   <div className="p-4 text-xs text-muted-foreground">{t.emptySidebar}</div>
                 ) : (
-                  <div className="space-y-3">
-                    {notebookGroups.map((g, gi) => {
+                  <div className="space-y-4">
+                    {notebookGroups.map((g) => {
                       const nb = g.notebook;
                       const nbId = nb?.id ?? "__none";
                       const open = nb ? expandedNotebooks.has(nb.id) : true;
@@ -1289,7 +1317,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                             onDragOver={(e) => onNotebookDragOver(e, nb?.id ?? null)}
                             onDrop={(e) => { e.stopPropagation(); onNotebookDrop(e, nb?.id ?? null); }}
                             onDragEnd={clearDrag}
-                            className={`group flex items-center gap-1 rounded-md px-1 py-1.5 hover:bg-secondary/60 transition-colors ${
+                            className={`group flex items-center gap-1.5 rounded-xl px-2 py-2 hover:bg-secondary/60 transition-colors ${
                               dragOverId === (nb ? `nb:${nb.id}` : "__none") ? "ring-2 ring-primary/60 bg-primary/5" : ""
                             }`}
                           >
@@ -1374,7 +1402,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                                       activeId={activeId}
                                       expanded={expanded}
                                       onToggle={(id) => setExpanded((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; })}
-                                      onSelect={setActiveId}
+                                      onSelect={(id) => { setActiveId(id); if (window.innerWidth < 768) setSidebarOpen(false); }}
                                       onAddChild={(pid) => createNote(pid)}
                                       onDelete={deleteNote}
                                       onRename={renamePage}
@@ -1396,17 +1424,17 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                   </div>
                 )}
               </div>
-              <div className="p-2 border-t border-border/60 space-y-2 bg-background/40">
+              <div className="p-3 border-t border-border/60 grid grid-cols-2 gap-2 bg-background/60">
                 <button
                   onClick={createNotebook}
-                  className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-border bg-card text-sm font-semibold hover:bg-secondary hover:border-primary/40 transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl border border-border bg-card text-xs font-bold hover:bg-secondary hover:border-primary/40 transition-colors"
                 >
                   <FolderPlus className="w-4 h-4" />
                   {t.newNotebook}
                 </button>
                 <button
                   onClick={() => createNote(null)}
-                  className="group w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.99] transition-all"
+                  className="group w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs font-black shadow-md shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all"
                 >
                   <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                   {t.newPage}
@@ -1418,19 +1446,19 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
       </AnimatePresence>
 
       {/* Main */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="relative z-10 flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 backdrop-blur-xl bg-background/60 border-b border-border/60 h-12 flex items-center px-3 gap-2">
+        <div className="sticky top-0 z-30 backdrop-blur-2xl bg-background/75 border-b border-border/50 h-14 flex items-center px-3 sm:px-5 gap-2">
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
+              className="w-9 h-9 rounded-xl border border-border/60 bg-card/70 hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
               aria-label="open sidebar"
             >
               <PanelLeft className="w-4 h-4" />
             </button>
           )}
-          <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+          <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
             {breadcrumb.length === 0 ? (
               <span>{t.title}</span>
             ) : (
@@ -1500,9 +1528,9 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-4 md:px-12 py-12 pb-40">
+            <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-10 py-5 sm:py-8 pb-40">
               {/* Notebook selector + Export */}
-              <div className="mb-4 relative flex items-center gap-2">
+              <div className="mb-4 relative flex flex-wrap items-center gap-2 pb-1">
                 <button
                   onClick={() => setMoveMenuFor(moveMenuFor === active.id ? null : active.id)}
                   className="inline-flex items-center gap-2 h-8 px-3 rounded-full border border-border bg-card text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
@@ -1511,7 +1539,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                   <span>{notebooks.find((n) => n.id === active.notebook_id)?.name ?? t.noNotebook}</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
-                <div className="ml-auto relative">
+                <div className="ms-auto relative flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={() => setExportOpen((v) => !v)}
                     disabled={exporting}
@@ -1539,14 +1567,14 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                       await flushSaves();
                       window.location.reload();
                     }}
-                    className="ms-2 inline-flex items-center gap-2 h-8 px-3 rounded-full border border-primary/30 bg-primary/10 text-xs font-medium text-primary hover:bg-primary/15 transition-colors"
+                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full border border-primary/30 bg-primary/10 text-xs font-medium text-primary hover:bg-primary/15 transition-colors"
                   >
                     <Video className="w-3.5 h-3.5" />
                     <span>{language === "ar" ? "حوّل إلى فيديو" : "Convert to video"}</span>
                   </button>
                   <button
                     onClick={() => { setAiPrompt(active?.title || ""); setAiOpen(true); }}
-                    className="ms-2 inline-flex items-center gap-2 h-8 px-3 rounded-full border border-primary/30 bg-gradient-to-r from-primary/15 to-primary/5 text-xs font-medium text-primary hover:from-primary/20 transition-colors"
+                    className="inline-flex items-center gap-2 h-8 px-3 rounded-full border border-primary/30 bg-gradient-to-r from-primary/15 to-primary/5 text-xs font-medium text-primary hover:from-primary/20 transition-colors"
                   >
                     <Wand2 className="w-3.5 h-3.5" />
                     <span>{language === "ar" ? "ملاحظات بالذكاء" : "AI Notes"}</span>
@@ -1642,12 +1670,20 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                 )}
               </div>
 
-              <div ref={exportRef}>
+              <div
+                ref={exportRef}
+                className="relative isolate px-5 py-7 sm:px-9 sm:py-10 lg:px-14"
+              >
+              <div
+                className="pointer-events-none absolute inset-0 -z-10 border border-border/60 bg-card/80 shadow-[0_24px_80px_hsl(var(--foreground)/.06)] backdrop-blur-xl"
+                style={{ clipPath: "polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)" }}
+              />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
               {/* Icon */}
-              <div className="relative inline-block mb-3">
+              <div className="relative inline-block mb-2">
                 <button
                   onClick={() => setIconPickerFor(iconPickerFor === active.id ? null : active.id)}
-                  className="text-5xl md:text-6xl hover:bg-secondary rounded-lg px-2 py-1 transition-colors"
+                  className="grid h-16 w-16 place-items-center rounded-[22px] border border-primary/15 bg-gradient-to-br from-primary/15 to-primary/5 text-4xl shadow-sm transition hover:border-primary/30 hover:scale-[1.03]"
                   aria-label={t.pickIcon}
                 >
                   {active.icon || "📄"}
@@ -1672,8 +1708,27 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                 value={active.title}
                 onChange={(e) => updateNote(active.id, { title: e.target.value })}
                 placeholder={t.titlePlaceholder}
-                className="w-full text-4xl md:text-5xl font-bold bg-transparent outline-none placeholder:text-muted-foreground/30 mb-6"
+                className="w-full text-3xl sm:text-4xl md:text-5xl font-black tracking-tight bg-transparent outline-none placeholder:text-muted-foreground/25 mb-2"
               />
+
+              <div className="mb-7 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border/50 pb-5 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />{active.content.length} {language === "ar" ? "كتلة" : "blocks"}</span>
+                <span>{language === "ar" ? "آخر تعديل" : "Last edited"}: {new Date(active.updated_at).toLocaleDateString(language === "ar" ? "ar-IQ" : "en-US")}</span>
+                <span className="hidden sm:inline">{language === "ar" ? "اكتب / لعرض جميع الأدوات" : "Type / for all tools"}</span>
+              </div>
+
+              <div className="mb-7 flex items-center gap-2 overflow-x-auto rounded-2xl border border-border/60 bg-secondary/30 p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <span className="shrink-0 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{language === "ar" ? "إضافة سريعة" : "Quick add"}</span>
+                {quickBlocks.map(({ type, label, Icon }) => (
+                  <button
+                    key={type}
+                    onClick={() => insertBlock(type)}
+                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-transparent bg-background/70 px-2.5 text-xs font-semibold text-muted-foreground shadow-sm transition hover:border-primary/20 hover:text-primary"
+                  >
+                    <Icon className="h-3.5 w-3.5" />{label}
+                  </button>
+                ))}
+              </div>
 
               {/* Blocks */}
               <div className="space-y-0.5" onClick={(e) => { if (slash) setSlash(null); }}>
@@ -1707,7 +1762,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                     setBlocks((blocks) => [...blocks, nb]);
                     setFocusBlockId(nb.id);
                   }}
-                  className="group mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary rounded-md px-2.5 py-1.5 hover:bg-primary/5 border border-dashed border-transparent hover:border-primary/30 transition-all"
+                  className="group mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary rounded-xl px-3 py-2 hover:bg-primary/5 border border-dashed border-border/70 hover:border-primary/30 transition-all"
                 >
                   <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" />
                   {language === "ar" ? "إضافة كتلة" : "Add block"}
