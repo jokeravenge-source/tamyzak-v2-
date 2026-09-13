@@ -82,6 +82,11 @@ var list_chapters_default = defineTool3({
 // src/lib/mcp/tools/get-my-points.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.106.1";
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.0";
+function getEnv2(key) {
+  const g = globalThis;
+  if (g.Deno) return g.Deno.env.get(key);
+  return g.process?.env?.[key];
+}
 var get_my_points_default = defineTool4({
   name: "get_my_points",
   title: "Get my points",
@@ -93,8 +98,8 @@ var get_my_points_default = defineTool4({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = createClient2(
-      Deno.env.get("SUPABASE_URL"),
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY"),
+      getEnv2("SUPABASE_URL"),
+      getEnv2("SUPABASE_PUBLISHABLE_KEY") ?? getEnv2("SUPABASE_ANON_KEY"),
       {
         global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
         auth: { persistSession: false, autoRefreshToken: false }
