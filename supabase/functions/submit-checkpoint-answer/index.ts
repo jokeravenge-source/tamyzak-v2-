@@ -5,8 +5,6 @@ import {
   callTutorJson,
   corsHeaders,
   json,
-  transcribeAudio,
-  uploadPodcastAudio,
 } from "../_shared/podcast.ts";
 
 type Grade = { verdict: "correct" | "partial" | "incorrect"; correction_text: string | null };
@@ -24,20 +22,26 @@ function validGrade(input: unknown): Grade {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
-  const guarded = await protect(req, "submit-checkpoint-answer", { max: 24, windowSeconds: 600, maxBytes: 26 * 1024 * 1024 });
+  const guarded = await protect(req, "submit-checkpoint-answer", { max: 24, windowSeconds: 600, maxBytes: 16_384 });
   if (!guarded.ok) return json({ error: guarded.error }, guarded.status);
   const user = await requireUser(req);
   if (!user.ok) return json({ error: user.error }, user.status);
 
   try {
-    const form = await req.formData();
-    const segmentId = String(form.get("segment_id") ?? "");
-    const recording = form.get("audio");
-    const recognizedText = String(form.get("student_answer_text") ?? "").replace(/\s+/g, " ").trim();
-    if (!/^[0-9a-f-]{36}$/i.test(segmentId) || !(recording instanceof File) || recording.size === 0) {
-      return json({ error: "التسجيل أو المقطع غير صالح." }, 400);
+    let body: { segment_id?: unknown; student_answer_text?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "الطلب غير صالح." }, 400);
     }
-    if (recording.size > 25 * 1024 * 1024) return json({ error: "التسجيل أكبر من الحد المسموح." }, 413);
+    const segmentId = typeof body.segment_id === "string" ? body.segment_id : "";
+    const studentText = typeof body.student_answer_text === "string"
+      ? body.student_answer_text.replace(/\s+/g, " ").trim()
+      : "";
+    if (!/^[0-9a-f-]{36}$/i.test(segmentId) || studentText.length < 2) {
+      return json({ error: "المقطع أو نص الإجابة غير صالح." }, 400);
+    }
+    if (studentText.length > 5000) return json({ error: "نص الإجابة أطول من الحد المسموح." }, 413);
 
     const admin = adminClient();
     const { data: segment } = await admin
@@ -54,20 +58,6 @@ Deno.serve(async (req) => {
     if (!session || session.user_id !== user.userId) return json({ error: "غير مسموح." }, 403);
     if (session.status === "processing" || session.status === "failed") return json({ error: "الجلسة غير جاهزة للإجابة." }, 409);
 
-    const audioPath = await uploadPodcastAudio(
-      admin,
-      user.userId,
-      session.id,
-      `segment-${segment.segment_order}-answer-${Date.now()}.webm`,
-      recording,
-      recording.type || "audio/webm",
-    );
-    if (recognizedText.length > 5000) return json({ error: "نص الإجابة أطول من الحد المسموح." }, 413);
-    // Chrome/Safari can provide the Arabic transcript with the recording at no
-    // extra API cost. Whisper remains an optional fallback for unsupported browsers.
-    const studentText = recognizedText.length >= 2
-      ? recognizedText
-      : await transcribeAudio(recording, recording.name || "answer.webm");
     const grade = validGrade(await callTutorJson(`
 أنت مدرس عراقي تقيّم ملخص طالب بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
 أرجع كائن JSON فقط بلا markdown:
@@ -83,7 +73,7 @@ Deno.serve(async (req) => {
     const completedAt = new Date().toISOString();
     const { error: updateError } = await admin.from("podcast_segments").update({
       student_answer_text: studentText,
-      student_answer_audio_url: audioPath,
+      student_answer_audio_url: null,
       verdict: grade.verdict,
       correction_text: grade.correction_text,
       correction_audio_url: null,
