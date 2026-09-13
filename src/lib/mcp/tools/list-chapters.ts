@@ -2,6 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 
+function getEnv(key: string): string | undefined {
+  const g = globalThis as any;
+  if (g.Deno) return g.Deno.env.get(key);
+  return g.process?.env?.[key];
+}
+
 export default defineTool({
   name: "list_chapters",
   title: "List chapters for a subject",
@@ -15,8 +21,8 @@ export default defineTool({
       return { content: [{ type: "text" as const, text: "Not authenticated" }], isError: true };
     }
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+      getEnv("SUPABASE_URL")!,
+      getEnv("SUPABASE_PUBLISHABLE_KEY") ?? getEnv("SUPABASE_ANON_KEY")!,
       {
         global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
         auth: { persistSession: false, autoRefreshToken: false },

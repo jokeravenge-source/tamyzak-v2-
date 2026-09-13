@@ -44,6 +44,11 @@ var list_subjects_default = defineTool2({
 import { createClient } from "npm:@supabase/supabase-js@^2.106.1";
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.20.0";
 import { z as z2 } from "npm:zod@^4.4.3";
+function getEnv(key) {
+  const g = globalThis;
+  if (g.Deno) return g.Deno.env.get(key);
+  return g.process?.env?.[key];
+}
 var list_chapters_default = defineTool3({
   name: "list_chapters",
   title: "List chapters for a subject",
@@ -57,8 +62,8 @@ var list_chapters_default = defineTool3({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL"),
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY"),
+      getEnv("SUPABASE_URL"),
+      getEnv("SUPABASE_PUBLISHABLE_KEY") ?? getEnv("SUPABASE_ANON_KEY"),
       {
         global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
         auth: { persistSession: false, autoRefreshToken: false }
