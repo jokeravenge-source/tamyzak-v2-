@@ -464,7 +464,8 @@ const PhysicsActivities = ({
                   position={[0, 2.9, 0]}
                   label={`${voltage.toFixed(2)} V`}
                 />
-                <Environment preset="city" />
+                <hemisphereLight args={["#ffffff", "#404060", 1.2]} />
+                <directionalLight position={[-5, 6, -4]} intensity={0.5} />
               </Suspense>
               <FloorGrid />
               <OrbitControls
