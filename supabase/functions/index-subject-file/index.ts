@@ -85,14 +85,16 @@ Deno.serve(async (req) => {
           const pageCount = pdf.numPages ?? 0;
           const chunks: string[] = [];
           let collected = 0;
-          for (let i = 1; i <= pageCount && collected < MAX_TEXT_CHARS; i++) {
-            try {
-              const { text: t } = await extractText(pdf, { mergePages: true, pages: [i] });
-              const pageText = Array.isArray(t) ? t.join("\n") : t;
-              chunks.push(pageText);
-              collected += pageText.length;
-            } catch { /* skip page */ }
-          }
+          try {
+            const pages = (await extractText(pdf, { mergePages: false })) as unknown as string[];
+            for (let i = 0; i < pageCount && i < pages.length && collected < MAX_TEXT_CHARS; i++) {
+              const pageText = (pages[i] ?? "").slice(0, MAX_TEXT_CHARS - collected);
+              if (pageText) {
+                chunks.push(pageText);
+                collected += pageText.length;
+              }
+            }
+          } catch { /* skip extraction */ }
           text = chunks.join("\n").slice(0, MAX_TEXT_CHARS);
         } else {
           try {
