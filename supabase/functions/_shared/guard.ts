@@ -32,8 +32,16 @@ export async function guardRequest(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+    const key = callerKey(req);
+    if (key.startsWith("u:")) {
+      const { data: isAdmin } = await admin.rpc("has_role", {
+        _user_id: key.slice(2),
+        _role: "admin",
+      });
+      if (isAdmin) return { ok: true };
+    }
     const { data: allowed, error } = await admin.rpc("check_edge_rate_limit", {
-      _key: callerKey(req),
+      _key: key,
       _feature: feature,
       _max_requests: maxRequests,
       _window_seconds: windowSeconds,
