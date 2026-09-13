@@ -76,14 +76,13 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
   const subId = data.subscriptionId ?? data.id ?? null;
   let userId: string | null = data.customData?.userId ?? null;
   if (!userId && subId) {
-    const { data: row } = await getSupabase()
-      .from('subscriptions')
+    const { data: row } = await (getSupabase().from('subscriptions' as any) as any)
       .select('user_id')
       .eq('paddle_subscription_id', subId)
       .maybeSingle();
     userId = (row as any)?.user_id ?? null;
   }
-  await getSupabase().from('payment_events').upsert({
+  await (getSupabase().from('payment_events' as any).upsert({
     event_id: event.eventId,
     event_type: event.eventType,
     user_id: userId,
@@ -91,7 +90,7 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
     paddle_customer_id: data.customerId ?? null,
     environment: env,
     payload: data,
-  }, { onConflict: 'event_id' });
+  }, { onConflict: 'event_id' }) as any);
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
