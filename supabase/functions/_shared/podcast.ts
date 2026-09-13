@@ -92,6 +92,37 @@ export async function fetchCaptionTranscript(videoId: string): Promise<string | 
   return transcript.length >= 80 ? transcript : null;
 }
 
+/** Uses the same Supadata YouTube transcript API and secret as Video to Notes. */
+export async function fetchSupadataTranscript(youtubeUrl: string): Promise<string | null> {
+  const apiKey = Deno.env.get("SUPADATA_API_KEY");
+  if (!apiKey) return null;
+  try {
+    const endpoint = `https://api.supadata.ai/v1/youtube/transcript?url=${encodeURIComponent(youtubeUrl)}&lang=ar&text=true`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const response = await fetch(endpoint, {
+      headers: { "x-api-key": apiKey },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!response.ok) {
+      console.error("Supadata podcast transcript failed", response.status, (await response.text()).slice(0, 300));
+      return null;
+    }
+    const data = await response.json().catch(() => null);
+    const transcript = typeof data?.content === "string"
+      ? data.content
+      : Array.isArray(data?.content)
+        ? data.content.map((item: { text?: unknown }) => typeof item?.text === "string" ? item.text : "").join(" ")
+        : "";
+    const cleaned = transcript.replace(/\s+/g, " ").trim();
+    return cleaned.length >= 80 ? cleaned : null;
+  } catch (error) {
+    console.error("Supadata podcast transcript error", error);
+    return null;
+  }
+}
+
 async function getFallbackAudio(youtubeUrl: string, videoId: string): Promise<Blob> {
   const extractorUrl = Deno.env.get("YOUTUBE_AUDIO_EXTRACTOR_URL");
   if (!extractorUrl) {
@@ -140,6 +171,10 @@ export async function transcribeAudio(audio: Blob, filename = "answer.webm"): Pr
 }
 
 export async function transcriptFor(youtubeUrl: string, videoId: string): Promise<string> {
+  // Keep caption extraction consistent with Video to Notes: use the project's
+  // existing Supadata integration first, then YouTube's direct caption track.
+  const supadata = await fetchSupadataTranscript(youtubeUrl);
+  if (supadata) return supadata;
   const captions = await fetchCaptionTranscript(videoId);
   if (captions) return captions;
   const audio = await getFallbackAudio(youtubeUrl, videoId);

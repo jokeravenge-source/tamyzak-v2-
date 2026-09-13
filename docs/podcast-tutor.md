@@ -9,6 +9,7 @@ ANTHROPIC_API_KEY
 CLAUDE_MODEL                 # optional; defaults to claude-sonnet-4-5-20250929
 OPENAI_API_KEY
 WHISPER_MODEL                # optional; defaults to whisper-1
+SUPADATA_API_KEY             # shared with the existing Video to Notes feature
 YOUTUBE_AUDIO_EXTRACTOR_URL  # required only when a video has no usable captions
 YOUTUBE_AUDIO_EXTRACTOR_KEY  # optional bearer token for the extractor
 ```
@@ -16,10 +17,16 @@ YOUTUBE_AUDIO_EXTRACTOR_KEY  # optional bearer token for the extractor
 Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` automatically to deployed Edge Functions.
 
-## Caption fallback contract
+## Transcript extraction
 
-The normal path reads a public video's YouTube caption track. If no track is
-available, `create-podcast-session` calls `YOUTUBE_AUDIO_EXTRACTOR_URL` with:
+Podcast Tutor now uses the same Supadata YouTube transcript API and
+`SUPADATA_API_KEY` already used by Video to Notes. If Supadata cannot return a
+transcript, it tries YouTube's public caption track directly.
+
+## Final audio fallback contract
+
+If neither Supadata nor YouTube captions are available,
+`create-podcast-session` calls `YOUTUBE_AUDIO_EXTRACTOR_URL` with:
 
 ```json
 {
