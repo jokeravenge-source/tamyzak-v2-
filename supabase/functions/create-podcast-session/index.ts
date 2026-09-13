@@ -55,11 +55,21 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const guarded = await protect(req, "create-podcast-session", { max: 20, windowSeconds: 600, maxBytes: 16_384 });
-  if (!guarded.ok) return json({ error: guarded.error }, guarded.status);
-
   const user = await requireUser(req);
   if (!user.ok) return json({ error: user.error, code: "AUTH_REQUIRED" }, user.status);
+
+  // Admins (e.g. the owner testing lessons) bypass the rate limit entirely.
+  const roleClient = adminClient();
+  const { data: adminRole } = await roleClient
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!adminRole) {
+    const guarded = await protect(req, "create-podcast-session", { max: 20, windowSeconds: 600, maxBytes: 16_384 });
+    if (!guarded.ok) return json({ error: guarded.error }, guarded.status);
+  }
 
   // Point redemptions create a normal active subscription, so paid and
   // points-based Premium are intentionally handled by the same server gate.
