@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Grid, Environment, Html, Text } from "@react-three/drei";
+import { OrbitControls, Grid, Html, Text } from "@react-three/drei";
 import { ArrowLeft, Atom, RotateCcw, Zap } from "lucide-react";
 import * as THREE from "three";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -464,7 +464,8 @@ const PhysicsActivities = ({
                   position={[0, 2.9, 0]}
                   label={`${voltage.toFixed(2)} V`}
                 />
-                <Environment preset="city" />
+                <hemisphereLight args={["#ffffff", "#404060", 1.2]} />
+                <directionalLight position={[-5, 6, -4]} intensity={0.5} />
               </Suspense>
               <FloorGrid />
               <OrbitControls
