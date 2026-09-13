@@ -72,7 +72,7 @@ const formatEnglishCurriculumParts = (input: any[]) => {
 
     formatted.push({
       title: String(part?.title || "Lecture notes"),
-      notes: `${cleanNotes}\n\n### Review Questions\n${questions.map((question, index) => `${index + 1}. ${question}`).join("\n")}`,
+      notes: `${cleanNotes}\n\n### Review Questions\n${questions.map((question: string, index: number) => `${index + 1}. ${question}`).join("\n")}`,
     });
   }
   return formatted.length ? formatted : null;
@@ -535,7 +535,7 @@ ${curriculumLanguageRules}
         break;
       }
       if (!geminiRes || !geminiRes.ok) {
-        lastGeminiError = { status: geminiRes.status, payload, text, model };
+        lastGeminiError = { status: geminiRes?.status ?? 0, payload, text, model };
         console.error("Gemini error", geminiRes?.status, model, text);
         // Try next model on overload/quota errors; otherwise stop.
         if (geminiRes && (geminiRes.status === 429 || geminiRes.status === 503 || payload?.error?.status === "RESOURCE_EXHAUSTED" || payload?.error?.status === "UNAVAILABLE")) continue;
