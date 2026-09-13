@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const guarded = await protect(req, "create-podcast-session", { max: 4, windowSeconds: 3600, maxBytes: 16_384 });
+  const guarded = await protect(req, "create-podcast-session", { max: 20, windowSeconds: 600, maxBytes: 16_384 });
   if (!guarded.ok) return json({ error: guarded.error }, guarded.status);
 
   const user = await requireUser(req);
