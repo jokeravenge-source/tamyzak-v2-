@@ -8,13 +8,13 @@ import {
   Headphones,
   History,
   Loader2,
-  Mic,
   Pause,
+  PenLine,
   Play,
   Podcast,
   RotateCcw,
+  Send,
   Sparkles,
-  Square,
   Volume2,
   Youtube,
 } from "lucide-react";
@@ -24,33 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 type SessionStatus = "processing" | "ready" | "in_progress" | "completed" | "failed";
 type Verdict = "correct" | "partial" | "incorrect";
-type TutorPhase = "idle" | "preparing_audio" | "narration" | "listening" | "recording" | "grading" | "correction";
+type TutorPhase = "idle" | "preparing_audio" | "narration" | "listening" | "grading" | "correction";
 type StudyPlaybackItem = { kind: "speech"; text: string } | { kind: "audio"; url: string };
-
-type BrowserSpeechRecognition = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: {
-    resultIndex: number;
-    results: ArrayLike<{ isFinal: boolean; 0?: { transcript?: string } }>;
-  }) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-};
-
-type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
-
-function getSpeechRecognition(): BrowserSpeechRecognitionConstructor | null {
-  const browserWindow = window as typeof window & {
-    SpeechRecognition?: BrowserSpeechRecognitionConstructor;
-    webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
-  };
-  return browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition ?? null;
-}
 
 type PodcastSession = {
   id: string;
@@ -149,38 +124,21 @@ export default function PodcastTutor({
   const [busy, setBusy] = useState(false);
   const [premiumRequired, setPremiumRequired] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [recordingSupported, setRecordingSupported] = useState(true);
+  const [answerText, setAnswerText] = useState("");
   const [recordPlaying, setRecordPlaying] = useState(false);
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
-  const browserTranscriptRef = useRef("");
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<number | null>(null);
 
   const current = segments[currentIndex] ?? null;
   const isComplete = session?.status === "completed";
 
-  const stopStream = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    if (timerRef.current) window.clearInterval(timerRef.current);
-    timerRef.current = null;
-  }, []);
-
   useEffect(() => () => {
-    stopStream();
-    recognitionRef.current?.abort();
-    recognitionRef.current = null;
     recordAudioRef.current?.pause();
     ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
     ttsAudioRef.current = null;
-  }, [stopStream]);
+  }, []);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -197,13 +155,13 @@ export default function PodcastTutor({
     setSegments(result.segments);
     const firstIncomplete = result.segments.findIndex((item) => !item.completed_at);
     setCurrentIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
+    setAnswerText("");
     setPhase("idle");
     setError(null);
     return result;
   }, []);
 
   useEffect(() => {
-    setRecordingSupported(typeof window !== "undefined" && "MediaRecorder" in window && !!navigator.mediaDevices?.getUserMedia);
     void loadHistory();
   }, [loadHistory]);
 
@@ -319,19 +277,23 @@ export default function PodcastTutor({
     }
     const next = Math.min(currentIndex + 1, Math.max(0, segments.length - 1));
     setCurrentIndex(next);
+    setAnswerText("");
     setPhase("idle");
   };
 
-  const submitRecording = async (blob: Blob, recognizedText: string) => {
+  const submitTextAnswer = async () => {
     if (!current) return;
+    const studentAnswer = answerText.replace(/\s+/g, " ").trim();
+    if (studentAnswer.length < 2) {
+      setError("اكتب ملخصك أولاً.");
+      return;
+    }
     setPhase("grading");
     setError(null);
     try {
-      const form = new FormData();
-      form.append("segment_id", current.id);
-      form.append("audio", new File([blob], "answer.webm", { type: blob.type || "audio/webm" }));
-      if (recognizedText.trim()) form.append("student_answer_text", recognizedText.trim());
-      const { data, error: fnError } = await supabase.functions.invoke("submit-checkpoint-answer", { body: form });
+      const { data, error: fnError } = await supabase.functions.invoke("submit-checkpoint-answer", {
+        body: { segment_id: current.id, student_answer_text: studentAnswer },
+      });
       if (fnError) {
         let message = fnError.message;
         const response = (fnError as unknown as { context?: unknown }).context;
@@ -348,6 +310,7 @@ export default function PodcastTutor({
         correction_audio_url: data.correction_audio_url,
         completed_at: new Date().toISOString(),
       } : item));
+      setAnswerText("");
       if (data.correction_text) {
         speakArabic(data.correction_text, "correction", () => { void advance(); });
       } else {
@@ -355,70 +318,8 @@ export default function PodcastTutor({
       }
     } catch (e) {
       setPhase("listening");
-      setError(e instanceof Error ? e.message : "تعذّر تقييم التسجيل. يمكنك المحاولة مجدداً.");
+      setError(e instanceof Error ? e.message : "تعذّر تقييم إجابتك. يمكنك المحاولة مجدداً.");
     }
-  };
-
-  const startRecording = async () => {
-    if (!recordingSupported) return;
-    try {
-      setError(null);
-      browserTranscriptRef.current = "";
-      const Recognition = getSpeechRecognition();
-      if (Recognition) {
-        const recognition = new Recognition();
-        recognition.lang = "ar-IQ";
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.onresult = (event) => {
-          const additions: string[] = [];
-          for (let index = event.resultIndex; index < event.results.length; index += 1) {
-            const result = event.results[index];
-            const transcript = result?.[0]?.transcript?.trim();
-            if (result?.isFinal && transcript) additions.push(transcript);
-          }
-          if (additions.length) {
-            browserTranscriptRef.current = `${browserTranscriptRef.current} ${additions.join(" ")}`.trim();
-          }
-        };
-        recognition.onerror = () => { /* the server transcription fallback remains available */ };
-        recognition.onend = () => {
-          if (recognitionRef.current === recognition) recognitionRef.current = null;
-        };
-        try {
-          recognition.start();
-          recognitionRef.current = recognition;
-        } catch { /* use server transcription fallback */ }
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      chunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      recorderRef.current = recorder;
-      recorder.ondataavailable = (event) => { if (event.data.size) chunksRef.current.push(event.data); };
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        stopStream();
-        window.setTimeout(() => {
-          void submitRecording(blob, browserTranscriptRef.current);
-        }, 450);
-      };
-      setRecordingSeconds(0);
-      timerRef.current = window.setInterval(() => setRecordingSeconds((value) => value + 1), 1000);
-      recorder.start();
-      setPhase("recording");
-    } catch {
-      recognitionRef.current?.abort();
-      recognitionRef.current = null;
-      stopStream();
-      setError("لم نتمكن من استخدام الميكروفون. اسمح بالوصول إليه ثم حاول مرة أخرى.");
-      setPhase("listening");
-    }
-  };
-
-  const stopRecording = () => {
-    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
-    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
   };
 
   const studyRecord = useMemo<StudyPlaybackItem[]>(() => segments.flatMap((item) => {
@@ -467,14 +368,13 @@ export default function PodcastTutor({
   };
 
   const resetHome = () => {
-    recognitionRef.current?.abort();
-    recognitionRef.current = null;
     recordAudioRef.current?.pause();
     ttsAudioRef.current?.pause();
     speechRunRef.current += 1;
     ttsAudioRef.current = null;
     setSession(null);
     setSegments([]);
+    setAnswerText("");
     setPhase("idle");
     setError(null);
     void loadHistory();
@@ -503,7 +403,7 @@ export default function PodcastTutor({
               <div className="mb-7 max-w-2xl">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-xs font-bold text-amber-100"><Crown className="h-4 w-4" /> ميزة مميّزة</div>
                 <h2 className="text-3xl font-black leading-tight sm:text-5xl">محاضرتك تتحوّل إلى<br /><span className="bg-gradient-to-l from-cyan-300 to-indigo-300 bg-clip-text text-transparent">حوار يثبت المعلومة</span></h2>
-                <p className="mt-4 max-w-xl leading-8 text-slate-300">الصق رابط المحاضرة، واستمع إلى شرح عربي مقسّم حسب الأفكار. بعد كل فكرة، لخّص بصوتك ليقيّمك المعلّم ويصحح لك فوراً.</p>
+                <p className="mt-4 max-w-xl leading-8 text-slate-300">الصق رابط المحاضرة، واستمع إلى شرح عربي مقسّم حسب الأفكار. بعد كل فكرة، اكتب تلخيصك ليقيّمك المعلّم ويصحح لك فوراً.</p>
               </div>
               <GlassCard className="p-5 sm:p-7">
                 <form onSubmit={createSession} className="space-y-5">
@@ -530,7 +430,7 @@ export default function PodcastTutor({
                 </form>
               </GlassCard>
               <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs text-slate-400">
-                {["٣–٥ مقاطع ذكية", "تقييم صوتي", "سجل للمراجعة"].map((text, index) => <div key={text} className="rounded-2xl border border-white/10 bg-white/5 px-2 py-3"><span className="mb-1 block font-black text-cyan-200">{index + 1}</span>{text}</div>)}
+                {["٣–٥ مقاطع ذكية", "تقييم كتابي", "سجل للمراجعة"].map((text, index) => <div key={text} className="rounded-2xl border border-white/10 bg-white/5 px-2 py-3"><span className="mb-1 block font-black text-cyan-200">{index + 1}</span>{text}</div>)}
               </div>
             </section>
             <HistoryPanel history={history} onOpen={(id) => void loadSession(id).catch((e: Error) => setError(e.message))} />
@@ -553,12 +453,11 @@ export default function PodcastTutor({
             current={current}
             currentIndex={currentIndex}
             phase={phase}
-            recordingSeconds={recordingSeconds}
-            recordingSupported={recordingSupported}
+            answerText={answerText}
             error={error}
             onPlay={playNarration}
-            onRecord={startRecording}
-            onStop={stopRecording}
+            onAnswerChange={setAnswerText}
+            onSubmitAnswer={() => { void submitTextAnswer(); }}
             onReplayCorrection={() => current?.correction_text && speakArabic(current.correction_text, "correction", () => setPhase("idle"))}
             onAdvance={() => void advance()}
           />
@@ -592,8 +491,8 @@ function HistoryPanel({ history, onOpen }: { history: PodcastSession[]; onOpen: 
 
 function SessionView(props: {
   session: PodcastSession; segments: PodcastSegment[]; current: PodcastSegment | null; currentIndex: number;
-  phase: TutorPhase; recordingSeconds: number; recordingSupported: boolean; error: string | null;
-  onPlay: () => void; onRecord: () => void; onStop: () => void; onReplayCorrection: () => void; onAdvance: () => void;
+  phase: TutorPhase; answerText: string; error: string | null;
+  onPlay: () => void; onAnswerChange: (value: string) => void; onSubmitAnswer: () => void; onReplayCorrection: () => void; onAdvance: () => void;
 }) {
   const { session, segments, current, currentIndex, phase } = props;
   if (!current) return <ProcessingCard title={session.title} />;
@@ -607,7 +506,7 @@ function SessionView(props: {
         <motion.div key={`${current.id}-${phase}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
           {phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
           : phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
-          : phase === "recording" ? <StateIcon icon={<Mic className="h-9 w-9" />} pulse label={`جاري التسجيل · ${props.recordingSeconds} ث`} danger />
+          : phase === "listening" ? <StateIcon icon={<PenLine className="h-9 w-9" />} label="اكتب ما فهمته" />
           : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
           : phase === "correction" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="استمع إلى التصحيح" />
           : <StateIcon icon={answered ? <Check className="h-9 w-9" /> : <Podcast className="h-9 w-9" />} label={answered ? "اكتمل هذا المقطع" : "اضغط لتسمع شرح المقطع"} />}
@@ -615,17 +514,36 @@ function SessionView(props: {
           {phase === "idle" && !answered && <button onClick={props.onPlay} className="mx-auto mt-5 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-7 py-3.5 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110"><Play className="h-5 w-5 fill-current" /> تشغيل الشرح الصوتي</button>}
 
           <p className="mx-auto mt-6 max-w-2xl text-right text-base leading-8 text-slate-200 sm:text-lg">{current.narration_text}</p>
-          {(phase === "listening" || phase === "recording") && <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>}
+          {phase === "listening" && <>
+            <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>
+            <div className="mt-4 rounded-[24px] border border-white/15 bg-slate-950/35 p-3 text-right shadow-inner shadow-slate-950/30 focus-within:border-cyan-300/50 focus-within:bg-slate-950/50">
+              <textarea
+                dir="rtl"
+                rows={5}
+                maxLength={5000}
+                autoFocus
+                value={props.answerText}
+                onChange={(event) => props.onAnswerChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && props.answerText.trim().length >= 2) props.onSubmitAnswer();
+                }}
+                placeholder="اكتب تلخيصك هنا بأسلوبك..."
+                className="w-full resize-none bg-transparent px-2 py-2 text-base leading-8 text-white outline-none placeholder:text-slate-600"
+              />
+              <div className="flex items-center justify-between px-2 pb-1 text-[11px] text-slate-500">
+                <span>Ctrl + Enter للإرسال</span>
+                <span>{props.answerText.length} / 5000</span>
+              </div>
+            </div>
+          </>}
           {answered && current.verdict && <div className="mt-5 text-right"><span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-black ${verdictCopy[current.verdict].style}`}>{verdictCopy[current.verdict].label}</span>{current.student_answer_text && <p className="mt-3 rounded-2xl bg-slate-950/30 p-4 text-sm leading-7 text-slate-300"><span className="font-black text-white">إجابتك: </span>{current.student_answer_text}</p>}{current.correction_text && <p className="mt-3 rounded-2xl border border-indigo-300/15 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100"><span className="font-black">تصحيح المعلّم: </span>{current.correction_text}</p>}</div>}
           {props.error && <div className="mt-5"><ErrorBanner message={props.error} /></div>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             {phase === "narration" && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" /> استمع حتى نهاية المقطع</span>}
-            {phase === "listening" && <><button disabled={!props.recordingSupported} onClick={props.onRecord} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-rose-400 to-fuchsia-500 px-6 py-3 font-black shadow-lg shadow-rose-500/20 disabled:opacity-40"><Mic className="h-5 w-5" /> ابدأ التلخيص بصوتك</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
-            {phase === "recording" && <button onClick={props.onStop} className="flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-black text-rose-600"><Square className="h-4 w-4 fill-current" /> إنهاء وإرسال</button>}
+            {phase === "listening" && <><button disabled={props.answerText.trim().length < 2} onClick={props.onSubmitAnswer} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-6 py-3 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><Send className="h-5 w-5" /> أرسل التلخيص</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
             {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_text && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
           </div>
-          {!props.recordingSupported && <p className="mt-4 text-xs text-rose-200">هذا المتصفح لا يدعم التسجيل الصوتي. افتح Tamyzak في Chrome أو Safari محدث.</p>}
         </motion.div>
       </AnimatePresence>
     </GlassCard>
