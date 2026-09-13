@@ -186,37 +186,67 @@ function parseJsonOnly(raw: string): unknown {
   return JSON.parse(clean);
 }
 
-export async function callClaudeJson(prompt: string, maxTokens = 3500): Promise<unknown> {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) throw new Error("خدمة إعداد الشرح غير مهيأة.");
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: Deno.env.get("CLAUDE_MODEL") ?? "claude-sonnet-4-5-20250929",
-      max_tokens: maxTokens,
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!response.ok) throw new Error("تعذّر إعداد الشرح الذكي لهذه المحاضرة.");
-  const payload = await response.json();
-  const raw = payload?.content?.find((part: { type?: string }) => part.type === "text")?.text;
-  if (typeof raw !== "string") throw new Error("استجابة الشرح غير مكتملة.");
-  try {
-    return parseJsonOnly(raw);
-  } catch {
-    throw new Error("تعذّر تنظيم الشرح إلى مقاطع. حاول مرة أخرى.");
+export async function callTutorJson(prompt: string, maxTokens = 3500): Promise<unknown> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) throw new Error("خدمة إعداد الشرح غير مهيأة. تأكد من إعداد LOVABLE_API_KEY.");
+  const configuredModel = Deno.env.get("PODCAST_AI_MODEL");
+  const models = configuredModel
+    ? [configuredModel]
+    : ["google/gemini-2.5-flash-lite", "google/gemini-2.5-flash"];
+
+  for (const model of models) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45_000);
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "Lovable-API-Key": apiKey,
+          "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          temperature: 0.2,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      }).finally(() => clearTimeout(timeout));
+      const rawResponse = await response.text();
+      if (!response.ok) {
+        console.error("Lovable podcast AI failed", response.status, model, rawResponse.slice(0, 300));
+        if ((response.status === 429 || response.status === 503) && model !== models.at(-1)) continue;
+        if (response.status === 402) throw new Error("رصيد خدمة الذكاء الاصطناعي غير كافٍ حالياً.");
+        throw new Error("تعذّر إعداد الشرح الذكي لهذه المحاضرة.");
+      }
+      const payload = JSON.parse(rawResponse);
+      const content = payload?.choices?.[0]?.message?.content;
+      const raw = typeof content === "string"
+        ? content
+        : Array.isArray(content)
+          ? content.map((item: { text?: unknown }) => typeof item?.text === "string" ? item.text : "").join("")
+          : "";
+      if (!raw) throw new Error("استجابة الشرح غير مكتملة.");
+      return parseJsonOnly(raw);
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes("الرصيد")
+        || error.message.includes("تعذّر إعداد")
+        || error.message.includes("استجابة الشرح")
+      )) throw error;
+      if (model === models.at(-1)) {
+        console.error("Lovable podcast AI error", error);
+        throw new Error("تعذّر تنظيم الشرح. حاول مرة أخرى.");
+      }
+    }
   }
+  throw new Error("تعذّر إعداد الشرح الذكي لهذه المحاضرة.");
 }
 
 export async function generateScript(transcript: string, subject?: string): Promise<PodcastScriptSegment[]> {
   const limited = transcript.slice(0, 90000);
-  const result = await callClaudeJson(`
+  const result = await callTutorJson(`
 أنت مدرس عراقي خبير لطلاب السادس العلمي. حوّل نص المحاضرة التالي إلى شرح صوتي عربي واضح، تعليمي، ودقيق.
 قسّم المحتوى إلى 3 إلى 5 مقاطع فقط عند حدود المفاهيم الطبيعية، لا حسب الزمن.
 لا تترجم حرفياً ولا تنسخ النص؛ أعد صياغته كمدرس يشرح الفكرة بأسلوب محادثة مناسب للصوت.

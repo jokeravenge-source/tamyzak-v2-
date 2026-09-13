@@ -5,8 +5,8 @@
 Set these secrets before deploying the three podcast Edge Functions:
 
 ```text
-ANTHROPIC_API_KEY
-CLAUDE_MODEL                 # optional; defaults to claude-sonnet-4-5-20250929
+LOVABLE_API_KEY              # shared with the existing Video to Notes feature
+PODCAST_AI_MODEL             # optional; defaults to a low-cost Gemini Flash model
 OPENAI_API_KEY
 WHISPER_MODEL                # optional; defaults to whisper-1
 SUPADATA_API_KEY             # shared with the existing Video to Notes feature

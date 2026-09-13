@@ -2,7 +2,7 @@ import { requireUser } from "../_shared/auth.ts";
 import { protect } from "../_shared/guard.ts";
 import {
   adminClient,
-  callClaudeJson,
+  callTutorJson,
   corsHeaders,
   json,
   transcribeAudio,
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
       recording.type || "audio/webm",
     );
     const studentText = await transcribeAudio(recording, recording.name || "answer.webm");
-    const grade = validGrade(await callClaudeJson(`
+    const grade = validGrade(await callTutorJson(`
 أنت مدرس عراقي تقيّم ملخص طالب بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
 أرجع كائن JSON فقط بلا markdown:
 {"verdict":"correct|partial|incorrect","correction_text":null}
