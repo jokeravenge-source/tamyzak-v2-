@@ -24,11 +24,15 @@ export function getPaddleClient(env: PaddleEnv): Paddle {
 
   return new Paddle(connectionApiKey, {
     environment: GATEWAY_BASE_URL as unknown as Environment,
-    customHeaders: {
-      'X-Connection-Api-Key': connectionApiKey,
-      'Lovable-API-Key': lovableApiKey,
-    },
-  });
+  } as any);
+}
+
+export function getPaddleHeaders(env: PaddleEnv): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'X-Connection-Api-Key': getConnectionApiKey(env),
+    'Lovable-API-Key': getEnv('LOVABLE_API_KEY'),
+  };
 }
 
 export async function gatewayFetch(env: PaddleEnv, path: string, init?: RequestInit): Promise<Response> {
