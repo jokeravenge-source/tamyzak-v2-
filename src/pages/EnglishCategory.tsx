@@ -1,14 +1,15 @@
-import { ArrowLeft, ArrowRight, BookOpen, FileText, Sparkles, SpellCheck2, Type } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, FileQuestion, FileText, Sparkles, SpellCheck2, Type } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 export const ENGLISH_CATEGORY_STORAGE_KEY = "app_english_category_v1";
-export type EnglishCategory = "grammar" | "literature" | "paragraphs" | "verbs";
+export type EnglishCategory = "grammar" | "literature" | "paragraphs" | "verbs" | "readingPractice";
 
 const items: Array<{ code: EnglishCategory; en: string; ar: string; Icon: React.ComponentType<{ className?: string }> }> = [
   { code: "grammar", en: "Grammar", ar: "القواعد", Icon: Type },
   { code: "literature", en: "Literature", ar: "الأدب", Icon: BookOpen },
   { code: "paragraphs", en: "Paragraphs", ar: "الفقرات", Icon: FileText },
   { code: "verbs", en: "Verb Forms", ar: "تصريف الأفعال", Icon: SpellCheck2 },
+  { code: "readingPractice", en: "Reading Practice", ar: "تدريب القطعة", Icon: FileQuestion },
 ];
 
 const copy = {
@@ -48,7 +49,7 @@ const EnglishCategory = ({
         <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">{text.description}</p>
       </header>
 
-      <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
+      <section className="max-w-5xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative">
         {items.map((s, i) => {
           const Icon = s.Icon;
           return (
