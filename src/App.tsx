@@ -67,6 +67,7 @@ const PoemsChecker = lazy(() => import("./pages/PoemsChecker"));
 const EnglishEssays = lazy(() => import("./pages/EnglishEssays"));
 const EnglishIsqat = lazy(() => import("./pages/EnglishIsqat"));
 const EnglishVerbForms = lazy(() => import("./pages/EnglishVerbForms"));
+const EnglishReadingPractice = lazy(() => import("./pages/EnglishReadingPractice"));
 const DailyReport = lazy(() => import("./pages/DailyReport"));
 const Notes = lazy(() => import("./pages/Notes"));
 const Canvas = lazy(() => import("./pages/Canvas"));
@@ -952,6 +953,14 @@ const App = () => {
         />
       ) : subject === "english" && englishCategory === "verbs" ? (
         <EnglishVerbForms
+          language={language}
+          onBack={() => {
+            localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
+            setEnglishCategory(null);
+          }}
+        />
+      ) : subject === "english" && englishCategory === "readingPractice" ? (
+        <EnglishReadingPractice
           language={language}
           onBack={() => {
             localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
