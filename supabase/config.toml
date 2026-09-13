@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.get-session-status]
 verify_jwt = false
+
+[functions.english-reading-practice]
+verify_jwt = false
