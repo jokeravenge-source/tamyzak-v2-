@@ -96,6 +96,9 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
+  if (!event) {
+    throw new Error('Invalid webhook signature or event');
+  }
   // Always log first so admins can audit even if a handler throws.
   try { await logPaymentEvent(event, env); } catch (e) { console.error('logPaymentEvent failed', e); }
   switch (event.eventType) {
