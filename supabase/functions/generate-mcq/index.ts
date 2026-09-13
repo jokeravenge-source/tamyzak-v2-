@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
             model: model as any,
             system,
             messages: messages as any,
-            experimental_output: Output.object({ schema: batchSchema }),
+            experimental_output: Output.object({ schema: batchSchema as any }),
           });
           const questions = (output as any)?.questions ?? [];
           if (!questions.length) throw new Error("empty structured output");

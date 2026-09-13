@@ -29,7 +29,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     });
     return;
   }
-  await getSupabase().from('subscriptions').upsert({
+  await ((getSupabase().from('subscriptions' as any) as any).upsert({
     user_id: userId,
     paddle_subscription_id: id,
     paddle_customer_id: customerId,
@@ -40,12 +40,12 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     current_period_end: currentBillingPeriod?.endsAt,
     environment: env,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'paddle_subscription_id' });
+  }, { onConflict: 'paddle_subscription_id' }) as any);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
   const { id, status, currentBillingPeriod, scheduledChange } = data;
-  await getSupabase().from('subscriptions')
+  await (getSupabase().from('subscriptions' as any) as any)
     .update({
       status,
       current_period_start: currentBillingPeriod?.startsAt,
@@ -61,7 +61,7 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   // User chose: revoke access immediately on cancel.
   // Mark canceled AND force current_period_end into the past so the
   // has_active_premium helper returns false right away.
-  await getSupabase().from('subscriptions')
+  await (getSupabase().from('subscriptions' as any) as any)
     .update({
       status: 'canceled',
       current_period_end: new Date(Date.now() - 1000).toISOString(),
@@ -76,14 +76,13 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
   const subId = data.subscriptionId ?? data.id ?? null;
   let userId: string | null = data.customData?.userId ?? null;
   if (!userId && subId) {
-    const { data: row } = await getSupabase()
-      .from('subscriptions')
+    const { data: row } = await (getSupabase().from('subscriptions' as any) as any)
       .select('user_id')
       .eq('paddle_subscription_id', subId)
       .maybeSingle();
     userId = (row as any)?.user_id ?? null;
   }
-  await getSupabase().from('payment_events').upsert({
+  await ((getSupabase().from('payment_events' as any) as any).upsert({
     event_id: event.eventId,
     event_type: event.eventType,
     user_id: userId,
@@ -91,11 +90,14 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
     paddle_customer_id: data.customerId ?? null,
     environment: env,
     payload: data,
-  }, { onConflict: 'event_id' });
+  }, { onConflict: 'event_id' }) as any);
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
+  if (!event) {
+    throw new Error('Invalid webhook signature or event');
+  }
   // Always log first so admins can audit even if a handler throws.
   try { await logPaymentEvent(event, env); } catch (e) { console.error('logPaymentEvent failed', e); }
   switch (event.eventType) {

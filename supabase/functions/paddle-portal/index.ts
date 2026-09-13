@@ -1,7 +1,7 @@
 import { protect } from "../_shared/guard.ts";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { getPaddleClient, type PaddleEnv } from '../_shared/paddle.ts';
+import { gatewayFetch, type PaddleEnv } from '../_shared/paddle.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -60,11 +60,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const paddle = getPaddleClient(environment);
-    const session = await paddle.customerPortalSessions.create(
-      sub.paddle_customer_id as string,
-      sub.paddle_subscription_id ? [sub.paddle_subscription_id as string] : [],
-    );
+    const response = await gatewayFetch(environment, '/customer-portal-sessions', {
+      method: 'POST',
+      body: JSON.stringify({
+        customer_id: sub.paddle_customer_id,
+        subscription_ids: sub.paddle_subscription_id ? [sub.paddle_subscription_id] : [],
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => 'Portal failed');
+      throw new Error(text);
+    }
+    const session = await response.json() as {
+      urls?: {
+        subscriptions?: Array<{ cancelSubscription?: string }>;
+        general?: { overview?: string };
+      };
+    };
     const cancelUrl = session.urls?.subscriptions?.[0]?.cancelSubscription
       ?? session.urls?.general?.overview;
     return new Response(JSON.stringify({ url: cancelUrl, overview: session.urls?.general?.overview }), {
