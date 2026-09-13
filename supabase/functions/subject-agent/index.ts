@@ -144,7 +144,7 @@ async function extractFromBlob(name: string, blob: Blob): Promise<string> {
     const chunks: string[] = [];
     let collected = 0;
     try {
-      const pages = await extractText(pdf, { mergePages: false }) as string[];
+      const pages = (await extractText(pdf, { mergePages: false })) as unknown as string[];
       for (let i = 0; i < pageCount && i < pages.length && collected < MAX_FILE_CHARS; i++) {
         const pageText = (pages[i] ?? "").slice(0, MAX_FILE_CHARS - collected);
         if (pageText) {
