@@ -1894,6 +1894,107 @@ export type Database = {
         }
         Relationships: []
       }
+      podcast_segments: {
+        Row: {
+          answer_key: string
+          checkpoint_prompt: string
+          completed_at: string | null
+          correction_audio_url: string | null
+          correction_text: string | null
+          created_at: string
+          id: string
+          narration_audio_url: string | null
+          narration_text: string
+          segment_order: number
+          session_id: string
+          student_answer_audio_url: string | null
+          student_answer_text: string | null
+          verdict: string | null
+        }
+        Insert: {
+          answer_key: string
+          checkpoint_prompt: string
+          completed_at?: string | null
+          correction_audio_url?: string | null
+          correction_text?: string | null
+          created_at?: string
+          id?: string
+          narration_audio_url?: string | null
+          narration_text: string
+          segment_order: number
+          session_id: string
+          student_answer_audio_url?: string | null
+          student_answer_text?: string | null
+          verdict?: string | null
+        }
+        Update: {
+          answer_key?: string
+          checkpoint_prompt?: string
+          completed_at?: string | null
+          correction_audio_url?: string | null
+          correction_text?: string | null
+          created_at?: string
+          id?: string
+          narration_audio_url?: string | null
+          narration_text?: string
+          segment_order?: number
+          session_id?: string
+          student_answer_audio_url?: string | null
+          student_answer_text?: string | null
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "podcast_segments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "podcast_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      podcast_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          status: string
+          subject: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          voice_id: string
+          youtube_url: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          voice_id: string
+          youtube_url: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          voice_id?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       point_redemptions: {
         Row: {
           created_at: string

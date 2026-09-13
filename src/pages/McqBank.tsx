@@ -55,7 +55,7 @@ const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   math: { ar: "الرياضيات", en: "Math" },
 };
 
-const SUBJECT_ICONS: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+const SUBJECT_ICONS: Record<string, React.ComponentType<React.ComponentProps<typeof Atom>>> = {
   physics: Atom,
   chemistry: FlaskConical,
   biology: Dna,
