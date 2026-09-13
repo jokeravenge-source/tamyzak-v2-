@@ -82,7 +82,7 @@ async function logPaymentEvent(event: any, env: PaddleEnv) {
       .maybeSingle();
     userId = (row as any)?.user_id ?? null;
   }
-  await (getSupabase().from('payment_events' as any).upsert({
+  await ((getSupabase().from('payment_events' as any) as any).upsert({
     event_id: event.eventId,
     event_type: event.eventType,
     user_id: userId,
