@@ -31,6 +31,7 @@ const ADMIN_PANEL_PATH = "/tmz-ctrl-8462";
 const AccountCenter = lazy(() => import("./pages/AccountCenter"));
 const Essay = lazy(() => import("./pages/Essay"));
 const VideoNotes = lazy(() => import("./pages/VideoNotes"));
+const PodcastTutor = lazy(() => import("./pages/PodcastTutor"));
 import ZombieGuard from "./components/ZombieGuard";
 import MistakesPunishment from "./components/MistakesPunishment";
 import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
@@ -544,7 +545,7 @@ const App = () => {
   const [englishCategory, setEnglishCategory] = useState<EnglishCategory | null>(
     () => (typeof window !== "undefined" ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null) : null)
   );
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.startsWith("/flashcards")) {
@@ -841,6 +842,8 @@ const App = () => {
         <Essay language={language} onBack={resetMenu} />
       ) : menuChoice === "videoNotes" ? (
         <VideoNotes language={language} onBack={resetMenu} />
+      ) : menuChoice === "podcastTutor" ? (
+        <PodcastTutor language={language} onBack={resetMenu} onPremium={() => chooseMenu("premium")} />
       ) : menuChoice === "biologyDrawings" ? (
         <BiologyDrawings language={language} onBack={backToBasics} />
       ) : menuChoice === "todo" ? (

@@ -4,7 +4,7 @@ import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
   X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
-  Globe, Trophy, Target, HelpCircle, Headphones, Lightbulb, Sparkles,
+  Globe, Trophy, Target, HelpCircle, Headphones, Podcast, Lightbulb, Sparkles,
   Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
@@ -197,6 +197,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
       { key: "mistakes", labelEn: "My Mistakes", labelAr: "أخطائي", Icon: AlertTriangle },
       { key: "mindmap", labelEn: "Mind Map", labelAr: "الخريطة الذهنية", Icon: Network },
       { key: "videoNotes", labelEn: "Video Notes", labelAr: "ملاحظات الفيديو", Icon: Headphones },
+      { key: "podcastTutor", labelEn: "Podcast Tutor", labelAr: "المعلّم الصوتي", Icon: Podcast },
       { key: "textToVideo", labelEn: "Text → Video", labelAr: "نص إلى فيديو", Icon: Video },
       { key: "youtube", labelEn: "YouTube Player", labelAr: "مشغّل يوتيوب", Icon: Youtube },
       { key: "liveBattle", labelEn: "Live Battle", labelAr: "المعركة المباشرة", Icon: Swords },
@@ -246,6 +247,7 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
   { key: "summaries",   Icon: FileText,   tintBg: "bg-violet-50",  tintText: "text-violet-600" },
   { key: "adminNotes",  Icon: BookOpen,   tintBg: "bg-rose-50",    tintText: "text-rose-600" },
   { key: "notes",       Icon: NotebookPen, tintBg: "bg-teal-50",   tintText: "text-teal-600" },
+  { key: "podcastTutor", Icon: Podcast, tintBg: "bg-cyan-50", tintText: "text-cyan-600" },
 ];
 
 // Study tools grid (bottom section)
@@ -253,6 +255,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
   { key: "mcqBank",    Icon: Layers },
   { key: "mistakes",   Icon: AlertTriangle },
   { key: "videoNotes", Icon: Headphones },
+  { key: "podcastTutor", Icon: Podcast },
   { key: "youtube",    Icon: Youtube },
   { key: "canvas",     Icon: Palette },
   { key: "notes",      Icon: NotebookPen },
@@ -264,6 +267,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
 // Icons for any tool that can show up in "recently used"
 const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className?: string }>>> = {
   videoNotes: Headphones,
+  podcastTutor: Podcast,
   youtube: Youtube,
   canvas: Palette,
   notes: NotebookPen,
@@ -288,6 +292,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   sessions: { card: "border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15", icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
   mistakes: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
   videoNotes: { card: "border-fuchsia-500/25 bg-fuchsia-500/10 hover:bg-fuchsia-500/15", icon: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300" },
+  podcastTutor: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
   youtube: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
   canvas: { card: "border-indigo-500/25 bg-indigo-500/10 hover:bg-indigo-500/15", icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" },
   companion: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
@@ -310,6 +315,7 @@ const FEATURED_COPY = {
     mistakes: { title: "My Mistakes", subtitle: "Everything you got wrong, back for review every 3 days." },
     youtube: { title: "YouTube Player", subtitle: "Watch any YouTube video inside the app." },
     videoNotes: { title: "Video to Notes", subtitle: "Turn a YouTube lecture into AI study notes." },
+    podcastTutor: { title: "Podcast Tutor", subtitle: "Explain, recap aloud, and get instant spoken feedback." },
     canvas: { title: "Canvas", subtitle: "Sketch and diagram your ideas freely." },
     notes: { title: "Notes", subtitle: "Write and organize your own study notes." },
     adminNotes: { title: "Enrichments", subtitle: "Colorful enrichment cards crafted by your instructors." },
@@ -328,6 +334,7 @@ const FEATURED_COPY = {
     mistakes: { title: "أخطائي", subtitle: "كل ما أخطأت فيه يعود للمراجعة كل 3 أيام." },
     youtube: { title: "مشغّل يوتيوب", subtitle: "شاهد أي فيديو يوتيوب داخل التطبيق." },
     videoNotes: { title: "من الفيديو إلى ملاحظات", subtitle: "حوّل محاضرة يوتيوب إلى ملاحظات بالذكاء." },
+    podcastTutor: { title: "المعلّم الصوتي", subtitle: "استمع، لخّص بصوتك، واحصل على تصحيح فوري." },
     canvas: { title: "اللوحة", subtitle: "ارسم ونظّم أفكارك بحرية." },
     notes: { title: "ملاحظاتي", subtitle: "اكتب ونظّم ملاحظاتك الدراسية." },
     adminNotes: { title: "إثرائيات", subtitle: "بطاقات إثرائية ملوّنة أعدّها المدرّسون خصيصاً لك." },
@@ -1110,6 +1117,11 @@ const Basics = ({
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
+                    {it.key === "podcastTutor" && (
+                      <span className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-black text-amber-600 dark:text-amber-300">
+                        <Crown className="h-3 w-3" /> {language === "ar" ? "مميّز" : "Premium"}
+                      </span>
+                    )}
                     <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-sm ring-1 ring-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform ${tint.icon}`}>
                       <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
@@ -1187,6 +1199,11 @@ const Basics = ({
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+                    {it.key === "podcastTutor" && (
+                      <span className="absolute top-2 end-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-600 dark:text-amber-300">
+                        <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
+                      </span>
+                    )}
                     {showNotesDot && (
                       <span
                         aria-label={language === "ar" ? "ملاحظات جديدة" : "New notes"}

@@ -58,3 +58,12 @@ verify_jwt = false
 
 [functions.telegram-setup-webhook]
 verify_jwt = false
+
+[functions.create-podcast-session]
+verify_jwt = false
+
+[functions.submit-checkpoint-answer]
+verify_jwt = false
+
+[functions.get-session-status]
+verify_jwt = false
