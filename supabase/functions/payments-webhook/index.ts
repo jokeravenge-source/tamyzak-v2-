@@ -61,7 +61,7 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   // User chose: revoke access immediately on cancel.
   // Mark canceled AND force current_period_end into the past so the
   // has_active_premium helper returns false right away.
-  await getSupabase().from('subscriptions')
+  await (getSupabase().from('subscriptions' as any) as any)
     .update({
       status: 'canceled',
       current_period_end: new Date(Date.now() - 1000).toISOString(),
