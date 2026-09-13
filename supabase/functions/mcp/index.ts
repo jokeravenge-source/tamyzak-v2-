@@ -118,6 +118,11 @@ var get_my_points_default = defineTool4({
 // src/lib/mcp/tools/get-my-todos.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.106.1";
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
+function getEnv3(key) {
+  const g = globalThis;
+  if (g.Deno) return g.Deno.env.get(key);
+  return g.process?.env?.[key];
+}
 var get_my_todos_default = defineTool5({
   name: "get_my_todos",
   title: "Get my todos",
@@ -129,8 +134,8 @@ var get_my_todos_default = defineTool5({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = createClient3(
-      Deno.env.get("SUPABASE_URL"),
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY"),
+      getEnv3("SUPABASE_URL"),
+      getEnv3("SUPABASE_PUBLISHABLE_KEY") ?? getEnv3("SUPABASE_ANON_KEY"),
       {
         global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
         auth: { persistSession: false, autoRefreshToken: false }
