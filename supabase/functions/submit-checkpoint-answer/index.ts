@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     const form = await req.formData();
     const segmentId = String(form.get("segment_id") ?? "");
     const recording = form.get("audio");
+    const recognizedText = String(form.get("student_answer_text") ?? "").replace(/\s+/g, " ").trim();
     if (!/^[0-9a-f-]{36}$/i.test(segmentId) || !(recording instanceof File) || recording.size === 0) {
       return json({ error: "التسجيل أو المقطع غير صالح." }, 400);
     }
@@ -61,7 +62,12 @@ Deno.serve(async (req) => {
       recording,
       recording.type || "audio/webm",
     );
-    const studentText = await transcribeAudio(recording, recording.name || "answer.webm");
+    if (recognizedText.length > 5000) return json({ error: "نص الإجابة أطول من الحد المسموح." }, 413);
+    // Chrome/Safari can provide the Arabic transcript with the recording at no
+    // extra API cost. Whisper remains an optional fallback for unsupported browsers.
+    const studentText = recognizedText.length >= 2
+      ? recognizedText
+      : await transcribeAudio(recording, recording.name || "answer.webm");
     const grade = validGrade(await callTutorJson(`
 أنت مدرس عراقي تقيّم ملخص طالب بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
 أرجع كائن JSON فقط بلا markdown:
