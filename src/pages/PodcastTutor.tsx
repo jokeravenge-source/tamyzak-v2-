@@ -130,7 +130,7 @@ export default function PodcastTutor({
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
   const speechVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
-  const autoSpokenSegmentRef = useRef<string | null>(null);
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -151,6 +151,7 @@ export default function PodcastTutor({
     recordAudioRef.current?.pause();
     speechRunRef.current += 1;
     window.speechSynthesis?.cancel();
+    activeUtteranceRef.current = null;
   }, [stopStream]);
 
   const loadHistory = useCallback(async () => {
@@ -231,6 +232,17 @@ export default function PodcastTutor({
     return voice;
   }, []);
 
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const refreshVoice = () => {
+      speechVoiceRef.current = null;
+      selectArabicVoice();
+    };
+    refreshVoice();
+    window.speechSynthesis.addEventListener("voiceschanged", refreshVoice);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", refreshVoice);
+  }, [selectArabicVoice]);
+
   const speakArabic = useCallback((
     text: string,
     speakingPhase: TutorPhase | null,
@@ -250,6 +262,7 @@ export default function PodcastTutor({
     }
     const runId = ++speechRunRef.current;
     window.speechSynthesis.cancel();
+    activeUtteranceRef.current = null;
     setError(null);
     if (speakingPhase) setPhase(speakingPhase);
     const voice = selectArabicVoice();
@@ -257,6 +270,7 @@ export default function PodcastTutor({
     const speakNext = () => {
       if (runId !== speechRunRef.current) return;
       if (index >= chunks.length) {
+        activeUtteranceRef.current = null;
         onEnd();
         return;
       }
@@ -265,9 +279,15 @@ export default function PodcastTutor({
       utterance.rate = 0.92;
       utterance.pitch = 1;
       if (voice) utterance.voice = voice;
-      utterance.onend = speakNext;
+      activeUtteranceRef.current = utterance;
+      utterance.onend = () => {
+        if (runId !== speechRunRef.current) return;
+        activeUtteranceRef.current = null;
+        speakNext();
+      };
       utterance.onerror = (event) => {
         if (runId !== speechRunRef.current || event.error === "canceled" || event.error === "interrupted") return;
+        activeUtteranceRef.current = null;
         setPhase("idle");
         setError("تعذّر تشغيل صوت الجهاز. تأكد من تثبيت صوت عربي ثم حاول مجدداً.");
         onFailure?.();
@@ -281,15 +301,6 @@ export default function PodcastTutor({
     if (!current) return;
     speakArabic(`${current.narration_text}. ${current.checkpoint_prompt}`, "narration", () => setPhase("listening"));
   }, [current, speakArabic]);
-
-  useEffect(() => {
-    if (!session || !current || current.completed_at || phase !== "idle") return;
-    if (session.status !== "ready" && session.status !== "in_progress") return;
-    if (autoSpokenSegmentRef.current === current.id) return;
-    autoSpokenSegmentRef.current = current.id;
-    const timer = window.setTimeout(playNarration, 350);
-    return () => window.clearTimeout(timer);
-  }, [session, current, phase, playNarration]);
 
   const advance = async () => {
     if (!session) return;
@@ -410,12 +421,14 @@ export default function PodcastTutor({
     recordAudioRef.current?.pause();
     speechRunRef.current += 1;
     window.speechSynthesis?.cancel();
+    activeUtteranceRef.current = null;
     setRecordPlaying(false);
   };
 
   const resetHome = () => {
     speechRunRef.current += 1;
     window.speechSynthesis?.cancel();
+    activeUtteranceRef.current = null;
     setSession(null);
     setSegments([]);
     setPhase("idle");
@@ -521,7 +534,7 @@ function ProcessingCard({ title }: { title: string | null }) {
     <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-[28px] bg-cyan-400/15"><Loader2 className="h-10 w-10 animate-spin text-cyan-300" /></div>
     <h2 className="text-center text-2xl font-black">نجهّز جلستك الصوتية</h2>
     {title && <p className="mt-2 text-center text-sm text-slate-400">{title}</p>}
-    <p className="mt-3 text-center leading-7 text-slate-300">يمكنك إبقاء هذه الصفحة مفتوحة. ستبدأ الجلسة تلقائياً عندما تجهز المقاطع.</p>
+    <p className="mt-3 text-center leading-7 text-slate-300">يمكنك إبقاء هذه الصفحة مفتوحة. سيظهر زر تشغيل الشرح الصوتي عندما تجهز المقاطع.</p>
     <div className="mt-7 space-y-3">{steps.map((step, index) => <motion.div key={step} initial={{ opacity: .35 }} animate={{ opacity: [0.4, 1, .4] }} transition={{ duration: 2, delay: index * .45, repeat: Infinity }} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4"><span className="grid h-8 w-8 place-items-center rounded-xl bg-white/10 text-sm font-black">{index + 1}</span><span className="font-bold">{step}</span></motion.div>)}</div>
   </GlassCard>;
 }
