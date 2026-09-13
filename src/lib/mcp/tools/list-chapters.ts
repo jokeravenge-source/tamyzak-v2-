@@ -10,24 +10,24 @@ export default defineTool({
     subject: z.string().min(1).describe("Subject id, e.g. physics, chemistry, biology."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ subject }, ctx: ToolContext) => {
+  handler: async ({ subject }: { subject: string }, ctx: ToolContext) => {
     if (!ctx.isAuthenticated()) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+      return { content: [{ type: "text" as const, text: "Not authenticated" }], isError: true };
     }
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY!,
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
       {
         global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
         auth: { persistSession: false, autoRefreshToken: false },
       },
     );
     const { data, error } = await supabase.rpc("list_subject_chapters", { _subject: subject });
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    const chapters = (data ?? []).map((r: { chapter: string }) => r.chapter);
+    if (error) return { content: [{ type: "text" as const, text: error.message }], isError: true };
+    const chapters = ((data ?? []) as Array<{ chapter: string }>).map((r) => r.chapter);
     return {
-      content: [{ type: "text", text: JSON.stringify(chapters, null, 2) }],
+      content: [{ type: "text" as const, text: JSON.stringify(chapters, null, 2) }],
       structuredContent: { subject, chapters },
     };
   },
-});
+}) as any;
