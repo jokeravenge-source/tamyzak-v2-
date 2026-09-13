@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 429 }), { status: ent.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const text = String(body.text || "").slice(0, MAX_STUDY_CHARS);
-      const images = Array.isArray(body.pageImages) ? body.pageImages.filter((image) => typeof image === "string" && image.startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
+      const images = Array.isArray(body.pageImages) ? body.pageImages.filter((image: unknown) => typeof image === "string" && (image as string).startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
       const n = Math.max(1, Math.min(10, Number(body.count) || 5));
       if ((!text || text.trim().length < 50) && !images.length) {
         return new Response(JSON.stringify({ error: "Not enough text" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       const userContent = images.length
         ? [
             { type: "text", text: userPrompt },
-            ...images.map((url) => ({ type: "image_url", image_url: { url } })),
+            ...images.map((url: string) => ({ type: "image_url", image_url: { url } })),
           ]
         : userPrompt;
       const res = await fetch(AI_URL, {
@@ -150,16 +150,16 @@ Deno.serve(async (req) => {
       }
       const studentText = String(body.studentText || "").slice(0, MAX_STUDY_CHARS);
       const keyText = String(body.keyText || "").slice(0, MAX_STUDY_CHARS);
-      const studentImages = Array.isArray(body.studentImages) ? body.studentImages.filter((u) => typeof u === "string" && u.startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
-      const keyImages = Array.isArray(body.keyImages) ? body.keyImages.filter((u) => typeof u === "string" && u.startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
+      const studentImages = Array.isArray(body.studentImages) ? body.studentImages.filter((u: unknown) => typeof u === "string" && (u as string).startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
+      const keyImages = Array.isArray(body.keyImages) ? body.keyImages.filter((u: unknown) => typeof u === "string" && (u as string).startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
       if ((!studentText && !studentImages.length) || (!keyText && !keyImages.length)) {
         return new Response(JSON.stringify({ error: "Missing files" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const systemPrompt = `You are an expert exam corrector. You receive TWO documents:\n1) The student's handwritten/typed answer sheet (may be images or text). OCR the images and read every answer carefully.\n2) The official answer key (PDF text and/or images).\n\nYour job:\n- Identify each question/item in the answer key.\n- For each item, find the student's matching answer (by number/order/topic).\n- Compare them and assign a score. Default max per item is 10 unless the key indicates a different mark; if so use that.\n- Be fair: give partial credit for partially correct answers; full marks for equivalent wording.\n- Provide a short, helpful feedback line for each item in ${language}.\n- Provide one overall comment in ${language}.\n- If a question has no student answer, score 0 and note it as missing.\n- Respond ONLY via the tool call. Total must equal the sum of item scores; max must equal the sum of item maxes.`;
       const parts: any[] = [
         { type: "text", text: `STUDENT ANSWER SHEET (text, may be empty if only images):\n${studentText || "(none)"}\n\nANSWER KEY (text, may be empty if only images):\n${keyText || "(none)"}\n\nImages below are the page scans. Earlier images = student sheet, later images = answer key. Student image count: ${studentImages.length}. Key image count: ${keyImages.length}.` },
-        ...studentImages.map((url) => ({ type: "image_url", image_url: { url } })),
-        ...keyImages.map((url) => ({ type: "image_url", image_url: { url } })),
+        ...studentImages.map((url: string) => ({ type: "image_url", image_url: { url } })),
+        ...keyImages.map((url: string) => ({ type: "image_url", image_url: { url } })),
       ];
       const res = await fetch(AI_URL, {
         method: "POST",
