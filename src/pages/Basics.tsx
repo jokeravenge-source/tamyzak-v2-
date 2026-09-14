@@ -1166,10 +1166,30 @@ const Basics = ({
             <p className="mb-2 text-sm text-muted-foreground">{isRTL ? "تميزك · مساحة دراستك" : "Tamayzak · your study space"}</p>
             <h2 className="text-2xl font-bold sm:text-3xl">{isRTL ? "شنو ندرس اليوم؟" : "What will you study today?"}</h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">{isRTL ? "ابدأ بمادة، راجع بطاقاتك، أو حل أسئلة. بقية الأدوات موجودة وقت تحتاجها." : "Choose a subject, review flashcards, or practise questions. More tools are there when you need them."}</p>
-            <button type="button" onClick={() => navigate("subjectsHub")}
-              className="mt-4 min-h-12 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-              {isRTL ? "ابدأ بمادة" : "Choose a subject"}
-            </button>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <motion.button
+                type="button"
+                onClick={() => navigate("subjectsHub")}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group inline-flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-black text-primary-foreground shadow-[0_14px_30px_-18px_hsl(var(--primary))] transition-shadow hover:shadow-[0_18px_36px_-16px_hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-6"
+              >
+                <BookOpen className="h-5 w-5" />
+                <span>{isRTL ? "اختر مادة" : "Choose a subject"}</span>
+                <ArrowRight className={`h-4 w-4 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => navigate("ourCourses")}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group inline-flex min-h-12 items-center gap-2 rounded-2xl border border-amber-400/50 bg-gradient-to-r from-amber-400/20 via-yellow-300/20 to-orange-400/20 px-5 py-3 font-black text-foreground shadow-[0_14px_30px_-20px_rgba(245,158,11,0.75)] backdrop-blur-md transition-all hover:border-amber-400 hover:shadow-[0_18px_36px_-18px_rgba(245,158,11,0.85)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:px-6"
+              >
+                <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                <span>{isRTL ? "الدورات" : "Courses"}</span>
+                <ArrowRight className={`h-4 w-4 text-amber-700 transition-transform dark:text-amber-300 ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+              </motion.button>
+            </div>
           </header>
 <section
             aria-label={isRTL ? "ملخص الدراسة" : "Study overview"}
@@ -1187,8 +1207,9 @@ const Basics = ({
             >
               <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
               <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-blue-500/25 blur-2xl" />
+              <span aria-hidden="true" className="absolute -end-8 top-20 h-px w-28 -rotate-12 bg-gradient-to-r from-transparent via-sky-700/20 to-transparent" />
               <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
-              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-sky-800/60 sm:text-[10px]">01</span>
+              <span aria-hidden="true" className="absolute start-3 top-3 hidden text-[9px] font-black uppercase tracking-[0.16em] text-sky-800/60 sm:block sm:text-[10px]">{isRTL ? "خطوتك التالية" : "Next step"}</span>
               <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-sky-800 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
@@ -1200,6 +1221,9 @@ const Basics = ({
                 {heroProgressPct}<span className="text-[10px] sm:text-sm">%</span>
               </span>
               <span className="relative mt-2 hidden text-xs font-bold text-slate-600 sm:block">{heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"}</span>
+              <span aria-hidden="true" className="absolute inset-x-5 bottom-3 h-1.5 overflow-hidden rounded-full bg-white/50 shadow-inner sm:inset-x-7">
+                <span className="block h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-[width] duration-500" style={{ width: `${heroProgressPct}%` }} />
+              </span>
             </motion.button>
 
             <motion.button
@@ -1214,8 +1238,9 @@ const Basics = ({
             >
               <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
               <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-orange-500/25 blur-2xl" />
+              <span aria-hidden="true" className="absolute -end-8 top-20 h-px w-28 -rotate-12 bg-gradient-to-r from-transparent via-amber-800/20 to-transparent" />
               <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
-              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-amber-900/60 sm:text-[10px]">02</span>
+              <span aria-hidden="true" className="absolute start-3 top-3 hidden text-[9px] font-black uppercase tracking-[0.16em] text-amber-900/60 sm:block sm:text-[10px]">{isRTL ? "إنجازك" : "Achievement"}</span>
               <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-amber-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
@@ -1227,6 +1252,11 @@ const Basics = ({
                 {totalPoints}<span className="text-[9px] sm:text-xs">{isRTL ? "نقطة" : "pts"}</span>
               </span>
               <span className="relative mt-2 hidden text-xs font-bold text-amber-900/70 sm:block">{rankLabel}</span>
+              <span aria-hidden="true" className="absolute inset-x-5 bottom-3 flex h-1.5 gap-1 sm:inset-x-7">
+                <span className="h-full flex-1 rounded-full bg-amber-500/80" />
+                <span className="h-full flex-1 rounded-full bg-orange-500/70" />
+                <span className="h-full flex-1 rounded-full bg-yellow-400/80" />
+              </span>
             </motion.button>
 
             <motion.button
@@ -1241,8 +1271,9 @@ const Basics = ({
             >
               <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
               <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-teal-500/25 blur-2xl" />
+              <span aria-hidden="true" className="absolute -end-8 top-20 h-px w-28 -rotate-12 bg-gradient-to-r from-transparent via-emerald-800/20 to-transparent" />
               <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
-              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-emerald-900/60 sm:text-[10px]">03</span>
+              <span aria-hidden="true" className="absolute start-3 top-3 hidden text-[9px] font-black uppercase tracking-[0.16em] text-emerald-900/60 sm:block sm:text-[10px]">{isRTL ? "استمرارية" : "Consistency"}</span>
               <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-emerald-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
@@ -1254,6 +1285,9 @@ const Basics = ({
                 {streakDays || 0}<span className="text-[9px] sm:text-xs">{isRTL ? "أيام" : "days"}</span>
               </span>
               <span className="relative mt-2 hidden text-xs font-bold text-emerald-900/70 sm:block">{isRTL ? "شجرة الاستمرارية" : "Streak tree"}</span>
+              <span aria-hidden="true" className="absolute inset-x-5 bottom-3 h-1.5 overflow-hidden rounded-full bg-white/50 shadow-inner sm:inset-x-7">
+                <span className="block h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-[width] duration-500" style={{ width: `${Math.min(100, ((streakDays || 0) / 7) * 100)}%` }} />
+              </span>
             </motion.button>
           </section>
 
