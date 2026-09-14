@@ -1143,21 +1143,90 @@ const Basics = ({
               {isRTL ? "ابدأ بمادة" : "Choose a subject"}
             </button>
           </header>
-<button type="button" id="progress-details-trigger" onClick={() => openDetail("progress")}
-            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 p-5 text-start shadow-[0_18px_45px_-24px_currentColor] transition-all hover:-translate-y-1 hover:shadow-[0_24px_55px_-22px_currentColor] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "linear-gradient(125deg, #fff7d6 0%, #fde68a 52%, #fed7aa 100%)", borderColor: "#f59e0b", color: "#78350f", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}>
-            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 shadow-[0_10px_25px_-14px_currentColor]">
-              <Trophy className="h-7 w-7" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lg font-bold leading-7">{isRTL ? "تقدمي ورتبتي" : "My progress and rank"}</span>
-              <span className="mt-1 block text-sm leading-6">{rankLabel} · {totalPoints} {isRTL ? "نقطة" : "points"}</span>
-              <span className="mt-2 block text-xs font-medium">{isRTL ? "شاهد النقاط وتفاصيل رتبتك" : "View points and rank details"}</span>
-            </span>
-            <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 shadow-sm transition-transform group-hover:translate-x-1">
-              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
-            </span>
-          </button>
+<section
+            aria-label={isRTL ? "ملخص الدراسة" : "Study overview"}
+            className="mb-6 grid grid-cols-3 gap-2 sm:gap-4"
+          >
+            <motion.button
+              type="button"
+              id="plan-details-trigger"
+              onClick={() => openDetail("plan")}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label={isRTL ? `خطة اليوم، مكتمل ${heroProgressPct} بالمئة` : `Today's plan, ${heroProgressPct}% complete`}
+              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 border-sky-300 px-2 py-4 text-center text-slate-950 shadow-[0_16px_35px_-22px_rgba(37,99,235,0.8)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(37,99,235,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
+              style={{ background: "linear-gradient(145deg, #eff6ff 0%, #bfdbfe 52%, #c7d2fe 100%)", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+            >
+              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
+              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 text-sky-600 shadow-[0_9px_22px_-12px_rgba(37,99,235,0.9)] sm:h-14 sm:w-14">
+                <Target className="h-5 w-5 sm:h-7 sm:w-7" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
+                {isRTL ? "خطة اليوم" : "Today's plan"}
+              </span>
+              <span className="relative mt-1 block text-sm font-black text-sky-800 sm:text-xl">{heroProgressPct}%</span>
+              <span className="relative mt-1 hidden text-xs font-semibold text-slate-600 sm:block">
+                {heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"}
+              </span>
+              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 text-sky-700 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+                <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              id="progress-details-trigger"
+              onClick={() => openDetail("progress")}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label={isRTL ? `تقدمي ورتبتي، ${totalPoints} نقطة` : `My progress and rank, ${totalPoints} points`}
+              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 px-2 py-4 text-center shadow-[0_16px_35px_-22px_rgba(245,158,11,0.9)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(245,158,11,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
+              style={{ background: "linear-gradient(145deg, #fff7d6 0%, #fde68a 52%, #fed7aa 100%)", borderColor: "#f59e0b", color: "#78350f", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+            >
+              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
+              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 shadow-[0_9px_22px_-12px_currentColor] sm:h-14 sm:w-14">
+                <Trophy className="h-5 w-5 sm:h-7 sm:w-7" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
+                {isRTL ? "تقدمي ورتبتي" : "Progress & rank"}
+              </span>
+              <span className="relative mt-1 block text-sm font-black sm:text-xl">
+                {totalPoints} <span className="text-[10px] sm:text-xs">{isRTL ? "نقطة" : "pts"}</span>
+              </span>
+              <span className="relative mt-1 hidden text-xs font-semibold opacity-75 sm:block">{rankLabel}</span>
+              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+                <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              id="streak-details-trigger"
+              onClick={() => openDetail("streak")}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label={isRTL ? `استمراريتي بالدراسة، ${streakDays || 0} أيام` : `My study streak, ${streakDays || 0} days`}
+              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 px-2 py-4 text-center shadow-[0_16px_35px_-22px_rgba(16,185,129,0.9)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(16,185,129,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
+              style={{ background: "linear-gradient(145deg, #ecfdf5 0%, #a7f3d0 52%, #99f6e4 100%)", borderColor: "#10b981", color: "#064e3b", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+            >
+              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
+              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 shadow-[0_9px_22px_-12px_currentColor] sm:h-14 sm:w-14">
+                <Sparkles className="h-5 w-5 sm:h-7 sm:w-7" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
+                {isRTL ? "استمراريتي" : "Study streak"}
+              </span>
+              <span className="relative mt-1 block text-sm font-black sm:text-xl">
+                {streakDays || 0} <span className="text-[10px] sm:text-xs">{isRTL ? "أيام" : "days"}</span>
+              </span>
+              <span className="relative mt-1 hidden text-xs font-semibold opacity-75 sm:block">
+                {isRTL ? "شجرة الاستمرارية" : "Streak tree"}
+              </span>
+              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+                <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+          </section>
 
           {dueMistakes > 0 && (
             <button
@@ -1182,31 +1251,7 @@ const Basics = ({
             </button>
           )}
 
-          {/* ====== Today's plan — one card, three clear next steps ====== */}
-<motion.button
-            type="button"
-            id="plan-details-trigger"
-            onClick={() => openDetail("plan")}
-            whileHover={{ y: -4 }}
-            whileTap={{ scale: 0.985 }}
-            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 border-sky-300 p-5 text-start text-slate-950 shadow-[0_18px_45px_-22px_rgba(37,99,235,0.7)] transition-shadow hover:shadow-[0_24px_55px_-20px_rgba(37,99,235,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "linear-gradient(125deg, #eff6ff 0%, #dbeafe 48%, #e0e7ff 100%)", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}
-          >
-            <span aria-hidden="true" className="absolute -end-10 -top-14 h-36 w-36 rounded-full bg-sky-400/25 blur-2xl transition-transform duration-500 group-hover:scale-125" />
-            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 text-sky-600 shadow-[0_10px_25px_-12px_rgba(37,99,235,0.8)]">
-              <Target className="h-8 w-8" />
-            </span>
-            <span className="relative min-w-0 flex-1">
-              <span className="block text-xl font-black leading-8">{isRTL ? "خطة اليوم" : "Today's plan"}</span>
-              <span className="mt-1 block text-sm font-bold text-sky-800">
-                {heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"} · {heroProgressPct}%
-              </span>
-              <span className="mt-2 block text-xs font-semibold text-slate-600">{isRTL ? "افتح خطواتك الثلاث وابدأ الدراسة" : "Open your three next steps and start studying"}</span>
-            </span>
-            <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 text-sky-700 shadow-sm transition-transform group-hover:translate-x-1">
-              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
-            </span>
-          </motion.button>
+
 
           {/* Core tools */}
           <section className="mb-6">
@@ -1346,22 +1391,7 @@ const Basics = ({
             </motion.div>
           </section>
 
-          {/* Streak tree — bottom */}
-<button type="button" id="streak-details-trigger" onClick={() => openDetail("streak")}
-            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 p-5 text-start shadow-[0_18px_45px_-24px_currentColor] transition-all hover:-translate-y-1 hover:shadow-[0_24px_55px_-22px_currentColor] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "linear-gradient(125deg, #ecfdf5 0%, #a7f3d0 52%, #99f6e4 100%)", borderColor: "#10b981", color: "#064e3b", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}>
-            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 shadow-[0_10px_25px_-14px_currentColor]">
-              <Sparkles className="h-7 w-7" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lg font-bold leading-7">{isRTL ? "استمراريتي بالدراسة" : "My study streak"}</span>
-              <span className="mt-1 block text-sm leading-6">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</span>
-              <span className="mt-2 block text-xs font-medium">{isRTL ? "افتح شجرة الاستمرارية" : "Explore your study streak"}</span>
-            </span>
-            <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 shadow-sm transition-transform group-hover:translate-x-1">
-              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
-            </span>
-          </button>
+
           </div>
         </div>
         </motion.div>
