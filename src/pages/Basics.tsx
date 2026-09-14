@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
@@ -365,6 +365,27 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(false);
+  const [detailScreen, setDetailScreen] = useState<"progress" | "streak" | null>(null);
+  const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
+  const openDetail = (screen: "progress" | "streak") => {
+    detailOrigin.current = { scroll: window.scrollY, trigger: screen + "-details-trigger" };
+    setDetailScreen(screen);
+  };
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (detailScreen) {
+        window.scrollTo({ top: 0, behavior: "instant" });
+        document.getElementById("study-detail-title")?.focus({ preventScroll: true });
+      } else if (detailOrigin.current) {
+        const origin = detailOrigin.current;
+        window.scrollTo({ top: origin.scroll, behavior: "instant" });
+        document.getElementById(origin.trigger)?.focus({ preventScroll: true });
+        detailOrigin.current = null;
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [detailScreen]);
+
   const [recentKeys, setRecentKeys] = useState<string[]>(() => getRecentTools());
   const hiddenStudyTools = useHiddenStudyTools();
 
@@ -718,6 +739,95 @@ const Basics = ({
   }, []);
 
 
+
+  if (detailScreen) {
+    return (
+      <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
+        <div className="mx-auto max-w-4xl">
+          <button type="button" onClick={() => setDetailScreen(null)}
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 py-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+            {isRTL ? "العودة للرئيسية" : "Back to home"}
+          </button>
+          <header className="mb-6">
+            <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>
+            <h1 id="study-detail-title" tabIndex={-1} className="text-2xl font-bold leading-relaxed outline-none sm:text-3xl">
+              {detailScreen === "progress" ? (isRTL ? "تقدمي ورتبتي" : "My progress and rank") : (isRTL ? "استمراريتي بالدراسة" : "My study streak")}
+            </h1>
+          </header>
+          {detailScreen === "progress" ? (
+            <section aria-label={isRTL ? "تفاصيل الرتبة" : "Rank details"} className="rounded-3xl border border-primary/25 bg-primary/5 p-4 sm:p-6">
+                          <div className="pt-4">
+            <div className="flex flex-wrap items-center gap-5 sm:gap-7">
+              <RankStone
+                rank={currentRank}
+                size={104}
+                fillProgress={stoneFill}
+                glow={currentRank === "royal" || currentRank === "diamond"}
+                className="shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-ash mb-1">
+                  {language === "ar" ? "رتبتك" : "Your rank"}
+                </p>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                  {rankLabel}
+                  {username && (
+                    <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
+                  )}
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {nextRank
+                    ? (language === "ar"
+                      ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
+                      : `${pointsToNextRank} points to ${nextRank.label.en}`)
+                    : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
+                </p>
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="rounded-2xl border border-border bg-background px-3 py-2.5">
+                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onNav("unlocks")}
+                    className="text-start rounded-2xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+                  >
+                    <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar" ? "نقطة · افتح الأدوات" : "points · unlock tools"}
+                    </p>
+                  </button>
+                  <div className="col-span-2 sm:col-span-1 rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2.5">
+                    <p className="font-mono text-primary text-xl font-semibold tabular-nums leading-none">
+                      {boardRank ? `#${boardRank}` : "—"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-ash">
+                      {language === "ar"
+                        ? `ترتيبك بين ${boardTotal} طالب عراقي`
+                        : `your place among ${boardTotal} Iraqi students`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <GiftMcqButton language={language} />
+            </div>
+            </div>
+
+            </section>
+          ) : (
+            <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-3xl border border-border p-4 sm:p-6">
+              <p className="mb-4 text-lg font-semibold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
+              <StreakTree language={language} />
+            </section>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
@@ -906,67 +1016,21 @@ const Basics = ({
               {isRTL ? "ابدأ بمادة" : "Choose a subject"}
             </button>
           </header>
-          <details className="mb-6 rounded-2xl border border-border p-4">
-            <summary className="cursor-pointer py-2 font-semibold">{isRTL ? "تقدمي ورتبتي" : "My progress and rank"}</summary>
-            <div className="pt-4">
-            <div className="flex items-center gap-5 sm:gap-7">
-              <RankStone
-                rank={currentRank}
-                size={104}
-                fillProgress={stoneFill}
-                glow={currentRank === "royal" || currentRank === "diamond"}
-                className="shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-ash mb-1">
-                  {language === "ar" ? "رتبتك" : "Your rank"}
-                </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
-                  {rankLabel}
-                  {username && (
-                    <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
-                  )}
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {nextRank
-                    ? (language === "ar"
-                      ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
-                      : `${pointsToNextRank} points to ${nextRank.label.en}`)
-                    : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
-                </p>
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="rounded-2xl border border-border bg-background px-3 py-2.5">
-                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onNav("unlocks")}
-                    className="text-start rounded-2xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
-                  >
-                    <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? "نقطة · افتح الأدوات" : "points · unlock tools"}
-                    </p>
-                  </button>
-                  <div className="col-span-2 sm:col-span-1 rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2.5">
-                    <p className="font-mono text-primary text-xl font-semibold tabular-nums leading-none">
-                      {boardRank ? `#${boardRank}` : "—"}
-                    </p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar"
-                        ? `ترتيبك بين ${boardTotal} طالب عراقي`
-                        : `your place among ${boardTotal} Iraqi students`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <GiftMcqButton language={language} />
-            </div>
-            </div>
-          </details>
+<button type="button" id="progress-details-trigger" onClick={() => openDetail("progress")}
+            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-3xl border p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+            style={{ background: "linear-gradient(125deg, #fffbeb, #fef3c7)", borderColor: "#fcd34d", color: "#78350f" }}>
+            <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/60 bg-white/70 shadow-sm">
+              <Trophy className="h-7 w-7" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-bold leading-7">{isRTL ? "تقدمي ورتبتي" : "My progress and rank"}</span>
+              <span className="mt-1 block text-sm leading-6">{rankLabel} · {totalPoints} {isRTL ? "نقطة" : "points"}</span>
+              <span className="mt-2 block text-xs font-medium">{isRTL ? "شاهد النقاط وتفاصيل رتبتك" : "View points and rank details"}</span>
+            </span>
+            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70">
+              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
+            </span>
+          </button>
 
           {dueMistakes > 0 && (
             <button
@@ -1258,10 +1322,21 @@ const Basics = ({
           </section>
 
           {/* Streak tree — bottom */}
-          <details className="rounded-2xl border border-border p-4">
-            <summary className="cursor-pointer py-2 font-semibold">{isRTL ? "شجرة الاستمرارية" : "My study streak"}</summary>
-            <StreakTree language={language} />
-          </details>
+<button type="button" id="streak-details-trigger" onClick={() => openDetail("streak")}
+            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-3xl border p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+            style={{ background: "linear-gradient(125deg, #ecfdf5, #ccfbf1)", borderColor: "#6ee7b7", color: "#064e3b" }}>
+            <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/60 bg-white/70 shadow-sm">
+              <Sparkles className="h-7 w-7" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-bold leading-7">{isRTL ? "استمراريتي بالدراسة" : "My study streak"}</span>
+              <span className="mt-1 block text-sm leading-6">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</span>
+              <span className="mt-2 block text-xs font-medium">{isRTL ? "افتح شجرة الاستمرارية" : "Explore your study streak"}</span>
+            </span>
+            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70">
+              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
+            </span>
+          </button>
           </div>
         </div>
         </motion.div>
