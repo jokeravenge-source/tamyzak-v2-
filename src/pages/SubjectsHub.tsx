@@ -124,7 +124,9 @@ const SubjectsHub = ({
   onSelect: (c: MainMenuChoice) => void;
 }) => {
   const isRTL = language === "ar";
+  const [showSpecialistTools, setShowSpecialistTools] = useState(false);
   const [open, setOpen] = useState<SubjectKey | null>(null);
+  useEffect(() => setShowSpecialistTools(false), [open]);
   useEffect(() => {
     try {
       const focus = localStorage.getItem("app_subject_focus_v1") as SubjectKey | null;
@@ -197,7 +199,7 @@ const SubjectsHub = ({
               onBack();
             }
           }}
-          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-6"
+          className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background text-sm font-medium hover:bg-secondary transition-colors mb-6"
         >
           <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
           {isRTL ? (current ? "كل المواد" : "رجوع") : (current ? "All Subjects" : "Back")}
@@ -205,7 +207,7 @@ const SubjectsHub = ({
 
         {!current && (
           <header className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Cairo', sans-serif" }}>
               {isRTL ? "المواد" : "Subjects"}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm md:text-base">
@@ -232,10 +234,10 @@ const SubjectsHub = ({
                     else localStorage.removeItem("app_subject_focus_v1");
                   } catch { /* ignore */ }
                 }}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-4 rounded-2xl border text-start transition-all ${
                   active
                     ? "border-primary bg-primary/10 shadow-[var(--shadow-card)]"
-                    : "border-border bg-card hover:border-primary/40"
+                    : "border-border bg-background hover:border-primary/40"
                 }`}
               >
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
@@ -265,7 +267,7 @@ const SubjectsHub = ({
                   <current.Icon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Cairo', sans-serif" }}>
                     {isRTL ? current.ar : current.en}
                   </h1>
                   <p className="text-muted-foreground text-sm">
@@ -273,8 +275,18 @@ const SubjectsHub = ({
                   </p>
                 </div>
               </header>
+              <p className="mb-4 text-sm leading-7 text-muted-foreground">
+                {isRTL ? "ابدأ بالمراجعة أو الملازم. افتح الأدوات الإضافية للتدريب المتخصص." : "Start with review cards or booklets. Explore extra tools for specialist practice."}
+              </p>
+              <button type="button" aria-expanded={showSpecialistTools} onClick={() => setShowSpecialistTools((value) => !value)}
+                className="mb-5 min-h-11 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+                {showSpecialistTools ? (isRTL ? "عرض الأساسيات فقط" : "Show essentials only") : (isRTL ? "عرض الأدوات الإضافية" : "Show extra tools")}
+              </button>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {current.tools.map((t) => {
+                {current.tools.filter((t) => showSpecialistTools || ["flashcards", "malazam", "ministerialBank"].includes(t.key)).sort((a, b) => {
+                  const order = ["flashcards", "malazam", "ministerialBank"];
+                  return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
+                }).map((t) => {
                   const Icon = t.Icon;
                   const free = t.placeholder ? true : FREE_TOOLS.has(t.key);
                   const hardLocked = !!t.disabled;
@@ -286,7 +298,7 @@ const SubjectsHub = ({
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleToolClick(t)}
-                      className={`group relative bg-card p-5 border rounded-2xl text-left transition-all ${
+                      className={`group relative bg-background p-5 border rounded-2xl text-start transition-all ${
                         comingSoon
                           ? "border-border/60 hover:border-sky-400/60"
                           : locked
