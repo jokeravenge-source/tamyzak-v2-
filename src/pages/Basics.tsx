@@ -365,20 +365,20 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(false);
-  const [detailScreen, setDetailScreen] = useState<"progress" | "streak" | null>(null);
+  const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(null);
   const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
-  const openDetail = (screen: "progress" | "streak") => {
+  const openDetail = (screen: "plan" | "progress" | "streak") => {
     detailOrigin.current = { scroll: window.scrollY, trigger: screen + "-details-trigger" };
     setDetailScreen(screen);
   };
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       if (detailScreen) {
-        window.scrollTo({ top: 0, behavior: "instant" });
+        window.scrollTo({ top: 0, behavior: "auto" });
         document.getElementById("study-detail-title")?.focus({ preventScroll: true });
       } else if (detailOrigin.current) {
         const origin = detailOrigin.current;
-        window.scrollTo({ top: origin.scroll, behavior: "instant" });
+        window.scrollTo({ top: origin.scroll, behavior: "auto" });
         document.getElementById(origin.trigger)?.focus({ preventScroll: true });
         detailOrigin.current = null;
       }
@@ -752,7 +752,11 @@ const Basics = ({
           <header className="mb-6">
             <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>
             <h1 id="study-detail-title" tabIndex={-1} className="text-2xl font-bold leading-relaxed outline-none sm:text-3xl">
-              {detailScreen === "progress" ? (isRTL ? "تقدمي ورتبتي" : "My progress and rank") : (isRTL ? "استمراريتي بالدراسة" : "My study streak")}
+              {detailScreen === "plan"
+                ? (isRTL ? "خطة اليوم" : "Today's plan")
+                : detailScreen === "progress"
+                  ? (isRTL ? "تقدمي ورتبتي" : "My progress and rank")
+                  : (isRTL ? "استمراريتي بالدراسة" : "My study streak")}
             </h1>
           </header>
           {detailScreen === "progress" ? (
@@ -817,11 +821,134 @@ const Basics = ({
             </div>
 
             </section>
-          ) : (
-            <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-3xl border border-border p-4 sm:p-6">
-              <p className="mb-4 text-lg font-semibold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
+          ) : detailScreen === "streak" ? (
+            <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7">
+              <p className="mb-4 text-lg font-bold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
               <StreakTree language={language} />
             </section>
+          ) : (
+            <section className="mb-0">
+            <div className="rounded-[2rem] border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(37,99,235,0.65)] sm:p-7">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Target className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-950 leading-tight">
+                    {language === "ar" ? "خطة اليوم" : "Today's plan"}
+                  </h2>
+                  <p className="text-xs text-slate-600">
+                    {language === "ar" ? "ابدأ من هنا — خطوة واحدة في كل مرة." : "Start here — one step at a time."}
+                  </p>
+                </div>
+                <div className="ms-auto flex items-center gap-3 shrink-0">
+                  <div className="relative w-14 h-14">
+                    <svg viewBox="0 0 100 100" className="w-14 h-14 -rotate-90">
+                      <circle cx="50" cy="50" r="45" stroke="hsl(var(--muted))" strokeWidth="10" fill="none" />
+                      <motion.circle
+                        cx="50" cy="50" r="45"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth="10"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 45}
+                        initial={{ strokeDashoffset: 2 * Math.PI * 45 }}
+                        animate={{ strokeDashoffset: 2 * Math.PI * 45 * (1 - heroProgressPct / 100) }}
+                        transition={{ duration: 0.9, ease: "easeOut" }}
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-slate-950">
+                      {heroProgressPct}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                {/* Step 1 — tasks */}
+                <button
+                  onClick={() => navigate("todo")}
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-sky-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md transition-all`}
+                >
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <ListChecks className="w-5 h-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-950 truncate">
+                      {todoTotal > 0
+                        ? (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`)
+                        : (language === "ar" ? "أضف مهام اليوم" : "Add today's tasks")}
+                    </span>
+                    <span className="block text-[11px] text-slate-600 truncate">
+                      {language === "ar" ? "قائمة المهام" : "To-do list"}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-primary">
+                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  </span>
+                </button>
+
+                {/* Step 2 — flashcards due */}
+                <button
+                  onClick={() => {
+                    try {
+                      if (dueCards > 0) sessionStorage.setItem("flashcards:review", "1");
+                      if (onboarding?.completed) localStorage.setItem("app_subject_v1", onboarding.subject);
+                    } catch { /* ignore */ }
+                    if (onboarding?.completed) {
+                      window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: onboarding.subject } }));
+                    }
+                    navigate("flashcards");
+                  }}
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-indigo-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-indigo-400 hover:shadow-md transition-all`}
+                >
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Layers className="w-5 h-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-950 truncate">
+                      {dueCards > 0
+                        ? (language === "ar" ? `راجع ${dueCards} بطاقة مستحقة` : `Review ${dueCards} card${dueCards === 1 ? "" : "s"} due`)
+                        : (language === "ar" ? "ادرس بالبطاقات التعليمية" : "Study with flashcards")}
+                    </span>
+                    <span className="block text-[11px] text-slate-600 truncate">
+                      {onboarding?.completed
+                        ? `${subjectLabel(onboarding.subject, language)}${weakTopicLabel ? ` · ${weakTopicLabel}` : ""}`
+                        : (language === "ar" ? "مراجعة متباعدة" : "Spaced repetition")}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-primary">
+                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  </span>
+                </button>
+
+                {/* Step 3 — progress report */}
+                <button
+                  onClick={() => onNav("report")}
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-violet-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md transition-all`}
+                >
+                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Sparkles className="w-5 h-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-950 truncate">
+                      {language === "ar" ? "شاهد تقدمك اليوم" : "See today's progress"}
+                    </span>
+                    <span className="block text-[11px] text-slate-600 truncate">
+                      {language === "ar" ? `${heroProgressDone} منجزة · ${pendingTodos} متبقية` : `${heroProgressDone} done · ${pendingTodos} left`}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-primary">
+                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  </span>
+                </button>
+              </div>
+
+              <div className="mt-3 text-center">
+                <VisitCounter inline />
+              </div>
+            </div>
+          </section>
           )}
         </div>
       </main>
@@ -1017,9 +1144,9 @@ const Basics = ({
             </button>
           </header>
 <button type="button" id="progress-details-trigger" onClick={() => openDetail("progress")}
-            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-3xl border p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "linear-gradient(125deg, #fffbeb, #fef3c7)", borderColor: "#fcd34d", color: "#78350f" }}>
-            <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/60 bg-white/70 shadow-sm">
+            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 p-5 text-start shadow-[0_18px_45px_-24px_currentColor] transition-all hover:-translate-y-1 hover:shadow-[0_24px_55px_-22px_currentColor] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+            style={{ background: "linear-gradient(125deg, #fff7d6 0%, #fde68a 52%, #fed7aa 100%)", borderColor: "#f59e0b", color: "#78350f", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}>
+            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 shadow-[0_10px_25px_-14px_currentColor]">
               <Trophy className="h-7 w-7" />
             </span>
             <span className="min-w-0 flex-1">
@@ -1027,7 +1154,7 @@ const Basics = ({
               <span className="mt-1 block text-sm leading-6">{rankLabel} · {totalPoints} {isRTL ? "نقطة" : "points"}</span>
               <span className="mt-2 block text-xs font-medium">{isRTL ? "شاهد النقاط وتفاصيل رتبتك" : "View points and rank details"}</span>
             </span>
-            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70">
+            <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 shadow-sm transition-transform group-hover:translate-x-1">
               <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
             </span>
           </button>
@@ -1056,132 +1183,30 @@ const Basics = ({
           )}
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
-          <section className="mb-6">
-            <div className="bg-background rounded-3xl border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Target className="w-4 h-4" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight">
-                    {language === "ar" ? "خطة اليوم" : "Today's plan"}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {language === "ar" ? "ابدأ من هنا — خطوة واحدة في كل مرة." : "Start here — one step at a time."}
-                  </p>
-                </div>
-                <div className="ms-auto flex items-center gap-3 shrink-0">
-                  <div className="relative w-14 h-14">
-                    <svg viewBox="0 0 100 100" className="w-14 h-14 -rotate-90">
-                      <circle cx="50" cy="50" r="45" stroke="hsl(var(--muted))" strokeWidth="10" fill="none" />
-                      <motion.circle
-                        cx="50" cy="50" r="45"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="10"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 45}
-                        initial={{ strokeDashoffset: 2 * Math.PI * 45 }}
-                        animate={{ strokeDashoffset: 2 * Math.PI * 45 * (1 - heroProgressPct / 100) }}
-                        transition={{ duration: 0.9, ease: "easeOut" }}
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-foreground">
-                      {heroProgressPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                {/* Step 1 — tasks */}
-                <button
-                  onClick={() => navigate("todo")}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
-                >
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <ListChecks className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-foreground truncate">
-                      {todoTotal > 0
-                        ? (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`)
-                        : (language === "ar" ? "أضف مهام اليوم" : "Add today's tasks")}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground truncate">
-                      {language === "ar" ? "قائمة المهام" : "To-do list"}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-primary">
-                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </span>
-                </button>
-
-                {/* Step 2 — flashcards due */}
-                <button
-                  onClick={() => {
-                    try {
-                      if (dueCards > 0) sessionStorage.setItem("flashcards:review", "1");
-                      if (onboarding?.completed) localStorage.setItem("app_subject_v1", onboarding.subject);
-                    } catch { /* ignore */ }
-                    if (onboarding?.completed) {
-                      window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: onboarding.subject } }));
-                    }
-                    navigate("flashcards");
-                  }}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border p-3.5 flex items-center gap-3 transition-colors ${
-                    dueCards > 0
-                      ? "border-primary/40 bg-primary/5 hover:border-primary"
-                      : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-primary/5"
-                  }`}
-                >
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Layers className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-foreground truncate">
-                      {dueCards > 0
-                        ? (language === "ar" ? `راجع ${dueCards} بطاقة مستحقة` : `Review ${dueCards} card${dueCards === 1 ? "" : "s"} due`)
-                        : (language === "ar" ? "ادرس بالبطاقات التعليمية" : "Study with flashcards")}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground truncate">
-                      {onboarding?.completed
-                        ? `${subjectLabel(onboarding.subject, language)}${weakTopicLabel ? ` · ${weakTopicLabel}` : ""}`
-                        : (language === "ar" ? "مراجعة متباعدة" : "Spaced repetition")}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-primary">
-                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </span>
-                </button>
-
-                {/* Step 3 — progress report */}
-                <button
-                  onClick={() => onNav("report")}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
-                >
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Sparkles className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-foreground truncate">
-                      {language === "ar" ? "شاهد تقدمك اليوم" : "See today's progress"}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground truncate">
-                      {language === "ar" ? `${heroProgressDone} منجزة · ${pendingTodos} متبقية` : `${heroProgressDone} done · ${pendingTodos} left`}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-primary">
-                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </span>
-                </button>
-              </div>
-
-              <div className="mt-3 text-center">
-                <VisitCounter inline />
-              </div>
-            </div>
-          </section>
+<motion.button
+            type="button"
+            id="plan-details-trigger"
+            onClick={() => openDetail("plan")}
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.985 }}
+            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 border-sky-300 p-5 text-start text-slate-950 shadow-[0_18px_45px_-22px_rgba(37,99,235,0.7)] transition-shadow hover:shadow-[0_24px_55px_-20px_rgba(37,99,235,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:p-6"
+            style={{ background: "linear-gradient(125deg, #eff6ff 0%, #dbeafe 48%, #e0e7ff 100%)", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}
+          >
+            <span aria-hidden="true" className="absolute -end-10 -top-14 h-36 w-36 rounded-full bg-sky-400/25 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 text-sky-600 shadow-[0_10px_25px_-12px_rgba(37,99,235,0.8)]">
+              <Target className="h-8 w-8" />
+            </span>
+            <span className="relative min-w-0 flex-1">
+              <span className="block text-xl font-black leading-8">{isRTL ? "خطة اليوم" : "Today's plan"}</span>
+              <span className="mt-1 block text-sm font-bold text-sky-800">
+                {heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"} · {heroProgressPct}%
+              </span>
+              <span className="mt-2 block text-xs font-semibold text-slate-600">{isRTL ? "افتح خطواتك الثلاث وابدأ الدراسة" : "Open your three next steps and start studying"}</span>
+            </span>
+            <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 text-sky-700 shadow-sm transition-transform group-hover:translate-x-1">
+              <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
+            </span>
+          </motion.button>
 
           {/* Core tools */}
           <section className="mb-6">
@@ -1323,9 +1348,9 @@ const Basics = ({
 
           {/* Streak tree — bottom */}
 <button type="button" id="streak-details-trigger" onClick={() => openDetail("streak")}
-            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-3xl border p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "linear-gradient(125deg, #ecfdf5, #ccfbf1)", borderColor: "#6ee7b7", color: "#064e3b" }}>
-            <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/60 bg-white/70 shadow-sm">
+            className="group relative mb-6 flex w-full items-center gap-4 overflow-hidden rounded-[1.9rem] border-2 p-5 text-start shadow-[0_18px_45px_-24px_currentColor] transition-all hover:-translate-y-1 hover:shadow-[0_24px_55px_-22px_currentColor] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+            style={{ background: "linear-gradient(125deg, #ecfdf5 0%, #a7f3d0 52%, #99f6e4 100%)", borderColor: "#10b981", color: "#064e3b", clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}>
+            <span aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.35rem] border border-white bg-white/80 shadow-[0_10px_25px_-14px_currentColor]">
               <Sparkles className="h-7 w-7" />
             </span>
             <span className="min-w-0 flex-1">
@@ -1333,7 +1358,7 @@ const Basics = ({
               <span className="mt-1 block text-sm leading-6">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</span>
               <span className="mt-2 block text-xs font-medium">{isRTL ? "افتح شجرة الاستمرارية" : "Explore your study streak"}</span>
             </span>
-            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/70">
+            <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white bg-white/80 shadow-sm transition-transform group-hover:translate-x-1">
               <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
             </span>
           </button>
