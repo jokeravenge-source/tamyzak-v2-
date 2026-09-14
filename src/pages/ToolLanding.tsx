@@ -111,9 +111,9 @@ const ToolLanding = ({ slug }: { slug: string }) => {
           <h2 className="mb-4 text-xl font-bold">أسئلة شائعة</h2>
           <div className="space-y-4">
             {tool.faq.map((f) => (
-              <article key={f.q} className="rounded-2xl border border-border bg-card p-4">
-                <h3 className="text-base font-semibold leading-relaxed">{f.q}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+              <article key={f.q} className="rounded-2xl border border-slate-300 bg-slate-100 p-4 text-slate-950 shadow-sm">
+                <h3 className="text-base font-bold leading-relaxed text-slate-950">{f.q}</h3>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700">{f.a}</p>
               </article>
             ))}
           </div>
