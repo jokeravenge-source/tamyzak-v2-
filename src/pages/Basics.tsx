@@ -315,6 +315,57 @@ const DEFAULT_HOME_TINT = {
   icon: "bg-primary text-primary-foreground shadow-lg shadow-primary/20",
 };
 
+const RANK_CARD_THEMES = {
+  coal: {
+    background: "linear-gradient(145deg, #f9fafb 0%, #d1d5db 48%, #9ca3af 100%)",
+    ink: "#111827",
+    accent: "#4b5563",
+    highlight: "#9ca3af",
+    glow: "rgba(75, 85, 99, 0.28)",
+    shadow: "rgba(31, 41, 55, 0.72)",
+  },
+  copper: {
+    background: "linear-gradient(145deg, #fff7ed 0%, #fdba74 48%, #b87333 100%)",
+    ink: "#7c2d12",
+    accent: "#9a3412",
+    highlight: "#fb923c",
+    glow: "rgba(184, 115, 51, 0.30)",
+    shadow: "rgba(154, 52, 18, 0.72)",
+  },
+  silver: {
+    background: "linear-gradient(145deg, #ffffff 0%, #e2e8f0 46%, #94a3b8 100%)",
+    ink: "#1e293b",
+    accent: "#475569",
+    highlight: "#cbd5e1",
+    glow: "rgba(148, 163, 184, 0.38)",
+    shadow: "rgba(71, 85, 105, 0.68)",
+  },
+  gold: {
+    background: "linear-gradient(145deg, #fffbeb 0%, #fde68a 46%, #f59e0b 100%)",
+    ink: "#78350f",
+    accent: "#b45309",
+    highlight: "#facc15",
+    glow: "rgba(245, 158, 11, 0.30)",
+    shadow: "rgba(180, 83, 9, 0.72)",
+  },
+  diamond: {
+    background: "linear-gradient(145deg, #ecfeff 0%, #a5f3fc 44%, #22d3ee 100%)",
+    ink: "#164e63",
+    accent: "#0e7490",
+    highlight: "#67e8f9",
+    glow: "rgba(34, 211, 238, 0.34)",
+    shadow: "rgba(8, 145, 178, 0.72)",
+  },
+  royal: {
+    background: "linear-gradient(145deg, #faf5ff 0%, #d8b4fe 44%, #a78bfa 100%)",
+    ink: "#581c87",
+    accent: "#7e22ce",
+    highlight: "#c084fc",
+    glow: "rgba(167, 139, 250, 0.34)",
+    shadow: "rgba(107, 33, 168, 0.72)",
+  },
+} as const;
+
 const FEATURED_COPY = {
   en: {
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
@@ -572,6 +623,7 @@ const Basics = ({
   }, []);
   const leaderboardRank = rankFor(totalPoints);
   const currentRank = leaderboardRank.key;
+  const rankCardTheme = RANK_CARD_THEMES[currentRank];
   const rankLabel = leaderboardRank.label[language];
   const rankIndex = RANKS.findIndex((rank) => rank.key === currentRank);
   const nextRank = rankIndex >= 0 ? RANKS[rankIndex + 1] : undefined;
@@ -1232,30 +1284,57 @@ const Basics = ({
               onClick={() => openDetail("progress")}
               whileHover={{ y: -6, rotate: 0.35 }}
               whileTap={{ scale: 0.97 }}
-              aria-label={isRTL ? `تقدمي ورتبتي، ${totalPoints} نقطة` : `My progress and rank, ${totalPoints} points`}
-              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 border-amber-400/90 px-2.5 py-4 text-center text-amber-950 shadow-[0_20px_42px_-24px_rgba(245,158,11,0.95)] transition-shadow hover:shadow-[0_26px_50px_-22px_rgba(245,158,11,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
-              style={{ background: "linear-gradient(145deg, #fffbeb 0%, #fde68a 46%, #fdba74 100%)", clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}
+              aria-label={isRTL ? `تقدمي ورتبتي، ${rankLabel}، ${totalPoints} نقطة` : `My progress and rank, ${rankLabel}, ${totalPoints} points`}
+              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 px-2.5 py-4 text-center transition-all hover:saturate-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
+              style={{
+                background: rankCardTheme.background,
+                borderColor: leaderboardRank.color,
+                color: rankCardTheme.ink,
+                boxShadow: `0 20px 42px -24px ${rankCardTheme.shadow}`,
+                clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))",
+              }}
             >
-              <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
-              <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-orange-500/25 blur-2xl" />
-              <span aria-hidden="true" className="absolute -end-8 top-20 h-px w-28 -rotate-12 bg-gradient-to-r from-transparent via-amber-800/20 to-transparent" />
+              <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/75 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+              <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full blur-2xl" style={{ backgroundColor: rankCardTheme.glow }} />
+              <span
+                aria-hidden="true"
+                className="absolute -end-8 top-20 h-px w-28 -rotate-12"
+                style={{ background: `linear-gradient(90deg, transparent, ${rankCardTheme.accent}55, transparent)` }}
+              />
               <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
-              <span aria-hidden="true" className="absolute start-3 top-3 hidden text-[9px] font-black uppercase tracking-[0.16em] text-amber-900/60 sm:block sm:text-[10px]">{isRTL ? "إنجازك" : "Achievement"}</span>
-              <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-amber-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
+              <span
+                aria-hidden="true"
+                className="absolute start-3 top-3 hidden text-[9px] font-black uppercase tracking-[0.16em] sm:block sm:text-[10px]"
+                style={{ color: rankCardTheme.ink, opacity: 0.62 }}
+              >
+                {isRTL ? "إنجازك" : "Achievement"}
+              </span>
+              <span
+                aria-hidden="true"
+                className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9"
+                style={{ color: rankCardTheme.accent }}
+              >
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
-              <span aria-hidden="true" className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 text-amber-800 shadow-[0_12px_26px_-14px_rgba(180,83,9,0.95)] backdrop-blur-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]">
+              <span
+                aria-hidden="true"
+                className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 backdrop-blur-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]"
+                style={{ color: rankCardTheme.accent, boxShadow: `0 12px 26px -14px ${rankCardTheme.shadow}` }}
+              >
                 <Trophy className="h-6 w-6 sm:h-8 sm:w-8" />
               </span>
               <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-lg sm:leading-7">{isRTL ? "تقدمي ورتبتي" : "Progress & rank"}</span>
-              <span className="relative mt-2 inline-flex min-w-[58px] items-baseline justify-center gap-1 rounded-full border border-white/75 bg-white/60 px-2.5 py-1 text-lg font-black text-amber-950 shadow-sm backdrop-blur-md sm:min-w-[88px] sm:px-4 sm:text-2xl">
+              <span
+                className="relative mt-2 inline-flex min-w-[58px] items-baseline justify-center gap-1 rounded-full border border-white/75 bg-white/60 px-2.5 py-1 text-lg font-black shadow-sm backdrop-blur-md sm:min-w-[88px] sm:px-4 sm:text-2xl"
+                style={{ color: rankCardTheme.ink }}
+              >
                 {totalPoints}<span className="text-[9px] sm:text-xs">{isRTL ? "نقطة" : "pts"}</span>
               </span>
-              <span className="relative mt-2 hidden text-xs font-bold text-amber-900/70 sm:block">{rankLabel}</span>
+              <span className="relative mt-2 hidden text-xs font-black sm:block" style={{ color: rankCardTheme.accent }}>{rankLabel}</span>
               <span aria-hidden="true" className="absolute inset-x-5 bottom-3 flex h-1.5 gap-1 sm:inset-x-7">
-                <span className="h-full flex-1 rounded-full bg-amber-500/80" />
-                <span className="h-full flex-1 rounded-full bg-orange-500/70" />
-                <span className="h-full flex-1 rounded-full bg-yellow-400/80" />
+                <span className="h-full flex-1 rounded-full" style={{ backgroundColor: leaderboardRank.color }} />
+                <span className="h-full flex-1 rounded-full" style={{ backgroundColor: rankCardTheme.accent, opacity: 0.82 }} />
+                <span className="h-full flex-1 rounded-full" style={{ backgroundColor: rankCardTheme.highlight, opacity: 0.92 }} />
               </span>
             </motion.button>
 
