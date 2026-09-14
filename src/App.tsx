@@ -555,6 +555,11 @@ const App = () => {
       localStorage.setItem(MENU_STORAGE_KEY, "flashcards");
       return "flashcards";
     }
+    // Public SEO deep links such as /malazam/physics-chapter-1 open Al-Malazam.
+    if (window.location.pathname.startsWith("/malazam")) {
+      localStorage.setItem(MENU_STORAGE_KEY, "malazam");
+      return "malazam";
+    }
     if (window.location.pathname.startsWith("/teachers")) {
       localStorage.setItem(MENU_STORAGE_KEY, "teachers");
       return "teachers";
