@@ -73,6 +73,8 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "englishEssays", en: "English Compositions", ar: "إنشاءات الإنكليزي", Icon: PenLine },
       { key: "englishIsqat", en: "Word Drops (Isqatat)", ar: "الإسقاطات", Icon: MousePointerClick },
+      { key: "englishVerbForms", en: "Verb Forms", ar: "تصريف الأفعال", Icon: SpellCheck2 },
+      { key: "englishReadingPractice", en: "Reading Practice", ar: "تدريب القطعة", Icon: FileQuestion },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
       { key: "malazam", en: "Malazam", ar: "الملازم", Icon: BookMarked },
     ],
