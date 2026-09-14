@@ -280,25 +280,39 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
 };
 
 const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: string }>> = {
-  subjectsHub: { card: "border-primary/25 bg-primary/10 hover:bg-primary/15", icon: "bg-primary/15 text-primary" },
-  mcqBank: { card: "border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/15", icon: "bg-sky-500/15 text-sky-600 dark:text-sky-300" },
-  missions: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
-  summaries: { card: "border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/15", icon: "bg-violet-500/15 text-violet-600 dark:text-violet-300" },
-  adminNotes: { card: "border-rose-500/25 bg-rose-500/10 hover:bg-rose-500/15", icon: "bg-rose-500/15 text-rose-600 dark:text-rose-300" },
-  notes: { card: "border-teal-500/25 bg-teal-500/10 hover:bg-teal-500/15", icon: "bg-teal-500/15 text-teal-600 dark:text-teal-300" },
-  sessions: { card: "border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15", icon: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
-  mistakes: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
-  videoNotes: { card: "border-fuchsia-500/25 bg-fuchsia-500/10 hover:bg-fuchsia-500/15", icon: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300" },
-  podcastTutor: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
-  youtube: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
-  canvas: { card: "border-indigo-500/25 bg-indigo-500/10 hover:bg-indigo-500/15", icon: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300" },
-  companion: { card: "border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/15", icon: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
-  mcq: { card: "border-purple-500/25 bg-purple-500/10 hover:bg-purple-500/15", icon: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
+  subjectsHub: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/25 via-sky-500/10 to-cyan-400/20", icon: "bg-blue-600 text-white shadow-lg shadow-blue-500/25" },
+  flashcards: { card: "border-violet-400/40 bg-gradient-to-br from-blue-500/20 via-violet-500/10 to-violet-400/20", icon: "bg-violet-600 text-white shadow-lg shadow-violet-500/25" },
+  malazam: { card: "border-orange-400/40 bg-gradient-to-br from-amber-500/25 via-orange-500/10 to-orange-400/20", icon: "bg-orange-600 text-white shadow-lg shadow-orange-500/25" },
+  ministerialBank: { card: "border-amber-400/40 bg-gradient-to-br from-orange-500/25 via-amber-500/10 to-yellow-400/20", icon: "bg-amber-600 text-white shadow-lg shadow-amber-500/25" },
+  biologyDrawings: { card: "border-lime-400/40 bg-gradient-to-br from-green-500/25 via-lime-500/10 to-lime-400/20", icon: "bg-lime-600 text-white shadow-lg shadow-lime-500/25" },
+  mcqBank: { card: "border-sky-400/40 bg-gradient-to-br from-sky-500/25 via-blue-500/10 to-blue-400/20", icon: "bg-sky-600 text-white shadow-lg shadow-sky-500/25" },
+  missions: { card: "border-yellow-400/40 bg-gradient-to-br from-amber-500/25 via-yellow-500/10 to-yellow-300/20", icon: "bg-amber-500 text-white shadow-lg shadow-amber-500/25" },
+  summaries: { card: "border-violet-400/40 bg-gradient-to-br from-violet-500/25 via-purple-500/10 to-fuchsia-400/20", icon: "bg-violet-600 text-white shadow-lg shadow-violet-500/25" },
+  adminNotes: { card: "border-rose-400/40 bg-gradient-to-br from-rose-500/25 via-pink-500/10 to-pink-400/20", icon: "bg-rose-600 text-white shadow-lg shadow-rose-500/25" },
+  notes: { card: "border-teal-400/40 bg-gradient-to-br from-teal-500/25 via-emerald-500/10 to-emerald-400/20", icon: "bg-teal-600 text-white shadow-lg shadow-teal-500/25" },
+  sessions: { card: "border-emerald-400/40 bg-gradient-to-br from-emerald-500/25 via-green-500/10 to-teal-400/20", icon: "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25" },
+  mistakes: { card: "border-orange-400/40 bg-gradient-to-br from-orange-500/25 via-red-500/10 to-red-400/20", icon: "bg-orange-600 text-white shadow-lg shadow-orange-500/25" },
+  mindmap: { card: "border-indigo-400/40 bg-gradient-to-br from-indigo-500/25 via-violet-500/10 to-purple-400/20", icon: "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25" },
+  videoNotes: { card: "border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-500/25 via-pink-500/10 to-rose-400/20", icon: "bg-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/25" },
+  podcastTutor: { card: "border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 via-sky-500/10 to-teal-400/20", icon: "bg-cyan-600 text-white shadow-lg shadow-cyan-500/25" },
+  textToVideo: { card: "border-pink-400/40 bg-gradient-to-br from-pink-500/25 via-rose-500/10 to-orange-400/20", icon: "bg-pink-600 text-white shadow-lg shadow-pink-500/25" },
+  youtube: { card: "border-red-400/40 bg-gradient-to-br from-red-500/25 via-rose-500/10 to-pink-400/20", icon: "bg-red-600 text-white shadow-lg shadow-red-500/25" },
+  canvas: { card: "border-blue-400/40 bg-gradient-to-br from-indigo-500/25 via-blue-500/10 to-cyan-400/20", icon: "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25" },
+  companion: { card: "border-emerald-400/40 bg-gradient-to-br from-teal-500/25 via-cyan-500/10 to-emerald-400/20", icon: "bg-teal-600 text-white shadow-lg shadow-teal-500/25" },
+  mcq: { card: "border-purple-400/40 bg-gradient-to-br from-purple-500/25 via-fuchsia-500/10 to-pink-400/20", icon: "bg-purple-600 text-white shadow-lg shadow-purple-500/25" },
+  liveBattle: { card: "border-rose-400/40 bg-gradient-to-br from-rose-500/25 via-red-500/10 to-amber-400/20", icon: "bg-rose-600 text-white shadow-lg shadow-rose-500/25" },
+  report: { card: "border-lime-400/40 bg-gradient-to-br from-lime-500/25 via-emerald-500/10 to-green-400/20", icon: "bg-lime-600 text-white shadow-lg shadow-lime-500/25" },
+  todo: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/25 via-indigo-500/10 to-violet-400/20", icon: "bg-blue-600 text-white shadow-lg shadow-blue-500/25" },
+  leaderboard: { card: "border-yellow-400/40 bg-gradient-to-br from-yellow-500/25 via-amber-500/10 to-orange-400/20", icon: "bg-yellow-500 text-white shadow-lg shadow-yellow-500/25" },
+  news: { card: "border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 via-blue-500/10 to-sky-400/20", icon: "bg-cyan-600 text-white shadow-lg shadow-cyan-500/25" },
+  advices: { card: "border-amber-400/40 bg-gradient-to-br from-yellow-500/25 via-amber-500/10 to-orange-300/20", icon: "bg-amber-500 text-white shadow-lg shadow-amber-500/25" },
+  dailyGame: { card: "border-purple-400/40 bg-gradient-to-br from-purple-500/25 via-indigo-500/10 to-blue-400/20", icon: "bg-purple-600 text-white shadow-lg shadow-purple-500/25" },
+  account: { card: "border-slate-400/40 bg-gradient-to-br from-slate-500/25 via-zinc-500/10 to-slate-300/20", icon: "bg-slate-700 text-white shadow-lg shadow-slate-500/25" },
 };
 
 const DEFAULT_HOME_TINT = {
-  card: "border-primary/20 bg-primary/5 hover:bg-primary/10",
-  icon: "bg-primary/10 text-primary",
+  card: "border-primary/30 bg-gradient-to-br from-primary/20 via-primary/5 to-background",
+  icon: "bg-primary text-primary-foreground shadow-lg shadow-primary/20",
 };
 
 const FEATURED_COPY = {
@@ -1082,29 +1096,43 @@ const Basics = ({
               })().map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
+                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 return (
                   <motion.button
                     key={it.key}
                     variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                    whileHover={isLocked ? undefined : { y: -2 }}
+                    whileHover={isLocked ? undefined : { y: -5 }}
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group bg-background p-5 border border-border rounded-2xl text-start transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
+                    className={`group relative isolate min-h-[190px] overflow-hidden border-2 p-5 text-start shadow-[0_18px_42px_-30px_currentColor] backdrop-blur-xl transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[0_24px_50px_-26px_currentColor]"} ${tint.card}`}
+                    style={{ clipPath: "polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px))" }}
                   >
-                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
-                      <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                    <span aria-hidden className={`absolute -end-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-2xl transition-transform duration-500 group-hover:scale-125 ${tint.icon}`} />
+                    <span aria-hidden className="pointer-events-none absolute inset-[4px] border border-white/20" style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }} />
+                    <span aria-hidden className="absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+                    {it.key === "podcastTutor" && (
+                      <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-700 backdrop-blur-md dark:text-amber-300">
+                        <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
+                      </span>
+                    )}
+                    <div className={`relative mb-4 grid h-12 w-12 place-items-center rounded-[1rem] ring-1 ring-white/25 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${tint.icon}`}>
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="font-bold text-base mb-1">
+                    <h3 className="relative pe-7 text-base font-black text-foreground">
                       {meta?.title ?? (language === "ar" ? it.labelAr : it.labelEn)}
                     </h3>
                     {meta?.subtitle && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{meta.subtitle}</p>
+                      <p className="relative mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{meta.subtitle}</p>
                     )}
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : (language === "ar" ? "افتح" : "Open")}
-                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />}
+                    <span className="relative mt-5 flex items-center justify-between gap-3">
+                      <span className="text-xs font-bold text-foreground/70">
+                        {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : (language === "ar" ? "افتح الأداة" : "Open tool")}
+                      </span>
+                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-transform group-hover:scale-110 ${tint.icon}`}>
+                        {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
+                      </span>
                     </span>
                   </motion.button>
                 );
@@ -1145,86 +1173,87 @@ const Basics = ({
           </header>
 <section
             aria-label={isRTL ? "ملخص الدراسة" : "Study overview"}
-            className="mb-6 grid grid-cols-3 gap-2 sm:gap-4"
+            className="mb-7 grid grid-cols-3 gap-2.5 sm:gap-4"
           >
             <motion.button
               type="button"
               id="plan-details-trigger"
               onClick={() => openDetail("plan")}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -6, rotate: -0.35 }}
               whileTap={{ scale: 0.97 }}
               aria-label={isRTL ? `خطة اليوم، مكتمل ${heroProgressPct} بالمئة` : `Today's plan, ${heroProgressPct}% complete`}
-              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 border-sky-300 px-2 py-4 text-center text-slate-950 shadow-[0_16px_35px_-22px_rgba(37,99,235,0.8)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(37,99,235,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
-              style={{ background: "linear-gradient(145deg, #eff6ff 0%, #bfdbfe 52%, #c7d2fe 100%)", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 border-sky-400/80 px-2.5 py-4 text-center text-slate-950 shadow-[0_20px_42px_-24px_rgba(14,165,233,0.9)] transition-shadow hover:shadow-[0_26px_50px_-22px_rgba(14,165,233,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
+              style={{ background: "linear-gradient(145deg, #f0f9ff 0%, #bae6fd 46%, #c7d2fe 100%)", clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}
             >
-              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
-              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 text-sky-600 shadow-[0_9px_22px_-12px_rgba(37,99,235,0.9)] sm:h-14 sm:w-14">
-                <Target className="h-5 w-5 sm:h-7 sm:w-7" />
-              </span>
-              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
-                {isRTL ? "خطة اليوم" : "Today's plan"}
-              </span>
-              <span className="relative mt-1 block text-sm font-black text-sky-800 sm:text-xl">{heroProgressPct}%</span>
-              <span className="relative mt-1 hidden text-xs font-semibold text-slate-600 sm:block">
-                {heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"}
-              </span>
-              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 text-sky-700 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+              <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+              <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-blue-500/25 blur-2xl" />
+              <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
+              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-sky-800/60 sm:text-[10px]">01</span>
+              <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-sky-800 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
+              <span aria-hidden="true" className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 text-sky-600 shadow-[0_12px_26px_-14px_rgba(2,132,199,0.95)] backdrop-blur-md transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]">
+                <Target className="h-6 w-6 sm:h-8 sm:w-8" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-lg sm:leading-7">{isRTL ? "خطة اليوم" : "Today's plan"}</span>
+              <span className="relative mt-2 inline-flex min-w-[58px] items-baseline justify-center gap-1 rounded-full border border-white/75 bg-white/60 px-2.5 py-1 text-lg font-black text-sky-900 shadow-sm backdrop-blur-md sm:min-w-[88px] sm:px-4 sm:text-2xl">
+                {heroProgressPct}<span className="text-[10px] sm:text-sm">%</span>
+              </span>
+              <span className="relative mt-2 hidden text-xs font-bold text-slate-600 sm:block">{heroProgressDone} / {heroProgressTotal || 0} {isRTL ? "منجزة" : "completed"}</span>
             </motion.button>
 
             <motion.button
               type="button"
               id="progress-details-trigger"
               onClick={() => openDetail("progress")}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -6, rotate: 0.35 }}
               whileTap={{ scale: 0.97 }}
               aria-label={isRTL ? `تقدمي ورتبتي، ${totalPoints} نقطة` : `My progress and rank, ${totalPoints} points`}
-              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 px-2 py-4 text-center shadow-[0_16px_35px_-22px_rgba(245,158,11,0.9)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(245,158,11,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
-              style={{ background: "linear-gradient(145deg, #fff7d6 0%, #fde68a 52%, #fed7aa 100%)", borderColor: "#f59e0b", color: "#78350f", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 border-amber-400/90 px-2.5 py-4 text-center text-amber-950 shadow-[0_20px_42px_-24px_rgba(245,158,11,0.95)] transition-shadow hover:shadow-[0_26px_50px_-22px_rgba(245,158,11,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
+              style={{ background: "linear-gradient(145deg, #fffbeb 0%, #fde68a 46%, #fdba74 100%)", clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}
             >
-              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
-              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 shadow-[0_9px_22px_-12px_currentColor] sm:h-14 sm:w-14">
-                <Trophy className="h-5 w-5 sm:h-7 sm:w-7" />
-              </span>
-              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
-                {isRTL ? "تقدمي ورتبتي" : "Progress & rank"}
-              </span>
-              <span className="relative mt-1 block text-sm font-black sm:text-xl">
-                {totalPoints} <span className="text-[10px] sm:text-xs">{isRTL ? "نقطة" : "pts"}</span>
-              </span>
-              <span className="relative mt-1 hidden text-xs font-semibold opacity-75 sm:block">{rankLabel}</span>
-              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+              <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+              <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-orange-500/25 blur-2xl" />
+              <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
+              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-amber-900/60 sm:text-[10px]">02</span>
+              <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-amber-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
+              <span aria-hidden="true" className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 text-amber-800 shadow-[0_12px_26px_-14px_rgba(180,83,9,0.95)] backdrop-blur-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]">
+                <Trophy className="h-6 w-6 sm:h-8 sm:w-8" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-lg sm:leading-7">{isRTL ? "تقدمي ورتبتي" : "Progress & rank"}</span>
+              <span className="relative mt-2 inline-flex min-w-[58px] items-baseline justify-center gap-1 rounded-full border border-white/75 bg-white/60 px-2.5 py-1 text-lg font-black text-amber-950 shadow-sm backdrop-blur-md sm:min-w-[88px] sm:px-4 sm:text-2xl">
+                {totalPoints}<span className="text-[9px] sm:text-xs">{isRTL ? "نقطة" : "pts"}</span>
+              </span>
+              <span className="relative mt-2 hidden text-xs font-bold text-amber-900/70 sm:block">{rankLabel}</span>
             </motion.button>
 
             <motion.button
               type="button"
               id="streak-details-trigger"
               onClick={() => openDetail("streak")}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -6, rotate: -0.35 }}
               whileTap={{ scale: 0.97 }}
               aria-label={isRTL ? `استمراريتي بالدراسة، ${streakDays || 0} أيام` : `My study streak, ${streakDays || 0} days`}
-              className="group relative flex min-h-[148px] min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border-2 px-2 py-4 text-center shadow-[0_16px_35px_-22px_rgba(16,185,129,0.9)] transition-shadow hover:shadow-[0_20px_42px_-20px_rgba(16,185,129,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:min-h-[190px] sm:rounded-[1.75rem] sm:p-5"
-              style={{ background: "linear-gradient(145deg, #ecfdf5 0%, #a7f3d0 52%, #99f6e4 100%)", borderColor: "#10b981", color: "#064e3b", clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))" }}
+              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 border-emerald-400/90 px-2.5 py-4 text-center text-emerald-950 shadow-[0_20px_42px_-24px_rgba(16,185,129,0.95)] transition-shadow hover:shadow-[0_26px_50px_-22px_rgba(16,185,129,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
+              style={{ background: "linear-gradient(145deg, #ecfdf5 0%, #a7f3d0 46%, #5eead4 100%)", clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}
             >
-              <span aria-hidden="true" className="absolute -end-8 -top-8 h-20 w-20 rounded-full bg-white/55 blur-xl transition-transform duration-500 group-hover:scale-150" />
-              <span aria-hidden="true" className="relative grid h-11 w-11 place-items-center rounded-[1rem] border border-white/90 bg-white/75 shadow-[0_9px_22px_-12px_currentColor] sm:h-14 sm:w-14">
-                <Sparkles className="h-5 w-5 sm:h-7 sm:w-7" />
-              </span>
-              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-base sm:leading-6">
-                {isRTL ? "استمراريتي" : "Study streak"}
-              </span>
-              <span className="relative mt-1 block text-sm font-black sm:text-xl">
-                {streakDays || 0} <span className="text-[10px] sm:text-xs">{isRTL ? "أيام" : "days"}</span>
-              </span>
-              <span className="relative mt-1 hidden text-xs font-semibold opacity-75 sm:block">
-                {isRTL ? "شجرة الاستمرارية" : "Streak tree"}
-              </span>
-              <span aria-hidden="true" className="absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full border border-white/80 bg-white/70 sm:end-3 sm:top-3 sm:h-8 sm:w-8">
+              <span aria-hidden="true" className="absolute -start-10 -top-14 h-32 w-32 rounded-full bg-white/70 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+              <span aria-hidden="true" className="absolute -bottom-12 -end-12 h-32 w-32 rounded-full bg-teal-500/25 blur-2xl" />
+              <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }} />
+              <span aria-hidden="true" className="absolute start-3 top-3 text-[9px] font-black tracking-[0.18em] text-emerald-900/60 sm:text-[10px]">03</span>
+              <span aria-hidden="true" className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 text-emerald-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9">
                 <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
+              <span aria-hidden="true" className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 text-emerald-800 shadow-[0_12px_26px_-14px_rgba(5,150,105,0.95)] backdrop-blur-md transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]">
+                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />
+              </span>
+              <span className="relative mt-3 block text-[11px] font-black leading-5 sm:text-lg sm:leading-7">{isRTL ? "استمراريتي" : "Study streak"}</span>
+              <span className="relative mt-2 inline-flex min-w-[58px] items-baseline justify-center gap-1 rounded-full border border-white/75 bg-white/60 px-2.5 py-1 text-lg font-black text-emerald-950 shadow-sm backdrop-blur-md sm:min-w-[88px] sm:px-4 sm:text-2xl">
+                {streakDays || 0}<span className="text-[9px] sm:text-xs">{isRTL ? "أيام" : "days"}</span>
+              </span>
+              <span className="relative mt-2 hidden text-xs font-bold text-emerald-900/70 sm:block">{isRTL ? "شجرة الاستمرارية" : "Streak tree"}</span>
             </motion.button>
           </section>
 
@@ -1272,9 +1301,10 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
+                    className={`group relative isolate min-h-[158px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border-2 p-4 sm:min-h-[186px] sm:p-6 shadow-[0_18px_42px_-30px_currentColor] backdrop-blur-xl transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:-translate-y-1 hover:shadow-[0_24px_50px_-26px_currentColor]"} ${tint.card}`}
+                    style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}
                   >
-                    <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
+                    <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
                     {it.key === "podcastTutor" && (
                       <span className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-black text-amber-600 dark:text-amber-300">
@@ -1359,7 +1389,8 @@ const Basics = ({
                     whileHover={isLocked ? undefined : { y: -3 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-start"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
+                    className={`group relative isolate min-h-[142px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border-2 p-3 shadow-[0_16px_36px_-28px_currentColor] backdrop-blur-xl transition-all sm:min-h-[164px] sm:p-5 ${isLocked ? "cursor-not-allowed opacity-60" : "hover:-translate-y-1 hover:shadow-[0_22px_44px_-24px_currentColor]"} ${tint.card}`}
+                    style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
@@ -1381,7 +1412,7 @@ const Basics = ({
                     </div>
                     <h3 className="relative pe-6 font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-4 text-[10px] sm:text-xs leading-relaxed text-muted-foreground line-clamp-2">{meta.subtitle}</p>
-                    <span className={`absolute bottom-2.5 end-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full opacity-65 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
+                    <span className={`absolute bottom-2.5 end-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
                       {isLocked ? <Lock className="h-3 w-3" /> : <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </motion.button>
