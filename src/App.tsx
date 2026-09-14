@@ -227,6 +227,25 @@ const App = () => {
     );
   }
 
+  // Public, crawlable Al-Malazam pages. Each SEO URL renders the real
+  // Al-Malazam subject picker while preserving its unique title and description.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/malazam")) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Subjects
+            language="ar"
+            onChangeLanguage={() => window.location.assign("/")}
+            onSelectSubject={() => {}}
+            mode="malazam"
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Public, crawlable ministerial questions landing page — before any auth gate.
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/ministerial-questions") {
     return (
