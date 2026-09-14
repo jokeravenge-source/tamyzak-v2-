@@ -448,11 +448,13 @@ const Basics = ({
   onChangeLanguage,
   onSelect,
   onNav,
+  initialShowAllTools = false,
 }: {
   language: AppLanguage;
   onChangeLanguage: () => void;
   onSelect: (c: BasicsChoice) => void;
   onNav: (c: MainMenuChoice) => void;
+  initialShowAllTools?: boolean;
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
   const [motivationalPhrase] = useState(() => phrases[Math.floor(Math.random() * phrases.length)]);
@@ -465,7 +467,7 @@ const Basics = ({
   const streakDays = useStreakDays();
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
-  const [showAllTools, setShowAllTools] = useState<boolean>(false);
+  const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
   const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(null);
   const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
   const openDetail = (screen: "plan" | "progress" | "streak") => {
@@ -1125,7 +1127,7 @@ const Basics = ({
           >
             <div className="flex items-center justify-between mb-8">
               <button
-                onClick={() => setShowAllTools(false)}
+                onClick={() => { setShowAllTools(false); onNav("basics"); }}
                 className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background text-sm font-medium hover:bg-secondary transition-colors"
               >
                 <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
@@ -1490,8 +1492,16 @@ const Basics = ({
           </section>
 
           <div className="mb-6">
-            <button type="button" onClick={() => onNav("more")} className="w-full rounded-2xl border border-border bg-background p-4 text-start font-semibold text-foreground hover:border-primary">
-              {isRTL ? "استكشف الأدوات حسب حاجتك ←" : "Explore tools by purpose →"}
+            <button
+              type="button"
+              onClick={() => setShowAllTools(true)}
+              className="group flex min-h-14 w-full items-center justify-between gap-3 overflow-hidden border-2 border-violet-400/40 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-cyan-500/15 px-5 py-4 text-start font-black text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))" }}
+            >
+              <span>{isRTL ? "استكشف كل أدوات الدراسة" : "Explore all study tools"}</span>
+              <span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/20 transition-transform group-hover:scale-110">
+                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
             </button>
           </div>
           {/* Countdown — quiet inline strip */}
