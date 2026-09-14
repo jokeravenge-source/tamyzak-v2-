@@ -15,6 +15,7 @@ import {
   Languages,
   Layers3,
   Loader2,
+  Lock,
   Microscope,
   MoonStar,
   RotateCcw,
@@ -294,27 +295,40 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
             {subjects.map(([s, count]) => {
               const style = SUBJECT_STYLES[s] ?? { card: "border-primary/25 bg-primary/10 hover:border-primary/60", icon: "bg-primary text-primary-foreground shadow-primary/30", iconRing: "border-primary/30 bg-primary/10", glow: "bg-primary/20" };
               const SubjectIcon = SUBJECT_ICONS[s] ?? Microscope;
+              const isLocked = s === "arabic";
               return (
               <motion.button
                 key={s}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.97 }}
+                disabled={isLocked}
+                whileHover={isLocked ? undefined : { y: -4 }}
+                whileTap={isLocked ? undefined : { scale: 0.97 }}
                 onClick={() => { setSubject(s); setChapter(null); }}
-                className={`group relative min-h-40 overflow-hidden rounded-2xl border p-4 text-start shadow-sm backdrop-blur transition-all duration-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:p-5 ${style.card}`}
+                aria-label={isLocked ? `${subjectLabel(s, isAr)} — ${isAr ? "مغلق" : "Locked"}` : undefined}
+                className={`group relative min-h-40 overflow-hidden rounded-2xl border p-4 text-start shadow-sm backdrop-blur transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:p-5 ${style.card} ${isLocked ? "cursor-not-allowed saturate-50 opacity-65" : "hover:shadow-lg"}`}
               >
                 <span aria-hidden="true" className={`absolute -end-7 -top-7 h-24 w-24 rounded-full blur-2xl ${style.glow}`} />
-                <div className={`relative mb-5 grid h-14 w-14 place-items-center rounded-[1.15rem] border transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-105 ${style.iconRing}`}>
-                  <span className={`grid h-10 w-10 place-items-center rounded-[0.85rem] shadow-lg transition-transform duration-300 group-hover:rotate-3 ${style.icon}`}>
-                    <SubjectIcon className="h-5 w-5" strokeWidth={2.25} />
+                {isLocked && (
+                  <span className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/85 px-2.5 py-1 text-xs font-bold text-muted-foreground shadow-sm backdrop-blur">
+                    <Lock className="h-3.5 w-3.5" />
+                    {isAr ? "مغلق" : "Locked"}
+                  </span>
+                )}
+                <div className={`relative mb-5 grid h-14 w-14 place-items-center rounded-[1.15rem] border transition-transform duration-300 ${isLocked ? "" : "group-hover:-rotate-3 group-hover:scale-105"} ${style.iconRing}`}>
+                  <span className={`grid h-10 w-10 place-items-center rounded-[0.85rem] shadow-lg transition-transform duration-300 ${isLocked ? "" : "group-hover:rotate-3"} ${style.icon}`}>
+                    {isLocked ? <Lock className="h-5 w-5" strokeWidth={2.25} /> : <SubjectIcon className="h-5 w-5" strokeWidth={2.25} />}
                   </span>
                   <span aria-hidden="true" className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full border-2 border-background bg-current opacity-70" />
                 </div>
                 <div className="relative font-extrabold">{subjectLabel(s, isAr)}</div>
                 <div className="relative mt-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                  {count} {isAr ? "سؤال" : "questions"}
+                    {isLocked ? (isAr ? "غير متاح حالياً" : "Currently unavailable") : `${count} ${isAr ? "سؤال" : "questions"}`}
                   </span>
-                  <ArrowRight className={`h-4 w-4 opacity-45 transition-transform group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
+                  {isLocked ? (
+                    <Lock className="h-4 w-4 opacity-55" />
+                  ) : (
+                    <ArrowRight className={`h-4 w-4 opacity-45 transition-transform group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
+                  )}
                 </div>
               </motion.button>
             )})}
