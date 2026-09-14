@@ -51,9 +51,12 @@ const ToolsIndex = () => {
         <ul className="grid gap-4 sm:grid-cols-2">
           {PUBLIC_TOOLS.map((t) => (
             <li key={t.slug}>
-              <a href={`/tools/${t.slug}`} className="block h-full rounded-2xl border border-border bg-card p-4">
-                <h2 className="text-base font-bold leading-relaxed">{t.title}</h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+              <a
+                href={`/tools/${t.slug}`}
+                className="block h-full rounded-2xl border border-slate-300 bg-slate-100 p-4 text-slate-950 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <h2 className="text-base font-bold leading-relaxed text-slate-950">{t.title}</h2>
+                <p className="mt-2 line-clamp-3 text-sm font-medium leading-relaxed text-slate-700">
                   {t.metaDescription}
                 </p>
               </a>
