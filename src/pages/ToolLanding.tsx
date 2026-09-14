@@ -4,11 +4,41 @@ import { PUBLIC_TOOLS, getPublicTool } from "@/data/publicTools";
 
 const SITE_URL = "https://tamyazak.site";
 
+const APP_MENU_BY_TOOL_SLUG: Record<string, string> = {
+  flashcards: "flashcards",
+  "ministerial-bank": "ministerialBank",
+  mcq: "mcqBank",
+  "mind-map": "mindmap",
+  summaries: "summaries",
+  malazam: "malazam",
+  "video-notes": "videoNotes",
+  sessions: "sessions",
+  leaderboard: "leaderboard",
+  missions: "missions",
+  todo: "todo",
+  "daily-report": "report",
+  "biology-drawings": "biologyDrawings",
+  "islamic-surahs": "islamicSurahs",
+  "hadith-checker": "hadithChecker",
+  "poems-checker": "poemsChecker",
+  "english-essays": "englishEssays",
+  "english-isqat": "englishIsqat",
+  advices: "advices",
+  news: "news",
+};
+
+const getAppHref = (slug: string) => {
+  if (slug === "malazam") return "/malazam";
+  const menu = APP_MENU_BY_TOOL_SLUG[slug];
+  return menu ? `/?menu=${encodeURIComponent(menu)}` : "/";
+};
+
 const ToolLanding = ({ slug }: { slug: string }) => {
   const tool = getPublicTool(slug);
   if (!tool) return null;
 
   const related = PUBLIC_TOOLS.filter((t) => t.slug !== tool.slug).slice(0, 6);
+  const appHref = getAppHref(tool.slug);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -63,8 +93,8 @@ const ToolLanding = ({ slug }: { slug: string }) => {
           <h1 className="text-3xl font-extrabold leading-tight">{tool.title}</h1>
           <p className="mt-4 leading-relaxed text-muted-foreground">{tool.intro}</p>
           <a
-            href="/"
-            className="mt-6 inline-flex h-11 items-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground"
+            href={appHref}
+            className="mt-6 inline-flex h-11 items-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {tool.cta}
           </a>
