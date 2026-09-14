@@ -44,6 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Subjects", titleAr: "المواد",
+    directKey: "subjectsHub",
     items: [
       { key: "ourCourses", labelEn: "Our Courses", labelAr: "دوراتنا", Icon: CoursesIcon },
       { key: "subjectsHub", labelEn: "All Subjects", labelAr: "كل المواد", Icon: BookOpen },
@@ -51,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Study", titleAr: "الأدوات",
+    directKey: "more",
     items: [
       { key: "notes", labelEn: "Notes", labelAr: "ملاحظاتي", Icon: NotebookPen },
       { key: "canvas", labelEn: "Canvas", labelAr: "اللوحة", Icon: Palette },
@@ -208,51 +210,9 @@ const BottomGroupNav = ({
         initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-auto w-full max-w-3xl rounded-2xl border border-border bg-card/85 backdrop-blur-xl shadow-[0_18px_50px_-12px_hsl(var(--primary)/0.25)] p-1.5"
+        className="pointer-events-auto w-full max-w-3xl rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-[0_18px_50px_-12px_hsl(var(--primary)/0.25)] p-1.5"
         aria-label="Primary"
       >
-        {currentGroup.items.length > 0 && !currentGroup.locked && (
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={activeGroup}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18 }}
-            className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1.5 mb-1.5 border-b border-border/60"
-          >
-            <LayoutGroup id={`bgn-subitems-${activeGroup}`}>
-              {currentGroup.items.map((it) => {
-                const Icon = it.Icon;
-                const isActive = active === it.key;
-                return (
-                  <motion.button
-                    key={it.key}
-                    whileTap={{ scale: 0.94 }}
-                    onClick={() => handleItem(it)}
-                    className={`relative shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                      isActive ? "text-primary" : "text-foreground/60 hover:text-foreground"
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="bgn-sub-pill"
-                        className="absolute inset-0 bg-primary/10 rounded-lg"
-                        transition={{ type: "spring", stiffness: 520, damping: 36 }}
-                      />
-                    )}
-                    <span className="relative z-10 inline-flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5" />
-                      {language === "ar" ? it.labelAr : it.labelEn}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </LayoutGroup>
-          </motion.div>
-        </AnimatePresence>
-        )}
-
         <LayoutGroup id="bgn-group-tabs">
           <div className="relative isolate flex items-stretch gap-1">
             <span
@@ -265,7 +225,7 @@ const BottomGroupNav = ({
               const right = BAR_GROUPS.slice(half);
               const renderGroup = (g: NavGroup) => {
                 const Icon = GROUP_ICONS[g.titleEn] ?? Layers;
-                const isActive = activeGroup === g.titleEn;
+                const isActive = g.titleEn === "Home" ? active === "basics" || active === null : g.directKey === active || (active !== "basics" && activeGroup === g.titleEn);
                 return (
                   <motion.button
                     key={g.titleEn}
@@ -277,7 +237,7 @@ const BottomGroupNav = ({
                         return;
                       }
                       setActiveGroup(g.titleEn);
-                      if (g.directKey) { setSheetGroup(null); onSelect(g.directKey); }
+                      if (g.directKey) { handleItem({ key: g.directKey, labelEn: g.titleEn, labelAr: g.titleAr, Icon }); }
                       else if (g.items.length === 0) { setSheetGroup(null); onSelect("basics"); }
                       else setSheetGroup(g.titleEn);
                     }}
@@ -370,7 +330,7 @@ const BottomGroupNav = ({
               animate={{ x: 0 }}
               exit={{ x: isRTL ? "-100%" : "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 34 }}
-              className={`absolute inset-y-0 z-10 w-[86%] max-w-sm border-border bg-card shadow-2xl ${isRTL ? "left-0 border-r" : "right-0 border-l"}`}
+              className={`absolute inset-y-0 z-10 w-[86%] max-w-sm border-border bg-background shadow-2xl ${isRTL ? "left-0 border-r" : "right-0 border-l"}`}
             >
               <div className="flex h-full flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
                 <div className="mb-6 flex items-center gap-3">
