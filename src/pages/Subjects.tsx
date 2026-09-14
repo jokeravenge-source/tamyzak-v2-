@@ -1,5 +1,8 @@
 import { Lock, ArrowLeft, ArrowRight, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, RefreshCw, Moon } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
+import { Helmet } from "react-helmet-async";
+import SeoHead from "@/components/SeoHead";
+import { getMalazamSeoItem } from "@/data/malazamSeo";
 
 export const SUBJECT_STORAGE_KEY = "app_subject_v1";
 export const PREVIOUS_SUBJECT_STORAGE_KEY = "app_previous_subject_v1";
@@ -64,6 +67,31 @@ const Subjects = ({
 }) => {
   const text = copy[language];
   const displayedSubjects = mode === "malazam" ? [...subjects, revisionSubject] : subjects;
+  const malazamSlug =
+    mode === "malazam" && typeof window !== "undefined"
+      ? decodeURIComponent(window.location.pathname.replace(/\/+$/, "").split("/")[2] ?? "")
+      : "";
+  const seoItem = getMalazamSeoItem(malazamSlug);
+  const seoPath = seoItem ? `/malazam/${seoItem.slug}` : "/malazam";
+  const seoTitle = seoItem
+    ? `${seoItem.title} — ملازم السادس العلمي | تميزك`
+    : "ملازم السادس العلمي | تميزك";
+  const seoDescription = seoItem?.description ??
+    "تصفح ملازم السادس العلمي لجميع المواد والأساتذة من خلال منصة تميزك التعليمية.";
+  const learningResourceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: seoItem?.title ?? "ملازم السادس العلمي",
+    description: seoDescription,
+    url: `https://tamyazak.site${seoPath}`,
+    inLanguage: "ar",
+    educationalLevel: "السادس العلمي",
+    provider: {
+      "@type": "Organization",
+      name: "تميزك",
+      url: "https://tamyazak.site/",
+    },
+  };
 
   const handleChangeLanguage = () => {
     localStorage.removeItem(LANGUAGE_STORAGE_KEY);
@@ -91,6 +119,15 @@ const Subjects = ({
 
   return (
     <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
+      {mode === "malazam" && (
+        <>
+          <SeoHead path={seoPath} title={seoTitle} description={seoDescription} />
+          <Helmet>
+            <html lang="ar" dir="rtl" />
+            <script type="application/ld+json">{JSON.stringify(learningResourceJsonLd)}</script>
+          </Helmet>
+        </>
+      )}
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
@@ -107,8 +144,17 @@ const Subjects = ({
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{text.badge}</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">{text.title}</h1>
-        <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">{text.description}</p>
+        <h1 className="text-4xl md:text-6xl font-bold gradient-text leading-[1.25] mb-4">
+          {seoItem ? seoItem.title : text.title}
+        </h1>
+        <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto leading-relaxed">
+          {seoItem ? seoDescription : text.description}
+        </p>
+        {seoItem && (
+          <p className="mt-3 text-sm font-semibold text-primary">
+            اختر المادة للوصول إلى الملزمة
+          </p>
+        )}
       </header>
 
       <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative">
