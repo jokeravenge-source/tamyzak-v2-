@@ -126,7 +126,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
               <li key={t.slug}>
                 <a
                   href={`/tools/${t.slug}`}
-                  className="inline-block rounded-full border border-border bg-card px-4 py-2 font-medium"
+                  className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                 >
                   {t.title}
                 </a>
@@ -135,7 +135,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
             <li>
               <a
                 href="/tools"
-                className="inline-block rounded-full border border-border bg-card px-4 py-2 font-medium"
+                className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
               >
                 كل الأدوات
               </a>
@@ -143,7 +143,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
             <li>
               <a
                 href="/ministerial-questions"
-                className="inline-block rounded-full border border-border bg-card px-4 py-2 font-medium"
+                className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
               >
                 الأسئلة الوزارية مع الأجوبة
               </a>
