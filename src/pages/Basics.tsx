@@ -241,13 +241,10 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
 
 // Featured top cards (report/summaries + todo/fahrast)
 const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }>; tintBg: string; tintText: string }[] = [
-  { key: "subjectsHub", Icon: BookOpen,   tintBg: "bg-primary",    tintText: "text-primary-foreground" },
-  { key: "mcqBank",     Icon: Layers,     tintBg: "bg-sky-50",     tintText: "text-sky-600" },
-  { key: "missions",    Icon: Target,     tintBg: "bg-amber-50",   tintText: "text-amber-600" },
-  { key: "summaries",   Icon: FileText,   tintBg: "bg-violet-50",  tintText: "text-violet-600" },
-  { key: "adminNotes",  Icon: BookOpen,   tintBg: "bg-rose-50",    tintText: "text-rose-600" },
-  { key: "notes",       Icon: NotebookPen, tintBg: "bg-teal-50",   tintText: "text-teal-600" },
-  { key: "podcastTutor", Icon: Podcast, tintBg: "bg-cyan-50", tintText: "text-cyan-600" },
+  { key: "subjectsHub", Icon: BookOpen, tintBg: "bg-primary", tintText: "text-primary-foreground" },
+  { key: "mcqBank", Icon: Layers, tintBg: "bg-sky-50", tintText: "text-sky-600" },
+  { key: "notes", Icon: NotebookPen, tintBg: "bg-teal-50", tintText: "text-teal-600" },
+  { key: "sessions", Icon: Timer, tintBg: "bg-emerald-50", tintText: "text-emerald-600" },
 ];
 
 // Study tools grid (bottom section)
@@ -365,6 +362,8 @@ const Basics = ({
   const todos = useTodos();
   const [missionsDone, setMissionsDone] = useState<number>(0);
   const streakDays = useStreakDays();
+  const [toolCategory, setToolCategory] = useState("All");
+  const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(false);
   const [recentKeys, setRecentKeys] = useState<string[]>(() => getRecentTools());
   const hiddenStudyTools = useHiddenStudyTools();
@@ -640,16 +639,10 @@ const Basics = ({
     .filter((k) => k !== "liveBattle" && !hiddenStudyTools.has(k) && TOOL_ICONS[k as MainMenuChoice] && (fc as any)[k])
     .slice(0, 4)
     .map((k) => ({ key: k as MainMenuChoice, Icon: TOOL_ICONS[k as MainMenuChoice]! }));
-  const displayedTools = (() => {
-    const visibleStudyTools = STUDY_TOOLS.filter((tool) => !hiddenStudyTools.has(tool.key));
-    const base = recentTools.length > 0 ? recentTools : visibleStudyTools.slice(0, 4);
-    const pinned: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
-      { key: "mcqBank" as MainMenuChoice, Icon: Layers },
-      { key: "adminNotes" as MainMenuChoice, Icon: BookOpen },
-      { key: "notes" as MainMenuChoice, Icon: NotebookPen },
-    ].filter((p) => !hiddenStudyTools.has(p.key) && !base.some((t) => t.key === p.key));
-    return [...pinned, ...base].slice(0, 6);
-  })();
+  const displayedTools = recentTools
+    .filter((tool) => !FEATURED.some((featured) => featured.key === tool.key))
+    .slice(0, 3);
+
 
   const displayedToolsHeader = recentTools.length > 0
     ? { en: "Recently used", ar: "المستخدمة مؤخراً" }[language]
@@ -694,7 +687,7 @@ const Basics = ({
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isRTL ? "ml-3" : "mr-3"} shrink-0`} />
-                      <span className="truncate text-left">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                      <span className="truncate text-start">{language === "ar" ? it.labelAr : it.labelEn}</span>
                     </button>
                   </li>
                 );
@@ -707,7 +700,7 @@ const Basics = ({
       <div className="p-4 border-t border-border space-y-3">
         <button
           onClick={() => onNav("account")}
-          className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-border bg-card text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
         >
           {language === "ar" ? "إعدادات الحساب" : "Account settings"}
         </button>
@@ -752,7 +745,7 @@ const Basics = ({
           <button
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-w-[10rem] sm:min-w-[16rem]"
+            className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-background text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-w-[10rem] sm:min-w-[16rem]"
           >
             <Search className="w-3.5 h-3.5 text-primary" />
             <span className="flex-1 text-start truncate">
@@ -764,7 +757,7 @@ const Basics = ({
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className="ms-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="ms-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -787,7 +780,7 @@ const Basics = ({
             <div className="flex items-center justify-between mb-8">
               <button
                 onClick={() => setShowAllTools(false)}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors"
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background text-sm font-medium hover:bg-secondary transition-colors"
               >
                 <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 {language === "ar" ? "رجوع" : "Back"}
@@ -815,6 +808,24 @@ const Basics = ({
                 {language === "ar" ? "كل ما تحتاجه للدراسة في مكان واحد." : "Everything you need to study, in one place."}
               </p>
             </header>
+            <div className="mb-6 space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold">{isRTL ? "شنو تريد تدرس؟" : "Find a study tool"}</span>
+                <input value={toolQuery} onChange={(event) => setToolQuery(event.target.value)}
+                  type="search" placeholder={isRTL ? "ابحث بالاسم أو الاستخدام…" : "Search by name or purpose…"}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
+              </label>
+              <div className="flex flex-wrap gap-2" aria-label={isRTL ? "تصنيفات الأدوات" : "Tool categories"}>
+                {[{ titleEn: "All", titleAr: "الكل" }, ...NAV_GROUPS].map((group) => (
+                  <button key={group.titleEn} type="button" aria-pressed={toolCategory === group.titleEn}
+                    onClick={() => setToolCategory(group.titleEn)}
+                    className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold ${toolCategory === group.titleEn ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
+                    {isRTL ? group.titleAr : group.titleEn}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">{isRTL ? "ما لكيت الأداة؟ جرّب كلمة ثانية أو اختَر «الكل»." : "No matching tool? Try another word or choose All."}</p>
+            </div>
             <motion.div
               initial="hidden"
               animate="show"
@@ -823,7 +834,9 @@ const Basics = ({
             >
               {(() => {
                 const seen = new Set<string>();
-                return NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
+                return NAV_GROUPS.filter((g) => toolCategory === "All" || g.titleEn === toolCategory).flatMap((g) => g.items).filter((it) => {
+                  const query = toolQuery.trim().toLocaleLowerCase();
+                  if (query && ![it.labelAr, it.labelEn, (fc as any)[it.key]?.subtitle ?? ""].join(" ").toLocaleLowerCase().includes(query)) return false;
                   if (hiddenStudyTools.has(it.key)) return false;
                   if (seen.has(it.key)) return false;
                   seen.add(it.key);
@@ -841,7 +854,7 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group bg-card p-5 border border-border rounded-2xl text-left transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
+                    className={`group bg-background p-5 border border-border rounded-2xl text-start transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:border-primary/40 hover:shadow-[var(--shadow-card)]"}`}
                   >
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                       <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
@@ -884,7 +897,18 @@ const Basics = ({
           {/* ====== Noir & Gold bento dashboard ====== */}
           {/* Header */}
           {/* === The Facet Stone hero === */}
-          <header className="mb-8 md:mb-12">
+          <header className="mb-6 rounded-3xl border border-primary/25 bg-primary/5 p-5 sm:p-7">
+            <p className="mb-2 text-sm text-muted-foreground">{isRTL ? "تميزك · مساحة دراستك" : "Tamayzak · your study space"}</p>
+            <h2 className="text-2xl font-bold sm:text-3xl">{isRTL ? "شنو ندرس اليوم؟" : "What will you study today?"}</h2>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">{isRTL ? "ابدأ بمادة، راجع بطاقاتك، أو حل أسئلة. بقية الأدوات موجودة وقت تحتاجها." : "Choose a subject, review flashcards, or practise questions. More tools are there when you need them."}</p>
+            <button type="button" onClick={() => navigate("subjectsHub")}
+              className="mt-4 min-h-12 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+              {isRTL ? "ابدأ بمادة" : "Choose a subject"}
+            </button>
+          </header>
+          <details className="mb-6 rounded-2xl border border-border p-4">
+            <summary className="cursor-pointer py-2 font-semibold">{isRTL ? "تقدمي ورتبتي" : "My progress and rank"}</summary>
+            <div className="pt-4">
             <div className="flex items-center gap-5 sm:gap-7">
               <RankStone
                 rank={currentRank}
@@ -911,7 +935,7 @@ const Basics = ({
                     : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
                 </p>
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="rounded-2xl border border-border bg-card px-3 py-2.5">
+                  <div className="rounded-2xl border border-border bg-background px-3 py-2.5">
                     <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
                     <p className="mt-1 text-[11px] text-ash">
                       {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
@@ -920,7 +944,7 @@ const Basics = ({
                   <button
                     type="button"
                     onClick={() => onNav("unlocks")}
-                    className="text-start rounded-2xl border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
+                    className="text-start rounded-2xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
                   >
                     <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
                     <p className="mt-1 text-[11px] text-ash">
@@ -941,7 +965,8 @@ const Basics = ({
               </div>
               <GiftMcqButton language={language} />
             </div>
-          </header>
+            </div>
+          </details>
 
           {dueMistakes > 0 && (
             <button
@@ -968,7 +993,7 @@ const Basics = ({
 
           {/* ====== Today's plan — one card, three clear next steps ====== */}
           <section className="mb-6">
-            <div className="bg-card rounded-3xl border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
+            <div className="bg-background rounded-3xl border border-border p-4 sm:p-6 shadow-[var(--shadow-card)]">
               <div className="flex items-center gap-3 mb-4">
                 <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Target className="w-4 h-4" />
@@ -1008,7 +1033,7 @@ const Basics = ({
                 {/* Step 1 — tasks */}
                 <button
                   onClick={() => navigate("todo")}
-                  className={`w-full ${isRTL ? "text-right" : "text-left"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
                 >
                   <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                     <ListChecks className="w-5 h-5" />
@@ -1040,7 +1065,7 @@ const Basics = ({
                     }
                     navigate("flashcards");
                   }}
-                  className={`w-full ${isRTL ? "text-right" : "text-left"} rounded-2xl border p-3.5 flex items-center gap-3 transition-colors ${
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border p-3.5 flex items-center gap-3 transition-colors ${
                     dueCards > 0
                       ? "border-primary/40 bg-primary/5 hover:border-primary"
                       : "border-border bg-secondary/30 hover:border-primary/50 hover:bg-primary/5"
@@ -1069,7 +1094,7 @@ const Basics = ({
                 {/* Step 3 — progress report */}
                 <button
                   onClick={() => onNav("report")}
-                  className={`w-full ${isRTL ? "text-right" : "text-left"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
+                  className={`w-full ${isRTL ? "text-right" : "text-start"} rounded-2xl border border-border bg-secondary/30 p-3.5 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-colors`}
                 >
                   <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
@@ -1113,7 +1138,7 @@ const Basics = ({
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-left"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
+                    className={`group relative min-h-[150px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border p-4 sm:min-h-[178px] sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[var(--shadow-card)]"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-35 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
@@ -1136,9 +1161,14 @@ const Basics = ({
             </div>
           </section>
 
+          <div className="mb-6">
+            <button type="button" onClick={() => onNav("more")} className="w-full rounded-2xl border border-border bg-background p-4 text-start font-semibold text-foreground hover:border-primary">
+              {isRTL ? "استكشف الأدوات حسب حاجتك ←" : "Explore tools by purpose →"}
+            </button>
+          </div>
           {/* Countdown — quiet inline strip */}
           {showTimer && (
-            <div className="mb-6 rounded-2xl border border-border bg-card px-5 py-4 flex items-center gap-4">
+            <div className="mb-6 rounded-2xl border border-border bg-background px-5 py-4 flex items-center gap-4">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
                 <Timer className="w-4 h-4 text-primary" />
               </div>
@@ -1178,7 +1208,7 @@ const Basics = ({
               initial="hidden"
               animate="show"
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
             >
               {displayedTools.map((it) => {
                 const Icon = it.Icon;
@@ -1195,7 +1225,7 @@ const Basics = ({
                     whileHover={isLocked ? undefined : { y: -3 }}
                     disabled={isLocked}
                     onClick={() => navigate(it.key)}
-                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-left"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
+                    className={`group relative min-h-[132px] overflow-hidden ${isRTL ? "text-right" : "text-start"} p-3 sm:min-h-[154px] sm:p-5 rounded-xl sm:rounded-2xl border shadow-sm transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-md"} ${tint.card}`}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
@@ -1228,9 +1258,10 @@ const Basics = ({
           </section>
 
           {/* Streak tree — bottom */}
-          <section>
+          <details className="rounded-2xl border border-border p-4">
+            <summary className="cursor-pointer py-2 font-semibold">{isRTL ? "شجرة الاستمرارية" : "My study streak"}</summary>
             <StreakTree language={language} />
-          </section>
+          </details>
           </div>
         </div>
         </motion.div>
