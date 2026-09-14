@@ -1,116 +1,313 @@
-import { ArrowRight, Sparkles, HelpCircle, ListChecks, MessageSquareQuote, PenLine, Headphones, Crown } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { ArrowRight, Search, BookOpen } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 
+type Tool = [MainMenuChoice, string, string, string, string];
+type Group = [string, string, Tool[]];
+const GROUPS: Group[] = [
+  [
+    "Learn",
+    "تعلّم",
+    [
+      [
+        "subjectsHub",
+        "Subjects",
+        "المواد",
+        "Choose a subject and its study tools.",
+        "اختَر مادة وأدواتها."
+      ],
+      [
+        "ourCourses",
+        "Courses",
+        "الدورات",
+        "Browse available courses.",
+        "تصفّح الدورات المتاحة."
+      ],
+      [
+        "teachers",
+        "Teachers",
+        "المدرسون",
+        "Find teachers and lectures.",
+        "اختَر مدرساً ومحاضراته."
+      ],
+      [
+        "flashcards",
+        "Flashcards",
+        "البطاقات",
+        "Review questions from memory.",
+        "راجع المعلومات من ذاكرتك."
+      ],
+      [
+        "malazam",
+        "Booklets",
+        "الملازم",
+        "Find study materials by subject.",
+        "تصفّح الملازم حسب المادة."
+      ],
+      [
+        "summaries",
+        "Summaries",
+        "الملخصات",
+        "Browse shared study notes.",
+        "تصفّح ملخصات الدراسة."
+      ],
+      [
+        "adminNotes",
+        "Enrichments",
+        "الإثرائيات",
+        "Read instructor study cards.",
+        "اقرأ بطاقات المدرسين."
+      ]
+    ]
+  ],
+  [
+    "Practise",
+    "تدرّب",
+    [
+      [
+        "mcqBank",
+        "Question bank",
+        "بنك الأسئلة",
+        "Practise ready-made questions.",
+        "حل أسئلة جاهزة."
+      ],
+      [
+        "ministerialBank",
+        "Past exams",
+        "الوزاريات",
+        "Review ministerial questions.",
+        "راجع الأسئلة الوزارية."
+      ],
+      [
+        "mistakes",
+        "My mistakes",
+        "أخطائي",
+        "Revisit questions you missed.",
+        "راجع الأسئلة التي أخطأت بها."
+      ],
+      [
+        "mcq",
+        "Generate questions",
+        "مولّد الأسئلة",
+        "Create questions from your file.",
+        "حوّل ملفك إلى أسئلة."
+      ],
+      [
+        "essay",
+        "Answer checker",
+        "المصحّح",
+        "Check your written answers.",
+        "راجع إجاباتك المكتوبة."
+      ]
+    ]
+  ],
+  [
+    "Create",
+    "اكتب ونظّم",
+    [
+      [
+        "notes",
+        "My notes",
+        "ملاحظاتي",
+        "Write and organise your notes.",
+        "اكتب ملاحظاتك ورتّبها."
+      ],
+      [
+        "canvas",
+        "Canvas",
+        "اللوحة",
+        "Draw and explain your ideas.",
+        "ارسم أفكارك واشرحها."
+      ],
+      [
+        "mindmap",
+        "Mind maps",
+        "الخرائط الذهنية",
+        "Connect the main ideas.",
+        "اربط الأفكار الرئيسية."
+      ],
+      [
+        "videoNotes",
+        "Video to notes",
+        "الفيديو إلى ملاحظات",
+        "Turn a lecture into notes.",
+        "حوّل المحاضرة إلى ملاحظات."
+      ],
+      [
+        "podcastTutor",
+        "Audio tutor",
+        "المعلّم الصوتي",
+        "Listen and check your understanding.",
+        "استمع واختبر فهمك."
+      ],
+      [
+        "youtube",
+        "Video player",
+        "مشغّل الفيديو",
+        "Watch a lecture.",
+        "شاهد محاضرتك."
+      ],
+      [
+        "textToVideo",
+        "Text to video",
+        "النص إلى فيديو",
+        "Create a video from text.",
+        "أنشئ فيديو من النص."
+      ]
+    ]
+  ],
+  [
+    "Plan",
+    "خطّط",
+    [
+      [
+        "todo",
+        "To-do list",
+        "قائمة المهام",
+        "Choose what to finish today.",
+        "حدّد مهامك لليوم."
+      ],
+      [
+        "missions",
+        "Chapter checklist",
+        "الفهرست",
+        "Track completed topics.",
+        "تابع المواضيع المنجزة."
+      ],
+      [
+        "sessions",
+        "Study sessions",
+        "جلسات الدراسة",
+        "Focus with a timer and study rooms.",
+        "ركّز بالمؤقّت وغرف الدراسة."
+      ],
+      [
+        "report",
+        "My progress",
+        "تقدمي",
+        "Review your study progress.",
+        "راجع تقدّمك الدراسي."
+      ],
+      [
+        "companion",
+        "Study companion",
+        "رفيق النجاح",
+        "Get help planning your study.",
+        "مساعدة في التخطيط لدراستك."
+      ]
+    ]
+  ],
+  [
+    "Community",
+    "المجتمع",
+    [
+      [
+        "liveBattle",
+        "Live battle",
+        "المعركة المباشرة",
+        "Practise with a friend.",
+        "تدرّب مع صديق."
+      ],
+      [
+        "dailyGame",
+        "Daily game",
+        "لعبة اليوم",
+        "Try today's challenge.",
+        "جرّب تحدي اليوم."
+      ],
+      [
+        "leaderboard",
+        "Leaderboard",
+        "المتصدرون",
+        "See student rankings.",
+        "شاهد ترتيب الطلاب."
+      ],
+      [
+        "news",
+        "News",
+        "الأخبار",
+        "Read announcements.",
+        "اقرأ الإعلانات."
+      ],
+      [
+        "advices",
+        "Study tips",
+        "نصائح الدراسة",
+        "Read other students' advice.",
+        "اقرأ نصائح الطلاب."
+      ]
+    ]
+  ]
+];
 
-const copy = {
-  en: {
-    badge: "More",
-    title: "More Tools",
-    description: "Extra study superpowers beyond the basics.",
-    items: {
-      mcq: { title: "MCQ Generator", subtitle: "Upload any file and get multiple-choice questions." },
-      missions: { title: "My Missions", subtitle: "Check off chapter topics and track progress." },
-      advices: { title: "Advices", subtitle: "Read tips from top students or share yours." },
-      essay: { title: "Al-Musahhih", subtitle: "Upload your answer sheet & the key — AI grades it." },
-      videoNotes: { title: "Video to Notes", subtitle: "Paste a YouTube link, get study notes." },
-      premium: { title: "Premium", subtitle: "Unlimited AI, premium badge & exclusive character styles." },
-    },
-  },
-  ar: {
-    badge: "المزيد",
-    title: "أدوات إضافية",
-    description: "قدرات دراسية إضافية تتجاوز الأساسيات.",
-    items: {
-      mcq: { title: "مولّد الأسئلة", subtitle: "ارفع أي ملف واحصل على أسئلة اختيار من متعدد." },
-      missions: { title: "مهماتي", subtitle: "اشطب مواضيع الفصل وتابع تقدمك." },
-      advices: { title: "النصائح", subtitle: "اقرأ نصائح المتفوقين أو شارك نصيحتك." },
-      essay: { title: "المُصحِّح", subtitle: "ارفع ورقتك ونموذج الإجابة ودع الذكاء يصحّح." },
-      videoNotes: { title: "من الفيديو إلى ملاحظات", subtitle: "ألصق رابط يوتيوب واحصل على ملاحظات." },
-      premium: { title: "بريميوم", subtitle: "ذكاء اصطناعي غير محدود، شارة بريميوم وأزياء حصرية." },
-    },
-  },
-} as const;
-
-type MoreKey = "mcq" | "missions" | "advices" | "essay" | "videoNotes" | "premium";
-
-const More = ({
-  language,
-  onSelect,
-  onNav,
-}: {
+const More = ({ language, onSelect, onNav }: {
   language: AppLanguage;
-  onSelect: (c: MainMenuChoice) => void;
-  onNav: (c: MainMenuChoice) => void;
+  onSelect: (key: MainMenuChoice) => void;
+  onNav: (key: MainMenuChoice) => void;
 }) => {
-  const t = copy[language];
-  const items: { key: MoreKey; Icon: React.ComponentType<{ className?: string }> }[] = [
-    { key: "mcq", Icon: HelpCircle },
-    { key: "missions", Icon: ListChecks },
-    { key: "advices", Icon: MessageSquareQuote },
-    { key: "videoNotes", Icon: Headphones },
-  ];
+  const isRTL = language === "ar";
+  const hidden = useHiddenStudyTools();
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
+  const normalized = query.trim().toLocaleLowerCase();
+  const groups = GROUPS.filter(([name]) => category === "All" || category === name)
+    .map(([en, ar, items]) => ({ en, ar, items: items.filter(([key, ...text]) =>
+      !hidden.has(key) && (!normalized || text.join(" ").toLocaleLowerCase().includes(normalized))) }))
+    .filter((group) => group.items.length > 0);
 
   return (
-    <>
-    <motion.main
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="min-h-screen px-4 py-12 md:py-20 pb-32 relative overflow-hidden"
-      dir={language === "ar" ? "rtl" : "ltr"}
-    >
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-
-      <header className="text-center max-w-3xl mx-auto z-10 relative">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t.badge}</span>
+    <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
+      <div className="mx-auto max-w-5xl">
+        <button type="button" onClick={() => onNav("basics")} className="mb-6 min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-semibold">
+          {isRTL ? "العودة للرئيسية" : "Back to home"}
+        </button>
+        <header className="mb-6">
+          <p className="mb-2 text-sm text-primary">{isRTL ? "أداة مناسبة لكل خطوة" : "The right tool for each step"}</p>
+          <h1 className="text-3xl font-bold">{isRTL ? "شنو تحتاج اليوم؟" : "What do you need today?"}</h1>
+          <p className="mt-3 leading-7 text-muted-foreground">{isRTL ? "اختَر هدفك أو ابحث عن أداة. مو لازم تستخدم كل الأدوات — ابدأ باللي يفيدك." : "Choose your goal or search for a tool. Start with what helps you; you don't need every feature."}</p>
+        </header>
+        <label className="mb-5 block">
+          <span className="mb-2 block text-sm font-semibold">{isRTL ? "البحث عن أداة" : "Find a tool"}</span>
+          <span className="flex items-center gap-3 rounded-2xl border border-border bg-background px-4 focus-within:ring-2 focus-within:ring-primary">
+            <Search className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+              placeholder={isRTL ? "مثلاً: أسئلة، ملاحظات، محاضرة…" : "Questions, notes, lectures…"}
+              className="min-h-12 w-full bg-transparent py-3 text-foreground outline-none" />
+          </span>
+        </label>
+        <div className="mb-8 flex flex-wrap gap-2" aria-label={isRTL ? "تصنيف الأدوات" : "Tool categories"}>
+          {[["All", "الكل"], ...GROUPS.map(([en, ar]) => [en, ar])].map(([en, ar]) => (
+            <button key={en} type="button" onClick={() => setCategory(en)} aria-pressed={category === en}
+              className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${category === en ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
+              {isRTL ? ar : en}
+            </button>
+          ))}
         </div>
-        <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">{t.title}</h1>
-        <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">{t.description}</p>
-      </header>
-
-      <motion.section
-        initial="hidden"
-        animate="show"
-        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-        className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative"
-      >
-        {items.map((it) => {
-          const Icon = it.Icon;
-          const meta = t.items[it.key];
-          return (
-            <motion.button
-              key={it.key}
-              variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } }}
-              whileHover={{ y: -6 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              onClick={() => onSelect(it.key as MainMenuChoice)}
-              className="group relative text-left rounded-3xl p-6 h-44 border border-primary/40 bg-secondary/40 backdrop-blur overflow-hidden cursor-pointer shadow-lg hover:border-primary hover:shadow-[var(--shadow-glow)]"
-            >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }} />
-              <div className="relative z-10 flex items-start justify-between">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-primary/15">
-                  <Icon className="w-6 h-6 text-primary" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
-              </div>
-              <div className="relative z-10 mt-6">
-                <h2 className="text-2xl font-semibold mb-1 text-foreground">{meta.title}</h2>
-                <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
-              </div>
-            </motion.button>
-          );
-        })}
-      </motion.section>
-    </motion.main>
-      
-    </>
+        <p className="mb-5 text-sm text-muted-foreground">{isRTL ? "بعض الأدوات تتطلب اشتراكاً أو نقاطاً؛ شروط الوصول الحالية تبقى مطبّقة." : "Some tools require a subscription or points; existing access rules still apply."}</p>
+        {groups.length === 0 && <div role="status" className="rounded-2xl border border-border p-6 text-center">
+          <p>{isRTL ? "ما لكينا أداة بهذا الاسم." : "No matching tool found."}</p>
+          <button type="button" onClick={() => { setQuery(""); setCategory("All"); }} className="mt-3 min-h-11 px-4 text-primary underline">{isRTL ? "عرض كل الأدوات" : "Show all tools"}</button>
+        </div>}
+        {groups.map((group) => (
+          <section key={group.en} className="mb-8">
+            <h2 className="mb-3 text-xl font-bold">{isRTL ? group.ar : group.en}</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {group.items.map(([key, en, ar, descEn, descAr]) => (
+                <button key={key} type="button" onClick={() => onSelect(key)}
+                  className="group flex min-h-28 items-start gap-3 rounded-2xl border border-border bg-background p-4 text-start text-foreground transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <BookOpen className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 flex-1"><span className="block font-bold leading-7">{isRTL ? ar : en}</span>
+                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">{isRTL ? descAr : descEn}</span></span>
+                  <ArrowRight className={`mt-1 h-4 w-4 shrink-0 text-primary ${isRTL ? "rotate-180" : ""}`} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </main>
   );
 };
-
 export default More;
