@@ -366,6 +366,42 @@ const RANK_CARD_THEMES = {
   },
 } as const;
 
+const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
+  All: {
+    active: "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20",
+    idle: "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
+  },
+  Subjects: {
+    active: "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-500/20",
+    idle: "border-blue-400/40 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:text-blue-300",
+  },
+  Study: {
+    active: "border-violet-600 bg-violet-600 text-white shadow-lg shadow-violet-500/20",
+    idle: "border-violet-400/40 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 dark:text-violet-300",
+  },
+  Progress: {
+    active: "border-amber-500 bg-amber-500 text-white shadow-lg shadow-amber-500/20",
+    idle: "border-amber-400/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300",
+  },
+  Community: {
+    active: "border-cyan-600 bg-cyan-600 text-white shadow-lg shadow-cyan-500/20",
+    idle: "border-cyan-400/40 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300",
+  },
+  Play: {
+    active: "border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-500/20",
+    idle: "border-rose-400/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300",
+  },
+  Account: {
+    active: "border-slate-700 bg-slate-700 text-white shadow-lg shadow-slate-500/20",
+    idle: "border-slate-400/40 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 dark:text-slate-300",
+  },
+};
+
+const DEFAULT_TOOL_CATEGORY_TINT = {
+  active: "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20",
+  idle: "border-border bg-secondary/70 text-foreground hover:bg-secondary",
+};
+
 const FEATURED_COPY = {
   en: {
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
@@ -751,30 +787,35 @@ const Basics = ({
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-        {NAV_GROUPS.map((g) => ({
-          ...g,
-          items: g.titleEn === "Study" ? g.items.filter((it) => !hiddenStudyTools.has(it.key)) : g.items,
-        })).map((g) => (
+        {NAV_GROUPS
+          .filter((g) => g.titleEn !== "Subjects")
+          .map((g) => ({
+            ...g,
+            items: g.titleEn === "Study" ? g.items.filter((it) => !hiddenStudyTools.has(it.key)) : g.items,
+          }))
+          .map((g) => (
           <div key={g.titleEn}>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
+            <p className={`mb-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${(TOOL_CATEGORY_TINTS[g.titleEn] ?? DEFAULT_TOOL_CATEGORY_TINT).idle}`}>
               {language === "ar" ? g.titleAr : g.titleEn}
             </p>
             <ul className="space-y-0.5">
               {g.items.map((it) => {
                 const Icon = it.Icon;
                 const active = activeKey === it.key;
+                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 return (
                   <li key={it.key}>
                     <button
                       onClick={() => navigate(it.key)}
-                      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                        active
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground/70 hover:bg-secondary hover:text-foreground"
-                      }`}
+                      aria-current={active ? "page" : undefined}
+                      className={`group relative flex w-full items-center gap-3 overflow-hidden border px-3 py-2.5 text-sm font-bold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "ring-2 ring-primary/30" : "opacity-90 hover:opacity-100"} ${tint.card}`}
+                      style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
                     >
-                      <Icon className={`w-4 h-4 ${isRTL ? "ml-3" : "mr-3"} shrink-0`} />
-                      <span className="truncate text-start">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                      <span aria-hidden className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform group-hover:scale-110 ${tint.icon}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-start">{language === "ar" ? it.labelAr : it.labelEn}</span>
+                      <ArrowRight className={`h-3.5 w-3.5 shrink-0 opacity-50 transition-transform group-hover:opacity-100 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
                     </button>
                   </li>
                 );
@@ -787,8 +828,10 @@ const Basics = ({
       <div className="p-4 border-t border-border space-y-3">
         <button
           onClick={() => onNav("account")}
-          className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          className="group inline-flex min-h-11 w-full items-center justify-center gap-2 border border-slate-400/40 bg-gradient-to-r from-slate-500/15 to-zinc-500/10 px-3 text-xs font-black text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:text-slate-200"
+          style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
         >
+          <UserCog className="h-4 w-4" />
           {language === "ar" ? "إعدادات الحساب" : "Account settings"}
         </button>
       </div>
@@ -1119,13 +1162,21 @@ const Basics = ({
                   className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
               </label>
               <div className="flex flex-wrap gap-2" aria-label={isRTL ? "تصنيفات الأدوات" : "Tool categories"}>
-                {[{ titleEn: "All", titleAr: "الكل" }, ...NAV_GROUPS].map((group) => (
-                  <button key={group.titleEn} type="button" aria-pressed={toolCategory === group.titleEn}
-                    onClick={() => setToolCategory(group.titleEn)}
-                    className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold ${toolCategory === group.titleEn ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
-                    {isRTL ? group.titleAr : group.titleEn}
-                  </button>
-                ))}
+                {[{ titleEn: "All", titleAr: "الكل" }, ...NAV_GROUPS].map((group) => {
+                  const active = toolCategory === group.titleEn;
+                  const tint = TOOL_CATEGORY_TINTS[group.titleEn] ?? DEFAULT_TOOL_CATEGORY_TINT;
+                  return (
+                    <button
+                      key={group.titleEn}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setToolCategory(group.titleEn)}
+                      className={`min-h-11 rounded-full border px-4 py-2 text-sm font-black transition-all hover:-translate-y-0.5 ${active ? tint.active : tint.idle}`}
+                    >
+                      {isRTL ? group.titleAr : group.titleEn}
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-sm text-muted-foreground">{isRTL ? "ما لكيت الأداة؟ جرّب كلمة ثانية أو اختَر «الكل»." : "No matching tool? Try another word or choose All."}</p>
             </div>
