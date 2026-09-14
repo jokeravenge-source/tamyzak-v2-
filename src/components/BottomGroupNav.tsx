@@ -45,6 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     titleEn: "Subjects", titleAr: "المواد",
     directKey: "subjectsHub",
+    showInBar: false,
     items: [
       { key: "ourCourses", labelEn: "Our Courses", labelAr: "دوراتنا", Icon: CoursesIcon },
       { key: "subjectsHub", labelEn: "All Subjects", labelAr: "كل المواد", Icon: BookOpen },
