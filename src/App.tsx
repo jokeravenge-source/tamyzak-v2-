@@ -43,7 +43,6 @@ import { isOnboardingDone, markOnboardedRemote, syncOnboardingWithServer, type O
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
 import { recordToolUse } from "@/lib/recentTools";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
-const More = lazy(() => import("./pages/More"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
 const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
@@ -966,7 +965,13 @@ const App = () => {
       ) : menuChoice === "premium" ? (
         <Premium language={language} onBack={resetMenu} />
       ) : menuChoice === "more" ? (
-        <More language={language} onSelect={(c) => chooseMenu(c)} onNav={chooseMenu} />
+        <Basics
+          language={language}
+          onChangeLanguage={resetLanguage}
+          onSelect={handleBasicsSelect}
+          onNav={chooseMenu}
+          initialShowAllTools
+        />
       ) : menuChoice === "leaderboard" ? (
         <Leaderboard language={language} onBack={resetMenu} onNav={chooseMenu} />
       ) : menuChoice === "malazam" ? (
