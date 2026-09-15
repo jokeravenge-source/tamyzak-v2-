@@ -62,14 +62,12 @@ import { flashcardsCh6 } from "@/data/flashcardsCh6";
 import { flashcardsCh7 } from "@/data/flashcardsCh7";
 import { flashcardsCh8 } from "@/data/flashcardsCh8";
 import { Flashcard } from "@/components/Flashcard";
-import { FlashcardTeacherBadge } from "@/components/FlashcardTeacherBadge";
 import { Button } from "@/components/ui/button";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
-import { uniqueFlashcards } from "@/lib/uniqueFlashcards";
 import { useTodos } from "@/lib/todoTopicProgress";
 import {
   cardKey as srsCardKey,
@@ -201,7 +199,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         if (cards) {
           return {
             title: "بطاقات تعليمية",
-            eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter}` : `Chemistry · Chapter ${chapter}`,
+            eyebrow: language === "ar"
+              ? `الكيمياء · الفصل ${chapter} · الأستاذ احمد النداوي`
+              : `Chemistry · Chapter ${chapter} · Teacher: Ahmed Al-Nadawi`,
             cards,
           };
         }
@@ -373,14 +373,13 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         if (preset) return preset;
       }
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
-      // Prefer the original built-in card when a submitted copy repeats it.
-      const baseCards = uniqueFlashcards([...deck.cards, ...extraCards]);
+      const baseCards = [...deck.cards, ...extraCards];
       const presetGroups = buildPresetGroups(subject, String(chapter), language, baseCards);
       if (presetGroups) {
         const preset = explicitTopics(presetGroups, language);
         if (preset) return preset;
       }
-      return groupFlashcardsByTopic(baseCards, language);
+      return groupFlashcardsByTopic([...deck.cards, ...extraCards], language);
     },
     [deck, extraCards, language, explicitGroups, subject, chapter]
   );
@@ -551,7 +550,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // Rebuild deck only when the underlying source changes — restore saved index.
   useEffect(() => {
     const nextCards = savedView
-      ? uniqueFlashcards(saved.map((s) => ({ q: s.q, a: s.a })))
+      ? saved.map((s) => ({ q: s.q, a: s.a }))
       : activeTopicCards;
     setCards(nextCards);
     setIndex(readSavedIndex(nextCards.length));
@@ -569,7 +568,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   useEffect(() => {
     if (!savedView) return;
     setCards((prev) => {
-      const next = uniqueFlashcards(saved.map((s) => ({ q: s.q, a: s.a })));
+      const next = saved.map((s) => ({ q: s.q, a: s.a }));
       setIndex((i) => Math.min(i, Math.max(0, next.length - 1)));
       return next;
     });
@@ -685,7 +684,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         />
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
         <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
-        <FlashcardTeacherBadge language={language} subject={subject} />
         <p className="text-muted-foreground">
           {loading
             ? language === "ar" ? "جارٍ التحميل..." : "Loading..."
@@ -728,7 +726,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         />
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.24em] text-primary">{deck.eyebrow}</p>
         <h1 className="text-2xl font-black text-foreground sm:text-3xl">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
-        <FlashcardTeacherBadge language={language} subject={subject} />
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
           <span className="text-foreground">
             {(language === "ar"
