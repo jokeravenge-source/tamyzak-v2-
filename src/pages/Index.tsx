@@ -160,28 +160,28 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       if (subject === "biology" && chapter === "1") {
         return {
           title: "بطاقات تعليمية",
-          eyebrow: language === "ar" ? "الأحياء · الخلية" : "Biology · The Cell",
+          eyebrow: language === "ar" ? "الأحياء · الخلية · الأستاذ محمد العنزي" : "Biology · The Cell · Teacher: Mohammed Al-Anzi",
           cards: language === "ar" ? flashcardsBioCh1Ar : flashcardsBioCh1En,
         };
       }
       if (subject === "biology" && chapter === "2") {
         return {
           title: "بطاقات تعليمية",
-          eyebrow: language === "ar" ? "الأحياء · الأنسجة" : "Biology · Tissues",
+          eyebrow: language === "ar" ? "الأحياء · الأنسجة · الأستاذ محمد العنزي" : "Biology · Tissues · Teacher: Mohammed Al-Anzi",
           cards: language === "ar" ? flashcardsBioCh2Ar : flashcardsBioCh2En,
         };
       }
       if (subject === "biology" && chapter === "3") {
         return {
           title: "بطاقات تعليمية",
-          eyebrow: language === "ar" ? "الأحياء · التكاثر" : "Biology · Reproduction",
+          eyebrow: language === "ar" ? "الأحياء · التكاثر · الأستاذ محمد العنزي" : "Biology · Reproduction · Teacher: Mohammed Al-Anzi",
           cards: language === "ar" ? flashcardsBioCh3Ar : flashcardsBioCh3En,
         };
       }
       if (subject === "biology" && chapter === "5") {
         return {
           title: "بطاقات تعليمية",
-          eyebrow: language === "ar" ? "الأحياء · الوراثة" : "Biology · Genetics",
+          eyebrow: language === "ar" ? "الأحياء · الوراثة · الأستاذ محمد العنزي" : "Biology · Genetics · Teacher: Mohammed Al-Anzi",
           cards: language === "ar" ? flashcardsBioCh5Ar : flashcardsBioCh5En,
         };
       }
