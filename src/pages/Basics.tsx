@@ -1567,66 +1567,29 @@ const Basics = ({
             </motion.div>
           </section>
 
-          <section className="mb-6" aria-labelledby="streak-widget-title">
-            <motion.button
-              type="button"
-              id="streak-details-trigger"
-              onClick={() => openDetail("streak")}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.985 }}
-              aria-label={isRTL ? `استمراريتي بالدراسة، ${streakDays || 0} أيام، افتح شجرة الاستمرارية` : `My study streak, ${streakDays || 0} days, open streak tree`}
-              className="group relative isolate w-full overflow-hidden border-2 border-emerald-400/90 p-5 text-start text-emerald-950 shadow-[0_22px_48px_-26px_rgba(16,185,129,0.95)] transition-all hover:shadow-[0_28px_58px_-24px_rgba(16,185,129,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:p-7"
-              style={{ background: "linear-gradient(125deg, #ecfdf5 0%, #a7f3d0 48%, #5eead4 100%)", clipPath: "polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px))" }}
-            >
-              <span aria-hidden="true" className="absolute -start-16 -top-20 h-48 w-48 rounded-full bg-white/75 blur-3xl transition-transform duration-500 group-hover:scale-125" />
-              <span aria-hidden="true" className="absolute -bottom-20 -end-12 h-52 w-52 rounded-full bg-emerald-600/20 blur-3xl" />
-              <span aria-hidden="true" className="absolute end-[18%] top-0 h-full w-px -rotate-[24deg] bg-gradient-to-b from-transparent via-white/60 to-transparent" />
-              <span aria-hidden="true" className="pointer-events-none absolute inset-[4px] border border-white/60" style={{ clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }} />
-
-              <span className="relative flex flex-wrap items-center gap-4 sm:flex-nowrap sm:gap-6">
-                <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-[1.15rem] border border-white/90 bg-white/75 text-emerald-800 shadow-[0_14px_30px_-16px_rgba(5,150,105,0.95)] backdrop-blur-md transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 sm:h-[72px] sm:w-[72px]">
-                  <Sparkles className="h-7 w-7 sm:h-9 sm:w-9" />
-                </span>
-
-                <span className="min-w-[140px] flex-1">
-                  <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-emerald-900/60">
-                    {isRTL ? "استمرارية الدراسة" : "Study consistency"}
-                  </span>
-                  <span id="streak-widget-title" className="mt-1 block text-lg font-black leading-7 sm:text-2xl">
-                    {streakDays > 0
-                      ? (isRTL ? "واصل السلسلة ولا توقفها" : "Keep your streak moving")
-                      : (isRTL ? "ابدأ سلسلة دراستك اليوم" : "Start your study streak today")}
-                  </span>
-                  <span className="mt-1 hidden text-sm font-bold text-emerald-900/70 sm:block">
-                    {isRTL ? "كل يوم دراسة يضيف خطوة جديدة إلى شجرة استمراريتك." : "Every study day grows your consistency tree."}
-                  </span>
-                </span>
-
-                <span className="w-full shrink-0 text-start sm:ms-auto sm:w-auto sm:text-center">
-                  <span className="inline-flex min-w-[76px] items-baseline justify-center gap-1 rounded-full border border-white/80 bg-white/70 px-3 py-2 text-2xl font-black shadow-sm backdrop-blur-md sm:min-w-[110px] sm:px-5 sm:text-3xl">
-                    {streakDays || 0}
-                    <span className="text-[10px] font-black sm:text-xs">{isRTL ? "أيام" : "days"}</span>
-                  </span>
-                  <span className="mt-1.5 hidden text-[10px] font-black text-emerald-900/60 sm:block">
-                    {isRTL ? "من أصل 7 أيام" : "of 7 days"}
-                  </span>
-                </span>
-
-                <span aria-hidden="true" className="hidden h-9 w-9 shrink-0 place-items-center rounded-full border border-white/80 bg-white/70 text-emerald-900 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:grid sm:h-11 sm:w-11">
-                  <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${isRTL ? "rotate-180" : ""}`} />
-                </span>
+          <section
+            aria-labelledby="home-streak-title"
+            className="mb-6 overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7"
+          >
+            <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-emerald-100 text-emerald-700 shadow-sm">
+                <Sparkles className="h-5 w-5" />
               </span>
-
-              <span className="relative mt-5 block">
-                <span className="mb-2 flex items-center justify-between gap-3 text-[10px] font-black text-emerald-900/70 sm:text-xs">
-                  <span>{isRTL ? "تقدّم الأسبوع" : "Weekly progress"}</span>
-                  <span>{Math.min(streakDays || 0, 7)} / 7</span>
-                </span>
-                <span aria-hidden="true" className="block h-2.5 overflow-hidden rounded-full border border-white/60 bg-white/60 shadow-inner">
-                  <span className="block h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 transition-[width] duration-500" style={{ width: `${Math.min(100, ((streakDays || 0) / 7) * 100)}%` }} />
-                </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700/70">
+                  {isRTL ? "سماء المثابرة" : "Streak sky"}
+                </p>
+                <h2 id="home-streak-title" className="mt-0.5 text-lg font-black sm:text-2xl">
+                  {isRTL ? "شجرة استمراريتي" : "My streak tree"}
+                </h2>
+              </div>
+              <span className="shrink-0 rounded-full border border-emerald-200 bg-white/80 px-3 py-2 text-sm font-black text-emerald-900 shadow-sm sm:px-4 sm:text-base">
+                {streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}
               </span>
-            </motion.button>
+            </div>
+            <div className="[&>section]:mb-0 [&>section]:mt-5">
+              <StreakTree language={language} />
+            </div>
           </section>
 
 
