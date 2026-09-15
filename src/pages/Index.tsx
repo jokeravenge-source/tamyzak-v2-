@@ -62,6 +62,7 @@ import { flashcardsCh6 } from "@/data/flashcardsCh6";
 import { flashcardsCh7 } from "@/data/flashcardsCh7";
 import { flashcardsCh8 } from "@/data/flashcardsCh8";
 import { Flashcard } from "@/components/Flashcard";
+import { FlashcardTeacherBadge } from "@/components/FlashcardTeacherBadge";
 import { Button } from "@/components/ui/button";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
@@ -684,6 +685,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         />
         <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">{deck.eyebrow}</p>
         <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-4">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
+        <FlashcardTeacherBadge language={language} subject={subject} />
         <p className="text-muted-foreground">
           {loading
             ? language === "ar" ? "جارٍ التحميل..." : "Loading..."
@@ -726,6 +728,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         />
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.24em] text-primary">{deck.eyebrow}</p>
         <h1 className="text-2xl font-black text-foreground sm:text-3xl">{deck.title}{SUBJECT_LABEL[language]?.[subject as string] ? ` — ${SUBJECT_LABEL[language]?.[subject as string]}` : ""}</h1>
+        <FlashcardTeacherBadge language={language} subject={subject} />
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
           <span className="text-foreground">
             {(language === "ar"
