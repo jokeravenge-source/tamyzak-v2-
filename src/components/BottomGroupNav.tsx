@@ -68,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     titleEn: "Community", titleAr: "المجتمع",
+    showInBar: false,
     items: [
       { key: "teachers", labelEn: "Our Teachers", labelAr: "مدرسينا", Icon: Users2 },
       { key: "news", labelEn: "News", labelAr: "الأخبار", Icon: Newspaper },
