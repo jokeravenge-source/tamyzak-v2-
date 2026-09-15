@@ -304,7 +304,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         if (d) {
           return {
             title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
-            eyebrow: language === "ar" ? d.ar : d.en,
+            eyebrow: language === "ar"
+              ? `${d.ar} · الأستاذ محمد علي الكناني`
+              : `${d.en} · Teacher: Mohammed Ali Al-Kinani`,
             cards: d.cards,
           };
         }
