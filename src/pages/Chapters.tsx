@@ -71,7 +71,7 @@ const englishGrammarChapters = Array.from({ length: 8 }, (_, i) => ({
   title: `Unit ${i + 1}`,
   arTitle: `الوحدة ${i + 1}`,
   subtitle: "",
-  locked: i > 0,
+  locked: i > 2,
 }));
 const englishLiteratureChapters = [
   { n: 1, title: "Coming Soon", arTitle: "قريباً", subtitle: "", locked: true },

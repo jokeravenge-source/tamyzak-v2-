@@ -47,6 +47,8 @@ import { flashcardsArabicNidaAr } from "@/data/flashcardsArabicNidaAr";
 import { flashcardsArabicIstifhamAr } from "@/data/flashcardsArabicIstifhamAr";
 import { flashcardsIslamicMeaningsAr } from "@/data/flashcardsIslamicMeaningsAr";
 import { flashcardsEngGrammar1 } from "@/data/flashcardsEngGrammar1";
+import { flashcardsEngGrammar2 } from "@/data/flashcardsEngGrammar2";
+import { flashcardsEngGrammar3 } from "@/data/flashcardsEngGrammar3";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
 import { flashcardsFrenchNegationAr } from "@/data/flashcardsFrenchNegationAr";
 import { flashcardsFrenchInterrogationAr } from "@/data/flashcardsFrenchInterrogationAr";
@@ -288,6 +290,22 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? "الإنجليزية · القواعد · الوحدة 1" : "English · Grammar · Unit 1",
           cards: flashcardsEngGrammar1,
+        };
+      }
+
+      if (subject === "english" && engCat === "grammar" && chapter === "2") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? "الإنجليزية · القواعد · الوحدة 2" : "English · Grammar · Unit 2",
+          cards: flashcardsEngGrammar2,
+        };
+      }
+
+      if (subject === "english" && engCat === "grammar" && chapter === "3") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? "الإنجليزية · القواعد · الوحدة 3" : "English · Grammar · Unit 3",
+          cards: flashcardsEngGrammar3,
         };
       }
 
