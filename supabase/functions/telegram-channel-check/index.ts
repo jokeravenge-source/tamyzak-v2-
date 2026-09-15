@@ -9,8 +9,16 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
-const CHANNEL = "@Tamayuzak";
+const REQUIRED_CHANNELS = ["@Tamayuzak", "@a6th_dhs", "@sad6ths"] as const;
 const MEMBER_STATUSES = new Set(["creator", "administrator", "member", "restricted"]);
+
+type ChannelCheck = {
+  channel: (typeof REQUIRED_CHANNELS)[number];
+  ok: boolean;
+  joined: boolean;
+  status?: string;
+  error?: string;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -45,22 +53,51 @@ Deno.serve(async (req) => {
     if (!tgId) return json({ ok: false, joined: false, error: "not_linked" });
 
 
-    const res = await fetch(`${GATEWAY_URL}/getChatMember`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TELEGRAM_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ chat_id: CHANNEL, user_id: Number(tgId) }),
-    });
-    const data = await res.json().catch(() => ({} as any));
-    if (!res.ok || !data?.ok) {
-      return json({ ok: false, joined: false, error: data?.description ?? `status_${res.status}` });
+    const channels: ChannelCheck[] = await Promise.all(
+      REQUIRED_CHANNELS.map(async (channel): Promise<ChannelCheck> => {
+        const res = await fetch(`${GATEWAY_URL}/getChatMember`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "X-Connection-Api-Key": TELEGRAM_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chat_id: channel, user_id: Number(tgId) }),
+        });
+        const data = await res.json().catch(() => ({} as Record<string, unknown>));
+        if (!res.ok || !(data as { ok?: boolean })?.ok) {
+          return {
+            channel,
+            ok: false,
+            joined: false,
+            error: (data as { description?: string })?.description ?? `status_${res.status}`,
+          };
+        }
+
+        const status = (data as { result?: { status?: string } }).result?.status;
+        const joined = !!status && MEMBER_STATUSES.has(status);
+        return { channel, ok: true, joined, status };
+      }),
+    );
+
+    const failedCheck = channels.find((channel) => !channel.ok);
+    if (failedCheck) {
+      return json({
+        ok: false,
+        joined: false,
+        error: failedCheck.error,
+        channel: failedCheck.channel,
+        channels,
+      });
     }
-    const status = data.result?.status as string | undefined;
-    const joined = !!status && MEMBER_STATUSES.has(status) && status !== "left" && status !== "kicked";
-    return json({ ok: true, joined, status, channel: CHANNEL });
+
+    const missingChannels = channels.filter((channel) => !channel.joined).map((channel) => channel.channel);
+    return json({
+      ok: true,
+      joined: missingChannels.length === 0,
+      missingChannels,
+      channels,
+    });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }

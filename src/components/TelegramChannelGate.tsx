@@ -3,32 +3,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Send, RefreshCw, CheckCircle2 } from "lucide-react";
 import type { AppLanguage } from "./LanguageGate";
 
-const CHANNEL_USERNAME = "Tamayuzak";
-const CHANNEL_URL = `https://t.me/${CHANNEL_USERNAME}`;
+const REQUIRED_CHANNELS = ["Tamayuzak", "a6th_dhs", "sad6ths"] as const;
 
 const T = {
   en: {
-    title: "Join our Telegram channel",
-    desc: `Please join @${CHANNEL_USERNAME} to continue. You'll get all announcements and updates there.`,
-    open: `Join @${CHANNEL_USERNAME}`,
+    title: "Join the required Telegram channels",
+    desc: "Please join all three channels to continue.",
+    open: "Join",
     check: "I've joined",
     checking: "Checking…",
     notJoined: "We can't see you in the channel yet. Please join, then try again.",
     signOut: "Sign out",
-    step1: `1. Tap “Join @${CHANNEL_USERNAME}” below.`,
-    step2: "2. Press JOIN inside Telegram.",
+    step1: "1. Open each channel below.",
+    step2: "2. Press JOIN in all three Telegram channels.",
     step3: "3. Come back here and tap “I've joined”.",
   },
   ar: {
-    title: "انضم إلى قناتنا على تلغرام",
-    desc: `يرجى الانضمام إلى @${CHANNEL_USERNAME} للمتابعة. ستصلك كل الإعلانات والتحديثات هناك.`,
-    open: `انضم إلى @${CHANNEL_USERNAME}`,
+    title: "انضم إلى قنوات تلغرام المطلوبة",
+    desc: "يرجى الانضمام إلى القنوات الثلاث للمتابعة.",
+    open: "انضم إلى",
     check: "لقد انضممت",
     checking: "جاري التحقق…",
     notJoined: "لم نرك في القناة بعد. يرجى الانضمام ثم المحاولة مرة أخرى.",
     signOut: "تسجيل الخروج",
-    step1: `١. اضغط على «انضم إلى @${CHANNEL_USERNAME}» بالأسفل.`,
-    step2: "٢. اضغط JOIN داخل تلغرام.",
+    step1: "١. افتح كل قناة من الأزرار بالأسفل.",
+    step2: "٢. اضغط JOIN في القنوات الثلاث داخل تلغرام.",
     step3: "٣. ارجع هنا واضغط «لقد انضممت».",
   },
 } as const;
@@ -83,15 +82,22 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <a
-              href={CHANNEL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:opacity-90 transition"
-            >
-              <Send className="w-4 h-4" />
-              {t.open}
-            </a>
+            {REQUIRED_CHANNELS.map((channel, index) => (
+              <a
+                key={channel}
+                href={`https://t.me/${channel}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full h-11 rounded-xl font-medium flex items-center justify-center gap-2 hover:opacity-90 transition ${
+                  index === 0
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-primary/30 bg-primary/10 text-primary"
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                {t.open} @{channel}
+              </a>
+            ))}
             <button
               onClick={() => check()}
               disabled={checking}
