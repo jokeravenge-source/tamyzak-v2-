@@ -68,6 +68,7 @@ import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
+import { uniqueFlashcards } from "@/lib/uniqueFlashcards";
 import { useTodos } from "@/lib/todoTopicProgress";
 import {
   cardKey as srsCardKey,
@@ -371,13 +372,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         if (preset) return preset;
       }
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
-      const baseCards = [...deck.cards, ...extraCards];
+      // Prefer the original built-in card when a submitted copy repeats it.
+      const baseCards = uniqueFlashcards([...deck.cards, ...extraCards]);
       const presetGroups = buildPresetGroups(subject, String(chapter), language, baseCards);
       if (presetGroups) {
         const preset = explicitTopics(presetGroups, language);
         if (preset) return preset;
       }
-      return groupFlashcardsByTopic([...deck.cards, ...extraCards], language);
+      return groupFlashcardsByTopic(baseCards, language);
     },
     [deck, extraCards, language, explicitGroups, subject, chapter]
   );
@@ -548,7 +550,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // Rebuild deck only when the underlying source changes — restore saved index.
   useEffect(() => {
     const nextCards = savedView
-      ? saved.map((s) => ({ q: s.q, a: s.a }))
+      ? uniqueFlashcards(saved.map((s) => ({ q: s.q, a: s.a })))
       : activeTopicCards;
     setCards(nextCards);
     setIndex(readSavedIndex(nextCards.length));
@@ -566,7 +568,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   useEffect(() => {
     if (!savedView) return;
     setCards((prev) => {
-      const next = saved.map((s) => ({ q: s.q, a: s.a }));
+      const next = uniqueFlashcards(saved.map((s) => ({ q: s.q, a: s.a })));
       setIndex((i) => Math.min(i, Math.max(0, next.length - 1)));
       return next;
     });

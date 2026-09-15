@@ -1,4 +1,5 @@
 import type { Flashcard } from "@/data/flashcards";
+import { uniqueFlashcards } from "@/lib/uniqueFlashcards";
 
 // Lightweight, language-aware topic detection for a deck of flashcards.
 // No external NLP — purely frequency-based keyword clustering so it works
@@ -49,7 +50,7 @@ function tokenize(text: string, lang: "ar" | "en"): string[] {
     return (norm.match(/[\u0600-\u06FF]+/g) ?? [])
       .filter((w) => w.length >= 3 && !AR_STOP.has(w));
   }
-  return (text.toLowerCase().match(/[a-z][a-z\-]{2,}/g) ?? [])
+  return (text.toLowerCase().match(/[a-z][a-z-]{2,}/g) ?? [])
     .filter((w) => !EN_STOP.has(w));
 }
 
@@ -83,9 +84,11 @@ export function explicitTopics(
   buckets: { key: string; label: string; cards: Flashcard[] }[],
   uiLang: "ar" | "en",
 ): TopicResult | null {
-  const nonEmpty = buckets.filter((b) => b.cards.length > 0);
+  const nonEmpty = buckets
+    .map((b) => ({ ...b, cards: uniqueFlashcards(b.cards) }))
+    .filter((b) => b.cards.length > 0);
   if (nonEmpty.length < 2) return null;
-  const all = nonEmpty.flatMap((b) => b.cards);
+  const all = uniqueFlashcards(nonEmpty.flatMap((b) => b.cards));
   return {
     allKey: ALL_KEY,
     topics: [
@@ -99,6 +102,7 @@ export function groupFlashcardsByTopic(
   cards: Flashcard[],
   uiLang: "ar" | "en",
 ): TopicResult {
+  cards = uniqueFlashcards(cards);
   if (cards.length < 6) {
     return {
       allKey: ALL_KEY,
