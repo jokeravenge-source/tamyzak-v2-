@@ -1569,21 +1569,21 @@ const Basics = ({
 
           <section
             aria-labelledby="home-streak-title"
-            className="mb-6 overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7"
+            className="mb-6 overflow-hidden rounded-[2rem] border border-border bg-card p-4 text-foreground shadow-sm sm:p-7"
           >
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-emerald-100 text-emerald-700 shadow-sm">
+              <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-indigo-400/25 bg-indigo-500/10 text-indigo-600 shadow-sm dark:text-indigo-300">
                 <Sparkles className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700/70">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-600/75 dark:text-indigo-300">
                   {isRTL ? "سماء المثابرة" : "Streak sky"}
                 </p>
                 <h2 id="home-streak-title" className="mt-0.5 text-lg font-black sm:text-2xl">
                   {isRTL ? "شجرة استمراريتي" : "My streak tree"}
                 </h2>
               </div>
-              <span className="shrink-0 rounded-full border border-emerald-200 bg-white/80 px-3 py-2 text-sm font-black text-emerald-900 shadow-sm sm:px-4 sm:text-base">
+              <span className="shrink-0 rounded-full border border-border bg-background px-3 py-2 text-sm font-black text-foreground shadow-sm sm:px-4 sm:text-base">
                 {streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}
               </span>
             </div>
