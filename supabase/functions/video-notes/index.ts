@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
     } else {
       const ent = await claimFeature(req, "video-notes");
       if (!ent.ok) {
-        return jsonResponse({ error: ent.error, upgrade: ent.status === 429 }, ent.status);
+        return jsonResponse({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }, ent.status);
       }
       quotaReserved = true;
     }

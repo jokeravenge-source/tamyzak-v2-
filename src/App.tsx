@@ -42,6 +42,9 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 import { isOnboardingDone, markOnboardedRemote, syncOnboardingWithServer, type OnboardingSubject } from "@/lib/onboarding";
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
 import { recordToolUse } from "@/lib/recentTools";
+import { useSubscription } from "@/hooks/useSubscription";
+import { isPremiumTool } from "@/lib/premium";
+import PremiumToolLock from "@/components/PremiumToolLock";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
@@ -314,6 +317,12 @@ const App = () => {
   }
 
 
+  // Keep student hooks inside their own component; public-route returns must
+  // not change the hook order or start subscription checks on public pages.
+  return <StudentApp />;
+};
+
+const StudentApp = () => {
   useEffect(() => {
     applyTheme(getInitialTheme());
   }, []);
@@ -642,12 +651,13 @@ const App = () => {
     setEnglishCategory(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
   };
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const chooseMenu = (choice: MenuChoice) => {
     logFirstFeatureTouch(choice);
     recordToolUse(choice);
     // Points-gated tools: send the student to the progress page instead of the tool.
     const gated = isGatedMenu(choice);
-    if (gated && !unlockedKeys.includes(gated)) {
+    if (gated && !unlockedKeys.includes(gated) && (!isPremiumTool(choice) || isPremium)) {
       setUnlockHighlight(gated);
       localStorage.setItem(MENU_STORAGE_KEY, "unlocks");
       setMenuChoice("unlocks");
@@ -755,7 +765,7 @@ const App = () => {
           onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
         />
         <InstallAppPrompt />
-        {language && <PremiumWelcomeOverlay language={language} />}
+        {language && isPremium && <PremiumWelcomeOverlay language={language} />}
         {authed && language && authRole !== "admin" && channelVerified && onboarded && (
           <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
         )}
@@ -839,6 +849,8 @@ const App = () => {
         <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
       ) : authRole !== "admin" && onboardChecked && !onboarded ? (
         <Onboarding language={language} onFinish={finishOnboarding} />
+      ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
+        <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
       ) : !menuChoice || menuChoice === "basics" ? (
         <Basics
           language={language}
@@ -870,7 +882,7 @@ const App = () => {
       ) : menuChoice === "videoNotes" ? (
         <VideoNotes language={language} onBack={resetMenu} />
       ) : menuChoice === "podcastTutor" ? (
-        <PodcastTutor language={language} onBack={resetMenu} onPremium={() => chooseMenu("premium")} />
+        <PodcastTutor language={language} onBack={resetMenu} />
       ) : menuChoice === "biologyDrawings" ? (
         <BiologyDrawings language={language} onBack={backToBasics} />
       ) : menuChoice === "todo" ? (

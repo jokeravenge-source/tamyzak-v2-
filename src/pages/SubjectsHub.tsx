@@ -7,8 +7,7 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { TOOL_PLACEHOLDER_KEY } from "@/pages/ToolPlaceholder";
-
-const FREE_TOOLS = new Set<MainMenuChoice>(["flashcards", "malazam", "frenchSynonyms", "frenchAntonyms", "physicsActivities", "chemistryExperiments", "chemicalEquations"]);
+import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
 
 type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic";
 
@@ -143,7 +142,7 @@ const SubjectsHub = ({
     return () => window.removeEventListener("app:open-subject", handler as EventListener);
   }, []);
   const current = SUBJECTS.find((s) => s.code === open);
-  const { isPremium } = useSubscription();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const handleToolClick = (t: Tool) => {
     if (t.disabled) {
       toast.error(isRTL ? "هذه الأداة مقفلة حالياً." : "This tool is currently locked.");
@@ -151,10 +150,11 @@ const SubjectsHub = ({
     }
     // Placeholder ("Coming Soon") tools are open to everyone — they just show
     // an in-development page, so there's no reason to gate them behind premium.
-    const free = t.placeholder ? true : FREE_TOOLS.has(t.key);
+    const free = t.placeholder || !isPremiumTool(t.key);
+    if (!free && subscriptionLoading) return;
     if (!free && !isPremium) {
       toast.error(isRTL ? "هذه الأداة متاحة للمشتركين في البريميوم فقط." : "This tool is available for Premium members only.");
-      onSelect("premium" as MainMenuChoice);
+      openPremiumTelegram();
       return;
     }
     trackFeature(`tool_${t.key}`);
@@ -290,7 +290,7 @@ const SubjectsHub = ({
                   return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
                 }).map((t) => {
                   const Icon = t.Icon;
-                  const free = t.placeholder ? true : FREE_TOOLS.has(t.key);
+                  const free = t.placeholder || !isPremiumTool(t.key);
                   const hardLocked = !!t.disabled;
                   const locked = hardLocked || (!free && !isPremium);
                   const comingSoon = !hardLocked && !!t.placeholder;
@@ -300,6 +300,7 @@ const SubjectsHub = ({
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleToolClick(t)}
+                      disabled={!free && subscriptionLoading}
                       className={`group relative bg-background p-5 border rounded-2xl text-start transition-all ${
                         comingSoon
                           ? "border-border/60 hover:border-sky-400/60"

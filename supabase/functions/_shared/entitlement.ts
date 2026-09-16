@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { PREMIUM_AI_FEATURES, verifyPremiumAccess } from "./premium-access.ts";
 
 export type EntitlementResult =
   | { ok: true; userId: string; bypassed: boolean }
@@ -6,10 +7,10 @@ export type EntitlementResult =
 
 /**
  * Validates the incoming JWT and reserves one daily use of `feature` for the
- * authenticated user. Premium users (active subscription in any environment)
- * are bypassed by the SQL function and never consume quota.
+ * authenticated user. Premium AI tools require a server-verified live
+ * subscription (or existing admin/owner access), without consuming quota.
  *
- * Returns 401 if no auth, 429 if quota is exhausted.
+ * Returns 401 if no auth, 403 if Premium is required, 429 if quota is exhausted.
  */
 export async function claimFeature(req: Request, feature: string, dailyLimit?: number): Promise<EntitlementResult> {
   const authHeader = req.headers.get("Authorization");
@@ -37,6 +38,12 @@ export async function claimFeature(req: Request, feature: string, dailyLimit?: n
   }
   if (!userId) {
     return { ok: false, status: 401, error: "Your session expired. Please sign out and sign in again." };
+  }
+
+  if (PREMIUM_AI_FEATURES.has(feature)) {
+    const access = await verifyPremiumAccess(() => supabase.rpc("can_use_premium_tools"));
+    if (!access.ok) return access;
+    return { ok: true, userId, bypassed: true };
   }
 
   const { data: allowed, error } = dailyLimit == null

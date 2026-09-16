@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       return json({ error: lang === "ar" ? "النص قصير جدًا." : "Text too short." }, 400);
     }
     const ent = await claimFeature(req, "video");
-    if (!ent.ok) return json({ error: ent.error, upgrade: ent.status === 429 }, ent.status);
+    if (!ent.ok) return json({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }, ent.status);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY not configured" }, 500);

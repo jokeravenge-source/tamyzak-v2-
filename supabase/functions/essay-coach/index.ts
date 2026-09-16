@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     if (mode === "generate") {
       const ent = await claimFeature(req, "essay");
       if (!ent.ok) {
-        return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 429 }), { status: ent.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }), { status: ent.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const text = String(body.text || "").slice(0, MAX_STUDY_CHARS);
       const images = Array.isArray(body.pageImages) ? body.pageImages.filter((image: unknown) => typeof image === "string" && (image as string).startsWith("data:image/")).slice(0, MAX_PAGE_IMAGES) : [];
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     if (mode === "correct") {
       const ent = await claimFeature(req, "essay");
       if (!ent.ok) {
-        return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 429 }), { status: ent.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }), { status: ent.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const studentText = String(body.studentText || "").slice(0, MAX_STUDY_CHARS);
       const keyText = String(body.keyText || "").slice(0, MAX_STUDY_CHARS);

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Loader2, Search, Library, Calculator, ListChecks } from "lucide-react";
+import { getFlashcardChapters } from "@/data/flashcardChapters";
+import { resolveMcqChapter } from "@/lib/mcqChapters";
 
 type Kind = "text" | "problems" | "mcq";
 
 const TEXT_SUBJECTS = ["arabic", "english", "math", "chemistry", "biology", "physics", "islamic", "french"] as const;
 const PROBLEM_SUBJECTS = ["math", "chemistry", "biology", "physics"] as const;
-const MCQ_SUBJECTS = ["physics", "chemistry", "biology", "english", "french", "arabic", "islamic"] as const;
+const MCQ_SUBJECTS = ["physics", "chemistry", "biology", "english", "english_literature", "french", "arabic", "islamic"] as const;
 
 type TextRow = {
   id: string; subject: string; chapter: number; chapter_title: string | null; section: string | null;
@@ -41,6 +43,7 @@ export default function AdminBankTab() {
 
   const table = kind === "text" ? "bank_text_questions" : kind === "problems" ? "bank_problems" : "mcq_banks";
   const subjects = kind === "text" ? TEXT_SUBJECTS : kind === "problems" ? PROBLEM_SUBJECTS : MCQ_SUBJECTS;
+  const mcqChapters = subject === "english_literature" ? [1, 2].map(n => ({ n, title: `Section ${n}`, arTitle: `القسم ${n}`, locked: false })) : getFlashcardChapters(subject);
 
   const [form, setForm] = useState({
     chapter: "1", chapter_title: "", section: "", language: "ar",
@@ -78,6 +81,7 @@ export default function AdminBankTab() {
   }, [table, subject]);
 
   useEffect(() => { setPage(0); }, [kind, subject, chapter, language, search]);
+  useEffect(() => { setChapter("all"); if (kind === "mcq") setForm(f => ({ ...f, chapter: "", chapter_title: "" })); }, [kind, subject]);
 
   useEffect(() => {
     if (!subjects.includes(subject as never)) setSubject(subjects[0]);
@@ -86,6 +90,11 @@ export default function AdminBankTab() {
   const pages = Math.max(1, Math.ceil(total / PAGE));
 
   const addRow = async () => {
+    const mcqChapter = mcqChapters.find(c => c.n === Number(form.chapter));
+    if (kind === "mcq" && !mcqChapter) {
+      toast({ title: "Choose a flashcard chapter first", variant: "destructive" });
+      return;
+    }
     if (!form.question.trim() || (kind !== "mcq" && !form.answer.trim())) {
       toast({ title: "Question and answer are required", variant: "destructive" });
       return;
@@ -97,7 +106,7 @@ export default function AdminBankTab() {
     const base = {
       subject,
       chapter: Number(form.chapter) || 1,
-      chapter_title: form.chapter_title.trim() || null,
+      chapter_title: kind === "mcq" && mcqChapter ? (form.language === "ar" ? mcqChapter.arTitle : mcqChapter.title) : form.chapter_title.trim() || null,
       section: form.section.trim() || null,
       language: form.language,
       difficulty: form.difficulty,
@@ -156,8 +165,11 @@ export default function AdminBankTab() {
       <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur space-y-3">
         <h3 className="font-semibold flex items-center gap-2"><Plus className="w-4 h-4 text-primary" /> Add to {heading} — {subject}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <input value={form.chapter} onChange={(e) => setForm({ ...form, chapter: e.target.value })} placeholder="Chapter number" className={inputCls} />
-          <input value={form.chapter_title} onChange={(e) => setForm({ ...form, chapter_title: e.target.value })} placeholder="Chapter title" className={inputCls} />
+          {kind === "mcq" ? <select aria-label="Flashcard chapter" value={form.chapter} onChange={e => setForm({ ...form, chapter: e.target.value })} className={inputCls}>
+            <option value="">Choose a flashcard chapter</option>
+            {mcqChapters.filter(c => c.title !== "Coming Soon").map(c => <option key={c.n} value={c.n}>{c.n} · {form.language === "ar" ? c.arTitle : c.title}</option>)}
+          </select> : <input value={form.chapter} onChange={(e) => setForm({ ...form, chapter: e.target.value })} placeholder="Chapter number" className={inputCls} />}
+          {kind === "mcq" ? <p className="self-center text-xs text-muted-foreground">Chapter titles come from the flashcards.</p> : <input value={form.chapter_title} onChange={(e) => setForm({ ...form, chapter_title: e.target.value })} placeholder="Chapter title" className={inputCls} />}
           <input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} placeholder="Section (optional)" className={inputCls} />
           <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className={inputCls}>
             <option value="ar">Arabic</option>
@@ -261,6 +273,24 @@ export default function AdminBankTab() {
                       </ul>
                     )}
                     <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">{a}</p>
+                    {isMcq && <form className="mt-3 flex flex-wrap items-center gap-2" onSubmit={async e => {
+                      e.preventDefault();
+                      const value = new FormData(e.currentTarget).get("chapter");
+                      const meta = mcqChapters.find(c => c.n === Number(value));
+                      if (!meta) return;
+                      setBusyId(r.id);
+                      const { error } = await supabase.from("mcq_banks").update({ chapter: meta.n, chapter_title: r.language === "ar" ? meta.arTitle : meta.title }).eq("id", r.id);
+                      setBusyId(null);
+                      if (error) { toast({ title: "Assignment failed", description: error.message, variant: "destructive" }); return; }
+                      toast({ title: "Flashcard chapter assigned" });
+                      void load();
+                    }}>
+                      <select name="chapter" aria-label={`Assign chapter for ${r.id}`} defaultValue={resolveMcqChapter(r)?.n ?? ""} className={inputCls} required>
+                        <option value="">Choose a flashcard chapter</option>
+                        {mcqChapters.filter(c => c.title !== "Coming Soon").map(c => <option key={c.n} value={c.n}>{c.n} · {r.language === "ar" ? c.arTitle : c.title}</option>)}
+                      </select>
+                      <button type="submit" disabled={busyId !== null} className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary disabled:opacity-50">Assign chapter</button>
+                    </form>}
                   </div>
                   <button onClick={() => removeRow(r.id)} disabled={busyId === r.id} className="shrink-0 p-2 rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-50">
                     {busyId === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}

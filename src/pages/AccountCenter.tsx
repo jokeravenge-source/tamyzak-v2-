@@ -22,6 +22,7 @@ import { RANKS, rankFor } from "@/lib/points";
 
 import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
+import { openPremiumTelegram } from "@/lib/premium";
 import { CUSTOMIZABLE_STUDY_TOOLS, saveHiddenStudyTools, useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import {
   CharacterAvatar,
@@ -111,7 +112,7 @@ const AccountCenter = ({
   const tryPremium = (apply: () => void) => {
     if (!isPremium) {
       toast.error(text.upgrade, {
-        action: onNav ? { label: language === "ar" ? "افتح" : "Open", onClick: () => onNav("premium") } : undefined,
+        action: { label: language === "ar" ? "افتح عبر تيليجرام" : "Unlock via Telegram", onClick: openPremiumTelegram },
       });
       return;
     }

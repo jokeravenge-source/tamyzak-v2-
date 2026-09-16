@@ -15,6 +15,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { useSubscription } from "@/hooks/useSubscription";
+import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
 import { missionsData, missionsOrder } from "@/data/missions";
 import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
@@ -463,7 +464,7 @@ const Basics = ({
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
   const [motivationalPhrase] = useState(() => phrases[Math.floor(Math.random() * phrases.length)]);
-  const { isPremium } = useSubscription();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const fc = FEATURED_COPY[language];
   const [activeKey, setActiveKey] = useState<MainMenuChoice>("flashcards");
   const [activeGroup, setActiveGroup] = useState<string>(NAV_GROUPS[0].titleEn);
@@ -704,6 +705,11 @@ const Basics = ({
   }, [onboarding, language]);
   const navigate = (k: MainMenuChoice) => {
     if (TEMP_LOCKED_TOOLS.has(k)) return;
+    if (k === "premium" || (isPremiumTool(k) && !isPremium && !subscriptionLoading)) {
+      openPremiumTelegram();
+      return;
+    }
+    if (isPremiumTool(k) && subscriptionLoading) return;
     setActiveKey(k);
     recordToolUse(k);
     // sync active group
@@ -1208,13 +1214,15 @@ const Basics = ({
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
+                const premiumLocked = isPremiumTool(it.key) && !isPremium;
+                const displayLocked = isLocked || premiumLocked;
                 return (
                   <motion.button
                     key={it.key}
                     variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                     whileHover={isLocked ? undefined : { y: -5 }}
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
-                    disabled={isLocked}
+                    disabled={isLocked || (isPremiumTool(it.key) && subscriptionLoading)}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
                     className={`group relative isolate min-h-[190px] overflow-hidden border-2 p-5 text-start shadow-[0_18px_42px_-30px_currentColor] backdrop-blur-xl transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[0_24px_50px_-26px_currentColor]"} ${tint.card}`}
                     style={{ clipPath: "polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px))" }}
@@ -1222,7 +1230,7 @@ const Basics = ({
                     <span aria-hidden className={`absolute -end-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-2xl transition-transform duration-500 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="pointer-events-none absolute inset-[4px] border border-white/20" style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }} />
                     <span aria-hidden className="absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
-                    {it.key === "podcastTutor" && (
+                    {isPremiumTool(it.key) && (
                       <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-700 backdrop-blur-md dark:text-amber-300">
                         <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
                       </span>
@@ -1238,10 +1246,10 @@ const Basics = ({
                     )}
                     <span className="relative mt-5 flex items-center justify-between gap-3">
                       <span className="text-xs font-bold text-foreground/70">
-                        {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : (language === "ar" ? "افتح الأداة" : "Open tool")}
+                        {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : premiumLocked ? (language === "ar" ? "افتح البريميوم" : "Unlock Premium") : (language === "ar" ? "افتح الأداة" : "Open tool")}
                       </span>
                       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-transform group-hover:scale-110 ${tint.icon}`}>
-                        {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
+                        {displayLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
                       </span>
                     </span>
                   </motion.button>
@@ -1435,20 +1443,21 @@ const Basics = ({
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
+                const displayLocked = isLocked || (isPremiumTool(it.key) && !isPremium);
                 if (!meta) return null;
                 return (
                   <motion.button
                     key={it.key}
                     whileHover={isLocked ? undefined : { y: -3 }}
                     whileTap={isLocked ? undefined : { scale: 0.98 }}
-                    disabled={isLocked}
+                    disabled={isLocked || (isPremiumTool(it.key) && subscriptionLoading)}
                     onClick={() => navigate(it.key)}
                     className={`group relative isolate min-h-[158px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border-2 p-4 sm:min-h-[186px] sm:p-6 shadow-[0_18px_42px_-30px_currentColor] backdrop-blur-xl transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:-translate-y-1 hover:shadow-[0_24px_50px_-26px_currentColor]"} ${tint.card}`}
                     style={{ clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))" }}
                   >
                     <span aria-hidden className={`absolute -top-8 -end-8 h-24 w-24 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent" />
-                    {it.key === "podcastTutor" && (
+                    {isPremiumTool(it.key) && (
                       <span className="absolute top-3 end-3 inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-black text-amber-600 dark:text-amber-300">
                         <Crown className="h-3 w-3" /> {language === "ar" ? "مميّز" : "Premium"}
                       </span>
@@ -1459,7 +1468,7 @@ const Basics = ({
                     <h3 className="relative pe-7 text-foreground text-base sm:text-xl font-bold mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-5 text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-3 end-3 inline-flex h-7 w-7 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
-                      {isLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
+                      {displayLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </motion.button>
                 );
@@ -1529,6 +1538,7 @@ const Basics = ({
                 const meta = (fc as any)[it.key];
                 const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
+                const displayLocked = isLocked || (isPremiumTool(it.key) && !isPremium);
                 if (!meta) return null;
                 const showNotesDot = it.key === "adminNotes" && unseenNotes > 0;
                 return (
@@ -1537,14 +1547,14 @@ const Basics = ({
                     variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     whileHover={isLocked ? undefined : { y: -3 }}
-                    disabled={isLocked}
+                    disabled={isLocked || (isPremiumTool(it.key) && subscriptionLoading)}
                     onClick={() => navigate(it.key)}
                     className={`group relative isolate min-h-[142px] overflow-hidden ${isRTL ? "text-right" : "text-start"} border-2 p-3 shadow-[0_16px_36px_-28px_currentColor] backdrop-blur-xl transition-all sm:min-h-[164px] sm:p-5 ${isLocked ? "cursor-not-allowed opacity-60" : "hover:-translate-y-1 hover:shadow-[0_22px_44px_-24px_currentColor]"} ${tint.card}`}
                     style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }}
                   >
                     <span aria-hidden className={`absolute -top-7 -end-7 h-20 w-20 rounded-full opacity-30 blur-2xl transition-transform duration-300 group-hover:scale-125 ${tint.icon}`} />
                     <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
-                    {it.key === "podcastTutor" && (
+                    {isPremiumTool(it.key) && (
                       <span className="absolute top-2 end-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-600 dark:text-amber-300">
                         <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
                       </span>
@@ -1563,7 +1573,7 @@ const Basics = ({
                     <h3 className="relative pe-6 font-bold text-xs sm:text-sm text-foreground mb-1 line-clamp-1">{meta.title}</h3>
                     <p className="relative pe-4 text-[10px] sm:text-xs leading-relaxed text-muted-foreground line-clamp-2">{meta.subtitle}</p>
                     <span className={`absolute bottom-2.5 end-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full opacity-70 transition-all group-hover:opacity-100 group-hover:translate-x-0.5 ${tint.icon}`}>
-                      {isLocked ? <Lock className="h-3 w-3" /> : <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />}
+                      {displayLocked ? <Lock className="h-3 w-3" /> : <ArrowRight className={`h-3 w-3 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </motion.button>
                 );

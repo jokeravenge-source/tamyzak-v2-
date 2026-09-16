@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { handleAiError } from "@/lib/upgradeToast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { openPremiumTelegram } from "@/lib/premium";
 
 const copy = {
   en: {
@@ -115,10 +116,10 @@ const ProblemGenerator = ({
   };
 
   const gatePremium = (): boolean => {
-    if (subLoading) return true;
+    if (subLoading) return false;
     if (!isPremium) {
       toast.error(t.premiumOnly, {
-        action: onNav ? { label: rtl ? "ترقية" : "Upgrade", onClick: () => onNav("premium") } : undefined,
+        action: { label: rtl ? "افتح عبر تيليجرام" : "Unlock via Telegram", onClick: openPremiumTelegram },
       });
       return false;
     }

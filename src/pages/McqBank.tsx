@@ -32,6 +32,7 @@ import { recordMistake } from "@/lib/mistakes";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
+import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
 
 type Row = {
   id: string;
@@ -98,7 +99,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState<string | null>(null);
-  const [chapter, setChapter] = useState<number | null>(null);
+  const [chapter, setChapter] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [answerIndex, setAnswerIndex] = useState<number | null>(null);
@@ -121,7 +122,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .order("chapter", { ascending: true })
           .order("sort_order", { ascending: true })
           .limit(2000),
-        (supabase as any).rpc("get_due_mcq_bank_reviews"),
+        supabase.rpc("get_due_mcq_bank_reviews"),
       ]);
       const databaseRows = (data ?? []) as Row[];
       const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
@@ -149,23 +150,20 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }, [rows]);
 
   const chapters = useMemo(() => {
-    if (!subject) return [] as { chapter: number; title: string | null; count: number }[];
-    const map = new Map<number, { chapter: number; title: string | null; count: number }>();
-    rows.filter((r) => r.subject === subject).forEach((r) => {
-      const cur = map.get(r.chapter) ?? { chapter: r.chapter, title: r.chapter_title, count: 0 };
-      cur.count += 1;
-      map.set(r.chapter, cur);
-    });
-    return [...map.values()].sort((a, b) => a.chapter - b.chapter);
-  }, [rows, subject]);
+    return subject ? getMcqChapterGroups(subject, rows, lang) : [];
+  }, [rows, subject, lang]);
 
   const dueRows = useMemo(
     () => rows.filter((r) => dueQuestionIds.includes(r.id)),
     [rows, dueQuestionIds],
   );
   const quiz = useMemo(
-    () => reviewing ? dueRows : rows.filter((r) => r.subject === subject && r.chapter === chapter),
-    [rows, subject, chapter, reviewing, dueRows],
+    () => {
+      if (reviewing) return dueRows;
+      const ids = new Set(chapters.find(c => c.key === chapter)?.questionIds ?? []);
+      return rows.filter(r => ids.has(r.id));
+    },
+    [rows, chapters, chapter, reviewing, dueRows],
   );
   const current = quiz[index];
   const choices = useMemo(
@@ -193,7 +191,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         refId: current.id,
         question: current.question,
         subject: current.subject,
-        chapter: String(current.chapter),
+        chapter: resolveMcqChapter(current)?.n.toString() ?? null,
         language: lang,
         choices,
         correctAnswer: choices[correctIdx],
@@ -355,24 +353,25 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           <p className="mt-1 text-sm text-muted-foreground">
             {usesSections
               ? (isAr ? "اختر القسم الذي تريد التدرب على أسئلته." : "Choose the section you want to practise.")
-              : (isAr ? "كل فصل مرتب وعدد أسئلته واضح قبل ما تبدأ." : "See each chapter and its question count before you begin.")}
+              : (isAr ? "نفس تقسيم فصول البطاقات التعليمية. الفصول بدون أسئلة تظهر غير متاحة." : "The same chapters as your flashcards. Chapters without questions are unavailable.")}
           </p>
         </div>
         <div className="grid gap-3">
           {chapters.map((c) => (
             <motion.button
-              key={c.chapter}
+              key={c.key}
+              disabled={c.count === 0}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.99 }}
-              onClick={() => { setChapter(c.chapter); setIndex(0); resetQ(); setScore({ right: 0, wrong: 0 }); }}
-              className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/75 p-4 text-start shadow-sm transition-all hover:border-primary/60 hover:shadow-md"
+              onClick={() => { setChapter(c.key); setIndex(0); resetQ(); setScore({ right: 0, wrong: 0 }); }}
+              className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/75 p-4 text-start shadow-sm transition-all hover:border-primary/60 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 font-mono text-lg font-black text-primary">{c.chapter}</span>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 font-mono text-lg font-black text-primary">{c.chapter ?? <Layers3 className="h-5 w-5" />}</span>
               <span className="min-w-0 flex-1">
                 <span className="block font-extrabold">
-                  {usesSections ? (c.title ?? `${isAr ? "القسم" : "Section"} ${c.chapter}`) : (isAr ? `الفصل ${c.chapter}` : `Chapter ${c.chapter}`)}
+                  {c.title}
                 </span>
-                {!usesSections && c.title ? <span className="mt-0.5 block truncate text-sm text-muted-foreground">{c.title}</span> : null}
+                {!usesSections && c.chapter !== null ? <span className="mt-0.5 block text-sm text-muted-foreground">{isAr ? `الفصل ${c.chapter}` : `Chapter ${c.chapter}`}</span> : null}
               </span>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground">{c.count} {isAr ? "سؤال" : "Q"}</span>
               <ArrowRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 ${isAr ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
@@ -394,9 +393,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       {header(
         reviewing
           ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
-          : subject === "english_literature"
-            ? `${subjectLabel(subject, isAr)} · ${chapters.find((item) => item.chapter === chapter)?.title ?? `${isAr ? "القسم" : "Section"} ${chapter}`}`
-            : `${subjectLabel(subject!, isAr)} · ${isAr ? `الفصل ${chapter}` : `Chapter ${chapter}`}`,
+          : `${subjectLabel(subject!, isAr)} · ${chapters.find((item) => item.key === chapter)?.title ?? ""}`,
         () => {
           if (reviewing) setReviewing(false);
           else setChapter(null);

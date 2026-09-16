@@ -13,6 +13,9 @@ import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
 import { edgeErrorMessage } from "@/lib/edgeError";
+import { SUBJECTS_ORDER } from "@/data/subjectChapters";
+import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
+import { validatedGeneratedChapter } from "@/lib/mcqChapters";
 
 
 const copy = {
@@ -74,14 +77,23 @@ const copy = {
   },
 } as const;
 
-type MCQ = { question: string; choices: string[]; answer_index: number; explanation: string; hint?: string };
-type Phase = "setup" | "quiz" | "result";
+type MCQ = { question: string; choices: string[]; answer_index: number; explanation: string; hint?: string; subject: string; chapter: number | null };
+type Phase = "setup" | "chapters" | "quiz" | "result";
 
 const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   useFeatureUsed("mcq");
   const t = copy[language];
   const rtl = language === "ar";
   const [file, setFile] = useState<File | null>(null);
+  const [subject, setSubject] = useState("");
+  const [section, setSection] = useState<FlashcardSection>("grammar");
+  const [chapterN, setChapterN] = useState<number | null>(null);
+  const [allQuestions, setAllQuestions] = useState<MCQ[]>([]);
+  const chapters = getFlashcardChapters(subject, section);
+  const chapterLabel = (n: number | null) => {
+    const meta = chapters.find(c => c.n === n);
+    return meta ? (rtl ? meta.arTitle : meta.title) : rtl ? "غير مصنفة" : "Unclassified";
+  };
   const [count, setCount] = useState(10);
   const [phase, setPhase] = useState<Phase>("setup");
   const [loading, setLoading] = useState(false);
@@ -107,7 +119,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
 
 
   const handleGenerate = async () => {
-    if (!file) return;
+    if (!file || !subject) return;
     setLoading(true);
     try {
       toast.loading(t.extracting, { id: "ext" });
@@ -128,19 +140,22 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
           fileName: material.fileName,
           count,
           language,
+          curriculum: { subject, chapter: chapterN, chapters: chapters.filter(c => c.title !== "Coming Soon").map(({ n, title, arTitle }) => ({ n, title, arTitle })) },
         },
       });
       toast.dismiss("gen");
       if (error) throw new Error(await edgeErrorMessage(error, "Failed to generate"));
       if (data?.error) throw new Error(data.message || data.error);
-      const qs: MCQ[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
+      const qs: MCQ[] = (data?.questions || []).filter((q: MCQ) => q?.choices?.length === 4)
+        .map((q: MCQ) => ({ ...q, subject: subject === "english" && section !== "grammar" ? `english_${section}` : subject, chapter: validatedGeneratedChapter(q.chapter, subject, section, chapterN) }));
       if (!qs.length) throw new Error("No questions returned");
       setQuestions(qs);
+      setAllQuestions(qs);
       setCurrent(0); setSelected(null); setRevealed(false); setHintShown(false); setScore(0);
-      setPhase("quiz");
-    } catch (e: any) {
+      setPhase(chapterN === null ? "chapters" : "quiz");
+    } catch (e: unknown) {
       toast.dismiss();
-      toast.error(e.message || "Failed to generate");
+      toast.error(e instanceof Error ? e.message : "Failed to generate");
     } finally {
       setLoading(false);
     }
@@ -148,7 +163,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   };
 
   const submitAnswer = () => {
-    if (selected === null) return;
+    if (selected === null || revealed) return;
     const q = questions[current];
     if (selected === q.answer_index) {
       setScore((s) => s + 1);
@@ -156,6 +171,8 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
       void recordMistake({
         source: "mcq_generator",
         question: q.question,
+        subject: q.subject,
+        chapter: q.chapter?.toString() ?? null,
         language,
         choices: q.choices,
         correctAnswer: q.choices[q.answer_index],
@@ -184,7 +201,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   };
 
   const restart = () => {
-    setPhase("setup"); setFile(null); setQuestions([]);
+    setPhase("setup"); setFile(null); setQuestions([]); setAllQuestions([]);
     setCurrent(0); setSelected(null); setRevealed(false); setHintShown(false); setScore(0);
   };
 
@@ -212,6 +229,33 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
 
         {phase === "setup" && (
           <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur p-8 space-y-8 animate-fade-up">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{rtl ? "اختار مادة الملف. تقسيم الفصول مطابق للبطاقات التعليمية." : "Choose your file’s subject. Chapters match your flashcards."}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium">
+                  <span className="block">{rtl ? "المادة" : "Subject"}</span>
+                  <select disabled={loading} value={subject} onChange={e => { setSubject(e.target.value); setChapterN(null); setSection("grammar"); }} className="w-full rounded-xl border border-border bg-background px-3 py-3 text-foreground">
+                    <option value="">{rtl ? "اختر المادة" : "Choose a subject"}</option>
+                    {SUBJECTS_ORDER.filter(s => getFlashcardChapters(s.code).length > 0).map(s => <option key={s.code} value={s.code}>{rtl ? s.ar : s.en}</option>)}
+                  </select>
+                </label>
+                {subject === "english" && <label className="space-y-2 text-sm font-medium">
+                  <span className="block">{rtl ? "القسم" : "Section"}</span>
+                  <select disabled={loading} value={section} onChange={e => { setSection(e.target.value as FlashcardSection); setChapterN(null); }} className="w-full rounded-xl border border-border bg-background px-3 py-3 text-foreground">
+                    <option value="grammar">{rtl ? "القواعد" : "Grammar"}</option>
+                    <option value="paragraphs">{rtl ? "الفقرات" : "Paragraphs"}</option>
+                    <option value="literature">{rtl ? "الأدب" : "Literature"}</option>
+                  </select>
+                </label>}
+                <label className="space-y-2 text-sm font-medium">
+                  <span className="block">{rtl ? "الفصل" : "Chapter"}</span>
+                  <select disabled={loading || !subject} value={chapterN ?? "all"} onChange={e => setChapterN(e.target.value === "all" ? null : Number(e.target.value))} className="w-full rounded-xl border border-border bg-background px-3 py-3 text-foreground">
+                    <option value="all">{rtl ? "كل الفصول / ملف متعدد الفصول" : "All chapters / multi-chapter file"}</option>
+                    {chapters.filter(c => c.title !== "Coming Soon").map(c => <option key={c.n} value={c.n}>{c.n} · {rtl ? c.arTitle : c.title}</option>)}
+                  </select>
+                </label>
+              </div>
+            </div>
             <div
               onClick={() => inputRef.current?.click()}
               className="cursor-pointer border-2 border-dashed border-primary/30 hover:border-primary rounded-2xl p-10 text-center transition"
@@ -241,11 +285,20 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
               <Slider value={[count]} min={1} max={100} step={1} onValueChange={(v) => setCount(v[0])} />
             </div>
 
-            <Button onClick={handleGenerate} disabled={!file || loading} className="w-full h-12 text-base">
+            <Button onClick={handleGenerate} disabled={!file || !subject || loading} className="w-full h-12 text-base">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.generating}</> : <><Sparkles className="w-4 h-4" /> {t.generate}</>}
             </Button>
           </div>
         )}
+
+        {phase === "chapters" && <section className="space-y-4 rounded-3xl border border-border bg-card/80 p-6">
+          <h2 className="text-xl font-bold">{rtl ? "اختر الفصل للتدرب" : "Choose a chapter to practise"}</h2>
+          <p className="text-sm text-muted-foreground">{rtl ? "الأسئلة مرتبة حسب فصول البطاقات. الأسئلة غير المؤكدة تبقى غير مصنفة." : "Questions follow your flashcard chapters. Uncertain matches stay unclassified."}</p>
+          {[...chapters.filter(c => allQuestions.some(q => q.chapter === c.n)).map(c => c.n), ...(allQuestions.some(q => q.chapter === null) ? [null] : [])].map(n => <button key={n ?? "unclassified"} type="button" onClick={() => { setQuestions(allQuestions.filter(q => q.chapter === n)); setPhase("quiz"); }} className="flex w-full items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 p-4 text-start transition-colors hover:bg-primary/10">
+            <span className="font-bold">{chapterLabel(n)}</span><span className="rounded-full bg-secondary px-3 py-1 text-sm">{allQuestions.filter(q => q.chapter === n).length} {rtl ? "سؤال" : "questions"}</span>
+          </button>)}
+          <Button className="w-full" onClick={() => { setQuestions(allQuestions); setPhase("quiz"); }}>{rtl ? "تدرب على كل الأسئلة" : "Practise all questions"}</Button>
+        </section>}
 
         {phase === "quiz" && questions[current] && (() => {
           const q = questions[current];
@@ -256,6 +309,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
                 <span>{score} ✓</span>
               </div>
               <Progress value={((current) / questions.length) * 100} className="mb-6" />
+              <span className="mb-4 inline-flex rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{chapterLabel(q.chapter)}</span>
               <h2 className="text-xl md:text-2xl font-semibold mb-6">{q.question}</h2>
               <div className="space-y-3 mb-6">
                 {q.choices.map((c, i) => {
@@ -269,7 +323,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
                   } else if (isSelected) cls = "border-primary bg-primary/10";
                   return (
                     <button key={i} disabled={revealed} onClick={() => setSelected(i)}
-                      className={`w-full text-left rounded-xl border p-4 transition flex items-center justify-between ${cls}`}>
+                      className={`w-full text-start rounded-xl border p-4 transition flex items-center justify-between ${cls}`}>
                       <span>{c}</span>
                       {revealed && isCorrect && <Check className="w-5 h-5 text-green-500" />}
                       {revealed && isSelected && !isCorrect && <X className="w-5 h-5 text-red-500" />}
@@ -317,6 +371,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
             <p className="text-6xl md:text-7xl font-bold gradient-text mb-2">{score} / {questions.length}</p>
             <p className="text-2xl text-muted-foreground mb-8">{Math.round((score / questions.length) * 100)}%</p>
             <Button onClick={restart} className="h-12 px-8"><RotateCw className="w-4 h-4" /> {t.restart}</Button>
+            {chapterN === null && <Button variant="outline" className="mt-3 block w-full" onClick={() => { setCurrent(0); setSelected(null); setRevealed(false); setHintShown(false); setScore(0); setPhase("chapters"); }}>{rtl ? "اختر فصلاً آخر من نفس الأسئلة" : "Choose another chapter from this quiz"}</Button>}
           </div>
         )}
       </div>

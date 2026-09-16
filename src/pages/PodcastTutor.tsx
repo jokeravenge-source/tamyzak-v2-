@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
 import {
   ArrowRight,
   Check,
@@ -108,11 +109,9 @@ function GlassCard({ children, className = "" }: { children: React.ReactNode; cl
 export default function PodcastTutor({
   language: _language,
   onBack,
-  onPremium,
 }: {
   language: AppLanguage;
   onBack: () => void;
-  onPremium: () => void;
 }) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [subject, setSubject] = useState("");
@@ -422,7 +421,7 @@ export default function PodcastTutor({
                     </select>
                   </label>
                   {error && <ErrorBanner message={error} />}
-                  {premiumRequired && <button type="button" onClick={onPremium} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 py-3 text-sm font-black text-amber-100"><Crown className="h-4 w-4" /> عرض الاشتراك والتفعيل بالنقاط</button>}
+                  {premiumRequired && <a href={PREMIUM_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 py-3 text-sm font-black text-amber-100"><Crown className="h-4 w-4" /> افتح البريميوم عبر تيليجرام</a>}
                   <button disabled={busy} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:opacity-60">
                     {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                     {busy ? "جاري إنشاء الجلسة..." : "أنشئ جلستي الصوتية"}

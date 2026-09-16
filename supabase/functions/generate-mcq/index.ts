@@ -5,6 +5,7 @@ import { z } from "npm:zod";
 import { createLovableAiGatewayProvider } from "../_shared/ai-gateway.ts";
 import { claimFeature } from "../_shared/entitlement.ts";
 import { enforceRateLimit } from "../_shared/rate-limit.ts";
+import { applyCurriculumChapter, curriculumInstructions, validSelectedChapter } from "../_shared/mcq-curriculum.ts";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
@@ -102,6 +103,7 @@ const questionSchema = z
     answer_index: z.number().int().min(0).max(3),
     hint: z.string().optional().default(""),
     explanation: z.string().trim().min(1),
+    chapter: z.number().int().nullable().optional(),
   })
   .refine((q) => new Set(q.choices.map((c) => c.toLowerCase())).size === 4, {
     message: "choices must be unique",
@@ -120,6 +122,11 @@ const requestSchema = z.object({
   fileData: z.string().max(MAX_PDF_CHARS).optional(),
   pageImages: z.array(z.string()).max(200).optional(),
   adminGeneration: z.boolean().optional(),
+  curriculum: z.object({
+    subject: z.enum(["physics", "chemistry", "biology", "english", "french", "arabic", "islamic"]),
+    chapter: z.number().int().positive().nullable(),
+    chapters: z.array(z.object({ n: z.number().int().positive(), title: z.string().max(100), arTitle: z.string().max(100) })).max(12),
+  }).optional(),
 });
 
 /**
@@ -292,7 +299,8 @@ const buildBatchInstruction = (batchSize: number, batchIndex: number, batchCount
 Each question needs exactly four unique choices, one answer_index between 0 and 3, a hint that does not reveal the answer, and an explanation quoting or paraphrasing the supporting source statement.
 
 Respond with RAW JSON only (no markdown fences, no commentary) in exactly this shape:
-{"questions":[{"question":"...","choices":["...","...","...","..."],"answer_index":0,"hint":"...","explanation":"..."}]}`;
+{"questions":[{"question":"...","choices":["...","...","...","..."],"answer_index":0,"hint":"...","explanation":"...","chapter":null}]}
+Use the supplied chapter taxonomy to set chapter to a matching number; leave it null when no taxonomy or no confident match is available.`;
 
 /* -------------------------------------------------------------------------- */
 /* Handler                                                                     */
@@ -324,6 +332,8 @@ Deno.serve(async (req) => {
     const body = parsedBody.data;
 
     const language = body.language === "ar" ? "Arabic" : "English";
+    const curriculum = body.curriculum;
+    if (!validSelectedChapter(curriculum)) return json({ error: "Invalid selected chapter" }, 400);
     const content = cleanExtractedText(body.text);
     const pageImages = validImages(body.pageImages);
     const pdfData = validPdf(body.fileData);
@@ -342,7 +352,7 @@ Deno.serve(async (req) => {
     } else {
       const entitlement = await claimFeature(req, "mcq", 2);
       if (!entitlement.ok) {
-        return json({ error: entitlement.error, upgrade: entitlement.status === 429 }, entitlement.status);
+        return json({ error: entitlement.error, upgrade: entitlement.status === 403 || entitlement.status === 429 }, entitlement.status);
       }
     }
 
@@ -377,7 +387,7 @@ Deno.serve(async (req) => {
 
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway(MODEL);
-    const system = buildSystemPrompt(language);
+    const system = buildSystemPrompt(language) + curriculumInstructions(curriculum);
 
     let retryAttempts = 0;
     let parsingFailures = 0;
@@ -445,7 +455,7 @@ Deno.serve(async (req) => {
       MAX_CONCURRENT_BATCHES,
     );
 
-    const questions = finalizeQuestions(batches.flat(), requestedCount);
+    const questions = finalizeQuestions(batches.flat(), requestedCount).map(q => applyCurriculumChapter(q, curriculum));
 
     log(requestId, "completed", {
       durationMs: Date.now() - startedAt,

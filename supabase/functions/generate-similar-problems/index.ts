@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const ent = await claimFeature(req, "problem_generator");
     if (!ent.ok) {
-      return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 429 }), {
+      return new Response(JSON.stringify({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }), {
         status: ent.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
