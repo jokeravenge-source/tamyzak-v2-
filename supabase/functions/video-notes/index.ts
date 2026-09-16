@@ -166,28 +166,6 @@ const fetchSupadataTranscript = async (videoUrl: string, language: "ar" | "en") 
   }
 };
 
-const refundFeatureUse = async (userId: string) => {
-  try {
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL") || "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
-    );
-    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Baghdad" }).format(new Date());
-    const { data } = await admin
-      .from("feature_usage")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("feature", "video-notes")
-      .eq("used_on", today)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) await admin.from("feature_usage").delete().eq("id", data.id);
-  } catch (error) {
-    console.error("Failed to refund video-notes use", error);
-  }
-};
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const guard = await protect(req, "video-notes", { max: 6, windowSeconds: 60 });
@@ -218,9 +196,7 @@ Deno.serve(async (req) => {
       if (!transcriptText) transcriptText = await fetchYouTubeTranscript(url.trim(), lang0);
     }
 
-    // Admin publishing is a content-management operation, not a student's
-    // daily tool use. The flag is trusted only after a server-side role check.
-    let quotaReserved = false;
+    // Admin publishing uses a verified role; student AI access uses Premium.
     if (adminGeneration === true) {
       const adminClient = createClient(
         Deno.env.get("SUPABASE_URL") || "",
@@ -238,7 +214,6 @@ Deno.serve(async (req) => {
       if (!ent.ok) {
         return jsonResponse({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }, ent.status);
       }
-      quotaReserved = true;
     }
 
     // Cap transcript size to stay well under model limits.
@@ -250,7 +225,6 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: lang0 === "ar" ? "تعذّر تفريغ هذا الفيديو لإنشاء بطاقات." : "Could not transcribe this video for flashcards." });
       }
       if (!LOVABLE_API_KEY) {
-        if (quotaReserved) await refundFeatureUse(auth.userId);
         return jsonResponse({ error: "LOVABLE_API_KEY not configured" }, 500);
       }
       const n = Math.max(6, Math.min(40, Number(count) || 15));
@@ -293,7 +267,6 @@ Deno.serve(async (req) => {
       });
       if (!res.ok) {
         const txt = await res.text();
-        if (quotaReserved) await refundFeatureUse(auth.userId);
         if (res.status === 429) return jsonResponse({ error: lang0 === "ar" ? "الذكاء الاصطناعي مشغول. حاول مجدداً." : "AI busy. Try again.", retryable: true }, 429);
         if (res.status === 402) return jsonResponse({ error: lang0 === "ar" ? "نفدت رصيد الذكاء الاصطناعي." : "AI credits exhausted." }, 402);
         return jsonResponse({ error: `AI error: ${txt}` }, 500);
@@ -301,7 +274,6 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
-        if (quotaReserved) await refundFeatureUse(auth.userId);
         return jsonResponse({ error: "No flashcards generated", retryable: true }, 502);
       }
       const parsed = JSON.parse(toolCall.function.arguments);
@@ -572,7 +544,6 @@ ${curriculumLanguageRules}
           ? "تعذّر إنشاء الملاحظات من هذا الفيديو. تأكد من الرابط أو جرّب فيديو آخر."
           : "Could not generate notes from this video. Check the link or try another video.");
 
-      if (quotaReserved) await refundFeatureUse(auth.userId);
       return jsonResponse({
         error: friendly,
         retryable: overloaded || (quota && !disabledOrDaily && retryAfter > 0),
@@ -582,7 +553,6 @@ ${curriculumLanguageRules}
     }
 
     if (!notes.trim()) {
-      if (quotaReserved) await refundFeatureUse(auth.userId);
       return jsonResponse({ error: "Empty response from model", retryable: true }, 502);
     }
     return jsonResponse({ notes, parts, transcript: transcriptText });

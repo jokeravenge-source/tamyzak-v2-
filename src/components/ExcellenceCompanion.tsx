@@ -5,6 +5,9 @@ import GeminiStatus from "@/components/GeminiStatus";
 import ChatBlobBackground from "@/components/ChatBlobBackground";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { pushTodos } from "@/lib/todosSync";
+import { edgeErrorMessage } from "@/lib/edgeError";
+import { aiErrorNotice } from "@/lib/aiErrorNotice";
+import { handleAiError } from "@/lib/upgradeToast";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Mode = "schedule" | "problem" | "psych";
@@ -199,21 +202,11 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
       });
       const replyFromData = (data as { reply?: string; error?: string } | null)?.reply;
       if (error && !replyFromData) {
-        const ctx = (error as { context?: { error?: string; upgrade?: boolean } }).context;
-        const upgrade = ctx?.upgrade || /Premium|free uses/i.test(String(ctx?.error || ""));
-        // Never surface the raw "Edge Function returned a non-2xx status code" string.
-        const rawMsg = String(ctx?.error || error.message || "");
-        const isNon2xx = /non-2xx/i.test(rawMsg);
-        const msg = upgrade
-          ? (language === "ar"
-              ? "استهلكت 5 استخدامات اليومية. رقّ إلى البريميوم للاستخدام غير المحدود."
-              : "You've used your 5 free uses today. Upgrade to Premium for unlimited access.")
-          : (isNon2xx || !ctx?.error
-              ? (language === "ar"
-                  ? "تعذّر الرد الآن. حاول مرة أخرى بعد لحظات."
-                  : "Could not respond just now. Please try again in a moment.")
-              : ctx.error);
-        setMessages([...next, { role: "assistant", content: msg }]);
+        const rawMessage = await edgeErrorMessage(error, t.error);
+        const details = { message: rawMessage, status: (error.context as Response | undefined)?.status };
+        const notice = aiErrorNotice(details, language);
+        if (notice.premiumRequired) handleAiError(details, { language });
+        setMessages([...next, { role: "assistant", content: notice.message }]);
         return;
       }
       const reply = replyFromData ?? t.error;

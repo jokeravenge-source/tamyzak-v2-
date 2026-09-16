@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
     if (action === "generate") {
       const difficulty = body.difficulty === "easy" || body.difficulty === "hard" ? body.difficulty : "medium";
       const topic = typeof body.topic === "string" ? body.topic.trim().slice(0, 120) : "";
-      const entitlement = await claimFeature(req, "english_reading_generate", 3);
+      const entitlement = await claimFeature(req, "english_reading_generate");
       if (!entitlement.ok) return json({ error: entitlement.error, upgrade: entitlement.status === 403 || entitlement.status === 429 }, entitlement.status);
 
       const system = `You create original English unseen-reading practice for Iraqi sixth-preparatory scientific-stream students.
@@ -192,7 +192,7 @@ Return only through the required tool call.`;
       if (passage.length < 100 || answers.length !== 6 || answers.some((answer) => !answer)) {
         return json({ error: "Passage, questions, and all six answers are required." }, 400);
       }
-      const entitlement = await claimFeature(req, "english_reading_grade", 5);
+      const entitlement = await claimFeature(req, "english_reading_grade");
       if (!entitlement.ok) return json({ error: entitlement.error, upgrade: entitlement.status === 403 || entitlement.status === 429 }, entitlement.status);
 
       const system = `You are a fair Iraqi sixth-preparatory English reading teacher. Grade six student answers using only the supplied passage.

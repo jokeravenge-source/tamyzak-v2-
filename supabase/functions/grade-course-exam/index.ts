@@ -100,7 +100,6 @@ Deno.serve(async (req) => {
   if (!guard.ok) return new Response(JSON.stringify({ error: guard.error }), { status: guard.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   deadline = Date.now() + TOTAL_BUDGET_MS;
 
-  let refundQuotaRef: (() => Promise<void>) | null = null;
   try {
     // Require a verified session before touching private exam files or the AI gateway.
     const auth = await requireUser(req);
@@ -131,63 +130,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // One AI paper scan per day for free students (premium is unlimited).
-    let claimedQuota = false;
-    /** Give the daily scan back when grading never produced a result. */
-    const refundQuota = async () => {
-      if (!claimedQuota) return;
-      claimedQuota = false;
-      try {
-        const svc = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: rows } = await svc
-          .from("feature_usage")
-          .select("id")
-          .eq("user_id", auth.userId)
-          .eq("feature", "ocr_grade")
-          .order("created_at", { ascending: false })
-          .limit(1);
-        const id = rows?.[0]?.id;
-        if (id) await svc.from("feature_usage").delete().eq("id", id);
-      } catch { /* best effort */ }
-    };
-    refundQuotaRef = refundQuota;
-    // Temporary: daily scan limit lifted for 2026-08-18 (Baghdad time) only.
-    const baghdadToday = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const LIMIT_FREE_DAY = "2026-08-18";
-    if (baghdadToday !== LIMIT_FREE_DAY) {
-      const authHeader = req.headers.get("Authorization") ?? "";
-      const db = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } },
-      );
-      const { data: allowed, error: claimErr } = await db.rpc("claim_daily_feature_limit", {
-        _feature: "ocr_grade",
-        _limit: 1,
-      });
-      if (claimErr) {
-        return new Response(JSON.stringify({ error: claimErr.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (!allowed) {
-        const isAr = language !== "en";
-        return new Response(JSON.stringify({
-          error: isAr
-            ? "لقد استخدمت تصحيح ورقة واحدة اليوم. يتجدد عند منتصف الليل بتوقيت بغداد، أو اشترك في النسخة المميزة للاستخدام غير المحدود."
-            : "You've used your 1 free paper scan for today. It resets at midnight Baghdad time, or upgrade to Premium for unlimited scans.",
-          upgrade: true,
-        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      claimedQuota = true;
-    }
-
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      await refundQuota();
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -206,7 +150,6 @@ Deno.serve(async (req) => {
       .eq("id", examId)
       .maybeSingle();
     if (!examRow?.exam_path) {
-      await refundQuota();
       return new Response(JSON.stringify({ error: "Exam not found." }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -249,7 +192,7 @@ Deno.serve(async (req) => {
     }
 
     // If the client already gave up, stop instead of burning AI credits.
-    if (req.signal?.aborted) { await refundQuota(); return new Response(null, { status: 499, headers: corsHeaders }); }
+    if (req.signal?.aborted) return new Response(null, { status: 499, headers: corsHeaders });
 
     // Cache miss: read the exam + answer PDFs ONCE and distill them into a
     // reusable text key, then persist it so later gradings never touch the PDFs.
@@ -259,7 +202,6 @@ Deno.serve(async (req) => {
         answerPath ? pdfToDataUrl(admin, answerPath) : Promise.resolve(null),
       ]);
       if (!examPdf) {
-        await refundQuota();
         return new Response(JSON.stringify({ error: "Could not load the exam PDF." }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -403,7 +345,6 @@ All feedback strings in ${isAr ? "Arabic" : "English"}.`;
       response_format: { type: "json_object" },
     }, GRADE_TIMEOUT_MS);
     if (!gradeResult.ok) {
-      await refundQuota();
       const status = gradeResult.status === 402 ? 402 : 200;
       const msg = gradeResult.status === 504
         ? (isAr ? "استغرق التصحيح وقتاً طويلاً. الرجاء المحاولة مرة أخرى." : "Grading took too long. Please try again.")
@@ -472,7 +413,6 @@ All feedback strings in ${isAr ? "Arabic" : "English"}.`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    await refundQuotaRef?.();
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

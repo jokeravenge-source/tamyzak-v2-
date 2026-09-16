@@ -1,11 +1,11 @@
 /**
  * supabase.functions.invoke() hides the real message behind
  * "Edge Function returned a non-2xx status code". This unwraps the response
- * body so users see the actual reason (daily limit, rate limit, bad file...).
+ * body so users see the actual reason (membership, rate limit, bad file...).
  */
 export async function edgeErrorMessage(error: unknown, fallback = "Request failed"): Promise<string> {
   const ctx = (error as { context?: unknown })?.context as Response | undefined;
-  if (ctx && typeof (ctx as any).text === "function") {
+  if (ctx && typeof ctx.text === "function") {
     try {
       const raw = await ctx.text();
       try {
@@ -19,7 +19,7 @@ export async function edgeErrorMessage(error: unknown, fallback = "Request faile
     } catch {
       /* body already consumed */
     }
-    if (ctx.status === 429) return "You reached today's limit for this tool. Try again tomorrow.";
+    if (ctx.status === 429) return "Too many requests right now. Please try again shortly.";
     if (ctx.status === 504) return "The file took too long. Try fewer questions or a smaller PDF.";
   }
   const msg = (error as { message?: string })?.message;
