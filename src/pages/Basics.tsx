@@ -195,6 +195,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
       { key: "mcq", labelEn: "MCQ Generator", labelAr: "مولّد الأسئلة", Icon: HelpCircle },
       { key: "mcqBank", labelEn: "MCQ Bank", labelAr: "بنك الأسئلة", Icon: Layers },
       { key: "mistakes", labelEn: "My Mistakes", labelAr: "أخطائي", Icon: AlertTriangle },
+      { key: "chemicalEquations", labelEn: "Chemical Equation", labelAr: "المعادلات الكيميائية", Icon: FlaskConical },
       { key: "mindmap", labelEn: "Mind Map", labelAr: "الخريطة الذهنية", Icon: Network },
       { key: "videoNotes", labelEn: "Video Notes", labelAr: "ملاحظات الفيديو", Icon: Headphones },
       { key: "podcastTutor", labelEn: "Podcast Tutor", labelAr: "المعلّم الصوتي", Icon: Podcast },
@@ -263,6 +264,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
 
 // Icons for any tool that can show up in "recently used"
 const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className?: string }>>> = {
+  chemicalEquations: FlaskConical,
   videoNotes: Headphones,
   podcastTutor: Podcast,
   youtube: Youtube,
@@ -280,6 +282,7 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
 };
 
 const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: string }>> = {
+  chemicalEquations: { card: "border-chemistry/40 bg-gradient-to-br from-chemistry/25 via-chemistry/10 to-orange-400/15", icon: "bg-chemistry text-white" },
   subjectsHub: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/25 via-sky-500/10 to-cyan-400/20", icon: "bg-blue-600 text-white shadow-lg shadow-blue-500/25" },
   flashcards: { card: "border-violet-400/40 bg-gradient-to-br from-blue-500/20 via-violet-500/10 to-violet-400/20", icon: "bg-violet-600 text-white shadow-lg shadow-violet-500/25" },
   malazam: { card: "border-orange-400/40 bg-gradient-to-br from-amber-500/25 via-orange-500/10 to-orange-400/20", icon: "bg-orange-600 text-white shadow-lg shadow-orange-500/25" },
@@ -404,6 +407,7 @@ const DEFAULT_TOOL_CATEGORY_TINT = {
 
 const FEATURED_COPY = {
   en: {
+    chemicalEquations: { title: "Chemical Equation", subtitle: "19 chemistry equations organized by topic, with a memory hint for each." },
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
     summaries: { title: "Notes & Summaries", subtitle: "Upload and browse approved notes." },
     todo: { title: "To-Do List", subtitle: "Plan tasks and celebrate when you finish." },
@@ -423,6 +427,7 @@ const FEATURED_COPY = {
     sessions: { title: "Study Sessions", subtitle: "Time your study and join study rooms." },
   },
   ar: {
+    chemicalEquations: { title: "المعادلات الكيميائية", subtitle: "19 معادلة كيميائية مرتبة حسب الموضوع، مع تلميح لحفظ كل معادلة." },
     report: { title: "تقريري اليومي", subtitle: "ملاحظات ذكية ورابط متابعة لولي الأمر." },
     summaries: { title: "ملخصات", subtitle: "ارفع وتصفّح ملاحظات معتمدة." },
     todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },

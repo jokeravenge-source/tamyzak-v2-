@@ -7,7 +7,7 @@ export type SearchNavChoice =
   | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings"
   | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank"
   | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker"
-  | "englishEssays" | "englishIsqat" | "report";
+  | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations";
 
 type Entry = {
   key: SearchNavChoice;
@@ -17,6 +17,8 @@ type Entry = {
 };
 
 const ENTRIES: Entry[] = [
+  { key: "chemicalEquations", en: { title: "Chemical Equation", desc: "19 equations by topic with memory hints" }, ar: { title: "المعادلات الكيميائية", desc: "معادلات حسب الموضوع مع تلميحات للحفظ" },
+    keywords: ["chemistry", "chemical", "equations", "reactions", "enthalpy", "redox", "zinc", "memorize", "كيمياء", "معادلات", "تفاعلات", "حرارية", "اتزان", "اكسدة", "اختزال", "حفظ"] },
   { key: "basics", en: { title: "The Basics", desc: "Hub for essential study tools" }, ar: { title: "الأساسيات", desc: "كل أدواتك الدراسية" },
     keywords: ["home", "main", "menu", "dashboard", "hub", "start", "tools", "رئيسية", "أساسيات", "قائمة"] },
   { key: "report", en: { title: "Daily Report", desc: "AI insights on today's study", tags: "parent follow" }, ar: { title: "تقريري اليومي", desc: "تحليل ذكي ليومك", tags: "ولي الأمر" },
