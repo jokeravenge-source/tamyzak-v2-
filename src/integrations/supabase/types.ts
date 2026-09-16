@@ -3195,6 +3195,7 @@ export type Database = {
         Args: { _points: number; _ref_id?: string; _source: string }
         Returns: string
       }
+      can_use_premium_tools: { Args: never; Returns: boolean }
       check_edge_rate_limit: {
         Args: {
           _feature: string
