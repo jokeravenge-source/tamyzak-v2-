@@ -174,6 +174,23 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
       },
     ],
   },
+  {
+    id: "asexual-reproduction-in-paramecium",
+    chapter: 3,
+    title: englishText("Asexual Reproduction in Paramecium"),
+    description: englishText("Transverse binary fission in Paramecium."),
+    parts: [
+      {
+        id: "paramecium-transverse-binary-fission",
+        title: englishText("Asexual Reproduction in Paramecium"),
+        image: parameciumAsexualReproductionImage,
+        imageAlt: englishText("The four stages of transverse binary fission in Paramecium"),
+        text: englishText(
+          "Paramecium reproduces asexually by transverse binary fission, which is explained as follows:\n\n1. Division starts by normal division of micronucleus.\n\n2. After division of micronucleus, each nucleus moves to the opposite side of Paramecium. At the same time, macronucleus extends and cytostome (mouth) appears.\n\n3. Macronucleus divides by amitosis into two nuclei and moves to the two sides of Paramecium. A new mouth and two new contractile vacuoles appear, and the body of Paramecium also stretches.\n\n4. Paramecium divides into two new paramecia.",
+        ),
+      },
+    ],
+  },
 ];
 import virusOverviewImage from "@/assets/biology-schemes/virus-overview.svg";
 import bacteriophageCyclesImage from "@/assets/biology-schemes/bacteriophage-cycles.svg";
@@ -190,3 +207,4 @@ import binaryFissionDnaImage from "@/assets/biology-schemes/binary-fission-dna.s
 import binaryFissionSeparationImage from "@/assets/biology-schemes/binary-fission-separation.svg";
 import binaryFissionCompleteImage from "@/assets/biology-schemes/binary-fission-complete.svg";
 import bacterialConjugationImage from "@/assets/biology-schemes/bacterial-conjugation-sexual-reproduction.png";
+import parameciumAsexualReproductionImage from "@/assets/biology-schemes/paramecium-asexual-reproduction.png";
