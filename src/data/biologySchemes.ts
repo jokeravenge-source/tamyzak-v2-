@@ -164,12 +164,57 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
         ),
       },
       {
-        id: "sexual-reproduction",
-        title: englishText("Sexual Reproduction"),
-        image: bacterialConjugationImage,
-        imageAlt: englishText("A textbook diagram explaining sexual reproduction in bacteria by conjugation"),
+        id: "conjugation-donor-recipient",
+        title: englishText("Step 1: Donor and Recipient Cells"),
+        image: conjugationDonorRecipientImage,
+        imageAlt: englishText("A donor bacterium with the fertility factor and sex pili beside a recipient bacterium without them"),
         text: englishText(
-          "Conjugation within bacteria is processed in the following steps:\n\n1. First conjugation happens between two cells. The first cell is called the donor cell. It contains the fertility factor, represented by DNA particles in the cytoplasm of the donor cell. It also contains sex pili on its surface. These structures make this cell the male donor cell. The second cell, the recipient cell, does not contain the fertility factor or sex pili and represents the female cell.\n\n2. When sex pili touch the surface of the recipient cell, they transform into a conjugation bridge which binds the protoplasm of the two bacterial cells.\n\n3. One DNA strand of the fertility factor breaks at a certain point and extends to transfer to the recipient cell.\n\n4. This broken DNA, together with a part of the cytoplasm of the donor cell, moves to the recipient cell through the conjugation bridge. The DNA strand replicates itself and becomes a complete double strand of DNA.\n\n5. The donor cell remains as it was in terms of genetic material because the broken DNA strand of the fertility factor is replicated in the donor cell. At the end of conjugation, both cells possess the fertility factor or plasmid.\n\n6. This kind of sexual reproduction is not an ordinary one, because the new bacterium does not receive a complete collection of genes from both original cells.",
+          "Conjugation within bacteria is processed in the following steps:\n\n1. First conjugation happens between two cells. The first cell is called the donor cell. It contains the fertility factor, represented by DNA particles in the cytoplasm of the donor cell. It also contains sex pili on its surface. These structures make this cell the male donor cell. The second cell, the recipient cell, does not contain the fertility factor or sex pili and represents the female cell.",
+        ),
+      },
+      {
+        id: "conjugation-bridge",
+        title: englishText("Step 2: Conjugation Bridge"),
+        image: conjugationBridgeImage,
+        imageAlt: englishText("A sex pilus connecting the donor and recipient bacteria to form a conjugation bridge"),
+        text: englishText(
+          "2. When sex pili touch the surface of the recipient cell, they transform into a conjugation bridge which binds the protoplasm of the two bacterial cells.",
+        ),
+      },
+      {
+        id: "conjugation-strand-breaks",
+        title: englishText("Step 3: DNA Strand Breaks"),
+        image: conjugationStrandBreaksImage,
+        imageAlt: englishText("One DNA strand of the fertility factor breaking and extending toward the recipient cell"),
+        text: englishText(
+          "3. One DNA strand of the fertility factor breaks at a certain point and extends to transfer to the recipient cell.",
+        ),
+      },
+      {
+        id: "conjugation-transfer-replication",
+        title: englishText("Step 4: Transfer and Replication"),
+        image: conjugationTransferReplicationImage,
+        imageAlt: englishText("The broken DNA strand moving through the bridge and replicating inside the recipient cell"),
+        text: englishText(
+          "4. This broken DNA, together with a part of the cytoplasm of the donor cell, moves to the recipient cell through the conjugation bridge. The DNA strand replicates itself and becomes a complete double strand of DNA.",
+        ),
+      },
+      {
+        id: "conjugation-both-plasmids",
+        title: englishText("Step 5: Both Cells Possess the Plasmid"),
+        image: conjugationBothPlasmidsImage,
+        imageAlt: englishText("Both bacterial cells possessing the fertility factor or plasmid after conjugation"),
+        text: englishText(
+          "5. The donor cell remains as it was in terms of genetic material because the broken DNA strand of the fertility factor is replicated in the donor cell. At the end of conjugation, both cells possess the fertility factor or plasmid.",
+        ),
+      },
+      {
+        id: "conjugation-result",
+        title: englishText("Step 6: Result of Conjugation"),
+        image: conjugationResultImage,
+        imageAlt: englishText("The conjugation result showing that only part of the genetic material was transferred"),
+        text: englishText(
+          "6. This kind of sexual reproduction is not an ordinary one, because the new bacterium does not receive a complete collection of genes from both original cells.",
         ),
       },
     ],
@@ -231,7 +276,12 @@ import binaryFissionExpansionImage from "@/assets/biology-schemes/binary-fission
 import binaryFissionDnaImage from "@/assets/biology-schemes/binary-fission-dna.svg";
 import binaryFissionSeparationImage from "@/assets/biology-schemes/binary-fission-separation.svg";
 import binaryFissionCompleteImage from "@/assets/biology-schemes/binary-fission-complete.svg";
-import bacterialConjugationImage from "@/assets/biology-schemes/bacterial-conjugation-sexual-reproduction.png";
+import conjugationDonorRecipientImage from "@/assets/biology-schemes/conjugation-step-1-donor-recipient.svg";
+import conjugationBridgeImage from "@/assets/biology-schemes/conjugation-step-2-bridge.svg";
+import conjugationStrandBreaksImage from "@/assets/biology-schemes/conjugation-step-3-strand-breaks.svg";
+import conjugationTransferReplicationImage from "@/assets/biology-schemes/conjugation-step-4-transfer-replication.svg";
+import conjugationBothPlasmidsImage from "@/assets/biology-schemes/conjugation-step-5-both-plasmids.svg";
+import conjugationResultImage from "@/assets/biology-schemes/conjugation-step-6-result.svg";
 import parameciumMicronucleusDivisionImage from "@/assets/biology-schemes/paramecium-step-1-micronucleus.svg";
 import parameciumNucleiMoveImage from "@/assets/biology-schemes/paramecium-step-2-nuclei-move.svg";
 import parameciumMacronucleusAmitosisImage from "@/assets/biology-schemes/paramecium-step-3-amitosis.svg";
