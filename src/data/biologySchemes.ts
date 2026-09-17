@@ -122,7 +122,7 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
         id: "binary-fission-ready",
         title: englishText("First: Asexual Reproduction in Bacteria — Step 1"),
         image: binaryFissionReadyImage,
-        imageAlt: englishText("A bacterial chromosome attached to the plasma membrane"),
+        imageAlt: englishText("A bacterial chromosome moving close to the cellular wall"),
         text: englishText(
           "Bacteria reproduce asexually by binary fission. This can be summarized as follows:\n\n1. The chromosome of the bacteria sticks to the plasma membrane in a certain position, and that means the bacterial cell is ready for division.",
         ),

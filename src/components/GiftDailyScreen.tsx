@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -170,6 +171,14 @@ export default function GiftDailyScreen({ language, onClose }: { language: AppLa
 
   useEffect(() => { void load(); }, [load]);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   const answer = async (i: number) => {
     if (picked !== null || !question) return;
     setPicked(i);
@@ -198,9 +207,9 @@ export default function GiftDailyScreen({ language, onClose }: { language: AppLa
 
   const Back = isAr ? ArrowRight : ArrowLeft;
 
-  return (
-    <div dir={isAr ? "rtl" : "ltr"} className="fixed inset-0 z-[120] bg-background overflow-y-auto">
-      <div className="mx-auto w-full max-w-2xl px-4 py-5 pb-24">
+  return createPortal(
+    <div dir={isAr ? "rtl" : "ltr"} className="fixed inset-0 z-[1000] overflow-y-auto bg-background overscroll-contain">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-[max(6rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={onClose}
@@ -270,7 +279,7 @@ export default function GiftDailyScreen({ language, onClose }: { language: AppLa
         {result && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[130] flex items-start justify-center bg-background/80 backdrop-blur-sm px-6 pt-[6vh]"
+            className="fixed inset-0 z-[1010] flex items-start justify-center bg-background/80 backdrop-blur-sm px-6 pt-[max(6vh,env(safe-area-inset-top))]"
           >
             <motion.div
               initial={{ scale: 0.7, y: 30, opacity: 0 }}
@@ -306,6 +315,7 @@ export default function GiftDailyScreen({ language, onClose }: { language: AppLa
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body,
   );
 }
