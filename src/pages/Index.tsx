@@ -56,6 +56,7 @@ import { flashcardsFrenchRelativePronounsAr } from "@/data/flashcardsFrenchRelat
 import { flashcardsFrenchFeminineAr } from "@/data/flashcardsFrenchFeminineAr";
 import { flashcardsFrenchPluralAr } from "@/data/flashcardsFrenchPluralAr";
 import { flashcardsFrenchAdverbsAr } from "@/data/flashcardsFrenchAdverbsAr";
+import { flashcardsMathCh1Ar } from "@/data/flashcardsMathCh1Ar";
 import { flashcardsCh1 } from "@/data/flashcardsCh1";
 import { flashcardsCh2 } from "@/data/flashcardsCh2";
 import { flashcardsCh4 } from "@/data/flashcardsCh4";
@@ -97,8 +98,8 @@ const decks: Record<string, { title: string; eyebrow: string; cards: typeof flas
 };
 
 const SUBJECT_LABEL: Record<string, Record<string, string>> = {
-  ar: { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", revision: "المراجعة" },
-  en: { physics: "Physics", chemistry: "Chemistry", biology: "Biology", english: "English", french: "French", arabic: "Arabic", islamic: "Islamic", revision: "Revision" },
+  ar: { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", math: "الرياضيات", revision: "المراجعة" },
+  en: { physics: "Physics", chemistry: "Chemistry", biology: "Biology", english: "English", french: "French", arabic: "Arabic", islamic: "Islamic", math: "Mathematics", revision: "Revision" },
 };
 
 const copy = {
@@ -328,6 +329,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             cards: d.cards,
           };
         }
+      }
+
+      if (subject === "math" && chapter === "1") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? "الرياضيات · الفصل الأول · الأعداد المركبة" : "Mathematics · Chapter 1 · Complex Numbers",
+          cards: flashcardsMathCh1Ar,
+        };
       }
 
       if (language === "ar" && chapter === "1") {
@@ -749,8 +758,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
           <span className="text-foreground">
             {(language === "ar"
-              ? { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", revision: "المراجعة" }
-              : { physics: "Physics", chemistry: "Chemistry", biology: "Biology", english: "English", french: "French", arabic: "Arabic", islamic: "Islamic", revision: "Revision" }
+              ? { physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء", english: "الإنجليزية", french: "الفرنسية", arabic: "العربية", islamic: "التربية الإسلامية", math: "الرياضيات", revision: "المراجعة" }
+              : { physics: "Physics", chemistry: "Chemistry", biology: "Biology", english: "English", french: "French", arabic: "Arabic", islamic: "Islamic", math: "Mathematics", revision: "Revision" }
             )[subject]}
           </span>
           <span className="opacity-40">·</span>

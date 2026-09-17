@@ -55,6 +55,7 @@ const SUBJECT_NAME: Record<AppSubject, { en: string; ar: string }> = {
   french: { en: "French", ar: "الفرنسية" },
   arabic: { en: "Arabic", ar: "العربية" },
   islamic: { en: "Islamic Education", ar: "التربية الإسلامية" },
+  math: { en: "Mathematics", ar: "الرياضيات" },
   revision: { en: "Revision", ar: "المراجعة" },
 };
 

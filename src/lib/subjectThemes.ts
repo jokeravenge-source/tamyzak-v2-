@@ -16,5 +16,6 @@ export const subjectThemes: Record<AppSubject, { image: string; tint: string }> 
   islamic: { image: islamic, tint: "from-emerald-600/15 via-transparent to-amber-500/10" },
   english: { image: english, tint: "from-red-500/10 via-transparent to-blue-500/10" },
   french: { image: french, tint: "from-blue-500/10 via-transparent to-red-500/10" },
+  math: { image: physics, tint: "from-violet-500/15 via-transparent to-indigo-500/10" },
   revision: { image: revision, tint: "from-purple-500/15 via-transparent to-fuchsia-500/10" },
 };

@@ -53,6 +53,14 @@ export const frenchChapters = [
   { n: 6, title: "Adverbs", arTitle: "اشتقاق الظروف", subtitle: "-ment / -emment / -amment", locked: false },
 ];
 
+export const mathChapters = Array.from({ length: 8 }, (_, i) => ({
+  n: i + 1,
+  title: `Chapter ${i + 1}`,
+  arTitle: `الفصل ${i + 1}`,
+  subtitle: i === 0 ? "Complex Numbers" : "",
+  locked: i > 0,
+}));
+
 export const englishGrammarChapters = Array.from({ length: 8 }, (_, i) => ({
   n: i + 1,
   title: `Unit ${i + 1}`,
@@ -76,6 +84,7 @@ export function getFlashcardChapters(subject: string, section: FlashcardSection 
     case "arabic": return arabicChapters;
     case "islamic": return islamicChapters;
     case "french": return frenchChapters;
+    case "math": return mathChapters;
     case "english": return section === "literature" ? englishLiteratureChapters : section === "paragraphs" ? englishParagraphsChapters : englishGrammarChapters;
     default: return [];
   }
