@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">DNA division</title><desc id="desc">Two identical bacterial chromosomes forming while the cell stretches</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#082f49"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs><rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <rect x="100" y="145" width="600" height="200" rx="100" fill="#34d399" opacity=".22" stroke="#6ee7b7" stroke-width="9"/><rect x="120" y="165" width="560" height="160" rx="80" fill="none" stroke="#a7f3d0" stroke-width="4"/>
+  <path d="M190 245c25-55 50 55 75 0s50 55 75 0" fill="none" stroke="#ddd6fe" stroke-width="10"/><path d="M460 245c25-55 50 55 75 0s50 55 75 0" fill="none" stroke="#f9a8d4" stroke-width="10"/>
+  <path d="M370 185v120M430 185v120" stroke="#fbbf24" stroke-width="5" stroke-dasharray="10 10"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">3 · DNA DIVISION</text><text x="400" y="397" text-anchor="middle" font-size="22">Two identical chromosomes are produced</text></g>
+</svg>

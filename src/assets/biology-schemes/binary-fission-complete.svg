@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Binary fission complete</title><desc id="desc">One bacterial cell divided into two identical daughter cells</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#052e16"/><stop offset="1" stop-color="#164e63"/></linearGradient></defs><rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <g transform="translate(230 245)"><rect x="-145" y="-72" width="290" height="144" rx="72" fill="#34d399" opacity=".3" stroke="#6ee7b7" stroke-width="8"/><path d="M-78 0c28-55 56 55 84 0s56 55 84 0" fill="none" stroke="#ddd6fe" stroke-width="9"/></g>
+  <g transform="translate(570 245)"><rect x="-145" y="-72" width="290" height="144" rx="72" fill="#34d399" opacity=".3" stroke="#6ee7b7" stroke-width="8"/><path d="M-78 0c28-55 56 55 84 0s56 55 84 0" fill="none" stroke="#ddd6fe" stroke-width="9"/></g>
+  <path d="M385 245h30" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">5 · TWO IDENTICAL CELLS</text><text x="400" y="400" text-anchor="middle" font-size="22">Binary fission is complete</text></g>
+</svg>

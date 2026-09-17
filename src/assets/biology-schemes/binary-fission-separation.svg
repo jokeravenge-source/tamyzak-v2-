@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Chromosome separation</title><desc id="desc">Two chromosomes moving in opposite directions as the bacterial cell elongates</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#312e81"/><stop offset="1" stop-color="#115e59"/></linearGradient><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#fbbf24"/></marker></defs><rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <rect x="65" y="150" width="670" height="190" rx="95" fill="#34d399" opacity=".22" stroke="#6ee7b7" stroke-width="9"/><rect x="85" y="170" width="630" height="150" rx="75" fill="none" stroke="#a7f3d0" stroke-width="4"/>
+  <path d="M165 245c24-50 48 50 72 0s48 50 72 0" fill="none" stroke="#ddd6fe" stroke-width="10"/><path d="M491 245c24-50 48 50 72 0s48 50 72 0" fill="none" stroke="#f9a8d4" stroke-width="10"/>
+  <path d="M350 245H280M450 245h70" stroke="#fbbf24" stroke-width="6" marker-end="url(#a)"/><path d="M350 245H280" stroke="#fbbf24" stroke-width="6"/><path d="M280 245l20-12v24z" fill="#fbbf24"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">4 · SEPARATION</text><text x="400" y="397" text-anchor="middle" font-size="22">Chromosomes move in different directions</text></g>
+</svg>

@@ -103,6 +103,68 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
       },
     ],
   },
+  {
+    id: "reproduction-in-monera",
+    chapter: 3,
+    title: englishText("Reproduction in Monera"),
+    description: englishText("Asexual reproduction in bacteria by binary fission."),
+    parts: [
+      {
+        id: "monera-overview",
+        title: englishText("Reproduction in Monera"),
+        image: moneraOverviewImage,
+        imageAlt: englishText("Bacteria and cyanobacteria representing Monera"),
+        text: englishText(
+          "Monera includes bacteria and cyanobacteria. It reproduces sexually and asexually. We will focus on reproduction in bacteria as an example of reproduction in Monera.",
+        ),
+      },
+      {
+        id: "binary-fission-ready",
+        title: englishText("First: Asexual Reproduction in Bacteria — Step 1"),
+        image: binaryFissionReadyImage,
+        imageAlt: englishText("A bacterial chromosome attached to the plasma membrane"),
+        text: englishText(
+          "Bacteria reproduce asexually by binary fission. This can be summarized as follows:\n\n1. The chromosome of the bacteria sticks to the plasma membrane in a certain position, and that means the bacterial cell is ready for division.",
+        ),
+      },
+      {
+        id: "binary-fission-expansion",
+        title: englishText("Step 2: Cell Expansion"),
+        image: binaryFissionExpansionImage,
+        imageAlt: englishText("The bacterial cell membrane and plasma membrane expanding"),
+        text: englishText(
+          "2. The bacterial cell gets ready for binary fission by expanding the cell membrane and plasma membrane.",
+        ),
+      },
+      {
+        id: "binary-fission-dna",
+        title: englishText("Step 3: DNA Division"),
+        image: binaryFissionDnaImage,
+        imageAlt: englishText("Two identical chromosomes forming while the bacterial cell stretches"),
+        text: englishText(
+          "3. The division of DNA produces two identical chromosomes, and at the same time, the cell membrane and plasma membrane start to stretch.",
+        ),
+      },
+      {
+        id: "binary-fission-separation",
+        title: englishText("Step 4: Chromosome Separation"),
+        image: binaryFissionSeparationImage,
+        imageAlt: englishText("The chromosomes moving in different directions inside an elongated bacterial cell"),
+        text: englishText(
+          "4. As a result of this stretch, the two chromosomes split in two different directions within the cell. At the same time, the cytoplasm spreads and the cell’s stretch increases.",
+        ),
+      },
+      {
+        id: "binary-fission-complete",
+        title: englishText("Step 5: Two Identical Cells"),
+        image: binaryFissionCompleteImage,
+        imageAlt: englishText("Two identical bacterial cells produced by binary fission"),
+        text: englishText(
+          "5. The cell divides to produce two identical cells.\n\nReproduction in bacteria (Binary Fission)",
+        ),
+      },
+    ],
+  },
 ];
 import virusOverviewImage from "@/assets/biology-schemes/virus-overview.svg";
 import bacteriophageCyclesImage from "@/assets/biology-schemes/bacteriophage-cycles.svg";
@@ -112,3 +174,9 @@ import biosynthesisImage from "@/assets/biology-schemes/lytic-biosynthesis.svg";
 import maturationImage from "@/assets/biology-schemes/lytic-maturation.svg";
 import releaseImage from "@/assets/biology-schemes/lytic-release.svg";
 import lysogenicImage from "@/assets/biology-schemes/lysogenic-cycle.svg";
+import moneraOverviewImage from "@/assets/biology-schemes/monera-overview.svg";
+import binaryFissionReadyImage from "@/assets/biology-schemes/binary-fission-ready.svg";
+import binaryFissionExpansionImage from "@/assets/biology-schemes/binary-fission-expansion.svg";
+import binaryFissionDnaImage from "@/assets/biology-schemes/binary-fission-dna.svg";
+import binaryFissionSeparationImage from "@/assets/biology-schemes/binary-fission-separation.svg";
+import binaryFissionCompleteImage from "@/assets/biology-schemes/binary-fission-complete.svg";

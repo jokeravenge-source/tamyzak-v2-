@@ -1344,6 +1344,7 @@ const Basics = ({
               </span>
             </motion.button>
 
+            <div className="relative min-w-0">
             <motion.button
               type="button"
               id="progress-details-trigger"
@@ -1351,7 +1352,7 @@ const Basics = ({
               whileHover={{ y: -6, rotate: 0.35 }}
               whileTap={{ scale: 0.97 }}
               aria-label={isRTL ? `تقدمي ورتبتي، ${rankLabel}، ${totalPoints} نقطة` : `My progress and rank, ${rankLabel}, ${totalPoints} points`}
-              className="group relative isolate flex min-h-[158px] min-w-0 flex-col items-center justify-center overflow-hidden border-2 px-2.5 py-4 text-center transition-all hover:saturate-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
+              className="group relative isolate flex h-full min-h-[158px] w-full min-w-0 flex-col items-center justify-center overflow-hidden border-2 px-2.5 py-4 text-center transition-all hover:saturate-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-h-[205px] sm:px-5 sm:py-6"
               style={{
                 background: rankCardTheme.background,
                 borderColor: leaderboardRank.color,
@@ -1377,13 +1378,6 @@ const Basics = ({
               </span>
               <span
                 aria-hidden="true"
-                className="absolute end-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full border border-white/80 bg-white/70 shadow-sm backdrop-blur-md transition-transform group-hover:scale-110 sm:end-4 sm:top-4 sm:h-9 sm:w-9"
-                style={{ color: rankCardTheme.accent }}
-              >
-                <ArrowRight className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRTL ? "rotate-180" : ""}`} />
-              </span>
-              <span
-                aria-hidden="true"
                 className="relative grid h-12 w-12 place-items-center rounded-[1.1rem] border border-white/90 bg-white/75 backdrop-blur-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 sm:h-16 sm:w-16 sm:rounded-[1.35rem]"
                 style={{ color: rankCardTheme.accent, boxShadow: `0 12px 26px -14px ${rankCardTheme.shadow}` }}
               >
@@ -1403,6 +1397,10 @@ const Basics = ({
                 <span className="h-full flex-1 rounded-full" style={{ backgroundColor: rankCardTheme.highlight, opacity: 0.92 }} />
               </span>
             </motion.button>
+              <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+                <GiftMcqButton language={language} compact />
+              </div>
+            </div>
 
             
           </section>

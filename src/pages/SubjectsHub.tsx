@@ -19,6 +19,8 @@ type Tool = {
   ar: string;
   Icon: React.ComponentType<{ className?: string }>;
   placeholder?: boolean;
+  /** Explicit free-access override, even if the global Premium list changes. */
+  free?: boolean;
   /** Hard-locked tool: not openable by anyone (temporarily disabled). */
   disabled?: boolean;
   descEn?: string;
@@ -62,7 +64,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
-      { key: "biologySchemes", en: "Schemes", ar: "مخططات", Icon: Images,
+      { key: "biologySchemes", en: "Schemes", ar: "مخططات", Icon: Images, free: true,
         descEn: "Visual, step-by-step explanations of complete Biology texts.", descAr: "شرح بصري متسلسل للنصوص الكاملة خطوة بخطوة." },
       { key: "biologyDrawings", en: "Biology Drawings", ar: "رسومات الأحياء", Icon: Microscope },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
@@ -152,7 +154,7 @@ const SubjectsHub = ({
     }
     // Placeholder ("Coming Soon") tools are open to everyone — they just show
     // an in-development page, so there's no reason to gate them behind premium.
-    const free = t.placeholder || !isPremiumTool(t.key);
+    const free = t.free || t.placeholder || !isPremiumTool(t.key);
     if (!free && subscriptionLoading) return;
     if (!free && !isPremium) {
       toast.error(isRTL ? "هذه الأداة متاحة للمشتركين في البريميوم فقط." : "This tool is available for Premium members only.");
@@ -292,7 +294,7 @@ const SubjectsHub = ({
                   return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
                 }).map((t) => {
                   const Icon = t.Icon;
-                  const free = t.placeholder || !isPremiumTool(t.key);
+                  const free = t.free || t.placeholder || !isPremiumTool(t.key);
                   const hardLocked = !!t.disabled;
                   const locked = hardLocked || (!free && !isPremium);
                   const comingSoon = !hardLocked && !!t.placeholder;
@@ -311,7 +313,11 @@ const SubjectsHub = ({
                           : "border-border hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
                       }`}
                     >
-                      {comingSoon ? (
+                      {t.free ? (
+                        <span className={`absolute top-3 ${isRTL ? "left-3" : "right-3"} inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400`}>
+                          {isRTL ? "مجاني" : "FREE"}
+                        </span>
+                      ) : comingSoon ? (
                         <span className={`absolute top-3 ${isRTL ? "left-3" : "right-3"} inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-sky-400/15 text-sky-600 border border-sky-400/30`}>
                           {isRTL ? "قريباً" : "COMING SOON"}
                         </span>
