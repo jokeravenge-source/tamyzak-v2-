@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Virus overview</title><desc id="desc">Viruses between living cells and the external environment</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#052e2b"/><stop offset="1" stop-color="#123d2b"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <circle cx="590" cy="226" r="118" fill="#34d399" opacity=".1"/><circle cx="590" cy="226" r="88" fill="#d1fae5" opacity=".15" stroke="#6ee7b7" stroke-width="4"/>
+  <circle cx="590" cy="226" r="54" fill="#10b981" opacity=".35"/><path d="M548 220c28-35 56 35 84 0M548 240c28-35 56 35 84 0" fill="none" stroke="#ecfdf5" stroke-width="7" stroke-linecap="round"/>
+  <g transform="translate(230 220)" filter="url(#glow)"><circle r="62" fill="#7c3aed" stroke="#c4b5fd" stroke-width="5"/><g stroke="#ddd6fe" stroke-width="7" stroke-linecap="round"><path d="M0-83v22M0 61v22M-83 0h22M61 0h22M-59-59l16 16M43 43l16 16M59-59L43-43M-43 43l-16 16"/></g><path d="M-30-8c20-28 40 28 60 0M-30 12c20-28 40 28 60 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>
+  <path d="M318 220h120" stroke="#fbbf24" stroke-width="5" stroke-dasharray="12 12"/><path d="M425 205l22 15-22 15" fill="#fbbf24"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="230" y="335" text-anchor="middle" font-size="24" font-weight="700">VIRUS</text><text x="590" y="375" text-anchor="middle" font-size="24" font-weight="700">LIVING CELL</text><text x="400" y="58" text-anchor="middle" font-size="27" font-weight="700">Reproduction requires a host cell</text></g>
+</svg>

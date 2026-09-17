@@ -4,7 +4,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 
 export type SearchNavChoice =
   | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices"
-  | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings"
+  | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "biologySchemes"
   | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank"
   | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker"
   | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations";
@@ -41,6 +41,8 @@ const ENTRIES: Entry[] = [
     keywords: ["profile", "settings", "username", "name", "avatar", "countdown", "timer", "event", "exam date", "theme", "language", "preferences", "signout", "logout", "telegram", "linked", "حساب", "إعدادات", "اسم", "ملف شخصي", "موعد", "عد تنازلي", "امتحان", "تليغرام", "خروج"] },
   { key: "biologyDrawings", en: { title: "Biology Drawings", desc: "Labeled diagrams" }, ar: { title: "رسومات الأحياء", desc: "رسومات معنونة" },
     keywords: ["biology", "diagrams", "drawings", "labels", "anatomy", "cell", "أحياء", "رسومات", "تشريح", "خلية"] },
+  { key: "biologySchemes", en: { title: "Biology Schemes", desc: "Visual step-by-step Biology texts" }, ar: { title: "مخططات", desc: "شرح نصوص الأحياء بالصور خطوة بخطوة" },
+    keywords: ["biology", "schemes", "visual", "parts", "text", "أحياء", "مخططات", "صور", "نص", "شرح"] },
   { key: "todo", en: { title: "To-Do List", desc: "Daily tasks" }, ar: { title: "قائمة المهام", desc: "مهام اليوم" },
     keywords: ["tasks", "todos", "checklist", "today", "homework", "plan", "schedule", "reminder", "مهام", "اليوم", "واجبات", "تذكير", "جدول"] },
   { key: "news", en: { title: "News", desc: "Announcements" }, ar: { title: "الأخبار", desc: "الإعلانات" },

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Lysogenic cycle</title><desc id="desc">Viral DNA incorporated into bacterial DNA as a prophage and copied during bacterial reproduction</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#172554"/><stop offset="1" stop-color="#14532d"/></linearGradient><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#fbbf24"/></marker></defs><rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <rect x="65" y="120" width="300" height="210" rx="105" fill="#34d399" opacity=".2" stroke="#6ee7b7" stroke-width="5"/><rect x="435" y="120" width="300" height="210" rx="105" fill="#34d399" opacity=".2" stroke="#6ee7b7" stroke-width="5"/>
+  <g transform="translate(215 220)" fill="none" stroke-width="8"><path d="M-82 0c28-62 55 62 82 0s55 62 82 0" stroke="#bfdbfe"/><path d="M-22-18c16-28 31 28 46 0" stroke="#f9a8d4"/></g>
+  <g transform="translate(585 205)" fill="none" stroke-width="8"><path d="M-90 0c30-58 60 58 90 0s60 58 90 0" stroke="#bfdbfe"/><path d="M-30-17c18-27 36 27 54 0" stroke="#f9a8d4"/><path d="M-90 55c30-58 60 58 90 0s60 58 90 0" stroke="#bfdbfe"/><path d="M25 38c18-27 36 27 54 0" stroke="#f9a8d4"/></g>
+  <path d="M375 225h48" stroke="#fbbf24" stroke-width="6" marker-end="url(#a)"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="48" text-anchor="middle" font-size="29" font-weight="700">LYSOGENIC CYCLE</text><text x="215" y="365" text-anchor="middle" font-size="21">PROPHAGE</text><text x="585" y="365" text-anchor="middle" font-size="21">COPIED WITH THE BACTERIUM</text></g>
+</svg>

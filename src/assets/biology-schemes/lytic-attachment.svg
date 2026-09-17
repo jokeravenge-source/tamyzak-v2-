@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Attachment stage</title><desc id="desc">Bacteriophage tail fibres attaching to receptor positions on a bacterial cell wall</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#111827"/><stop offset="1" stop-color="#164e63"/></linearGradient></defs><rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <path d="M55 355c125-68 250-70 375 0s250 68 315 8v87H55z" fill="#34d399" opacity=".38"/><path d="M55 355c125-68 250-70 375 0s250 68 315 8" fill="none" stroke="#6ee7b7" stroke-width="8"/>
+  <g transform="translate(400 120)"><polygon points="0,-55 48,-28 48,28 0,55 -48,28 -48,-28" fill="#7c3aed" stroke="#ddd6fe" stroke-width="6"/><path d="M-22-8c15-22 30 22 44 0M-22 10c15-22 30 22 44 0" stroke="#fff" stroke-width="5" fill="none"/><path d="M0 55v105M-18 160h36M-18 160l-58 78M18 160l58 78M-10 55v-20M10 55v-20" stroke="#ddd6fe" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="-76" cy="238" r="9" fill="#fbbf24"/><circle cx="76" cy="238" r="9" fill="#fbbf24"/></g>
+  <g fill="#fbbf24"><circle cx="324" cy="358" r="11"/><circle cx="476" cy="358" r="11"/></g><path d="M324 347v-30M476 347v-30" stroke="#fde68a" stroke-width="5"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="50" text-anchor="middle" font-size="29" font-weight="700">1 · ATTACHMENT</text><text x="400" y="410" text-anchor="middle" font-size="22">Tail fibres bind to specific receptors</text></g>
+</svg>
