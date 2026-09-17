@@ -107,7 +107,7 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
     id: "reproduction-in-monera",
     chapter: 3,
     title: englishText("Reproduction in Monera"),
-    description: englishText("Asexual reproduction in bacteria by binary fission."),
+    description: englishText("Asexual and sexual reproduction in bacteria."),
     parts: [
       {
         id: "monera-overview",
@@ -163,6 +163,15 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
           "5. The cell divides to produce two identical cells.\n\nReproduction in bacteria (Binary Fission)",
         ),
       },
+      {
+        id: "sexual-reproduction",
+        title: englishText("Sexual Reproduction"),
+        image: bacterialConjugationImage,
+        imageAlt: englishText("A textbook diagram explaining sexual reproduction in bacteria by conjugation"),
+        text: englishText(
+          "Conjugation within bacteria is processed in the following steps:\n\n1. First conjugation happens between two cells. The first cell is called the donor cell. It contains the fertility factor, represented by DNA particles in the cytoplasm of the donor cell. It also contains sex pili on its surface. These structures make this cell the male donor cell. The second cell, the recipient cell, does not contain the fertility factor or sex pili and represents the female cell.\n\n2. When sex pili touch the surface of the recipient cell, they transform into a conjugation bridge which binds the protoplasm of the two bacterial cells.\n\n3. One DNA strand of the fertility factor breaks at a certain point and extends to transfer to the recipient cell.\n\n4. This broken DNA, together with a part of the cytoplasm of the donor cell, moves to the recipient cell through the conjugation bridge. The DNA strand replicates itself and becomes a complete double strand of DNA.\n\n5. The donor cell remains as it was in terms of genetic material because the broken DNA strand of the fertility factor is replicated in the donor cell. At the end of conjugation, both cells possess the fertility factor or plasmid.\n\n6. This kind of sexual reproduction is not an ordinary one, because the new bacterium does not receive a complete collection of genes from both original cells.",
+        ),
+      },
     ],
   },
 ];
@@ -180,3 +189,4 @@ import binaryFissionExpansionImage from "@/assets/biology-schemes/binary-fission
 import binaryFissionDnaImage from "@/assets/biology-schemes/binary-fission-dna.svg";
 import binaryFissionSeparationImage from "@/assets/biology-schemes/binary-fission-separation.svg";
 import binaryFissionCompleteImage from "@/assets/biology-schemes/binary-fission-complete.svg";
+import bacterialConjugationImage from "@/assets/biology-schemes/bacterial-conjugation-sexual-reproduction.png";
