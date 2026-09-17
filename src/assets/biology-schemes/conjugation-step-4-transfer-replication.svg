@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">DNA transfer and replication</title><desc id="desc">The broken fertility-factor DNA strand passes through the bridge and replicates in the recipient</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#172554"/><stop offset="1" stop-color="#0f766e"/></linearGradient><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#fbbf24"/></marker></defs>
+  <rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <g fill="#5eead4" fill-opacity=".3" stroke="#99f6e4" stroke-width="7"><rect x="70" y="165" width="255" height="140" rx="70"/><rect x="475" y="165" width="255" height="140" rx="70"/></g>
+  <path d="M325 235H475" stroke="#fecdd3" stroke-width="16" stroke-linecap="round"/><path d="M205 235c95-55 178 0 316 0" fill="none" stroke="#fbbf24" stroke-width="7" marker-end="url(#arrow)"/>
+  <path d="M555 215a42 42 0 1 1-8 52" fill="none" stroke="#fde68a" stroke-width="8"/><path d="M575 220a30 30 0 1 1-7 39" fill="none" stroke="#f0abfc" stroke-width="6"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">4 · TRANSFER AND REPLICATION</text><text x="400" y="397" text-anchor="middle" font-size="22">The transferred strand becomes double-stranded DNA</text></g>
+</svg>
