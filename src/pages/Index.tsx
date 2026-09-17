@@ -334,7 +334,10 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       if (subject === "math" && chapter === "1") {
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
-          eyebrow: language === "ar" ? "الرياضيات · الفصل الأول · الأعداد المركبة" : "Mathematics · Chapter 1 · Complex Numbers",
+          eyebrow:
+            language === "ar"
+              ? "الرياضيات · الفصل الأول · الأعداد المركبة · الأستاذ احمد فتحي النداوي"
+              : "Mathematics · Chapter 1 · Complex Numbers · Teacher: Ahmed Fathi Al-Nadawi",
           cards: flashcardsMathCh1Ar,
         };
       }
