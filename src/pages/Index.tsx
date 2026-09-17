@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star, ExternalLink } from "lucide-react";
 import { Brain } from "lucide-react";
 import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -839,16 +839,29 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         })()}
       >
         {card ? (
-          <Flashcard
-            question={card.q}
-            answer={card.a}
-            index={index}
-            total={cards.length}
-            direction={direction}
-            language={language}
-            onRate={savedView ? undefined : handleRate}
-            intervalHints={intervalHints}
-          />
+          <>
+            <Flashcard
+              question={card.q}
+              answer={card.a}
+              index={index}
+              total={cards.length}
+              direction={direction}
+              language={language}
+              onRate={savedView ? undefined : handleRate}
+              intervalHints={intervalHints}
+            />
+            {subject === "math" && chapter === "1" && (
+              <a
+                href="https://t.me/math_05_a/932"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 w-full max-w-xl items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ExternalLink className="size-4" />
+                Review the full answer
+              </a>
+            )}
+          </>
         ) : (
           <div className="flex min-h-72 w-full flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/70 px-6 text-center shadow-sm">
             <Bookmark className="mb-3 size-8 text-muted-foreground" />
