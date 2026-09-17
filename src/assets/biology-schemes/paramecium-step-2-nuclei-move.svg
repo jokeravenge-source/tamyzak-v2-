@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Nuclei move apart</title><desc id="desc">Two micronuclei move to opposite sides as the macronucleus extends and a cytostome appears</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#172554"/><stop offset="1" stop-color="#115e59"/></linearGradient><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="#fde68a"/></marker></defs>
+  <rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <path d="M105 226c21-74 151-104 366-86 143 12 240 52 226 101-17 59-166 94-392 75-139-12-216-42-200-90z" fill="#5eead4" opacity=".34" stroke="#99f6e4" stroke-width="8" stroke-dasharray="3 8"/>
+  <path d="M290 227c55-50 159-45 221 2-61 46-166 51-221-2z" fill="#c4b5fd" opacity=".9"/>
+  <circle cx="225" cy="228" r="13" fill="#fde68a"/><circle cx="575" cy="228" r="13" fill="#fde68a"/><path d="M365 188H245M435 188h120" stroke="#fde68a" stroke-width="4" marker-end="url(#arrow)"/>
+  <ellipse cx="400" cy="291" rx="34" ry="12" fill="#fb7185" stroke="#fecdd3" stroke-width="4"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">2 · NUCLEI MOVE APART</text><text x="400" y="397" text-anchor="middle" font-size="22">The macronucleus extends and a cytostome appears</text><text x="400" y="300" text-anchor="middle" font-size="15">Cytostome</text></g>
+</svg>

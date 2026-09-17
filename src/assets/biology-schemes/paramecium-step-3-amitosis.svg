@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-labelledby="title desc">
+  <title id="title">Macronucleus amitosis</title><desc id="desc">The elongated Paramecium forms two macronuclei, new mouths and contractile vacuoles</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#172554"/><stop offset="1" stop-color="#14532d"/></linearGradient></defs>
+  <rect width="800" height="450" rx="32" fill="url(#bg)"/>
+  <path d="M105 225c18-68 144-99 302-86 159-13 276 21 288 86 12 65-108 99-288 85-175 14-320-19-302-85z" fill="#5eead4" opacity=".34" stroke="#99f6e4" stroke-width="8" stroke-dasharray="3 8"/>
+  <path d="M392 143c-22 42-22 121 0 163M422 143c22 42 22 121 0 163" fill="none" stroke="#fbbf24" stroke-width="5" stroke-dasharray="10 9"/>
+  <ellipse cx="285" cy="225" rx="65" ry="34" fill="#c4b5fd"/><ellipse cx="525" cy="225" rx="65" ry="34" fill="#f0abfc"/>
+  <circle cx="203" cy="224" r="11" fill="#fde68a"/><circle cx="607" cy="224" r="11" fill="#fde68a"/>
+  <g stroke="#7dd3fc" stroke-width="5" fill="none"><circle cx="175" cy="178" r="15"/><path d="M175 151v12m-24 15h10m28 0h10m-41-22l9 9m25-9l-9 9"/><circle cx="635" cy="178" r="15"/><path d="M635 151v12m-24 15h10m28 0h10m-41-22l9 9m25-9l-9 9"/></g>
+  <ellipse cx="300" cy="282" rx="27" ry="10" fill="#fb7185"/><ellipse cx="510" cy="282" rx="27" ry="10" fill="#fb7185"/>
+  <g font-family="Arial,sans-serif" fill="#fff"><text x="400" y="55" text-anchor="middle" font-size="30" font-weight="700">3 · MACRONUCLEUS AMITOSIS</text><text x="400" y="397" text-anchor="middle" font-size="22">New mouths and contractile vacuoles appear</text></g>
+</svg>

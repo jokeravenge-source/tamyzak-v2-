@@ -181,13 +181,38 @@ export const BIOLOGY_SCHEMES: BiologySchemeLesson[] = [
     description: englishText("Transverse binary fission in Paramecium."),
     parts: [
       {
-        id: "paramecium-transverse-binary-fission",
-        title: englishText("Asexual Reproduction in Paramecium"),
-        image: parameciumAsexualReproductionImage,
-        imageAlt: englishText("The four stages of transverse binary fission in Paramecium"),
+        id: "paramecium-micronucleus-division",
+        title: englishText("Step 1: Micronucleus Division"),
+        image: parameciumMicronucleusDivisionImage,
+        imageAlt: englishText("The micronucleus beginning normal division inside a Paramecium"),
         text: englishText(
-          "Paramecium reproduces asexually by transverse binary fission, which is explained as follows:\n\n1. Division starts by normal division of micronucleus.\n\n2. After division of micronucleus, each nucleus moves to the opposite side of Paramecium. At the same time, macronucleus extends and cytostome (mouth) appears.\n\n3. Macronucleus divides by amitosis into two nuclei and moves to the two sides of Paramecium. A new mouth and two new contractile vacuoles appear, and the body of Paramecium also stretches.\n\n4. Paramecium divides into two new paramecia.",
+          "Paramecium reproduces asexually by transverse binary fission, which is explained as follows:\n\n1. Division starts by normal division of micronucleus.",
         ),
+      },
+      {
+        id: "paramecium-nuclei-move",
+        title: englishText("Step 2: Nuclei Move Apart"),
+        image: parameciumNucleiMoveImage,
+        imageAlt: englishText("The two micronuclei moving to opposite sides while the macronucleus extends and a cytostome appears"),
+        text: englishText(
+          "2. After division of micronucleus, each nucleus moves to the opposite side of Paramecium. At the same time, macronucleus extends and cytostome (mouth) appears.",
+        ),
+      },
+      {
+        id: "paramecium-macronucleus-amitosis",
+        title: englishText("Step 3: Macronucleus Amitosis"),
+        image: parameciumMacronucleusAmitosisImage,
+        imageAlt: englishText("The macronucleus dividing by amitosis as new mouths and contractile vacuoles appear"),
+        text: englishText(
+          "3. Macronucleus divides by amitosis into two nuclei and moves to the two sides of Paramecium. A new mouth and two new contractile vacuoles appear, and the body of Paramecium also stretches.",
+        ),
+      },
+      {
+        id: "paramecium-two-new-cells",
+        title: englishText("Step 4: Two New Paramecia"),
+        image: parameciumTwoCellsImage,
+        imageAlt: englishText("Two new paramecia formed by transverse binary fission"),
+        text: englishText("4. Paramecium divides into two new paramecia."),
       },
     ],
   },
@@ -207,4 +232,7 @@ import binaryFissionDnaImage from "@/assets/biology-schemes/binary-fission-dna.s
 import binaryFissionSeparationImage from "@/assets/biology-schemes/binary-fission-separation.svg";
 import binaryFissionCompleteImage from "@/assets/biology-schemes/binary-fission-complete.svg";
 import bacterialConjugationImage from "@/assets/biology-schemes/bacterial-conjugation-sexual-reproduction.png";
-import parameciumAsexualReproductionImage from "@/assets/biology-schemes/paramecium-asexual-reproduction.png";
+import parameciumMicronucleusDivisionImage from "@/assets/biology-schemes/paramecium-step-1-micronucleus.svg";
+import parameciumNucleiMoveImage from "@/assets/biology-schemes/paramecium-step-2-nuclei-move.svg";
+import parameciumMacronucleusAmitosisImage from "@/assets/biology-schemes/paramecium-step-3-amitosis.svg";
+import parameciumTwoCellsImage from "@/assets/biology-schemes/paramecium-step-4-two-cells.svg";
