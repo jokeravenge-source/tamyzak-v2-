@@ -541,8 +541,8 @@ const StudentApp = () => {
   }, [authed, authRole]);
   const [language, setLanguage] = useState<AppLanguage | null>(() => {
     if (typeof window === "undefined") return null;
-    // Deep link /teachers?lang=en&lec=1 or /flashcards/7?subject=physics&lang=ar
-    if (window.location.pathname.startsWith("/teachers") || window.location.pathname.startsWith("/flashcards")) {
+    // Deep links such as /teachers?lang=en or /enrichments?lang=ar.
+    if (window.location.pathname.startsWith("/teachers") || window.location.pathname.startsWith("/flashcards") || window.location.pathname.startsWith("/enrichments")) {
       const l = new URLSearchParams(window.location.search).get("lang");
       if (l === "ar" || l === "en") {
         localStorage.setItem(LANGUAGE_STORAGE_KEY, l);
@@ -592,6 +592,10 @@ const StudentApp = () => {
     if (window.location.pathname.startsWith("/teachers")) {
       localStorage.setItem(MENU_STORAGE_KEY, "teachers");
       return "teachers";
+    }
+    if (window.location.pathname.startsWith("/enrichments")) {
+      localStorage.setItem(MENU_STORAGE_KEY, "adminNotes");
+      return "adminNotes";
     }
     if (window.location.pathname.startsWith("/who-is-best")) {
       localStorage.setItem(MENU_STORAGE_KEY, "whoIsBest");

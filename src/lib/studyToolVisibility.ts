@@ -5,7 +5,7 @@ export const STUDY_TOOL_VISIBILITY_EVENT = "app:study-tools-visibility-changed";
 
 export const CUSTOMIZABLE_STUDY_TOOLS = [
   { key: "notes", en: "Notes", ar: "ملاحظاتي" },
-  { key: "adminNotes", en: "Study Notes", ar: "الملاحظات الدراسية" },
+  { key: "adminNotes", en: "Enrichments", ar: "الإثرائيات" },
   { key: "canvas", en: "Canvas", ar: "اللوحة" },
   { key: "summaries", en: "Summaries", ar: "الملخصات" },
   { key: "mcq", en: "MCQ Generator", ar: "مولّد الأسئلة" },

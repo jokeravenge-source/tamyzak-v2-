@@ -28,7 +28,7 @@ const copy = {
       essay: { title: "Al-Musahhih", subtitle: "Upload your answer sheet & the key — AI grades it." },
       report: { title: "Daily Report", subtitle: "AI insights on today's study + share progress with a parent." },
       youtube: { title: "YouTube Player", subtitle: "Watch any YouTube video inside the app without distractions." },
-      adminNotes: { title: "Study Notes", subtitle: "Beautiful study notes crafted by your instructors." },
+      adminNotes: { title: "Enrichments", subtitle: "Colorful enrichment cards crafted by your instructors." },
     },
   },
   ar: {
@@ -51,7 +51,7 @@ const copy = {
       essay: { title: "مدرّب المقالات", subtitle: "ارفع ملفاً واحصل على أسئلة مقالية مُقيَّمة من 1 إلى 10." },
       report: { title: "تقريري اليومي", subtitle: "تحليل ذكي ليومك الدراسي ومشاركة تقدمك مع ولي الأمر." },
       youtube: { title: "مشغّل يوتيوب", subtitle: "شاهد أي فيديو يوتيوب داخل التطبيق بدون تشتيت." },
-      adminNotes: { title: "ملاحظات دراسية", subtitle: "ملاحظات جميلة أعدّها المدرّسون خصيصاً لك." },
+      adminNotes: { title: "الإثرائيات", subtitle: "بطاقات إثرائية ملوّنة أعدّها المدرّسون خصيصاً لك." },
     },
   },
 } as const;

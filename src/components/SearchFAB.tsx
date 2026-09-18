@@ -7,7 +7,7 @@ export type SearchNavChoice =
   | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "biologySchemes"
   | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank"
   | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker"
-  | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations";
+  | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations" | "adminNotes";
 
 type Entry = {
   key: SearchNavChoice;
@@ -29,6 +29,8 @@ const ENTRIES: Entry[] = [
     keywords: ["booklet", "book", "notes", "pdf", "documents", "files", "library", "ملزمة", "ملازم", "كتب", "مذكرات", "ملفات", "مكتبة"] },
   { key: "summaries", en: { title: "Notes & Summaries", desc: "Community summaries" }, ar: { title: "الملخصات", desc: "ملاحظات وملخصات" },
     keywords: ["summary", "notes", "share", "upload", "community", "ملخص", "ملاحظات", "رفع"] },
+  { key: "adminNotes", en: { title: "Enrichments", desc: "Instructor-made enrichment cards" }, ar: { title: "الإثرائيات", desc: "بطاقات إثرائية من المدرّسين" },
+    keywords: ["enrichment", "enrichments", "instructor", "teacher", "cards", "إثراء", "إثرائيات", "مدرس", "بطاقات"] },
   { key: "missions", en: { title: "My Missions", desc: "Chapter checklists" }, ar: { title: "مهماتي", desc: "مواضيع كل فصل" },
     keywords: ["tasks", "goals", "checklist", "chapters", "topics", "progress", "checkoff", "مهام", "أهداف", "فصول", "مواضيع", "تقدم"] },
   { key: "mcq", en: { title: "MCQ Generator", desc: "Generate MCQs from a file" }, ar: { title: "مولّد الأسئلة", desc: "أسئلة من ملف" },
