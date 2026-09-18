@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Loader2, Eye, EyeOff, Save, X, FileText, ArrowUp, ArrowDown, Layout, Sparkles, Image as ImageIcon, Upload, BookOpen, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, Eye, EyeOff, Save, X, FileText, ArrowUp, ArrowDown, Layout, Sparkles, Image as ImageIcon, Upload, BookOpen, ArrowLeft, Search, Sigma, WandSparkles, LibraryBig, CircleCheck, Clock3 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -7,6 +7,7 @@ import {
   STUDY_GUIDE_TEMPLATE,
   type AdminNoteBlock,
 } from "@/components/AdminNoteRenderer";
+import { normalizeScientificText, SCIENTIFIC_SYMBOL_GROUPS } from "@/lib/scientificNotation";
 
 type NoteRow = {
   id: string;
@@ -54,6 +55,7 @@ const BLOCK_ADDERS: Array<{ label: string; make: () => AdminNoteBlock }> = [
   { label: "Bulleted list", make: () => ({ type: "bullets", items: [""] }) },
   { label: "Numbered list", make: () => ({ type: "numbered", items: [""] }) },
   { label: "Quote", make: () => ({ type: "quote", text: "" }) },
+  { label: "Math / physics", make: () => ({ type: "formula", text: "E = mc^2", caption: "" }) },
   { label: "Divider", make: () => ({ type: "divider" }) },
 ];
 
@@ -64,6 +66,7 @@ export default function AdminNotesTab() {
   const [notebooks, setNotebooks] = useState<NotebookRow[]>([]);
   const [activeNotebook, setActiveNotebook] = useState<NotebookRow | null>(null);
   const [nbEditor, setNbEditor] = useState<NotebookRow | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -142,12 +145,33 @@ export default function AdminNotesTab() {
   }
 
   if (!activeNotebook) {
+    const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+    const visibleNotebooks = normalizedSearch
+      ? notebooks.filter((notebook) =>
+          [notebook.title, notebook.description]
+            .filter(Boolean)
+            .some((value) => value!.toLocaleLowerCase().includes(normalizedSearch)),
+        )
+      : notebooks;
+    const publishedCount = notebooks.filter((notebook) => notebook.published).length;
+    const draftCount = notebooks.length - publishedCount;
+
     return (
-      <div className="space-y-6">
-        <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur flex items-center justify-between flex-wrap gap-3">
-          <h3 className="font-semibold flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" /> Notebooks
-          </h3>
+      <div className="space-y-5">
+        <section className="relative overflow-hidden rounded-3xl border border-primary/20 bg-secondary/45 p-5 shadow-[0_18px_50px_-32px_hsl(var(--primary)/0.65)] md:p-7">
+          <div className="pointer-events-none absolute -end-16 -top-20 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-wrap items-center justify-between gap-5">
+            <div className="flex min-w-0 items-center gap-4">
+              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/25">
+                <LibraryBig className="h-7 w-7" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Enrichments studio</h2>
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  Organize lessons into notebooks, add rich learning blocks, and publish them for students.
+                </p>
+              </div>
+            </div>
           <button
             onClick={() =>
               setNbEditor({
@@ -161,22 +185,58 @@ export default function AdminNotesTab() {
                 updated_at: "",
               })
             }
-            className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Plus className="w-4 h-4" /> New notebook
           </button>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {[
+            { label: "Notebooks", value: notebooks.length, Icon: BookOpen },
+            { label: "Published", value: publishedCount, Icon: CircleCheck },
+            { label: "Drafts", value: draftCount, Icon: Clock3 },
+          ].map(({ label, value, Icon }) => (
+            <div key={label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-secondary/30 p-3 sm:p-4">
+              <span className="hidden h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary sm:grid">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-xl font-bold tabular-nums sm:text-2xl">{value}</p>
+                <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
+              </div>
+            </div>
+          ))}
         </div>
+
+        <label className="relative block">
+          <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search notebooks..."
+            className="h-12 w-full rounded-2xl border border-white/10 bg-background/70 px-11 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+          />
+          <span className="sr-only">Search notebooks</span>
+        </label>
 
         {loading ? (
           <div className="flex justify-center py-10">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : notebooks.length === 0 ? (
-          <p className="text-center text-muted-foreground py-10">No notebooks yet.</p>
+        ) : visibleNotebooks.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-white/15 bg-secondary/20 px-6 py-12 text-center">
+            <BookOpen className="mx-auto h-8 w-8 text-primary/70" />
+            <p className="mt-3 font-semibold">{notebooks.length ? "No matching notebooks" : "Create your first notebook"}</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+              {notebooks.length ? "Try a different title or description." : "Notebooks keep related enrichment lessons easy to find and publish."}
+            </p>
+          </div>
         ) : (
-          <div className="grid gap-3">
-            {notebooks.map((nb) => (
-              <article key={nb.id} className="rounded-2xl p-4 border border-white/10 bg-secondary/40 backdrop-blur flex flex-wrap items-center gap-4">
+          <div className="grid gap-3 xl:grid-cols-2">
+            {visibleNotebooks.map((nb) => (
+              <article key={nb.id} className="group rounded-2xl border border-white/10 bg-secondary/35 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/50 flex flex-wrap items-center gap-4">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/15 flex items-center justify-center text-2xl">
                   {nb.cover_image_url ? (
                     <img src={nb.cover_image_url} alt="" className="w-full h-full object-cover" />
@@ -233,26 +293,40 @@ export default function AdminNotesTab() {
   const visibleRows = rows.filter((r) => r.notebook_id === activeNotebook.id);
 
   return (
-    <div className="space-y-6">
-      <button
-        onClick={() => setActiveNotebook(null)}
-        className="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-white/10 hover:border-primary/40 text-sm"
-      >
-        <ArrowLeft className="w-4 h-4" /> All notebooks
-      </button>
-      <h2 className="text-lg font-semibold">
-        {activeNotebook.cover_emoji} {activeNotebook.title}
-      </h2>
-      <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur">
-        <h3 className="font-semibold flex items-center gap-2 mb-3">
-          <Layout className="w-4 h-4 text-primary" /> Create note from template
-        </h3>
-        <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-white/10 bg-secondary/40 p-5 md:p-6">
+        <button
+          onClick={() => setActiveNotebook(null)}
+          className="inline-flex h-9 items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <ArrowLeft className="w-4 h-4" /> All notebooks
+        </button>
+        <div className="mt-4 flex items-center gap-4">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-3xl ring-1 ring-primary/20">
+            {activeNotebook.cover_emoji || "📚"}
+          </span>
+          <div className="min-w-0">
+            <h2 className="truncate text-2xl font-bold tracking-tight">{activeNotebook.title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {visibleRows.length} {visibleRows.length === 1 ? "enrichment" : "enrichments"} · {activeNotebook.published ? "Published notebook" : "Draft notebook"}
+            </p>
+          </div>
+        </div>
+      </section>
+      <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-4 md:p-5">
+        <div className="mb-3 flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Layout className="w-4 h-4" /></span>
+          <div>
+            <h3 className="font-semibold">Create an enrichment</h3>
+            <p className="text-xs leading-relaxed text-muted-foreground">Start with a guided lesson structure or a blank page.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 ps-12">
           {Object.entries(TEMPLATES).map(([key, tpl]) => (
             <button
               key={key}
               onClick={() => startNew(key as keyof typeof TEMPLATES)}
-              className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Plus className="w-4 h-4" /> {tpl.label}
             </button>
@@ -265,7 +339,9 @@ export default function AdminNotesTab() {
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
       ) : visibleRows.length === 0 ? (
-        <p className="text-center text-muted-foreground py-10">No notes yet. Pick a template above.</p>
+        <div className="rounded-2xl border border-dashed border-white/15 py-12 text-center text-sm text-muted-foreground">
+          No enrichments yet. Choose a template above to begin.
+        </div>
       ) : (
         <div className="grid gap-3">
           {visibleRows.map((r) => (
@@ -557,33 +633,38 @@ function NoteEditor({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-5">
+      <div className="sticky top-2 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-background/95 p-3 shadow-[0_14px_40px_-28px_rgba(0,0,0,0.8)] backdrop-blur-xl">
         <button
           onClick={onClose}
-          className="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-white/10 hover:border-primary/40 text-sm"
+          className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <X className="w-4 h-4" /> Close
+          <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <div className="flex items-center gap-2">
-          <label className="inline-flex items-center gap-2 px-3 h-9 rounded-lg border border-white/10 text-sm cursor-pointer">
+        <div className="hidden min-w-0 flex-1 px-2 sm:block">
+          <p className="truncate text-sm font-semibold">{title || "Untitled enrichment"}</p>
+          <p className="text-xs text-muted-foreground">{blocks.length} content blocks · {published ? "Will be published" : "Saved as draft"}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 text-sm transition-colors hover:border-primary/35">
             <input
               type="checkbox"
               checked={published}
               onChange={(e) => setPublished(e.target.checked)}
+              className="accent-[hsl(var(--primary))]"
             />
             Publish
           </label>
           <button
             onClick={() => setShowPreview((s) => !s)}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-white/10 hover:border-primary/40 text-sm"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-white/10 px-3 text-sm transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Eye className="w-4 h-4" /> {showPreview ? "Edit" : "Preview"}
           </button>
           <button
             onClick={save}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
           </button>
@@ -606,19 +687,32 @@ function NoteEditor({
         </div>
       ) : (
         <>
-          <div className="rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-4 md:p-6 space-y-3">
-            <input
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value.slice(0, 4))}
-              className="w-24 h-14 text-4xl text-center rounded-xl bg-background border border-white/10"
-            />
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note title"
-              dir="rtl"
-              className="w-full h-14 px-4 rounded-xl bg-background border border-white/10 text-right text-2xl font-semibold"
-            />
+          <div className="rounded-2xl border border-white/10 bg-secondary/35 p-4 md:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold">Enrichment details</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Set the title, cover, and student visibility.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[5.5rem_1fr]">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Icon</span>
+                <input
+                  value={emoji}
+                  onChange={(e) => setEmoji(e.target.value.slice(0, 4))}
+                  aria-label="Enrichment icon"
+                  className="h-14 w-full rounded-xl border border-white/10 bg-background text-center text-3xl outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Title</span>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enrichment title"
+                  dir="auto"
+                  className="h-14 w-full rounded-xl border border-white/10 bg-background px-4 text-xl font-semibold outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                />
+              </label>
+            </div>
             <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -668,6 +762,13 @@ function NoteEditor({
           </div>
 
           <div className="space-y-3">
+            <div className="flex items-end justify-between gap-3 px-1">
+              <div>
+                <h2 className="text-lg font-semibold">Lesson content</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Arrange blocks in the order students should read them.</p>
+              </div>
+              <span className="text-xs font-medium tabular-nums text-muted-foreground">{blocks.length} blocks</span>
+            </div>
             {blocks.map((b, i) => (
               <BlockEditor
                 key={i}
@@ -680,10 +781,9 @@ function NoteEditor({
             ))}
           </div>
 
-          <div className="rounded-2xl border border-dashed border-white/10 bg-secondary/20 p-4">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
-              Add block
-            </p>
+          <div className="rounded-2xl border border-dashed border-primary/25 bg-primary/[0.03] p-4">
+            <p className="mb-1 text-sm font-semibold">Add content</p>
+            <p className="mb-3 text-xs text-muted-foreground">Choose the block that best fits the next part of the lesson.</p>
             <div className="flex flex-wrap gap-2">
               {BLOCK_ADDERS.map((a) => (
                 <button
@@ -715,21 +815,36 @@ function BlockEditor({
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
+  const formulaRef = useRef<HTMLTextAreaElement>(null);
+  const insertFormulaText = (value: string) => {
+    if (block.type !== "formula") return;
+    const input = formulaRef.current;
+    const start = input?.selectionStart ?? block.text.length;
+    const end = input?.selectionEnd ?? start;
+    const next = `${block.text.slice(0, start)}${value}${block.text.slice(end)}`;
+    onChange({ ...block, text: next });
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(start + value.length, start + value.length);
+    });
+  };
+
   return (
-    <div className="rounded-xl border border-white/10 bg-secondary/30 p-3">
+    <div className={`rounded-2xl border p-3 transition-colors md:p-4 ${block.type === "formula" ? "border-primary/25 bg-primary/[0.045]" : "border-white/10 bg-secondary/30"}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          {block.type}
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+          {block.type === "formula" && <Sigma className="h-3.5 w-3.5 text-primary" />}
+          {block.type === "formula" ? "Math / physics" : block.type}
           {block.type === "heading" ? ` ${block.level}` : ""}
         </span>
         <div className="flex items-center gap-1">
-          <button onClick={onMoveUp} className="w-7 h-7 rounded-md hover:bg-white/5">
+          <button onClick={onMoveUp} title="Move block up" aria-label="Move block up" className="w-8 h-8 rounded-lg hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <ArrowUp className="w-3.5 h-3.5 mx-auto" />
           </button>
-          <button onClick={onMoveDown} className="w-7 h-7 rounded-md hover:bg-white/5">
+          <button onClick={onMoveDown} title="Move block down" aria-label="Move block down" className="w-8 h-8 rounded-lg hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <ArrowDown className="w-3.5 h-3.5 mx-auto" />
           </button>
-          <button onClick={onRemove} className="w-7 h-7 rounded-md hover:bg-red-500/10 text-red-400">
+          <button onClick={onRemove} title="Delete block" aria-label="Delete block" className="w-8 h-8 rounded-lg hover:bg-red-500/10 text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">
             <Trash2 className="w-3.5 h-3.5 mx-auto" />
           </button>
         </div>
@@ -822,6 +937,84 @@ function BlockEditor({
           dir="rtl"
           className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-right text-sm italic"
         />
+      )}
+      {block.type === "formula" && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-white/10 bg-background/65 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold">Symbol palette</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Tap a symbol to insert it at the cursor.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onChange({ ...block, text: normalizeScientificText(block.text) })}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <WandSparkles className="h-3.5 w-3.5" /> Make readable
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              {SCIENTIFIC_SYMBOL_GROUPS.map((group) => (
+                <div key={group.label} className="flex flex-wrap items-center gap-1.5">
+                  <span className="w-12 shrink-0 text-[10px] font-medium text-muted-foreground">{group.label}</span>
+                  {group.symbols.map((symbol) => (
+                    <button
+                      key={`${group.label}-${symbol}`}
+                      type="button"
+                      onClick={() => insertFormulaText(symbol)}
+                      title={`Insert ${symbol}`}
+                      className="grid h-8 min-w-8 place-items-center rounded-lg border border-white/10 bg-secondary/50 px-2 font-serif text-sm transition-colors hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {symbol}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <label className="block space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Equation or scientific notation</span>
+            <textarea
+              ref={formulaRef}
+              value={block.text}
+              onChange={(event) => onChange({ ...block, text: event.target.value })}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData("text");
+                const normalized = normalizeScientificText(pasted);
+                if (normalized !== pasted) {
+                  event.preventDefault();
+                  insertFormulaText(normalized);
+                }
+              }}
+              onBlur={() => onChange({ ...block, text: normalizeScientificText(block.text) })}
+              rows={3}
+              dir="ltr"
+              spellCheck={false}
+              placeholder="Example: F = ma, Δx/Δt, E = mc^2, or \\frac{a}{b}"
+              className="w-full resize-y rounded-xl border border-white/10 bg-background px-3 py-2.5 font-serif text-base leading-relaxed outline-none placeholder:font-sans placeholder:text-xs placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+            />
+          </label>
+
+          <div className="rounded-xl border border-primary/20 bg-background/70 px-4 py-4 text-center">
+            <p className="mb-2 text-[10px] font-medium text-muted-foreground">STUDENT PREVIEW</p>
+            <div dir="ltr" className="overflow-x-auto whitespace-pre-wrap break-words font-serif text-xl font-semibold leading-relaxed tracking-wide">
+              {normalizeScientificText(block.text) || "Your equation will appear here"}
+            </div>
+          </div>
+
+          <label className="block space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Explanation (optional)</span>
+            <input
+              value={block.caption || ""}
+              onChange={(event) => onChange({ ...block, caption: event.target.value })}
+              dir="auto"
+              placeholder="Explain the symbols or variables"
+              className="h-10 w-full rounded-lg border border-white/10 bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+            />
+          </label>
+        </div>
       )}
       {block.type === "divider" && (
         <div className="text-center text-muted-foreground text-xs">— divider —</div>

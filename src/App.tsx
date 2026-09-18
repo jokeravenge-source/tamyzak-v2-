@@ -963,7 +963,7 @@ const StudentApp = () => {
       ) : menuChoice === "teachers" ? (
         <Teachers language={language} onBack={resetMenu} isAdmin={isAdmin} />
       ) : menuChoice === "adminNotes" ? (
-        <AdminNotes language={language} onBack={resetMenu} />
+        <AdminNotes language={language} onBack={backToBasics} />
       ) : menuChoice === "dailyGame" ? (
         <DailyGame language={language} onBack={backToBasics} />
       ) : menuChoice === "whoIsBest" ? (

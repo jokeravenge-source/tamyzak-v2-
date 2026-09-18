@@ -1,4 +1,5 @@
 import type { AppLanguage } from "@/components/LanguageGate";
+import { normalizeScientificText } from "@/lib/scientificNotation";
 
 export type AdminNoteBlock =
   | { type: "callout"; emoji?: string; text: string }
@@ -7,6 +8,7 @@ export type AdminNoteBlock =
   | { type: "bullets"; items: string[] }
   | { type: "numbered"; items: string[] }
   | { type: "quote"; text: string }
+  | { type: "formula"; text: string; caption?: string }
   | { type: "divider" };
 
 export const STUDY_GUIDE_TEMPLATE: AdminNoteBlock[] = [
@@ -100,6 +102,25 @@ export const AdminNoteRenderer = ({
             >
               {b.text}
             </blockquote>
+          );
+        }
+        if (b.type === "formula") {
+          const formula = normalizeScientificText(b.text);
+          return (
+            <figure key={i} className="m-0 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-5 text-center">
+              <div
+                dir="ltr"
+                aria-label={formula}
+                className="overflow-x-auto whitespace-pre-wrap break-words font-serif text-xl font-semibold leading-relaxed tracking-wide text-foreground sm:text-2xl"
+              >
+                {formula || "Formula"}
+              </div>
+              {b.caption && (
+                <figcaption className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {b.caption}
+                </figcaption>
+              )}
+            </figure>
           );
         }
         if (b.type === "divider") {

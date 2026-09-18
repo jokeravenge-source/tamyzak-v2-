@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX, Sparkles, ArrowUpRight, Atom, Dna } from "lucide-react";
+import { ArrowLeft, Loader2, StickyNote, ChevronRight, Check, X, RotateCcw, BookOpen, ListX, Sparkles, ArrowUpRight, Atom, Dna, Send } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { markAllAdminNotesSeen } from "@/lib/unseenAdminNotes";
@@ -368,13 +368,27 @@ const AdminNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-primary" /> {notebook.title}
               </h1>
-              <button
-                onClick={() => setMode(mode === "unknown-list" ? "deck" : "unknown-list")}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 text-sm text-amber-500 shadow-sm transition-colors hover:bg-amber-500/15 dark:text-amber-300"
-              >
-                <ListX className="w-4 h-4 text-amber-400" />
-                {t("الملاحظات غير المفهومة", "Not understood notes")} ({unknownNotes.length})
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {isBiologyNotebook(notebook.title) && (
+                  <a
+                    href="https://t.me/Biology_sixth_grade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-sky-400/35 bg-sky-500/10 px-3 text-sm font-semibold text-sky-600 shadow-sm transition-colors hover:bg-sky-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:text-sky-300"
+                  >
+                    <Send className="h-4 w-4" />
+                    {t("قناة الأحياء", "Biology channel")}
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                <button
+                  onClick={() => setMode(mode === "unknown-list" ? "deck" : "unknown-list")}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 text-sm text-amber-500 shadow-sm transition-colors hover:bg-amber-500/15 dark:text-amber-300"
+                >
+                  <ListX className="w-4 h-4 text-amber-400" />
+                  {t("الملاحظات غير المفهومة", "Not understood notes")} ({unknownNotes.length})
+                </button>
+              </div>
             </div>
 
             {mode === "unknown-list" ? (
