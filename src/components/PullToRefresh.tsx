@@ -9,6 +9,22 @@ function isStandalonePwa() {
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
 }
 
+/** True when the touch started inside a scrollable pane that is not at its top. */
+function insideScrolledContainer(target: HTMLElement | null) {
+  let node: HTMLElement | null = target;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const scrollable = /(auto|scroll|overlay)/.test(`${style.overflowY} ${style.overflow}`);
+    if (scrollable && node.scrollHeight > node.clientHeight) {
+      if (node.scrollTop > 0) return true;
+      // A scrollable pane at its top (dialogs, chat panes) still owns the gesture.
+      return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
 export default function PullToRefresh() {
   const [enabled, setEnabled] = useState(false);
   const [distance, setDistance] = useState(0);
@@ -35,6 +51,8 @@ export default function PullToRefresh() {
       if (refreshing || window.scrollY > 0 || event.touches.length !== 1) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true'], [data-pull-refresh-ignore]")) return;
+      if (target?.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
+      if (insideScrolledContainer(target)) return;
 
       startY.current = event.touches[0].clientY;
       startX.current = event.touches[0].clientX;

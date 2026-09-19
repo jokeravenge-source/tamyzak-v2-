@@ -51,7 +51,8 @@ const subjectIcons: Record<BankSubject, React.ComponentType<{ className?: string
   math: Sigma,
 };
 
-const lockedSubjects = new Set<BankSubject>(["math", "english", "islamic"]);
+// Islamic units 1 and 2 still ship with the app, so the card stays open.
+const lockedSubjects = new Set<BankSubject>(["math", "english"]);
 
 const subjectVisuals: Record<BankSubject, { color: string; soft: string; glow: string }> = {
   physics: { color: "#38bdf8", soft: "rgba(56,189,248,.14)", glow: "rgba(56,189,248,.25)" },

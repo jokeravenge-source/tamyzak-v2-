@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensureSession";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Link2, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
@@ -266,6 +267,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const createRoom = async () => {
     if (!userId) { toast.error(L.signIn); return; }
     if (!roomName.trim()) { toast.error(L.needName); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setBusy(true);
     try {
       let created: Room | null = null;
@@ -297,6 +299,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
 
   const joinByCode = async (code: string) => {
     if (!userId) { toast.error(L.signIn); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setBusy(true);
     try {
       const { data } = await supabase.from("study_rooms")
@@ -412,6 +415,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     const body = draft.trim();
     if (!body) return;
     if (findBannedWords(body).length > 0) { toast.error(L.blocked); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setDraft("");
     // Optimistic render so the chat feels instant even on a flaky connection.
     const tempId = `temp-${Date.now()}`;

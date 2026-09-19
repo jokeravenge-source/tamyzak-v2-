@@ -619,39 +619,18 @@ const Basics = ({
   const [boardRank, setBoardRank] = useState<number | null>(null);
   const [boardTotal, setBoardTotal] = useState<number>(0);
   useEffect(() => {
-    let uid: string | null = null;
+    let active = true;
+    let lastFetch = 0;
+    // The rank is computed server-side; never scan the whole points table here.
     const load = async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
-      uid = u.user.id;
-      const { data } = await supabase
-        .from("user_points")
-        .select("points")
-        .eq("user_id", u.user.id);
-      const total = (data ?? []).reduce((sum, r: { points: number | null }) => sum + (r.points ?? 0), 0);
-      setTotalPoints(total);
-
-      // Standing among all students (all-time totals, same source as the leaderboard).
-      const pageSize = 1000;
-      const totals = new Map<string, number>();
-      let from = 0;
-      for (;;) {
-        const { data: page, error } = await supabase
-          .from("user_points")
-          .select("user_id, points")
-          .range(from, from + pageSize - 1);
-        if (error) break;
-        (page ?? []).forEach((r: { user_id: string; points: number | null }) => {
-          totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + (r.points ?? 0));
-        });
-        if (!page || page.length < pageSize) break;
-        from += pageSize;
-      }
-      const mine = totals.get(u.user.id) ?? total;
-      let ahead = 0;
-      totals.forEach((v, k) => { if (k !== u.user!.id && v > mine) ahead += 1; });
-      setBoardTotal(totals.size);
-      setBoardRank(totals.size ? ahead + 1 : null);
+      if (document.hidden || Date.now() - lastFetch < 30000) return;
+      lastFetch = Date.now();
+      const { data, error } = await supabase.rpc("get_home_dashboard_stats");
+      if (!active || error || !data) return;
+      const stats = data as { total_points?: number; board_rank?: number | null; board_total?: number };
+      setTotalPoints(stats.total_points ?? 0);
+      setBoardRank(stats.board_rank ?? null);
+      setBoardTotal(stats.board_total ?? 0);
     };
     load();
     const onFocus = () => load();
@@ -661,6 +640,7 @@ const Basics = ({
     window.addEventListener("app:progress-updated", onFocus);
     window.addEventListener("app:feature-unlocked", onFocus);
     return () => {
+      active = false;
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("app:progress-updated", onFocus);
       window.removeEventListener("app:feature-unlocked", onFocus);

@@ -208,7 +208,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       if (ok) {
         celebrate();
         if (current.id.startsWith("builtin-")) {
-          const awarded = await awardPoints("mcq", `mcq-bank:${current.id}`);
+          // Drop the language segment so the same question can't pay twice.
+          const refId = `mcq-bank:${current.id.replace(/-(?:en|ar)-/g, "-")}`;
+          const awarded = await awardPoints("mcq", refId);
           setDelta(awarded);
         }
       } else {

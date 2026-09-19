@@ -88,7 +88,9 @@ const AdminPointsTab = () => {
 
   const grant = async () => {
     if (!detail) return;
-    const amount = parseInt(grantAmount, 10);
+    // Accept both "-50" and the hinted trailing form "50-".
+    const raw = grantAmount.trim();
+    const amount = /^\d+-$/.test(raw) ? -parseInt(raw, 10) : parseInt(raw, 10);
     if (!Number.isFinite(amount) || amount === 0) { toast.error("أدخل عدد نقاط صحيح"); return; }
     setGranting(true);
     const { error } = await supabase.rpc("admin_grant_points", {

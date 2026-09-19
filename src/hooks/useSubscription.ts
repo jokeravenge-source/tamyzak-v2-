@@ -17,6 +17,8 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now);
+  // Admins and the owner account are entitled server-side without a subscription row.
+  const [serverEntitled, setServerEntitled] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -29,16 +31,20 @@ export function useSubscription() {
     const fetchSub = async (uid: string) => {
       const version = ++requestVersion;
       try {
-        const { data, error } = await supabase.from("subscriptions").select("*")
-          .eq("user_id", uid).eq("environment", env)
-          .in("status", ["active", "trialing", "past_due"])
-          .order("created_at", { ascending: false });
+        const [{ data, error }, entitlement] = await Promise.all([
+          supabase.from("subscriptions").select("*")
+            .eq("user_id", uid).eq("environment", env)
+            .in("status", ["active", "trialing", "past_due"])
+            .order("created_at", { ascending: false }),
+          supabase.rpc("can_use_premium_tools"),
+        ]);
         if (active && version === requestVersion) {
+          setServerEntitled(entitlement.error ? false : entitlement.data === true);
           setSub(error ? null : ((data as SubscriptionRow[] | null) ?? [])
             .find((row) => hasActivePremiumSubscription(row, env)) ?? null);
         }
       } catch {
-        if (active && version === requestVersion) setSub(null);
+        if (active && version === requestVersion) { setSub(null); setServerEntitled(false); }
       } finally {
         if (active && version === requestVersion) {
           setNow(Date.now());
@@ -52,6 +58,7 @@ export function useSubscription() {
       ++requestVersion;
       setUserId(uid);
       setSub(null);
+      setServerEntitled(false);
       setLoading(Boolean(uid));
       if (uid) {
         lastFetch = Date.now();
@@ -103,5 +110,10 @@ export function useSubscription() {
     return () => window.clearTimeout(timer);
   }, [sub, now]);
 
-  return { subscription: sub, isPremium: !loading && hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now), loading, userId };
+  return {
+    subscription: sub,
+    isPremium: !loading && (serverEntitled || hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now)),
+    loading,
+    userId,
+  };
 }

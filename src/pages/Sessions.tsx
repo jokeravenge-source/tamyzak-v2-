@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -902,6 +903,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     }
     savingRef.current = true;
     setRunning(false);
+    // Refresh an expiring token first, otherwise the saved session is rejected.
+    await ensureFreshSession();
     // 5 points per full studied hour.
     const points = Math.floor(durationSeconds / 3600) * 5;
     let insertedId: string | null = null;
