@@ -5,7 +5,7 @@ import { protect } from "../_shared/guard.ts";
 // flashcards (with a curated fallback). Results are upserted into the
 // public.daily_games table which the client reads at runtime.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SUBJECT_ROTATION = ["physics", "chemistry", "biology", "arabic", "english", "french", "islamic"] as const;
 const ENGINES = ["falling", "match", "memory", "bubblePop", "laneSort", "pathDoors", "wordCannon", "revealGrid"] as const;

@@ -1,5 +1,5 @@
 import { protect } from "../_shared/guard.ts";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OWNER_CHAT: string | number = Deno.env.get("OWNER_TELEGRAM_CHAT_ID") || -1004306969532;

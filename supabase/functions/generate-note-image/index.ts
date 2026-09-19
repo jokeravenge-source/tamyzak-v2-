@@ -1,5 +1,5 @@
 import { protect } from "../_shared/guard.ts";
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from "../_shared/cors.ts";
 import { requireUser } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
