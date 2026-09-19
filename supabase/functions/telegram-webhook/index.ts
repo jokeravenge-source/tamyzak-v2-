@@ -144,4 +144,8 @@ Deno.serve(async (req) => {
   });
 
   return new Response(JSON.stringify({ ok: true }));
+  } catch (_e) {
+    // Always 200 so Telegram stops re-delivering the same update in a loop.
+    return new Response(JSON.stringify({ ok: true, handled: false }));
+  }
 });
