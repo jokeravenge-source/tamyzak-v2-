@@ -3287,6 +3287,10 @@ export type Database = {
         Returns: Json
       }
       redeem_referral: { Args: { _code: string }; Returns: Json }
+      register_push_token: {
+        Args: { _platform?: string; _token: string; _user_agent?: string }
+        Returns: undefined
+      }
       resolve_mistake: {
         Args: { _correct: boolean; _id: string }
         Returns: undefined
