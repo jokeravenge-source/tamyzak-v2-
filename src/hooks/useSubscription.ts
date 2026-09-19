@@ -17,6 +17,8 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now);
+  // Admins and the owner account are entitled server-side without a subscription row.
+  const [serverEntitled, setServerEntitled] = useState(false);
 
   useEffect(() => {
     let active = true;
