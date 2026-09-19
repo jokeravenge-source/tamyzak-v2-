@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
   const hasPremium = (subscriptions ?? []).some((item) =>
     !item.current_period_end || new Date(item.current_period_end).getTime() > now
   );
-  if (!hasPremium) return json({
+  if (!hasPremium && !adminRole) return json({
     error: "المعلّم الصوتي متاح للمشتركين المميزين. يمكنك تفعيل الاشتراك بالنقاط.",
     code: "PREMIUM_REQUIRED",
   }, 403);
