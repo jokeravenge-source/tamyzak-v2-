@@ -82,12 +82,15 @@ Deno.serve(async (req) => {
           }
           const buf = new Uint8Array(await blob.arrayBuffer());
           const pdf = await getDocumentProxy(buf);
-          const pageCount = pdf.numPages ?? 0;
           const chunks: string[] = [];
           let collected = 0;
           try {
-            const pages = (await extractText(pdf, { mergePages: false })) as unknown as string[];
-            for (let i = 0; i < pageCount && i < pages.length && collected < MAX_TEXT_CHARS; i++) {
+            // unpdf returns { totalPages, text }; with mergePages:false, text is a string[].
+            const extracted = await extractText(pdf, { mergePages: false });
+            const pages: string[] = Array.isArray(extracted?.text)
+              ? extracted.text
+              : [String(extracted?.text ?? "")];
+            for (let i = 0; i < pages.length && collected < MAX_TEXT_CHARS; i++) {
               const pageText = (pages[i] ?? "").slice(0, MAX_TEXT_CHARS - collected);
               if (pageText) {
                 chunks.push(pageText);
