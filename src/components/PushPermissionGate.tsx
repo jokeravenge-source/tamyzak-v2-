@@ -25,6 +25,7 @@ export function PushPermissionGate({ language }: { language: "ar" | "en" }) {
     try {
       const token = await enablePushNotifications();
       if (token || pushPermission() === "granted") setOpen(false);
+      else if (pushPermission() === "denied") setOpen(false); // browser blocked: never trap the user
       else setFailed(true);
     } catch {
       setFailed(true);
@@ -63,6 +64,9 @@ export function PushPermissionGate({ language }: { language: "ar" | "en" }) {
         )}
         <Button onClick={enable} disabled={busy} className="w-full">
           {busy ? t("Enabling…", "جارٍ التفعيل…") : t("Allow notifications", "السماح بالتنبيهات")}
+        </Button>
+        <Button variant="ghost" onClick={() => setOpen(false)} className="w-full">
+          {t("Not now", "ليس الآن")}
         </Button>
       </div>
     </div>

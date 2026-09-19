@@ -9,7 +9,70 @@ function isStandalonePwa() {
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
 }
 
+/** True when the touch started inside a scrollable pane that is not at its top. */
+function insideScrolledContainer(target: HTMLElement | null) {
+  let node: HTMLElement | null = target;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const scrollable = /(auto|scroll|overlay)/.test(`${style.overflowY} ${style.overflow}`);
+    if (scrollable && node.scrollHeight > node.clientHeight) {
+      if (node.scrollTop > 0) return true;
+      // A scrollable pane at its top (dialogs, chat panes) still owns the gesture.
+      return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
 export default function PullToRefresh() {
+  const [enabled, setEnabled] = useState(false);
+  const [distance, setDistance] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const startY = useRef(0);
+  const startX = useRef(0);
+  const tracking = useRef(false);
+  const distanceRef = useRef(0);
+
+  useEffect(() => {
+    setEnabled(isStandalonePwa() && window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const reset = () => {
+      tracking.current = false;
+      distanceRef.current = 0;
+      setDistance(0);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (refreshing || window.scrollY > 0 || event.touches.length !== 1) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], [data-pull-refresh-ignore]")) return;
+      if (target?.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
+      if (insideScrolledContainer(target)) return;
+
+      startY.current = event.touches[0].clientY;
+      startX.current = event.touches[0].clientX;
+      tracking.current = true;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!tracking.current || event.touches.length !== 1) return;
+
+      const deltaY = event.touches[0].clientY - startY.current;
+      const deltaX = event.touches[0].clientX - startX.current;
+      if (deltaY <= 0 || Math.abs(deltaX) > deltaY) {
+        reset();
+        return;
+      }
+
+      if (window.scrollY > 0) {
+        reset();
+        return;
+      }
   const [enabled, setEnabled] = useState(false);
   const [distance, setDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
