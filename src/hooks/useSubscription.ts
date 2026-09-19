@@ -58,6 +58,7 @@ export function useSubscription() {
       ++requestVersion;
       setUserId(uid);
       setSub(null);
+      setServerEntitled(false);
       setLoading(Boolean(uid));
       if (uid) {
         lastFetch = Date.now();
@@ -109,5 +110,10 @@ export function useSubscription() {
     return () => window.clearTimeout(timer);
   }, [sub, now]);
 
-  return { subscription: sub, isPremium: !loading && hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now), loading, userId };
+  return {
+    subscription: sub,
+    isPremium: !loading && (serverEntitled || hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now)),
+    loading,
+    userId,
+  };
 }
