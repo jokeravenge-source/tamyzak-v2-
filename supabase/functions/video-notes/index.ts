@@ -63,7 +63,8 @@ const formatEnglishCurriculumParts = (input: any[]) => {
         }
         if (insideReviewSection && /^#{1,4}\s+/.test(trimmed)) insideReviewSection = false;
         if (insideReviewSection) return [];
-        if (/^(?:[-*]\s*)?(?:س|سؤال)\s*\d*\s*[:.)-]/.test(trimmed) || trimmed.includes("؟")) return [];
+        // Only drop numbered question lines; keep headings/explanations that merely contain "؟".
+        if (/^(?:[-*]\s*)?(?:س|سؤال)\s*\d*\s*[:.)-]/.test(trimmed)) return [];
         return [line];
       })
       .join("\n")
