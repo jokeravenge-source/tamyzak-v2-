@@ -31,16 +31,20 @@ export function useSubscription() {
     const fetchSub = async (uid: string) => {
       const version = ++requestVersion;
       try {
-        const { data, error } = await supabase.from("subscriptions").select("*")
-          .eq("user_id", uid).eq("environment", env)
-          .in("status", ["active", "trialing", "past_due"])
-          .order("created_at", { ascending: false });
+        const [{ data, error }, entitlement] = await Promise.all([
+          supabase.from("subscriptions").select("*")
+            .eq("user_id", uid).eq("environment", env)
+            .in("status", ["active", "trialing", "past_due"])
+            .order("created_at", { ascending: false }),
+          supabase.rpc("can_use_premium_tools"),
+        ]);
         if (active && version === requestVersion) {
+          setServerEntitled(entitlement.error ? false : entitlement.data === true);
           setSub(error ? null : ((data as SubscriptionRow[] | null) ?? [])
             .find((row) => hasActivePremiumSubscription(row, env)) ?? null);
         }
       } catch {
-        if (active && version === requestVersion) setSub(null);
+        if (active && version === requestVersion) { setSub(null); setServerEntitled(false); }
       } finally {
         if (active && version === requestVersion) {
           setNow(Date.now());
