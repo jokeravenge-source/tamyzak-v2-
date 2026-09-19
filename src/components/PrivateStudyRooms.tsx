@@ -266,6 +266,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const createRoom = async () => {
     if (!userId) { toast.error(L.signIn); return; }
     if (!roomName.trim()) { toast.error(L.needName); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setBusy(true);
     try {
       let created: Room | null = null;
@@ -297,6 +298,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
 
   const joinByCode = async (code: string) => {
     if (!userId) { toast.error(L.signIn); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setBusy(true);
     try {
       const { data } = await supabase.from("study_rooms")
@@ -412,6 +414,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     const body = draft.trim();
     if (!body) return;
     if (findBannedWords(body).length > 0) { toast.error(L.blocked); return; }
+    if (!(await ensureFreshSession())) { toast.error(L.signIn); return; }
     setDraft("");
     // Optimistic render so the chat feels instant even on a flaky connection.
     const tempId = `temp-${Date.now()}`;
