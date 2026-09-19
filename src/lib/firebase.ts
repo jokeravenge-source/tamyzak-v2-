@@ -137,16 +137,12 @@ async function registerPushToken(): Promise<string | null> {
   const { data: u, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   if (!u.user) throw new Error("Sign in before enabling notifications");
-  const { error: tokenError } = await supabase.from("push_tokens").upsert(
-        {
-          user_id: u.user.id,
-          token,
-          platform: isIOSDevice() ? "ios-pwa" : "web",
-          user_agent: navigator.userAgent.slice(0, 300),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "token" },
-      );
+  // Server-side so a device shared between accounts is re-assigned, not rejected.
+  const { error: tokenError } = await supabase.rpc("register_push_token", {
+    _token: token,
+    _platform: isIOSDevice() ? "ios-pwa" : "web",
+    _user_agent: navigator.userAgent.slice(0, 300),
+  });
   if (tokenError) throw tokenError;
 
   return token;
