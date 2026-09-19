@@ -26,20 +26,30 @@ const WELCOME_KEYBOARD = {
   inline_keyboard: [[{ text: "🌐 افتح الموقع وأكمل التسجيل", url: SITE_URL }]],
 };
 
+/** Never throws and never hangs: a slow connector must not crash the worker. */
 async function tg(method: string, body: unknown) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
   const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY")!;
-  const res = await fetch(`${GATEWAY_URL}/${method}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TELEGRAM_API_KEY,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return { ok: res.ok && data.ok, data, status: res.status };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`${GATEWAY_URL}/${method}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": TELEGRAM_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({} as Record<string, unknown>));
+    return { ok: res.ok && (data as { ok?: boolean }).ok === true, data, status: res.status };
+  } catch (_e) {
+    return { ok: false, data: null, status: 0 };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 Deno.serve(async (req) => {
