@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
   const actual = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
   if (!safeEqual(actual, expected)) return new Response("Unauthorized", { status: 401 });
 
+  try {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
