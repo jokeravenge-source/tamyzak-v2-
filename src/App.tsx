@@ -47,6 +47,7 @@ import { isPremiumTool } from "@/lib/premium";
 import PremiumToolLock from "@/components/PremiumToolLock";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const BiologySchemes = lazy(() => import("./pages/BiologySchemes"));
+const PhysicsSchemes = lazy(() => import("./pages/PhysicsSchemes"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
 const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
@@ -577,7 +578,7 @@ const StudentApp = () => {
   const [englishCategory, setEnglishCategory] = useState<EnglishCategory | null>(
     () => (typeof window !== "undefined" ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null) : null)
   );
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.startsWith("/flashcards")) {
@@ -892,6 +893,8 @@ const StudentApp = () => {
         <BiologyDrawings language={language} onBack={backToBasics} />
       ) : menuChoice === "biologySchemes" ? (
         <BiologySchemes language={language} onBack={backToBasics} />
+      ) : menuChoice === "physicsSchemes" ? (
+        <PhysicsSchemes language={language} onBack={() => chooseMenu("subjectsHub")} />
       ) : menuChoice === "todo" ? (
         <TodoList language={language} onBack={backToBasics} />
       ) : menuChoice === "news" ? (

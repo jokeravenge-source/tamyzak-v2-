@@ -4,7 +4,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 
 export type SearchNavChoice =
   | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices"
-  | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "biologySchemes"
+  | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes"
   | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank"
   | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker"
   | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations" | "adminNotes";
@@ -45,6 +45,8 @@ const ENTRIES: Entry[] = [
     keywords: ["biology", "diagrams", "drawings", "labels", "anatomy", "cell", "أحياء", "رسومات", "تشريح", "خلية"] },
   { key: "biologySchemes", en: { title: "Biology Schemes", desc: "Visual step-by-step Biology texts" }, ar: { title: "مخططات", desc: "شرح نصوص الأحياء بالصور خطوة بخطوة" },
     keywords: ["biology", "schemes", "visual", "parts", "text", "أحياء", "مخططات", "صور", "نص", "شرح"] },
+  { key: "physicsSchemes", en: { title: "Physics Schemes", desc: "Illustrated Physics lessons in short steps" }, ar: { title: "مخططات الفيزياء", desc: "شرح الفيزياء بالصور وخطوات قصيرة" },
+    keywords: ["physics", "schemes", "eddy currents", "faraday", "lenz", "magnetic flux", "فيزياء", "مخططات", "تيارات دوامة", "لنز", "فيض"] },
   { key: "todo", en: { title: "To-Do List", desc: "Daily tasks" }, ar: { title: "قائمة المهام", desc: "مهام اليوم" },
     keywords: ["tasks", "todos", "checklist", "today", "homework", "plan", "schedule", "reminder", "مهام", "اليوم", "واجبات", "تذكير", "جدول"] },
   { key: "news", en: { title: "News", desc: "Announcements" }, ar: { title: "الأخبار", desc: "الإعلانات" },

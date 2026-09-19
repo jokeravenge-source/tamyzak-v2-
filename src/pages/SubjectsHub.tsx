@@ -39,6 +39,8 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "problemGenerator", en: "Problem Generator", ar: "مولّد المسائل", Icon: Wand2 },
       { key: "physicsQuickMcq", en: "Quick MCQ", ar: "اختبار سريع", Icon: Zap, disabled: true },
       { key: "physicsLaws", en: "Laws & Units", ar: "قوانين ووحدات", Icon: Ruler },
+      { key: "physicsSchemes", en: "Schemes", ar: "مخططات", Icon: Images, free: true,
+        descEn: "Illustrated, step-by-step Physics explanations for easier memorization.", descAr: "شرح مصوّر ومتسلسل لموضوعات الفيزياء لتسهيل الحفظ." },
       { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
       { key: "malazam", en: "Malazam", ar: "الملازم", Icon: BookMarked },
