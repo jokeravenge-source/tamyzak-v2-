@@ -32,6 +32,7 @@ import { recordMistake } from "@/lib/mistakes";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
+import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
 import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
 import { DAILY_MCQ_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
@@ -146,7 +147,10 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const literatureSectionTwoFallback = getBuiltInEnglishLiteratureSection2(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
-      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback]);
+      const literatureSectionThreeFallback = getBuiltInEnglishLiteratureSection3(lang).filter(
+        (row) => !existingQuestions.has(rowKey(row)),
+      );
+      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();

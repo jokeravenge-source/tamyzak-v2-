@@ -12,6 +12,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
 vi.mock("@/lib/physicsChapter2Mcqs", () => ({ getBuiltInPhysicsCh2: () => [] }));
 vi.mock("@/lib/englishLiteratureSection1Mcqs", () => ({ getBuiltInEnglishLiteratureSection1: () => [] }));
 vi.mock("@/lib/englishLiteratureSection2Mcqs", () => ({ getBuiltInEnglishLiteratureSection2: () => [] }));
+vi.mock("@/lib/englishLiteratureSection3Mcqs", () => ({ getBuiltInEnglishLiteratureSection3: () => [] }));
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 vi.mock("@/lib/points", () => ({ awardPoints: vi.fn(), showAward: vi.fn() }));
 vi.mock("@/lib/mistakes", () => ({ recordMistake: vi.fn() }));
@@ -48,10 +49,18 @@ describe("MCQ bank flashcard divisions", () => {
     expect(screen.getByRole("button", { name: /المتسعات/ })).toBeEnabled();
   });
   it("preserves the existing English literature section navigation", async () => {
-    mocks.rows = [row("english_literature", 2, "Section 2")];
+    mocks.rows = [row("english_literature", 2, "Section 2"), row("english_literature", 3, "Section 3")];
     render(<McqBank language="en" onBack={vi.fn()} />);
     fireEvent.click(await screen.findByRole("button", { name: /English Literature/ }));
     fireEvent.click(screen.getByRole("button", { name: /Section 2/ }));
     expect(screen.getByText("Question for english_literature 2")).toBeInTheDocument();
+  });
+  it("opens English literature Section 3 independently", async () => {
+    mocks.rows = [row("english_literature", 2, "Section 2"), row("english_literature", 3, "Section 3")];
+    render(<McqBank language="en" onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /English Literature/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Section 3/ }));
+    expect(screen.getByText("Question for english_literature 3")).toBeInTheDocument();
+    expect(screen.queryByText("Question for english_literature 2")).not.toBeInTheDocument();
   });
 });
