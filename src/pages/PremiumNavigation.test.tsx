@@ -66,17 +66,25 @@ describe("simplified home navigation", () => {
     await act(async () => { render(<Basics language="en" onChangeLanguage={vi.fn()} onSelect={onSelect} onNav={onNav} />); });
 
     const continueButton = screen.getByRole("button", { name: /Continue studying/ });
-    const subjectsButton = screen.getByRole("button", { name: /Choose a subject/ });
-    const mistakesButton = screen.getByRole("button", { name: /Review mistakes/ });
-    const allToolsButton = screen.getByRole("button", { name: /All tools/ });
 
     fireEvent.click(continueButton);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Recommended flashcards/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Recommended MCQs/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Recommended flashcards/ }));
     expect(onSelect).toHaveBeenCalledWith("flashcards");
-    fireEvent.click(subjectsButton);
+
+    fireEvent.click(screen.getByRole("button", { name: /Back to home/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue studying/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Recommended MCQs/ }));
+    expect(onNav).toHaveBeenCalledWith("mcqBank");
+
+    fireEvent.click(screen.getByRole("button", { name: /Back to home/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Choose a subject/ }));
     expect(onNav).toHaveBeenCalledWith("subjectsHub");
-    fireEvent.click(mistakesButton);
+    fireEvent.click(screen.getByRole("button", { name: /Review mistakes/ }));
     expect(onNav).toHaveBeenCalledWith("mistakes");
-    fireEvent.click(allToolsButton);
+    fireEvent.click(screen.getByRole("button", { name: /All tools/ }));
     expect(screen.getByRole("heading", { name: "All study tools" })).toBeInTheDocument();
   });
 

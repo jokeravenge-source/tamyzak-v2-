@@ -26,6 +26,13 @@ import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
+import {
+  DAILY_FLASHCARD_TARGET_KEY,
+  DAILY_MCQ_TARGET_KEY,
+  readWeeklyLearningProfile,
+  todayKey,
+  type WeeklyLearningProfile,
+} from "@/lib/weeklyLearning";
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   physics: { ar: "الفيزياء", en: "Physics" },
@@ -475,6 +482,8 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
+  const [showRecommendedStudy, setShowRecommendedStudy] = useState(false);
+  const [recommendedProfile, setRecommendedProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
   const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(null);
   const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
   const openDetail = (screen: "plan" | "progress" | "streak") => {
@@ -507,6 +516,11 @@ const Basics = ({
       window.removeEventListener("app:recent-tools-updated", sync);
       window.removeEventListener("focus", sync);
     };
+  }, []);
+  useEffect(() => {
+    const sync = () => setRecommendedProfile(readWeeklyLearningProfile());
+    window.addEventListener("app:weekly-learning-updated", sync);
+    return () => window.removeEventListener("app:weekly-learning-updated", sync);
   }, []);
   const [dueCards, setDueCards] = useState<number>(0);
   const [dueGroups, setDueGroups] = useState<DueGroup[]>([]);
@@ -685,6 +699,10 @@ const Basics = ({
     const meta = weakTopicsFor(onboarding.subject).find((c) => c.n === onboarding.weakestTopic);
     return meta ? topicLabel(meta, language === "ar" ? "ar" : "en") : "";
   }, [onboarding, language]);
+  const recommendationSubject = recommendedProfile?.subject ?? (onboarding?.completed ? onboarding.subject : "");
+  const recommendationTopic = recommendedProfile
+    ? (isRTL ? recommendedProfile.topicAr : recommendedProfile.topicEn)
+    : weakTopicLabel;
   const navigate = (k: MainMenuChoice) => {
     if (TEMP_LOCKED_TOOLS.has(k)) return;
     if (k === "premium" || (isPremiumTool(k) && !isPremium && !subscriptionLoading)) {
@@ -704,6 +722,24 @@ const Basics = ({
     ]);
     if (basicsKeys.has(k)) onSelect(k as BasicsChoice);
     else onNav(k);
+  };
+  const openRecommendedFlashcards = () => {
+    try {
+      if (recommendedProfile) {
+        sessionStorage.setItem(DAILY_FLASHCARD_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
+      } else if (dueCards > 0) {
+        sessionStorage.setItem("flashcards:review", "1");
+      }
+    } catch { /* ignore */ }
+    navigate("flashcards");
+  };
+  const openRecommendedMcqs = () => {
+    try {
+      if (recommendedProfile) {
+        sessionStorage.setItem(DAILY_MCQ_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
+      }
+    } catch { /* ignore */ }
+    navigate("mcqBank");
   };
 
   const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -1059,6 +1095,100 @@ const Basics = ({
     );
   }
 
+  if (showRecommendedStudy) {
+    return (
+      <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', 'Cairo', sans-serif" }}>
+        <div className="mx-auto max-w-4xl">
+          <button
+            type="button"
+            onClick={() => setShowRecommendedStudy(false)}
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-bold shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+            {isRTL ? "العودة للرئيسية" : "Back to home"}
+          </button>
+
+          <header className="relative mb-5 overflow-hidden rounded-[2rem] border border-blue-400/25 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-6 text-white shadow-[0_24px_60px_-32px_rgba(37,99,235,0.9)] sm:p-8">
+            <span aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full border-[30px] border-white/10" />
+            <div className="relative max-w-2xl">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                {isRTL ? "مختارة إلك" : "Picked for you"}
+              </span>
+              <h1 className="text-2xl font-black tracking-tight sm:text-4xl">
+                {isRTL ? "كمّل دراستك" : "Continue studying"}
+              </h1>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
+                {recommendationTopic
+                  ? (isRTL ? `راجع ${recommendationTopic} بالبطاقات والأسئلة المقترحة.` : `Review ${recommendationTopic} with recommended flashcards and MCQs.`)
+                  : (isRTL ? "اختَر بين بطاقات المراجعة والأسئلة المقترحة إلك." : "Choose between your review flashcards and recommended MCQs.")}
+              </p>
+              {recommendationSubject && (
+                <span className="mt-4 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
+                  {subjectLabel(recommendationSubject, language)}
+                  {recommendedProfile ? ` · ${isRTL ? "الفصل" : "Chapter"} ${recommendedProfile.chapterNumber}` : ""}
+                </span>
+              )}
+            </div>
+          </header>
+
+          <section aria-label={isRTL ? "الدراسة المقترحة" : "Recommended study"} className="grid gap-4 sm:grid-cols-2">
+            <motion.button
+              type="button"
+              onClick={openRecommendedFlashcards}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-sky-400/35 bg-gradient-to-br from-sky-500/20 via-card to-blue-500/10 p-6 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            >
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+                <BookOpen className="h-7 w-7" />
+              </span>
+              <span className="mt-6 block text-xl font-black">{isRTL ? "البطاقات المقترحة" : "Recommended flashcards"}</span>
+              <span className="mt-2 block pe-12 text-sm leading-6 text-muted-foreground">
+                {recommendedProfile
+                  ? (isRTL ? "10 بطاقات مختارة من موضوع ضعفك" : "10 cards selected from your weak topic")
+                  : dueCards > 0
+                    ? (isRTL ? `${dueCards} بطاقة مستحقة للمراجعة` : `${dueCards} flashcards due for review`)
+                    : (isRTL ? "ارجع لآخر بطاقات درستها" : "Return to your latest flashcards")}
+              </span>
+              <span className="absolute bottom-6 end-6 grid h-10 w-10 place-items-center rounded-full bg-sky-500 text-white transition-transform group-hover:scale-110">
+                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={openRecommendedMcqs}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-violet-400/35 bg-gradient-to-br from-violet-500/20 via-card to-fuchsia-500/10 p-6 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+            >
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
+                <ListChecks className="h-7 w-7" />
+              </span>
+              <span className="mt-6 block text-xl font-black">{isRTL ? "الأسئلة المقترحة" : "Recommended MCQs"}</span>
+              <span className="mt-2 block pe-12 text-sm leading-6 text-muted-foreground">
+                {recommendedProfile
+                  ? (isRTL ? "10 أسئلة مختارة من نفس الفصل والموضوع" : "10 questions selected from the same chapter and topic")
+                  : (isRTL ? "أسئلة من بنك الـ MCQ تناسب مراجعتك" : "Questions from the MCQ bank matched to your review")}
+              </span>
+              <span className="absolute bottom-6 end-6 grid h-10 w-10 place-items-center rounded-full bg-violet-600 text-white transition-transform group-hover:scale-110">
+                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+          </section>
+
+          <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+            <Target className="h-3.5 w-3.5 text-primary" />
+            {recommendedProfile
+              ? (isRTL ? "الاقتراحات مبنية على خطة الضعف الأسبوعية" : "Recommendations are based on your weekly weakness plan")
+              : (isRTL ? "حدّث خطة الدراسة حتى تحصل على اقتراحات أدق" : "Update your study plan for more precise recommendations")}
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
@@ -1270,7 +1400,10 @@ const Basics = ({
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             <motion.button
               type="button"
-              onClick={() => navigate("flashcards")}
+              onClick={() => {
+                setRecommendedProfile(readWeeklyLearningProfile());
+                setShowRecommendedStudy(true);
+              }}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
               className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-blue-400/35 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-5 text-start text-white shadow-[0_22px_45px_-26px_rgba(37,99,235,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:p-6"
@@ -1281,9 +1414,7 @@ const Basics = ({
               </span>
               <span className="relative mt-5 block text-xl font-black">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
               <span className="relative mt-1 block pe-12 text-sm text-white/80">
-                {dueCards > 0
-                  ? (isRTL ? `${dueCards} بطاقة تنتظر المراجعة` : `${dueCards} flashcards ready to review`)
-                  : (isRTL ? "ارجع لآخر بطاقات درستها" : "Return to your latest flashcards")}
+                {isRTL ? "بطاقات وأسئلة مقترحة إلك" : "Recommended flashcards and MCQs"}
               </span>
               <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-white text-blue-600 transition-transform group-hover:scale-110">
                 <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />

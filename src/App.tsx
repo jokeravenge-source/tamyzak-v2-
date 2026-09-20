@@ -610,6 +610,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(MENU_STORAGE_KEY) as MenuChoice | null;
   });
+  const [practiceReturnTarget, setPracticeReturnTarget] = useState<"physicsSchemes" | "biologySchemes" | null>(null);
   // Points-unlock state (lifetime points gate the 4 advanced tools)
   const [unlockedKeys, setUnlockedKeys] = useState<FeatureKey[]>([]);
   const [unlockHighlight, setUnlockHighlight] = useState<FeatureKey | null>(null);
@@ -660,6 +661,7 @@ const StudentApp = () => {
   };
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const chooseMenu = (choice: MenuChoice) => {
+    if (choice !== "mcqBank") setPracticeReturnTarget(null);
     logFirstFeatureTouch(choice);
     recordToolUse(choice);
     // Points-gated tools: send the student to the progress page instead of the tool.
@@ -713,7 +715,7 @@ const StudentApp = () => {
   useEffect(() => {
     const openPersonalized = (event: Event) => {
       const profile = readWeeklyLearningProfile();
-      const detail = (event as CustomEvent<{ kind?: "flashcards" | "mcq"; subject?: string; chapterNumber?: number }>).detail;
+      const detail = (event as CustomEvent<{ kind?: "flashcards" | "mcq"; subject?: string; chapterNumber?: number; origin?: "physicsSchemes" | "biologySchemes" }>).detail;
       const kind = detail?.kind;
       const nextSubject = (detail?.subject ?? profile?.subject) as AppSubject | undefined;
       const nextChapter = detail?.chapterNumber ?? profile?.chapterNumber;
@@ -724,6 +726,7 @@ const StudentApp = () => {
         window.history.replaceState({}, "", `/flashcards/${nextChapter}`);
         chooseMenu("flashcards");
       } else {
+        setPracticeReturnTarget(detail?.origin ?? null);
         chooseMenu("mcqBank");
       }
     };
@@ -921,7 +924,11 @@ const StudentApp = () => {
       ) : menuChoice === "news" ? (
         <News language={language} onBack={backToBasics} />
       ) : menuChoice === "mcqBank" ? (
-        <McqBank language={language} onBack={backToBasics} />
+        <McqBank language={language} onBack={() => {
+          const returnTarget = practiceReturnTarget;
+          setPracticeReturnTarget(null);
+          chooseMenu(returnTarget ?? "basics");
+        }} />
       ) : menuChoice === "mistakes" ? (
         <MyMistakes language={language} onBack={backToBasics} />
       ) : menuChoice === "ministerialBank" ? (

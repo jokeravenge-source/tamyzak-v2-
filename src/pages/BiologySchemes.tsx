@@ -93,7 +93,7 @@ const BiologySchemes = ({ language, onBack }: { language: AppLanguage; onBack: (
       topicKey: lesson.id, topicEn: lesson.title.en, topicAr: lesson.title.ar, weaknessText: lesson.description?.[language] ?? lesson.title[language], updatedAt: new Date().toISOString(),
     };
     sessionStorage.setItem(kind === "flashcards" ? DAILY_FLASHCARD_TARGET_KEY : DAILY_MCQ_TARGET_KEY, JSON.stringify(target));
-    window.dispatchEvent(new CustomEvent("app:open-personalized-practice", { detail: { kind, subject: "biology", chapterNumber: lesson.chapter } }));
+    window.dispatchEvent(new CustomEvent("app:open-personalized-practice", { detail: { kind, subject: "biology", chapterNumber: lesson.chapter, origin: "biologySchemes" } }));
   };
 
   const back = () => {
