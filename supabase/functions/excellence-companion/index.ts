@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
   const json200 = (obj: Record<string, unknown>) =>
     new Response(JSON.stringify(obj), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
-    const { mode, messages, language } = await req.json();
+    const { mode, messages, language, learningProfile } = await req.json();
     const ar = language === "ar";
     if (!mode || !Array.isArray(messages)) {
       return json200({ reply: ar ? "حدث خطأ في الطلب. حاول مرة أخرى." : "Bad request. Please try again." });
@@ -122,8 +122,11 @@ Deno.serve(async (req) => {
       )
       .slice(-MAX_CHAT_MESSAGES);
 
+    const profileContext = mode === "schedule" && learningProfile && typeof learningProfile === "object"
+      ? `\n\nVERIFIED AL-FAHRAST WEAKNESS FOR THIS WEEK:\nSubject: ${String(learningProfile.subject ?? "").slice(0, 80)}\nChapter: ${String(learningProfile.chapterKey ?? "").slice(0, 80)}\nMatched topic: ${String(language === "ar" ? learningProfile.topicAr : learningProfile.topicEn).slice(0, 180)}\nStudent's description: ${String(learningProfile.weaknessText ?? "").slice(0, 700)}\n\nTreat this as confirmed curriculum context. Build the weekly plan around this weak topic. Include a short flashcard review and an MCQ practice task from this same subject and chapter on multiple days. Do not ask the student to repeat the subject, chapter, topic, or weakness.`
+      : "";
     const convo: Array<{ role: string; content: string }> = [
-      { role: "system", content: systemFor(mode, language) },
+      { role: "system", content: systemFor(mode, language) + profileContext },
       ...safeMessages,
     ];
     let fullReply = "";

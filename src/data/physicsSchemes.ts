@@ -35,7 +35,7 @@ const bilingual = (en: string, ar = en): PhysicsSchemeText => ({ ar, en });
 export const PHYSICS_SCHEMES: PhysicsSchemeLesson[] = [
   {
     id: "eddy-currents",
-    chapter: 3,
+    chapter: 2,
     title: bilingual("Eddy Currents", "التيارات الدوامة"),
     description: bilingual("Definition, Lenz’s law, energy loss, and practical applications.", "التعريف وقانون لنز وفقدان الطاقة والتطبيقات العملية."),
     parts: [

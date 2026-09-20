@@ -64,6 +64,7 @@ import { flashcardsCh5 } from "@/data/flashcardsCh5";
 import { flashcardsCh6 } from "@/data/flashcardsCh6";
 import { flashcardsCh7 } from "@/data/flashcardsCh7";
 import { flashcardsCh8 } from "@/data/flashcardsCh8";
+import { DAILY_FLASHCARD_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 import { Flashcard } from "@/components/Flashcard";
 import { Button } from "@/components/ui/button";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -417,14 +418,33 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   );
   const hasTopics = topicResult.topics.length > 1;
   const [topicKey, setTopicKey] = useState<string>(topicResult.allKey);
+  const [dailyTarget] = useState<WeeklyLearningProfile | null>(() => {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(DAILY_FLASHCARD_TARGET_KEY) || "null") as WeeklyLearningProfile | null;
+      sessionStorage.removeItem(DAILY_FLASHCARD_TARGET_KEY);
+      return parsed;
+    } catch { return null; }
+  });
   const todos = useTodos();
   useEffect(() => {
+    if (dailyTarget?.subject === subject && dailyTarget.chapterNumber === Number(chapter)) {
+      const wanted = `${dailyTarget.topicEn} ${dailyTarget.topicAr}`.toLocaleLowerCase();
+      const matched = topicResult.topics.find((group) => {
+        const label = group.label.toLocaleLowerCase();
+        return label !== "all" && label !== "الكل" && (wanted.includes(label) || label.split(/\s+/).some((word) => word.length > 3 && wanted.includes(word)));
+      });
+      setTopicKey(matched?.key ?? topicResult.allKey);
+      return;
+    }
     setTopicKey(topicResult.allKey);
-  }, [topicResult]);
+  }, [topicResult, dailyTarget, subject, chapter]);
   const activeTopicCards = useMemo(() => {
     const t = topicResult.topics.find((g) => g.key === topicKey) ?? topicResult.topics[0];
-    return t?.cards ?? [];
-  }, [topicResult, topicKey]);
+    const cards = t?.cards ?? [];
+    return dailyTarget?.subject === subject && dailyTarget.chapterNumber === Number(chapter)
+      ? dailyRotate(cards, 10, `${todayKey()}:${dailyTarget.topicKey}`)
+      : cards;
+  }, [topicResult, topicKey, dailyTarget, subject, chapter]);
 
   const [cards, setCards] = useState(activeTopicCards);
   const progressKey = `flashcard-progress:${subject}:${chapter}:${savedView ? "saved" : topicKey}`;

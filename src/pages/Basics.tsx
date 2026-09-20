@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 23735)
+Total output lines: 1609
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
@@ -26,6 +29,7 @@ import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
+import DailyPersonalizedPractice from "@/components/DailyPersonalizedPractice";
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   physics: { ar: "الفيزياء", en: "Physics" },
@@ -782,253 +786,7 @@ const Basics = ({
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-6">
         {NAV_GROUPS
-          .filter((g) => g.titleEn !== "Subjects")
-          .map((g) => ({
-            ...g,
-            items: g.titleEn === "Study" ? g.items.filter((it) => !hiddenStudyTools.has(it.key)) : g.items,
-          }))
-          .map((g) => (
-          <div key={g.titleEn}>
-            <p className={`mb-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${(TOOL_CATEGORY_TINTS[g.titleEn] ?? DEFAULT_TOOL_CATEGORY_TINT).idle}`}>
-              {language === "ar" ? g.titleAr : g.titleEn}
-            </p>
-            <ul className="space-y-0.5">
-              {g.items.map((it) => {
-                const Icon = it.Icon;
-                const active = activeKey === it.key;
-                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
-                return (
-                  <li key={it.key}>
-                    <button
-                      onClick={() => navigate(it.key)}
-                      aria-current={active ? "page" : undefined}
-                      className={`group relative flex w-full items-center gap-3 overflow-hidden border px-3 py-2.5 text-sm font-bold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "ring-2 ring-primary/30" : "opacity-90 hover:opacity-100"} ${tint.card}`}
-                      style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
-                    >
-                      <span aria-hidden className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-transform group-hover:scale-110 ${tint.icon}`}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-start">{language === "ar" ? it.labelAr : it.labelEn}</span>
-                      <ArrowRight className={`h-3.5 w-3.5 shrink-0 opacity-50 transition-transform group-hover:opacity-100 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t border-border space-y-3">
-        <button
-          onClick={() => onNav("account")}
-          className="group inline-flex min-h-11 w-full items-center justify-center gap-2 border border-slate-400/40 bg-gradient-to-r from-slate-500/15 to-zinc-500/10 px-3 text-xs font-black text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:text-slate-200"
-          style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
-        >
-          <UserCog className="h-4 w-4" />
-          {language === "ar" ? "إعدادات الحساب" : "Account settings"}
-        </button>
-      </div>
-    </>
-  );
-
-  const [dueMistakes, setDueMistakes] = useState(0);
-  const [unseenNotes, setUnseenNotes] = useState(0);
-  useEffect(() => {
-    let alive = true;
-    dueMistakesCount().then((n) => { if (alive) setDueMistakes(n); }).catch(() => {});
-    unseenAdminNotesCount().then((n) => { if (alive) setUnseenNotes(n); }).catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-
-
-  if (detailScreen) {
-    return (
-      <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        <div className="mx-auto max-w-4xl">
-          <button type="button" onClick={() => setDetailScreen(null)}
-            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 py-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-            <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-            {isRTL ? "العودة للرئيسية" : "Back to home"}
-          </button>
-          <header className="mb-6">
-            <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>
-            <h1 id="study-detail-title" tabIndex={-1} className="text-2xl font-bold leading-relaxed outline-none sm:text-3xl">
-              {detailScreen === "plan"
-                ? (isRTL ? "خطة اليوم" : "Today's plan")
-                : detailScreen === "progress"
-                  ? (isRTL ? "تقدمي ورتبتي" : "My progress and rank")
-                  : (isRTL ? "استمراريتي بالدراسة" : "My study streak")}
-            </h1>
-          </header>
-          {detailScreen === "progress" ? (
-            <section aria-label={isRTL ? "تفاصيل الرتبة" : "Rank details"} className="rounded-3xl border border-primary/25 bg-primary/5 p-4 sm:p-6">
-                          <div className="pt-4">
-            <div className="flex flex-wrap items-center gap-5 sm:gap-7">
-              <RankStone
-                rank={currentRank}
-                size={104}
-                fillProgress={stoneFill}
-                glow={currentRank === "royal" || currentRank === "diamond"}
-                className="shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-ash mb-1">
-                  {language === "ar" ? "رتبتك" : "Your rank"}
-                </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
-                  {rankLabel}
-                  {username && (
-                    <span className="text-ash font-normal text-base sm:text-lg ms-2">· {username}</span>
-                  )}
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {nextRank
-                    ? (language === "ar"
-                      ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}`
-                      : `${pointsToNextRank} points to ${nextRank.label.en}`)
-                    : (language === "ar" ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
-                </p>
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  <div className="rounded-2xl border border-border bg-background px-3 py-2.5">
-                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onNav("unlocks")}
-                    className="text-start rounded-2xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-primary/50 hover:bg-primary/5"
-                  >
-                    <p className="font-mono text-foreground text-xl font-semibold tabular-nums leading-none">{totalPoints}</p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar" ? "نقطة · افتح الأدوات" : "points · unlock tools"}
-                    </p>
-                  </button>
-                  <div className="col-span-2 sm:col-span-1 rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2.5">
-                    <p className="font-mono text-primary text-xl font-semibold tabular-nums leading-none">
-                      {boardRank ? `#${boardRank}` : "—"}
-                    </p>
-                    <p className="mt-1 text-[11px] text-ash">
-                      {language === "ar"
-                        ? `ترتيبك بين ${boardTotal} طالب عراقي`
-                        : `your place among ${boardTotal} Iraqi students`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <GiftMcqButton language={language} />
-            </div>
-            </div>
-
-            </section>
-          ) : detailScreen === "streak" ? (
-            <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7">
-              <p className="mb-4 text-lg font-bold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
-              <StreakTree language={language} />
-            </section>
-          ) : (
-            <section className="mb-0">
-            <div className="rounded-[2rem] border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(37,99,235,0.65)] sm:p-7">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Target className="w-4 h-4" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-950 leading-tight">
-                    {language === "ar" ? "خطة اليوم" : "Today's plan"}
-                  </h2>
-                  <p className="text-xs text-slate-600">
-                    {language === "ar" ? "ابدأ من هنا — خطوة واحدة في كل مرة." : "Start here — one step at a time."}
-                  </p>
-                </div>
-                <div className="ms-auto flex items-center gap-3 shrink-0">
-                  <div className="relative w-14 h-14">
-                    <svg viewBox="0 0 100 100" className="w-14 h-14 -rotate-90">
-                      <circle cx="50" cy="50" r="45" stroke="hsl(var(--muted))" strokeWidth="10" fill="none" />
-                      <motion.circle
-                        cx="50" cy="50" r="45"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="10"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 45}
-                        initial={{ strokeDashoffset: 2 * Math.PI * 45 }}
-                        animate={{ strokeDashoffset: 2 * Math.PI * 45 * (1 - heroProgressPct / 100) }}
-                        transition={{ duration: 0.9, ease: "easeOut" }}
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold tabular-nums text-slate-950">
-                      {heroProgressPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2.5">
-                {/* Step 1 — tasks */}
-                <button
-                  onClick={() => navigate("todo")}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-sky-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md transition-all`}
-                >
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <ListChecks className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-slate-950 truncate">
-                      {todoTotal > 0
-                        ? (language === "ar" ? `${Math.max(0, todoTotal - todoDone)} مهمة متبقية اليوم` : `${Math.max(0, todoTotal - todoDone)} task${todoTotal - todoDone === 1 ? "" : "s"} left today`)
-                        : (language === "ar" ? "أضف مهام اليوم" : "Add today's tasks")}
-                    </span>
-                    <span className="block text-[11px] text-slate-600 truncate">
-                      {language === "ar" ? "قائمة المهام" : "To-do list"}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-primary">
-                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </span>
-                </button>
-
-                {/* Step 2 — flashcards due */}
-                <button
-                  onClick={() => {
-                    try {
-                      if (dueCards > 0) sessionStorage.setItem("flashcards:review", "1");
-                      if (onboarding?.completed) localStorage.setItem("app_subject_v1", onboarding.subject);
-                    } catch { /* ignore */ }
-                    if (onboarding?.completed) {
-                      window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: onboarding.subject } }));
-                    }
-                    navigate("flashcards");
-                  }}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-indigo-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-indigo-400 hover:shadow-md transition-all`}
-                >
-                  <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Layers className="w-5 h-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-slate-950 truncate">
-                      {dueCards > 0
-                        ? (language === "ar" ? `راجع ${dueCards} بطاقة مستحقة` : `Review ${dueCards} card${dueCards === 1 ? "" : "s"} due`)
-                        : (language === "ar" ? "ادرس بالبطاقات التعليمية" : "Study with flashcards")}
-                    </span>
-                    <span className="block text-[11px] text-slate-600 truncate">
-                      {onboarding?.completed
-                        ? `${subjectLabel(onboarding.subject, language)}${weakTopicLabel ? ` · ${weakTopicLabel}` : ""}`
-                        : (language === "ar" ? "مراجعة متباعدة" : "Spaced repetition")}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-primary">
-                    {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                  </span>
-                </button>
-
-                {/* Step 3 — progress report */}
-                <button
-                  onClick={() => onNav("report")}
-                  className={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-violet-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md transition-all`}
+     …3735 tokens truncated…={`w-full ${isRTL ? "text-right" : "text-start"} group rounded-3xl border border-violet-200 bg-white/85 p-4 flex items-center gap-3 shadow-sm hover:-translate-y-0.5 hover:border-violet-400 hover:shadow-md transition-all`}
                 >
                   <span className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
@@ -1290,6 +1048,11 @@ const Basics = ({
               </motion.button>
             </div>
           </header>
+          <DailyPersonalizedPractice
+            language={language}
+            onOpenFlashcards={() => window.dispatchEvent(new CustomEvent("app:open-personalized-practice", { detail: { kind: "flashcards" } }))}
+            onOpenMcqs={() => window.dispatchEvent(new CustomEvent("app:open-personalized-practice", { detail: { kind: "mcq" } }))}
+          />
 <section
             aria-label={isRTL ? "ملخص الدراسة" : "Study overview"}
             className="mb-7 grid grid-cols-2 gap-3 sm:gap-4"

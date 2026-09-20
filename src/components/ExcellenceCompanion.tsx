@@ -8,6 +8,12 @@ import { pushTodos } from "@/lib/todosSync";
 import { edgeErrorMessage } from "@/lib/edgeError";
 import { aiErrorNotice } from "@/lib/aiErrorNotice";
 import { handleAiError } from "@/lib/upgradeToast";
+import WeeklyWeaknessIntake from "@/components/WeeklyWeaknessIntake";
+import {
+  readWeeklyLearningProfile,
+  saveWeeklyLearningProfile,
+  type WeeklyLearningProfile,
+} from "@/lib/weeklyLearning";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Mode = "schedule" | "problem" | "psych";
@@ -43,6 +49,8 @@ const labels = {
     newChat: "New chat",
     modeLabel: "Assistant mode",
     disclaimer: "Tamayzak AI can make mistakes. Check important information.",
+    matched: "Matched with Al‑Fahras",
+    matchedPrompt: "Great — I matched your weakness to {topic}. Now tell me how much time you have each day and which days are available, and I’ll build your week around it.",
   },
   ar: {
     fab: "رفيق النجاح",
@@ -70,6 +78,8 @@ const labels = {
     newChat: "محادثة جديدة",
     modeLabel: "وضع المساعد",
     disclaimer: "رفيق التميز ممكن يخطئ، فتأكد من المعلومات المهمة.",
+    matched: "تمت المطابقة مع الفهرست",
+    matchedPrompt: "تمام — طابقت نقطة ضعفك ويا موضوع {topic} من الفهرست. هسه كلي شكد وقتك المتاح باليوم وشنو الأيام المناسبة، وأرتب أسبوعك حوله.",
   },
 };
 
@@ -111,7 +121,7 @@ function stripPlanBlock(text: string): string {
 }
 
 const INTRO_DONE_KEY = "app_companion_intro_v1";
-const PLANNED_WEEK_KEY = "app_companion_planned_week_v1";
+const PLANNED_WEEK_KEY = "app_companion_planned_week_v2";
 
 const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLanguage; embedded?: boolean }) => {
   const [open, setOpen] = useState(embedded);
@@ -122,6 +132,7 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [approved, setApproved] = useState(false);
+  const [weeklyProfile, setWeeklyProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,6 +142,7 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
       setMode("schedule");
       setMessages([]);
       setApproved(false);
+      setWeeklyProfile(readWeeklyLearningProfile());
       setOpen(true);
     };
     const onAutoSchedule = () => {
@@ -198,7 +210,7 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("excellence-companion", {
-        body: { mode, language, messages: next },
+        body: { mode, language, messages: next, learningProfile: weeklyProfile },
       });
       const replyFromData = (data as { reply?: string; error?: string } | null)?.reply;
       if (error && !replyFromData) {
@@ -243,10 +255,46 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
     window.dispatchEvent(new Event("app:todos-changed"));
     pushTodos(merged);
     setApproved(true);
+    if (weeklyProfile) {
+      const completedProfile = { ...weeklyProfile, planTasks: pendingPlan, updatedAt: new Date().toISOString() };
+      setWeeklyProfile(completedProfile);
+      saveWeeklyLearningProfile(completedProfile);
+      void persistWeeklyProfile(completedProfile);
+    }
     try {
       localStorage.setItem(INTRO_DONE_KEY, "1");
       localStorage.setItem(PLANNED_WEEK_KEY, getISOWeek());
     } catch { /* ignore */ }
+  };
+
+  const persistWeeklyProfile = async (profile: WeeklyLearningProfile) => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    await (supabase as any).from("weekly_learning_profiles").upsert({
+      user_id: data.user.id,
+      iso_week: profile.isoWeek,
+      subject: profile.subject,
+      chapter_key: profile.chapterKey,
+      chapter_number: profile.chapterNumber,
+      topic_key: profile.topicKey,
+      topic_en: profile.topicEn,
+      topic_ar: profile.topicAr,
+      weakness_text: profile.weaknessText,
+      plan_tasks: profile.planTasks ?? [],
+      updated_at: profile.updatedAt,
+    }, { onConflict: "user_id,iso_week" });
+  };
+
+  const completeWeaknessIntake = (profile: WeeklyLearningProfile) => {
+    setWeeklyProfile(profile);
+    saveWeeklyLearningProfile(profile);
+    void persistWeeklyProfile(profile);
+    const topic = language === "ar" ? profile.topicAr : profile.topicEn;
+    setApproved(false);
+    setMessages([{
+      role: "assistant",
+      content: t.matchedPrompt.replace("{topic}", topic),
+    }]);
   };
 
   const ActiveModeIcon = mode === "schedule" ? CalendarDays : mode === "psych" ? Heart : HeartHandshake;
@@ -301,7 +349,9 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
               </div>
             </header>
 
-            {intro && messages.length === 0 ? (
+            {mode === "schedule" && !weeklyProfile ? (
+              <WeeklyWeaknessIntake language={language} onComplete={completeWeaknessIntake} />
+            ) : intro && messages.length === 0 ? (
               <div className="relative z-10 flex-1 overflow-y-auto p-6 flex flex-col gap-4 justify-center">
                 <h2 className="text-xl font-bold text-center">{t.introTitle}</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed text-center">{t.introBody}</p>

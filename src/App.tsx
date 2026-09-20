@@ -103,6 +103,7 @@ const MinisterialQuestions = lazy(() => import("./pages/MinisterialQuestions"));
 const ToolLanding = lazy(() => import("./pages/ToolLanding"));
 const ToolsIndex = lazy(() => import("./pages/ToolsIndex"));
 import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
+import { readWeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
@@ -125,7 +126,7 @@ captureSignupSource();
 captureReferralCode();
 
 const MENU_STORAGE_KEY = "app_menu_choice_v1";
-const COMPANION_PLANNED_WEEK_KEY = "app_companion_planned_week_v1";
+const COMPANION_PLANNED_WEEK_KEY = "app_companion_planned_week_v2";
 
 // Reading the persisted auth snapshot is synchronous. This lets returning
 // users render immediately instead of waiting on a refresh request that can
@@ -709,6 +710,26 @@ const StudentApp = () => {
       chooseMenu(c as MenuChoice);
     }
   };
+  useEffect(() => {
+    const openPersonalized = (event: Event) => {
+      const profile = readWeeklyLearningProfile();
+      const detail = (event as CustomEvent<{ kind?: "flashcards" | "mcq"; subject?: string; chapterNumber?: number }>).detail;
+      const kind = detail?.kind;
+      const nextSubject = (detail?.subject ?? profile?.subject) as AppSubject | undefined;
+      const nextChapter = detail?.chapterNumber ?? profile?.chapterNumber;
+      if (!nextSubject || !nextChapter) return;
+      localStorage.setItem(SUBJECT_STORAGE_KEY, nextSubject);
+      setSubject(nextSubject);
+      if (kind === "flashcards") {
+        window.history.replaceState({}, "", `/flashcards/${nextChapter}`);
+        chooseMenu("flashcards");
+      } else {
+        chooseMenu("mcqBank");
+      }
+    };
+    window.addEventListener("app:open-personalized-practice", openPersonalized);
+    return () => window.removeEventListener("app:open-personalized-practice", openPersonalized);
+  }, []);
   const backToBasics = () => chooseMenu("basics");
   // First-run onboarding (subject picker → diagnostic → results → streak → dashboard)
   const [onboarded, setOnboarded] = useState<boolean>(() => isOnboardingDone());

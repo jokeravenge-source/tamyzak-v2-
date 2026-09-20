@@ -33,6 +33,7 @@ import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
 import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
+import { DAILY_MCQ_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 type Row = {
   id: string;
@@ -43,6 +44,7 @@ type Row = {
   choices: unknown;
   answer_index: number;
   explanation: string | null;
+  tags?: string[];
 };
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
@@ -96,9 +98,16 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const lang = isAr ? "ar" : "en";
   const Back = isAr ? ArrowRight : ArrowLeft;
 
+  const [personalizedTarget] = useState<WeeklyLearningProfile | null>(() => {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(DAILY_MCQ_TARGET_KEY) || "null") as WeeklyLearningProfile | null;
+      sessionStorage.removeItem(DAILY_MCQ_TARGET_KEY);
+      return parsed;
+    } catch { return null; }
+  });
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState<string | null>(null);
+  const [subject, setSubject] = useState<string | null>(personalizedTarget?.subject ?? null);
   const [chapter, setChapter] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -116,7 +125,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const [{ data }, dueResult] = await Promise.all([
         supabase
           .from("mcq_banks")
-          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation")
+          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
           .eq("language", lang)
           .order("subject", { ascending: true })
           .order("chapter", { ascending: true })
@@ -161,10 +170,25 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     () => {
       if (reviewing) return dueRows;
       const ids = new Set(chapters.find(c => c.key === chapter)?.questionIds ?? []);
-      return rows.filter(r => ids.has(r.id));
+      const chapterRows = rows.filter(r => ids.has(r.id));
+      if (personalizedTarget && personalizedTarget.subject === subject && personalizedTarget.chapterNumber === chapters.find(c => c.key === chapter)?.chapter) {
+        const terms = `${personalizedTarget.topicEn} ${personalizedTarget.topicAr}`.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 3);
+        const related = chapterRows.filter((row) => {
+          const haystack = `${row.question} ${(row.tags ?? []).join(" ")}`.toLocaleLowerCase();
+          return terms.some((term) => haystack.includes(term));
+        });
+        return dailyRotate(related.length >= 3 ? related : chapterRows, 10, `${todayKey()}:${personalizedTarget.topicKey}`);
+      }
+      return chapterRows;
     },
-    [rows, chapters, chapter, reviewing, dueRows],
+    [rows, chapters, chapter, reviewing, dueRows, personalizedTarget, subject],
   );
+
+  useEffect(() => {
+    if (!personalizedTarget || chapter || !chapters.length) return;
+    const match = chapters.find((item) => item.chapter === personalizedTarget.chapterNumber && item.count > 0);
+    if (match) setChapter(match.key);
+  }, [personalizedTarget, chapters, chapter]);
   const current = quiz[index];
   const choices = useMemo(
     () => (Array.isArray(current?.choices) ? (current!.choices as unknown[]).map(String) : []),

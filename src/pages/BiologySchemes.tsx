@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Images, RotateCcw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Images, Layers3, ListChecks, RotateCcw } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { BIOLOGY_SCHEMES, type BiologySchemeLesson } from "@/data/biologySchemes";
+import { DAILY_FLASHCARD_TARGET_KEY, DAILY_MCQ_TARGET_KEY, getISOWeek, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 const copy = {
   ar: {
@@ -20,6 +21,8 @@ const copy = {
     completedText: "أحسنت! انتقلت عبر جميع أجزاء المخطط.",
     restart: "مراجعة من البداية",
     chooseLesson: "اختر المخطط",
+    flashcards: "راجع البطاقات المرتبطة",
+    mcqs: "حل الأسئلة المرتبطة",
   },
   en: {
     badge: "Biology",
@@ -37,6 +40,8 @@ const copy = {
     completedText: "Great work! You moved through every part of the scheme.",
     restart: "Review from the start",
     chooseLesson: "Choose a scheme",
+    flashcards: "Review related flashcards",
+    mcqs: "Practice related MCQs",
   },
 } as const;
 
@@ -80,6 +85,15 @@ const BiologySchemes = ({ language, onBack }: { language: AppLanguage; onBack: (
     if (!lesson) return;
     setCompleted(true);
     try { localStorage.setItem(progressKey(lesson.id), "0"); } catch { /* ignore */ }
+  };
+  const openPractice = (kind: "flashcards" | "mcq") => {
+    if (!lesson) return;
+    const target: WeeklyLearningProfile = {
+      isoWeek: getISOWeek(), subject: "biology", chapterKey: `bio-${lesson.chapter}`, chapterNumber: lesson.chapter,
+      topicKey: lesson.id, topicEn: lesson.title.en, topicAr: lesson.title.ar, weaknessText: lesson.description?.[language] ?? lesson.title[language], updatedAt: new Date().toISOString(),
+    };
+    sessionStorage.setItem(kind === "flashcards" ? DAILY_FLASHCARD_TARGET_KEY : DAILY_MCQ_TARGET_KEY, JSON.stringify(target));
+    window.dispatchEvent(new CustomEvent("app:open-personalized-practice", { detail: { kind, subject: "biology", chapterNumber: lesson.chapter } }));
   };
 
   const back = () => {
@@ -146,6 +160,10 @@ const BiologySchemes = ({ language, onBack }: { language: AppLanguage; onBack: (
             <CheckCircle2 className="mx-auto size-14 text-emerald-500" />
             <h2 className="mt-4 text-2xl font-black text-foreground">{t.completed}</h2>
             <p className="mt-2 text-muted-foreground">{t.completedText}</p>
+            <div className="mx-auto mt-6 grid max-w-lg gap-3 sm:grid-cols-2">
+              <button onClick={() => openPractice("flashcards")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-bold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"><Layers3 className="size-4" />{t.flashcards}</button>
+              <button onClick={() => openPractice("mcq")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-4 font-bold text-emerald-800 transition-colors hover:bg-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200"><ListChecks className="size-4" />{t.mcqs}</button>
+            </div>
             <button
               onClick={() => { setCompleted(false); moveTo(0); }}
               className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-5 font-bold text-white transition-colors hover:bg-emerald-700"
