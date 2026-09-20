@@ -58,3 +58,33 @@ describe("locked tool navigation", () => {
     expect(state.openTelegram).not.toHaveBeenCalled();
   });
 });
+
+describe("simplified home navigation", () => {
+  it("shows four primary actions and routes each one", async () => {
+    const onSelect = vi.fn();
+    const onNav = vi.fn();
+    await act(async () => { render(<Basics language="en" onChangeLanguage={vi.fn()} onSelect={onSelect} onNav={onNav} />); });
+
+    const continueButton = screen.getByRole("button", { name: /Continue studying/ });
+    const subjectsButton = screen.getByRole("button", { name: /Choose a subject/ });
+    const mistakesButton = screen.getByRole("button", { name: /Review mistakes/ });
+    const allToolsButton = screen.getByRole("button", { name: /All tools/ });
+
+    fireEvent.click(continueButton);
+    expect(onSelect).toHaveBeenCalledWith("flashcards");
+    fireEvent.click(subjectsButton);
+    expect(onNav).toHaveBeenCalledWith("subjectsHub");
+    fireEvent.click(mistakesButton);
+    expect(onNav).toHaveBeenCalledWith("mistakes");
+    fireEvent.click(allToolsButton);
+    expect(screen.getByRole("heading", { name: "All study tools" })).toBeInTheDocument();
+  });
+
+  it("supports the same simplified actions in Arabic RTL", async () => {
+    await act(async () => { render(<Basics language="ar" onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={vi.fn()} />); });
+    expect(screen.getByRole("button", { name: /كمّل دراستك/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /اختَر مادة/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /راجع أخطاءك/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /كل الأدوات/ })).toBeInTheDocument();
+  });
+});
