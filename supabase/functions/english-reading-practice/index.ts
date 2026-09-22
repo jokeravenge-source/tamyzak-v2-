@@ -124,7 +124,7 @@ const gradingSchema = {
 
 function cleanQuestions(value: unknown): PracticeQuestion[] {
   if (!Array.isArray(value) || value.length !== 6) throw new Error("Invalid questions returned");
-  const questions = value.map((item, index) => {
+  const questions: PracticeQuestion[] = value.map((item, index) => {
     const row = item as Record<string, unknown>;
     const type = row.type;
     if (type !== "short" && type !== "true_false" && type !== "fill_blank" && type !== "title") {
@@ -132,7 +132,7 @@ function cleanQuestions(value: unknown): PracticeQuestion[] {
     }
     const prompt = typeof row.prompt === "string" ? row.prompt.trim().slice(0, 600) : "";
     if (!prompt) throw new Error("Empty question returned");
-    return { id: index + 1, prompt, type };
+    return { id: index + 1, prompt, type: type as QuestionType };
   });
   if (questions[5].type !== "title") throw new Error("The title question must be last");
   if (questions.slice(0, 5).some((question) => question.type === "title")) throw new Error("Only the last question can ask for a title");
