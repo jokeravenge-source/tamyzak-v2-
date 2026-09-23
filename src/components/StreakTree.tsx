@@ -4,59 +4,71 @@ import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const KEY = "streak_sky_state_v1";
+const KEY = "streak_sky_celebrated_v2";
 const FULL_DAYS = 5;
 const MAX_STREAK_DAYS = 60;
 
-type StreakState = { days: number; lastDate: string; celebrated?: boolean };
+type StreakState = { userId: string | null; days: number; celebrated: boolean };
 
 // The server stores the account's streak, so it survives deployments, browser
 // storage cleanup, and moves between the Lovable and custom-domain addresses.
 function useStreak(enabled = true) {
-  const [state, setState] = useState<StreakState>(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { days: 0, lastDate: "", celebrated: false };
-  });
+  const [state, setState] = useState<StreakState>({ userId: null, days: 0, celebrated: false });
 
   useEffect(() => {
     if (!enabled) return;
     let active = true;
 
     const refresh = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!active) return;
+      const userId = auth.user?.id ?? null;
+      if (!userId) {
+        setState({ userId: null, days: 0, celebrated: false });
+        return;
+      }
       // Safe to call repeatedly: the server awards a daily login only once.
       await ensureDailyLogin();
       const progress = await fetchProgress();
       if (!active) return;
-
+      const { data: currentAuth } = await supabase.auth.getUser();
+      if (!active || currentAuth.user?.id !== userId) return;
       setState((prev) => {
-        // Keep an existing local value only when the remote account has not yet
-        // recorded a streak (for example, while an older account is migrating).
-        const days = progress.current_streak > 0 ? progress.current_streak : prev.days;
-        const next = {
-          days,
-          lastDate: progress.last_active_date ?? prev.lastDate,
-          celebrated: prev.celebrated && days >= MAX_STREAK_DAYS,
-        };
-        try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
-        return next;
+        const days = progress.current_streak;
+        let celebrated = false;
+        try { celebrated = localStorage.getItem(`${KEY}:${userId}`) === "true"; } catch {}
+        return { userId, days, celebrated: days >= MAX_STREAK_DAYS && (celebrated || (prev.userId === userId && prev.celebrated)) };
       });
     };
 
     void refresh();
     window.addEventListener("app:progress-updated", refresh);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setState((prev) => prev.userId === (session?.user.id ?? null)
+        ? prev
+        : { userId: null, days: 0, celebrated: false });
+      // Supabase auth callbacks must not await another auth request.
+      window.setTimeout(() => { if (active) void refresh(); }, 0);
+    });
+    const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 60_000);
     return () => {
       active = false;
+      authListener.subscription.unsubscribe();
       window.removeEventListener("app:progress-updated", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(interval);
     };
   }, [enabled]);
 
   const markCelebrated = () => {
     setState((p) => {
       const n = { ...p, celebrated: true };
-      try { localStorage.setItem(KEY, JSON.stringify(n)); } catch {}
+      if (p.userId) {
+        try { localStorage.setItem(`${KEY}:${p.userId}`, "true"); } catch {}
+      }
       return n;
     });
   };

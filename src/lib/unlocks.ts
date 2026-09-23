@@ -116,24 +116,38 @@ export async function awardAction(
   return res;
 }
 
-const LOGIN_KEY = "daily_login_awarded_v1";
+const LOGIN_KEY = "daily_login_awarded_v2";
+const pendingLogins = new Map<string, Promise<void>>();
 
 function baghdadToday(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Baghdad" }).format(new Date());
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find((item) => item.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 /** Awards `daily_login` at most once per Baghdad day (server enforces the real cap). */
 export async function ensureDailyLogin() {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return;
   const today = baghdadToday();
+  const key = `${LOGIN_KEY}:${auth.user.id}`;
+  const attempt = `${key}:${today}`;
   try {
-    if (localStorage.getItem(LOGIN_KEY) === today) return;
+    if (localStorage.getItem(key) === today) return;
   } catch {
     /* storage unavailable — the server cap still protects us */
   }
-  const res = await awardAction("daily_login", { day: today });
-  if (res) {
-    try { localStorage.setItem(LOGIN_KEY, today); } catch { /* ignore */ }
-  }
+  if (pendingLogins.has(attempt)) return pendingLogins.get(attempt);
+  const pending = (async () => {
+    const res = await awardAction("daily_login", { day: today });
+    if (res) {
+      try { localStorage.setItem(key, today); } catch { /* ignore */ }
+    }
+  })();
+  pendingLogins.set(attempt, pending);
+  try { await pending; } finally { pendingLogins.delete(attempt); }
 }
 /** Human-readable earning rules — kept in sync with the `award_points` DB function. */
 export type PointRule = {
