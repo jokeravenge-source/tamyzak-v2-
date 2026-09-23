@@ -29,6 +29,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { awardPoints, showAward } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
+import { recordTopicPractice } from "@/lib/topicMastery";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
@@ -227,9 +228,21 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         explanation: current.explanation,
       });
     };
+    const trackPractice = (correct: boolean) => {
+      const chapterNumber = resolveMcqChapter(current)?.n ?? current.chapter;
+      void recordTopicPractice({
+        subject: current.subject,
+        chapter: chapterNumber,
+        question: current.question,
+        context: (current.tags ?? []).join(" "),
+        source: "mcq_bank",
+        correct,
+      });
+    };
     if (error || !res) {
       // fall back to local check so the user still gets feedback
       const ok = choice === current.answer_index;
+      trackPractice(ok);
       setAnswerIndex(current.answer_index);
       setExplanation(current.explanation);
       setScore((s) => ({ right: s.right + (ok ? 1 : 0), wrong: s.wrong + (ok ? 0 : 1) }));
@@ -247,6 +260,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       return;
     }
     setAnswerIndex(res.answer_index);
+    trackPractice(res.correct);
     setExplanation(res.explanation ?? current.explanation);
     setDelta(res.points);
     setScore((s) => ({ right: s.right + (res.correct ? 1 : 0), wrong: s.wrong + (res.correct ? 0 : 1) }));

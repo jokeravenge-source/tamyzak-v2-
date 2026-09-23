@@ -535,6 +535,24 @@ function matchScore(card: Flashcard, def: TopicDef): number {
   return score;
 }
 
+/** One stable bilingual category across flashcards, MCQs, and ministerial questions. */
+export function matchPresetTopic(subject: string, chapter: number | string, question: string, answer = ""): TopicDef | null {
+  const defs = TOPIC_PRESETS[`${subject}:${chapter}`];
+  if (!defs) return null;
+  let best: TopicDef | null = null;
+  let bestScore = 0;
+  for (const def of defs) {
+    // The question describes the skill more reliably than a model answer,
+    // which often mentions neighbouring concepts as context.
+    const score = matchScore({ q: question, a: "" }, def) * 2 + matchScore({ q: "", a: answer }, def);
+    if (score > bestScore) {
+      best = def;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 export function buildPresetGroups(
   subject: string,
   chapter: string,

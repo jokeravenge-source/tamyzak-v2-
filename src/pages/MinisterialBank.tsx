@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, Eye, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -39,6 +39,7 @@ import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
 import { Textarea } from "@/components/ui/textarea";
+import { recordTopicPractice, topicForQuestion } from "@/lib/topicMastery";
 
 const subjectIcons: Record<BankSubject, React.ComponentType<{ className?: string }>> = {
   physics: Atom,
@@ -182,6 +183,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
   const [subject, setSubject] = useState<BankSubject | null>(null);
   const [chapterN, setChapterN] = useState<number | null>(null);
   const [qIndex, setQIndex] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [reviewing, setReviewing] = useState(false);
   const [examOpen, setExamOpen] = useState(false);
@@ -202,6 +204,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       setReviewing(false);
     } else if (chapterN !== null) {
       setChapterN(null);
+      setSelectedCategory(null);
       setQIndex(0);
       setAnswers({});
     } else if (subject) {
@@ -299,7 +302,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
 
   const chapters = subject ? getChaptersForSubject(subject) : [];
   const subjectMeta = SUBJECTS_ORDER.find((s) => s.code === subject);
-  const questions =
+  const allQuestions =
     subject === "physics" && chapterN === 1
       ? (language === "ar" ? ministerialPhysicsCh1Ar : ministerialPhysicsCh1)
       : subject === "physics" && chapterN === 2
@@ -339,8 +342,26 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 : subject === "islamic" && chapterN === 2
                 ? ministerialIslamicUnit2
                 : [];
+  const categoryOptions = useMemo(() => {
+    const options = new Map<string, { ar: string; en: string; count: number }>();
+    if (subject && chapterN !== null) {
+      for (const question of allQuestions) {
+        const category = topicForQuestion(subject, chapterN, question.q, question.a);
+        const currentCount = options.get(category.key)?.count ?? 0;
+        options.set(category.key, { ar: category.labelAr, en: category.labelEn, count: currentCount + 1 });
+      }
+    }
+    return options;
+  }, [allQuestions, subject, chapterN]);
+  const questions = useMemo(() => selectedCategory && subject && chapterN !== null
+    ? allQuestions.filter((question) => topicForQuestion(subject, chapterN, question.q, question.a).key === selectedCategory)
+    : allQuestions, [allQuestions, selectedCategory, subject, chapterN]);
   const hasQuestionBank = questions.length > 0;
   const current = questions[qIndex];
+  const markQuestion = (correct: boolean) => {
+    if (!subject || chapterN === null || !current) return;
+    void recordTopicPractice({ subject, chapter: chapterN, question: current.q, context: current.a, source: "ministerial_bank", correct });
+  };
 
   return (
     <main className="min-h-screen px-4 pb-20 pt-8 md:pt-12 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
@@ -659,7 +680,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
               </div>
               <div className="flex items-center justify-center gap-6 pt-2">
                 <button
-                  onClick={() => setReviewing(false)}
+                  onClick={() => { markQuestion(false); setReviewing(false); }}
                   aria-label={t.gotItWrong}
                   title={t.gotItWrong}
                   className="w-16 h-16 rounded-full border border-red-400/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-all flex items-center justify-center"
@@ -668,6 +689,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 </button>
                 <button
                   onClick={() => {
+                    markQuestion(true);
                     if (qIndex < questions.length - 1) {
                       setQIndex((i) => i + 1);
                     }
@@ -675,6 +697,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                   }}
                   aria-label={t.gotIt}
                   title={t.gotIt}
+                  disabled={!answers[qIndex]?.trim()}
                   className="w-16 h-16 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all flex items-center justify-center"
                 >
                   <Check className="w-7 h-7" />
@@ -683,6 +706,20 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
             </section>
           ) : (
             <section className="max-w-3xl mx-auto mt-12 z-10 relative animate-fade-up space-y-5">
+              {categoryOptions.size > 1 && (
+                <div className="flex flex-wrap gap-2" aria-label={language === "ar" ? "تصنيفات الأسئلة" : "Question categories"}>
+                  <button onClick={() => { setSelectedCategory(null); setQIndex(0); setReviewing(false); }}
+                    className={`rounded-full border px-3 py-1.5 text-sm ${!selectedCategory ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/40"}`}>
+                    {language === "ar" ? "الكل" : "All"} ({allQuestions.length})
+                  </button>
+                  {[...categoryOptions].map(([key, item]) => (
+                    <button key={key} onClick={() => { setSelectedCategory(key); setQIndex(0); setReviewing(false); }}
+                      className={`rounded-full border px-3 py-1.5 text-sm ${selectedCategory === key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/40"}`}>
+                      {language === "ar" ? item.ar : item.en} ({item.count})
+                    </button>
+                  ))}
+                </div>
+              )}
               {subject && chapterN !== null && (
                 <button
                   onClick={() => generateExam(subject, chapterN)}

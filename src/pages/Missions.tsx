@@ -10,6 +10,7 @@ const useAr = (subj: string | null | undefined, language: string) =>
 import { type AppLanguage } from "@/components/LanguageGate";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { categoryLabel, loadTopicPractice, topicSummary, type PracticeAttempt } from "@/lib/topicMastery";
 
 const copy = {
   en: {
@@ -49,6 +50,7 @@ type ProgressRow = { id: string; topic_key: string; subject: string; completed: 
 const Missions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const t = copy[language];
   const [rows, setRows] = useState<ProgressRow[]>([]);
+  const [practice, setPractice] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [subject, setSubject] = useState<string | null>(null);
@@ -70,6 +72,11 @@ const Missions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         setRows(data ?? []);
         setLoading(false);
       });
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    void loadTopicPractice().then(setPractice);
   }, [userId]);
 
   const doneSet = useMemo(
@@ -141,6 +148,13 @@ const Missions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const chapData: MissionChapter | undefined = subjData?.chapters.find(
     (c) => c.key === chapter,
   );
+  const practiceByCategory = new Map<string, PracticeAttempt[]>();
+  for (const attempt of practice) {
+    if (attempt.subject !== subject || attempt.chapter !== chapter?.match(/\d+$/)?.[0]) continue;
+    const group = practiceByCategory.get(attempt.category_key) ?? [];
+    group.push(attempt);
+    practiceByCategory.set(attempt.category_key, group);
+  }
 
   return (
     <main
@@ -284,6 +298,31 @@ const Missions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         {subject && chapter && chapData && (
           <div className="space-y-3">
+            <div className="rounded-2xl border border-primary/30 bg-secondary/40 p-4">
+              <h2 className="font-bold">{language === "ar" ? "مستواك حسب موضوع الأسئلة" : "Your question practice by topic"}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{language === "ar" ? "إكمال المهمة منفصل عن تقييم إجاباتك. نتائج البطاقات والوزاريات تعتمد على تقييمك لنفسك." : "Mission completion is separate from answer results. Flashcard and ministerial results are self-assessed."}</p>
+              {practiceByCategory.size === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">{language === "ar" ? "جاوب على أسئلة البنك أو الوزاريات أو راجع البطاقات حتى يظهر تقدمك هنا." : "Answer bank or ministerial questions, or review flashcards to see progress here."}</p>
+              ) : (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {[...practiceByCategory].map(([key, attempts]) => {
+                    const summary = topicSummary(attempts);
+                    const labels = language === "ar"
+                      ? { starting: "بدأت", strong: "قوي", improving: "يتحسن", practice: "يحتاج تدريب" }
+                      : { starting: "Getting started", strong: "Strong", improving: "Improving", practice: "Needs practice" };
+                    return (
+                      <div key={key} className="rounded-xl border border-border bg-background/70 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-sm font-semibold">{categoryLabel(key, language)}</span>
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{labels[summary.state]}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{language === "ar" ? `${summary.count} أسئلة مختلفة · ${summary.objectiveCount} مصححة تلقائياً` : `${summary.count} distinct questions · ${summary.objectiveCount} automatically graded`}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             {chapData.topics.map((tp, i) => {
               const done = doneSet.has(tp.key);
               return (

@@ -70,6 +70,7 @@ import { Button } from "@/components/ui/button";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
+import { recordTopicPractice } from "@/lib/topicMastery";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
 import { useTodos } from "@/lib/todoTopicProgress";
@@ -510,6 +511,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const handleRate = async (rating: SrsRating) => {
     const current = cards[index];
     if (!current) return;
+    void recordTopicPractice({
+      subject,
+      chapter,
+      question: current.q,
+      context: current.a,
+      source: "flashcards",
+      correct: rating === "good" || rating === "easy",
+    });
     const key = keyOf(current);
     const prev = srs.get(key) ?? defaultState(key);
     const updated = await rateCard({
