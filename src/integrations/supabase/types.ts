@@ -1658,9 +1658,6 @@ export type Database = {
           created_by: string | null
           id: string
           link: string | null
-          link_updated_at: string | null
-          push_sent: boolean
-          telegram_sent: boolean
           title: string
         }
         Insert: {
@@ -1669,9 +1666,6 @@ export type Database = {
           created_by?: string | null
           id?: string
           link?: string | null
-          link_updated_at?: string | null
-          push_sent?: boolean
-          telegram_sent?: boolean
           title: string
         }
         Update: {
@@ -1680,9 +1674,6 @@ export type Database = {
           created_by?: string | null
           id?: string
           link?: string | null
-          link_updated_at?: string | null
-          push_sent?: boolean
-          telegram_sent?: boolean
           title?: string
         }
         Relationships: []
@@ -2569,7 +2560,6 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
-          is_public: boolean
           name: string
           owner_id: string
           subject: string | null
@@ -2580,7 +2570,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
-          is_public?: boolean
           name: string
           owner_id: string
           subject?: string | null
@@ -2591,7 +2580,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
-          is_public?: boolean
           name?: string
           owner_id?: string
           subject?: string | null
@@ -2904,21 +2892,18 @@ export type Database = {
       telegram_notifications_sent: {
         Row: {
           id: string
-          message_id: number | null
           notification_key: string
           sent_at: string
           telegram_user_id: number
         }
         Insert: {
           id?: string
-          message_id?: number | null
           notification_key: string
           sent_at?: string
           telegram_user_id: number
         }
         Update: {
           id?: string
-          message_id?: number | null
           notification_key?: string
           sent_at?: string
           telegram_user_id?: number
