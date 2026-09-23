@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
@@ -390,7 +390,7 @@ const SUBJECT_TINTS: Record<string, { card: string; icon: string }> = {
 
 const T = {
   en: {
-    title: "Study Sessions", desc: "Pick a subject, set a mission, and earn points.",
+    title: "Study Sessions", desc: "Pick a subject and start focusing. Adding a task is optional.",
     leaderboard: "Leaderboard", mission: "Mission for this session", missionPh: "e.g. Finish chapter 3 exercises",
     start: "Start", pause: "Pause", resume: "Resume", stop: "Stop & save",
     completed: "Mark mission completed", points: "pts", hours: "hours", minutes: "min", noOne: "No scores yet.",
@@ -430,9 +430,10 @@ const T = {
     finalTime: "Time that will be saved",
     saveAdjusted: "Save adjusted session",
     invalidRemove: "Enter a number of minutes within the session duration.",
+    sessionMenu: "Session menu", hideMenu: "Hide menu", optionalTask: "Optional task",
   },
   ar: {
-    title: "جلسات الدراسة", desc: "اختر مادة وحدد مهمتك واكسب النقاط.",
+    title: "جلسات الدراسة", desc: "اختر مادة وابدأ التركيز. إضافة مهمة اختيارية.",
     leaderboard: "لوحة المتصدرين", mission: "مهمة هذه الجلسة", missionPh: "مثلاً: إنهاء تمارين الفصل 3",
     start: "ابدأ", pause: "إيقاف مؤقت", resume: "متابعة", stop: "إيقاف وحفظ",
     completed: "تم إنجاز المهمة", points: "نقطة", hours: "ساعة", minutes: "دقيقة", noOne: "لا توجد نتائج بعد.",
@@ -472,6 +473,7 @@ const T = {
     finalTime: "الوقت الذي سيتم حفظه",
     saveAdjusted: "حفظ الوقت المعدّل",
     invalidRemove: "أدخل عدد دقائق ضمن مدة الجلسة.",
+    sessionMenu: "قائمة الجلسة", hideMenu: "إخفاء القائمة", optionalTask: "مهمة اختيارية",
   },
 } as const;
 
@@ -496,6 +498,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [pomodoro, setPomodoro] = useState(false);
+  const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
+  const [joinedStudyRoom, setJoinedStudyRoom] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [editingSaveTime, setEditingSaveTime] = useState(false);
@@ -856,7 +860,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   };
 
   const startSession = () => {
-    if (!mission.trim()) { toast.error(language === "ar" ? "أدخل مهمتك" : "Type a mission first"); return; }
     if (pomodoro) {
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
@@ -1071,14 +1074,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             ))}
           </div>
 
-        <PrivateStudyRooms language={language}>
+        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom}>
           <div className="text-sm font-semibold mb-1">
-            {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك الخاصة" : "Start your study timer inside your private room"}
+            {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك" : "Start your study timer inside your room"}
           </div>
           <p className="text-xs text-muted-foreground mb-3">
             {language === "ar"
-              ? "اختر المادة وستبقى غرفتك الخاصة والدردشة ظاهرة مع المؤقت والبومودورو والموسيقى."
-              : "Pick a subject — your private room and chat stay visible along with the timer, pomodoro and music."}
+              ? "اختر المادة وستبقى الغرفة والدردشة ظاهرة مع المؤقت. الخيارات الإضافية موجودة داخل قائمة الجلسة."
+              : "Pick a subject — your room and chat stay visible with the timer. Extra options are inside the session menu."}
           </p>
           <div className="flex flex-wrap gap-2">
             {SUBJECTS.map((s) => (
@@ -1117,77 +1120,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         <header className={`mb-6 rounded-[2rem] border p-5 shadow-sm ${activeTint.card}`}>
           <div className="flex items-center gap-4">
             <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${activeTint.icon}`}><ActiveSubjectIcon className="h-6 w-6" /></span>
-            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{language === "ar" ? subj.ar : subj.en}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p></div>
+            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{language === "ar" ? subj.ar : subj.en}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
             {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
           </div>
         </header>
 
-        {/* All session features live inside the private room card */}
-        <PrivateStudyRooms language={language}>
+        {/* Keep the timer primary; optional session tools stay behind one menu. */}
+        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom}>
         <div className="rounded-[2rem] border border-border/70 bg-card/80 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] backdrop-blur md:p-8 space-y-5">
-          <label className="block">
-            <span className="text-sm text-muted-foreground flex items-center gap-2 mb-2"><Target className="w-4 h-4" /> {L.mission}</span>
-            <Input value={mission} onChange={(e) => setMission(e.target.value)} placeholder={L.missionPh} disabled={started} maxLength={200} />
-          </label>
-
-          <SessionTodos
-            language={language}
-            onPick={(text) => { if (!started) setMission(text.slice(0, 200)); }}
-            selectedText={mission}
-            pickDisabled={started}
-          />
-
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => !started && setPomodoro((v) => !v)}
-              disabled={started}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition-all ${pomodoro ? "border-primary bg-primary/15 text-primary" : "border-white/10 bg-secondary/40 text-muted-foreground"} ${started ? "opacity-60 cursor-not-allowed" : "hover:border-primary/60"}`}
-            >
-              <Coffee className="w-4 h-4" />
-              <span>{L.pomodoro}</span>
-              <span className="text-xs opacity-80">· {pomodoro ? L.pomodoroOn : L.pomodoroOff}</span>
-            </button>
-          </div>
-
-          {!started && pomodoro && (
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              <label className="flex items-center gap-2 text-sm">
-                <Settings className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">{L.workMin}</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={180}
-                  value={pomodoroWorkMin || ""}
-                  onChange={(e) => {
-                    if (e.target.value === "") { setPomodoroWorkMin(0); return; }
-                    const v = parseInt(e.target.value, 10);
-                    if (!isNaN(v)) setPomodoroWorkMin(Math.min(180, v));
-                  }}
-                  onBlur={() => { if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN); }}
-                  className="w-20 text-center"
-                />
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">{L.restMin}</span>
-                <Input
-                  type="number"
-                  min={1}
-                  max={180}
-                  value={pomodoroRestMin || ""}
-                  onChange={(e) => {
-                    if (e.target.value === "") { setPomodoroRestMin(0); return; }
-                    const v = parseInt(e.target.value, 10);
-                    if (!isNaN(v)) setPomodoroRestMin(Math.min(180, v));
-                  }}
-                  onBlur={() => { if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN); }}
-                  className="w-20 text-center"
-                />
-              </label>
-            </div>
-          )}
-
           {started && pomodoro && (
             <div className={`text-center text-sm font-semibold ${phase === "rest" ? "text-primary" : "text-muted-foreground"}`}>
               {phase === "rest"
@@ -1201,13 +1141,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(seconds)}</div>
             <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour"}</span><span>{Math.floor(nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 transition-all" style={{ width: `${nextHourProgress}%` }} /></div></div>
           </div>
-
-          {started && (
-            <label className="flex items-center gap-2 justify-center text-sm">
-              <input type="checkbox" checked={completed} onChange={(e) => setCompleted(e.target.checked)} />
-              <span>{L.completed}</span>
-            </label>
-          )}
 
           <div className="flex flex-wrap justify-center gap-3">
             {!started ? (
@@ -1224,6 +1157,109 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               </>
             )}
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => !started && setPomodoro((value) => !value)}
+              disabled={started}
+              aria-pressed={pomodoro}
+              className={`flex h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold text-white shadow-sm transition ${pomodoro ? "border-red-500 bg-red-600 hover:bg-red-700" : "border-slate-500 bg-slate-600 hover:bg-slate-700"} ${started ? "cursor-not-allowed opacity-80" : ""}`}
+            >
+              <Coffee className="h-4 w-4" />
+              <span>{L.pomodoro}</span>
+              <span className="text-xs">· {pomodoro ? L.pomodoroOn : L.pomodoroOff}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSessionMenuOpen((value) => !value)}
+              aria-expanded={sessionMenuOpen}
+              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 text-sm font-bold text-primary transition hover:bg-primary/15"
+            >
+              <Menu className="h-4 w-4" />
+              {sessionMenuOpen ? L.hideMenu : L.sessionMenu}
+              <ChevronDown className={`h-4 w-4 transition-transform ${sessionMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+
+          {sessionMenuOpen && (
+            <div className="space-y-4 rounded-2xl border border-border/70 bg-background/45 p-4">
+              <label className="block">
+                <span className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Target className="h-4 w-4" /> {L.optionalTask}</span>
+                <Input value={mission} onChange={(event) => setMission(event.target.value)} placeholder={L.missionPh} disabled={started} maxLength={200} />
+              </label>
+
+              <SessionTodos
+                language={language}
+                onPick={(text) => { if (!started) setMission(text.slice(0, 200)); }}
+                selectedText={mission}
+                pickDisabled={started}
+              />
+
+              {!started && pomodoro && (
+                <div className="flex flex-wrap items-center justify-center gap-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">{L.workMin}</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={180}
+                      value={pomodoroWorkMin || ""}
+                      onChange={(event) => {
+                        if (event.target.value === "") { setPomodoroWorkMin(0); return; }
+                        const value = parseInt(event.target.value, 10);
+                        if (!Number.isNaN(value)) setPomodoroWorkMin(Math.min(180, value));
+                      }}
+                      onBlur={() => { if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN); }}
+                      className="w-20 text-center"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">{L.restMin}</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={180}
+                      value={pomodoroRestMin || ""}
+                      onChange={(event) => {
+                        if (event.target.value === "") { setPomodoroRestMin(0); return; }
+                        const value = parseInt(event.target.value, 10);
+                        if (!Number.isNaN(value)) setPomodoroRestMin(Math.min(180, value));
+                      }}
+                      onBlur={() => { if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN); }}
+                      className="w-20 text-center"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {started && mission.trim() && (
+                <label className="flex items-center justify-center gap-2 text-sm">
+                  <input type="checkbox" checked={completed} onChange={(event) => setCompleted(event.target.checked)} />
+                  <span>{L.completed}</span>
+                </label>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 backdrop-blur">
+                <Music className="h-5 w-5 text-primary" />
+                <div className="flex overflow-hidden rounded-full border border-white/10 text-xs">
+                  <button onClick={() => switchPlaylist("music")} className={`px-3 py-1 ${playlist === "music" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "موسيقى" : "Music"}</button>
+                  <button onClick={() => switchPlaylist("quran")} className={`px-3 py-1 ${playlist === "quran" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "قرآن" : "Quran"}</button>
+                </div>
+                <span className="text-sm font-medium">{language === "ar" ? `المقطع ${trackIdx + 1}/${TRACKS.length}` : `Track ${trackIdx + 1}/${TRACKS.length}`}</span>
+                <Button size="sm" variant="secondary" onClick={toggleMusic} className="gap-2">{musicPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</Button>
+                <Button size="sm" variant="ghost" onClick={nextTrack} className="gap-2"><SkipForward className="h-4 w-4" /></Button>
+                <div className="ms-auto flex items-center gap-2">
+                  {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(event) => setVolume(parseFloat(event.target.value))} className="w-28" />
+                </div>
+                <audio ref={audioRef} src={TRACKS[trackIdx]} loop preload="none" />
+              </div>
+
+              <SpotifyPlayerBlock language={language} />
+            </div>
+          )}
 
           {started && (
             <div className="flex justify-center">
@@ -1245,32 +1281,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           )}
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 backdrop-blur">
-          <Music className="w-5 h-5 text-primary" />
-          <div className="flex rounded-full border border-white/10 overflow-hidden text-xs">
-            <button onClick={() => switchPlaylist("music")} className={`px-3 py-1 ${playlist === "music" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "موسيقى" : "Music"}</button>
-            <button onClick={() => switchPlaylist("quran")} className={`px-3 py-1 ${playlist === "quran" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "قرآن" : "Quran"}</button>
-          </div>
-          <span className="text-sm font-medium">{language === "ar" ? `موسيقى ${trackIdx + 1}/${TRACKS.length}` : `Track ${trackIdx + 1}/${TRACKS.length}`}</span>
-          <Button size="sm" variant="secondary" onClick={toggleMusic} className="gap-2">
-            {musicPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={nextTrack} className="gap-2"><SkipForward className="w-4 h-4" /></Button>
-          <div className="flex items-center gap-2 ml-auto">
-            {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-            <input type="range" min={0} max={1} step={0.05} value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-28" />
-          </div>
-          <audio ref={audioRef} src={TRACKS[trackIdx]} loop preload="none" />
-        </div>
-
-        <SpotifyPlayerBlock language={language} />
         </PrivateStudyRooms>
 
-        <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur md:p-5">
+        {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur md:p-5">
           <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
           <StudyRoom language={language} subject={subject} currentUserId={userId} />
-        </section>
+        </section>}
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/60 backdrop-blur">
           <button type="button" onClick={() => setLeaderboardOpen((value) => !value)} aria-expanded={leaderboardOpen} className="flex w-full items-center gap-3 p-3.5 text-start hover:bg-amber-500/10">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame } from "lucide-react";
+import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SUMMARY_SUBJECTS } from "./Summaries";
@@ -201,11 +201,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const pendingDeletionCount = fcs.filter((f) => Boolean(f.delete_requested_at)).length;
 
   // Notifications state
-  type Notif = { id: string; title: string; body: string; link: string | null; created_at: string };
+  type Notif = { id: string; title: string; body: string; link: string | null; created_at: string; telegram_sent: boolean; push_sent: boolean; link_updated_at: string | null };
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [notifForm, setNotifForm] = useState<{ title: string; body: string; link: string; file: File | null; video: File | null }>({ title: "", body: "", link: "", file: null, video: null });
   const [notifBusy, setNotifBusy] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const [editingNotifId, setEditingNotifId] = useState<string | null>(null);
+  const [editingNotifLink, setEditingNotifLink] = useState("");
+  const [notifEditBusy, setNotifEditBusy] = useState(false);
   const loadNotifs = async () => {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false });
     setNotifs((data ?? []) as Notif[]);
@@ -236,13 +239,15 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
       }
       const { data: inserted, error } = await supabase.from("notifications").insert({ title: notifForm.title, body: notifForm.body, link: link || null, created_by: u.user?.id }).select("id").single();
       if (error) throw error;
+      const notificationId = inserted.id;
       toast.success("Notification sent to all users");
       try {
         const { data: tg } = await supabase.functions.invoke("telegram-notify", {
-          body: { title: notifForm.title, body: notifForm.body, link: link || null, photo_url, video_url, audience: "all", notification_key: `notif:${inserted?.id}` },
+          body: { title: notifForm.title, body: notifForm.body, link: link || null, photo_url, video_url, audience: "all", notification_key: `notif:${notificationId}` },
         });
         if (tg && typeof tg === "object" && "sent" in (tg as Record<string, unknown>)) {
           const t = tg as { sent: number; failed: number; total: number };
+          if (t.sent > 0) await supabase.from("notifications").update({ telegram_sent: true }).eq("id", notificationId);
           toast.success(`Telegram: ${t.sent}/${t.total} delivered${t.failed ? ` (${t.failed} failed)` : ""}`);
         }
       } catch (e: any) {
@@ -253,13 +258,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
       try {
         setPushBusy(true);
         const { data: push, error: pushErr } = await supabase.functions.invoke("send-push", {
-          body: { title: notifForm.title, body: notifForm.body, link: link || null },
+          body: { title: notifForm.title, body: notifForm.body, link: link || null, message_id: notificationId },
         });
         if (pushErr) throw pushErr;
         const p = push as { sent?: number; failed?: number; total?: number; reason?: string };
         if (p.reason === "no_tokens") {
           toast("No devices registered for push notifications yet.");
         } else {
+          if ((p.sent ?? 0) > 0) await supabase.from("notifications").update({ push_sent: true }).eq("id", notificationId);
           toast.success(`Push: ${p.sent ?? 0}/${p.total ?? 0} delivered${p.failed ? ` (${p.failed} failed)` : ""}`);
         }
       } catch (e: any) {
@@ -280,6 +286,42 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     const { error } = await supabase.from("notifications").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setNotifs((r) => r.filter((x) => x.id !== id));
+  };
+  const saveNotifLink = async (notification: Notif) => {
+    const link = editingNotifLink.trim();
+    if (link && !/^https?:\/\//i.test(link)) return toast.error("Link must start with http:// or https://");
+    setNotifEditBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("update-notification-link", {
+        body: { notification_id: notification.id, link: link || null },
+      });
+      if (error) throw error;
+      const result = data as {
+        telegram?: { edited?: number; failed?: number; legacy?: number };
+        push?: { sent?: number; failed?: number; total?: number; reason?: string } | null;
+        push_error?: string | null;
+      };
+      setNotifs((rows) => rows.map((row) => row.id === notification.id
+        ? { ...row, link: link || null, link_updated_at: new Date().toISOString() }
+        : row));
+      setEditingNotifId(null);
+      setEditingNotifLink("");
+      const telegram = result.telegram;
+      if (notification.telegram_sent) {
+        toast.success(`Telegram links updated: ${telegram?.edited ?? 0}${telegram?.failed ? ` · ${telegram.failed} failed` : ""}${telegram?.legacy ? ` · ${telegram.legacy} older messages could not be edited` : ""}`);
+      }
+      if (notification.push_sent) {
+        const push = result.push;
+        if (result.push_error) toast.error(result.push_error);
+        else if (push?.reason === "no_tokens") toast("Link saved. No push devices are currently registered.");
+        else toast.success(`Corrected push: ${push?.sent ?? 0}/${push?.total ?? 0} delivered${push?.failed ? ` (${push.failed} failed)` : ""}`);
+      }
+      if (!notification.telegram_sent && !notification.push_sent) toast.success("Notification link updated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not update notification link");
+    } finally {
+      setNotifEditBusy(false);
+    }
   };
 
   // News state
@@ -956,15 +998,30 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <button
                 onClick={async () => {
                   if (!notifForm.title.trim()) return toast.error("Title required");
+                  const link = notifForm.link.trim();
+                  if (link && !/^https?:\/\//i.test(link)) return toast.error("Link must start with http:// or https://");
                   setPushBusy(true);
                   try {
+                    const { data: userData } = await supabase.auth.getUser();
+                    const { data: inserted, error: insertError } = await supabase.from("notifications").insert({
+                      title: notifForm.title,
+                      body: notifForm.body,
+                      link: link || null,
+                      created_by: userData.user?.id,
+                    }).select("id").single();
+                    if (insertError) throw insertError;
                     const { data, error } = await supabase.functions.invoke("send-push", {
-                      body: { title: notifForm.title, body: notifForm.body, link: notifForm.link.trim() || null },
+                      body: { title: notifForm.title, body: notifForm.body, link: link || null, message_id: inserted.id },
                     });
                     if (error) throw error;
                     const r = data as { sent?: number; failed?: number; total?: number; reason?: string };
                     if (r.reason === "no_tokens") toast("No devices registered for push notifications yet.");
-                    else toast.success(`Push: ${r.sent ?? 0}/${r.total ?? 0} delivered${r.failed ? ` (${r.failed} failed)` : ""}`);
+                    else {
+                      if ((r.sent ?? 0) > 0) await supabase.from("notifications").update({ push_sent: true }).eq("id", inserted.id);
+                      toast.success(`Push: ${r.sent ?? 0}/${r.total ?? 0} delivered${r.failed ? ` (${r.failed} failed)` : ""}`);
+                    }
+                    setNotifForm({ title: "", body: "", link: "", file: null, video: null });
+                    loadNotifs();
                   } catch (e: any) {
                     toast.error(`FCM push failed: ${e?.message ?? e}`);
                   } finally {
@@ -987,11 +1044,40 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold">{n.title}</h4>
                       {n.body && <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">{n.body}</p>}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                        {n.telegram_sent && <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-sky-400">Telegram</span>}
+                        {n.push_sent && <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-2 py-0.5 text-violet-400">Push</span>}
+                        {n.link && <a href={n.link} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 truncate text-primary hover:underline"><Link2 className="h-3 w-3 shrink-0" />{n.link}</a>}
+                        {!n.link && <span className="text-muted-foreground">No destination link</span>}
+                      </div>
+                      {editingNotifId === n.id && (
+                        <div className="mt-3 rounded-xl border border-primary/25 bg-background/70 p-3">
+                          <label className="mb-1.5 block text-xs font-semibold">Edit destination link</label>
+                          <input
+                            value={editingNotifLink}
+                            onChange={(event) => setEditingNotifLink(event.target.value)}
+                            placeholder="https://... (leave empty to remove the button)"
+                            className="h-10 w-full rounded-lg border border-white/10 bg-background px-3 text-sm"
+                          />
+                          <p className="mt-1.5 text-[11px] text-muted-foreground">Telegram buttons are edited in place. Push sends a corrected replacement notification.</p>
+                          <div className="mt-3 flex gap-2">
+                            <button disabled={notifEditBusy} onClick={() => saveNotifLink(n)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                              {notifEditBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save & update
+                            </button>
+                            <button disabled={notifEditBusy} onClick={() => { setEditingNotifId(null); setEditingNotifLink(""); }} className="h-9 rounded-lg border border-white/10 px-3 text-sm hover:bg-secondary">Cancel</button>
+                          </div>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">{new Date(n.created_at).toLocaleString()}</p>
                     </div>
-                    <button onClick={() => delNotif(n.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 text-sm">
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                      <button onClick={() => { setEditingNotifId(n.id); setEditingNotifLink(n.link ?? ""); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-primary/40 px-3 text-sm text-primary hover:bg-primary/10">
+                        <Pencil className="h-4 w-4" /> Edit link
+                      </button>
+                      <button onClick={() => delNotif(n.id)} className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 text-sm">
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

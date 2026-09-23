@@ -172,7 +172,7 @@ export async function onPushMessage(handler?: (title: string, body: string) => v
             body,
             icon: "/app-icon-192.png",
             badge: "/app-icon-192.png",
-            tag: "tamayzak-push",
+            tag: payload.data?.messageId ? `tamayzak-push-${payload.data.messageId}` : "tamayzak-push",
             data: { url: payload.data?.url ?? "/" },
           });
         } catch {

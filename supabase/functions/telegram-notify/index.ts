@@ -85,18 +85,31 @@ Deno.serve(async (req) => {
     for (const r of rows ?? []) {
       const id = (r as { telegram_user_id: number | null }).telegram_user_id;
       if (!id) continue;
+      let deliveryId: string | null = null;
       if (notificationKey) {
-        const { error: insErr } = await admin
+        const { data: insertedDelivery, error: insErr } = await admin
           .from("telegram_notifications_sent")
-          .insert({ notification_key: notificationKey, telegram_user_id: id });
+          .insert({ notification_key: notificationKey, telegram_user_id: id })
+          .select("id")
+          .single();
         if (insErr) {
           // duplicate (already delivered) or other write error — skip send
           skipped++;
           continue;
         }
+        deliveryId = insertedDelivery?.id ?? null;
       }
       const res = await tgSend(id, msg, link, photoUrl, videoUrl);
-      if (res.ok) sent++; else failed++;
+      if (res.ok) {
+        sent++;
+        const messageId = Number(res.data?.result?.message_id);
+        if (deliveryId && Number.isFinite(messageId) && messageId > 0) {
+          await admin.from("telegram_notifications_sent").update({ message_id: messageId }).eq("id", deliveryId);
+        }
+      } else {
+        failed++;
+        if (deliveryId) await admin.from("telegram_notifications_sent").delete().eq("id", deliveryId);
+      }
       await new Promise((r) => setTimeout(r, 40));
     }
 

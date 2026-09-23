@@ -29,10 +29,12 @@ function show(title, body, url, messageId) {
   });
 }
 
-function showOnce(title, body, url, messageId) {
+function showOnce(title, body, url, messageId, replaceExisting) {
   const tag = messageId ? `tamayzak-push-${messageId}` : "tamayzak-push";
   return self.registration.getNotifications({ tag }).then((existing) => {
-    if (existing.length > 0) return;
+    if (existing.length > 0 && !replaceExisting) return;
+    if (replaceExisting && existing.some((notification) => (notification.data?.url || "/") === (url || "/"))) return;
+    if (replaceExisting) existing.forEach((notification) => notification.close());
     return show(title, body, url, messageId);
   });
 }
@@ -41,7 +43,7 @@ function showOnce(title, body, url, messageId) {
 messaging.onBackgroundMessage((payload) => {
   const d = payload.data || {};
   const n = payload.notification || {};
-  return showOnce(n.title || d.title, n.body || d.body, d.url, d.messageId);
+  return showOnce(n.title || d.title, n.body || d.body, d.url, d.messageId, d.replaceExisting === "1");
 });
 
 // Raw fallback: fires even if the FCM SDK handler is skipped, and guarantees
@@ -59,7 +61,7 @@ self.addEventListener("push", (event) => {
   const body = n.body || d.body;
   if (!title && !body) return;
   event.waitUntil(
-    showOnce(title, body, d.url, d.messageId),
+    showOnce(title, body, d.url, d.messageId, d.replaceExisting === "1"),
   );
 });
 

@@ -86,8 +86,10 @@ async function sendFcm(
   title: string,
   body: string,
   link?: string | null,
+  messageId?: string,
+  replaceExisting = false,
 ): Promise<FcmDeliveryResult> {
-  const messageId = crypto.randomUUID();
+  const stableMessageId = messageId || crypto.randomUUID();
   // Send a data message and let our service worker display it. This produces
   // one consistent notification path on iOS Home Screen apps and Chromium.
   const message: Record<string, unknown> = {
@@ -96,7 +98,8 @@ async function sendFcm(
       title: title ?? "",
       body: body ?? "",
       url: link ?? "/",
-      messageId,
+      messageId: stableMessageId,
+      replaceExisting: replaceExisting ? "1" : "0",
     },
     android: { priority: "high" },
     webpush: {
@@ -173,6 +176,8 @@ Deno.serve(async (req) => {
     const title = String(body.title ?? "").slice(0, 200).trim();
     const text = String(body.body ?? "").slice(0, 3500).trim();
     const link = body.link ? String(body.link).slice(0, 500) : null;
+    const messageId = body.message_id ? String(body.message_id).slice(0, 200) : undefined;
+    const replaceExisting = body.replace_existing === true;
     const targetUserId = body.target_user_id ? String(body.target_user_id) : null;
     const targetUserIds = Array.isArray(body.target_user_ids)
       ? [...new Set(body.target_user_ids.map(String).filter(Boolean))].slice(0, 500)
@@ -234,6 +239,8 @@ Deno.serve(async (req) => {
           personalized?.title || title || "تميزك",
           personalized?.body ?? text,
           personalized?.link ?? link,
+          messageId,
+          replaceExisting,
         );
       } catch (e) {
         console.error("FCM send error", e instanceof Error ? e.message : e);

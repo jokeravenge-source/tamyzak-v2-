@@ -215,6 +215,11 @@ export default function StudyRoom({
                   <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-xs font-medium max-w-[120px] truncate ${isMe ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30"}`}>
                     {isMe ? (language === "ar" ? "أنت" : "You") : p.display_name}
                   </div>
+                  {!!p.mission && (
+                    <div className="mb-1 max-w-[120px] truncate rounded-full bg-background/75 px-2 py-0.5 text-[10px] text-muted-foreground" title={p.mission}>
+                      {p.mission}
+                    </div>
+                  )}
                   <div className="relative">
                     <CharacterAvatar gender={p.gender} traits={p.character ?? undefined} size={96} />
                     <div className="w-24 h-3.5 -mt-3 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />

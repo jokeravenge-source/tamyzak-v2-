@@ -3,15 +3,15 @@ import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { toast } from "sonner";
-import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Link2, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
+import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
 
-type Room = { id: string; code: string; name: string; owner_id: string };
+type Room = { id: string; code: string; name: string; owner_id: string; is_public: boolean; subject: string | null };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
 type Message = { id: string; user_id: string; display_name: string; body: string; created_at: string };
-type Presence = { elapsed_seconds: number; is_running: boolean; subject: string };
+type Presence = { elapsed_seconds: number; is_running: boolean; subject: string; mission: string };
 
 const LS_KEY = "study_room_active_v1";
 const MEMBER_PREVIEW_LIMIT = 30;
@@ -30,7 +30,17 @@ function makeCode() {
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-export default function PrivateStudyRooms({ language, children }: { language: "en" | "ar"; children?: React.ReactNode }) {
+export default function PrivateStudyRooms({
+  language,
+  children,
+  subject = null,
+  onRoomMembershipChange,
+}: {
+  language: "en" | "ar";
+  children?: React.ReactNode;
+  subject?: string | null;
+  onRoomMembershipChange?: (joined: boolean) => void;
+}) {
   const ar = language === "ar";
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Student");
@@ -38,6 +48,8 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
   const [members, setMembers] = useState<Member[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [roomName, setRoomName] = useState("");
+  const [roomVisibility, setRoomVisibility] = useState<"public" | "private">("private");
+  const [publicRooms, setPublicRooms] = useState<Room[]>([]);
   const [joinCode, setJoinCode] = useState("");
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,12 +62,12 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
 
   const L = ar
     ? {
-        title: "غرف الدراسة الخاصة", create: "إنشاء غرفة", join: "انضمام",
+        title: "غرف الدراسة", create: "إنشاء غرفة", join: "انضمام",
         roomName: "اسم الغرفة", code: "رمز الغرفة", enterCode: "أدخل الرمز",
         chat: "الدردشة", send: "إرسال", leave: "مغادرة الغرفة", copied: "تم نسخ الرمز",
         members: "الأعضاء", placeholder: "اكتب رسالة...", notFound: "لا توجد غرفة بهذا الرمز",
         blocked: "رسالتك تحتوي على كلمات غير مسموح بها (شتائم أو كلام عاطفي).",
-        needName: "اكتب اسم الغرفة", signIn: "سجّل الدخول لاستخدام الغرف الخاصة",
+        needName: "اكتب اسم الغرفة", signIn: "سجّل الدخول لاستخدام غرف الدراسة",
         joined: "تم الانضمام إلى الغرفة", hint: "شارك الرمز مع أصدقائك ليدرسوا معك.",
         empty: "لا توجد رسائل بعد — ابدأ الحديث!",
         share: "مشاركة الرابط", linkCopied: "تم نسخ رابط الغرفة",
@@ -66,15 +78,17 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         transferConfirm: "هل تريد جعل هذا الطالب صاحب الغرفة؟", noTimer: "لا يوجد مؤقّت",
         takeOwner: "استلام الملكية (مشرف)", takeConfirm: "هل تريد استلام ملكية هذه الغرفة؟",
         bannedList: "المحظورون", unban: "رفع الحظر", unbanned: "تم رفع الحظر", noBans: "لا يوجد محظورون",
-        showMore: "عرض المزيد", showLess: "عرض أقل",
+        showMore: "عرض المزيد", showLess: "عرض أقل", publicRooms: "الغرف العامة",
+        publicRoom: "عامة", privateRoom: "خاصة", visibility: "نوع الغرفة",
+        noPublicRooms: "لا توجد غرف عامة حالياً.", joinPublic: "دخول الغرفة", task: "المهمة",
       }
     : {
-        title: "Private study rooms", create: "Create room", join: "Join",
+        title: "Study rooms", create: "Create room", join: "Join",
         roomName: "Room name", code: "Room code", enterCode: "Enter code",
         chat: "Chat", send: "Send", leave: "Leave room", copied: "Code copied",
         members: "Members", placeholder: "Type a message...", notFound: "No room with that code",
         blocked: "Your message contains words that aren't allowed (cursing or love talk).",
-        needName: "Type a room name", signIn: "Sign in to use private rooms",
+        needName: "Type a room name", signIn: "Sign in to use study rooms",
         joined: "Joined the room", hint: "Share the code with friends so they can study with you.",
         empty: "No messages yet — say hi!",
         share: "Share link", linkCopied: "Room link copied",
@@ -85,8 +99,23 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         transferConfirm: "Make this student the room owner?", noTimer: "No timer",
         takeOwner: "Take ownership (admin)", takeConfirm: "Take ownership of this room?",
         bannedList: "Banned members", unban: "Unban", unbanned: "Member unbanned", noBans: "No banned members",
-        showMore: "Show more", showLess: "Show less",
+        showMore: "Show more", showLess: "Show less", publicRooms: "Public rooms",
+        publicRoom: "Public", privateRoom: "Private", visibility: "Room type",
+        noPublicRooms: "No public rooms are available yet.", joinPublic: "Join room", task: "Task",
       };
+
+  const roomColumns = "id,code,name,owner_id,is_public,subject";
+
+  const loadPublicRooms = useCallback(async () => {
+    const { data } = await supabase
+      .from("study_rooms")
+      .select(roomColumns)
+      .eq("is_active", true)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    setPublicRooms((data ?? []) as Room[]);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -111,7 +140,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
       supabase.from("study_room_messages")
         .select("id,user_id,display_name,body,created_at")
         .eq("room_id", roomId).order("created_at", { ascending: true }).limit(200),
-      supabase.from("study_rooms").select("id,code,name,owner_id").eq("id", roomId).maybeSingle(),
+      supabase.from("study_rooms").select(roomColumns).eq("id", roomId).maybeSingle(),
     ]);
     // Only replace the room object when something actually changed — a new
     // object identity on every refresh re-triggers effects and loops.
@@ -121,7 +150,9 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
         prev.id === roomRow.id &&
         prev.code === roomRow.code &&
         prev.name === roomRow.name &&
-        prev.owner_id === roomRow.owner_id
+        prev.owner_id === roomRow.owner_id &&
+        prev.is_public === roomRow.is_public &&
+        prev.subject === roomRow.subject
           ? prev
           : (roomRow as Room),
       );
@@ -146,13 +177,13 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
       const profs = ids.map((id) => profById.get(id)).filter(Boolean);
       const { data: sess } = await supabase
         .from("active_sessions")
-        .select("user_id,elapsed_seconds,is_running,subject")
+        .select("user_id,elapsed_seconds,is_running,subject,mission")
         .in("user_id", ids);
       setPresence(
         Object.fromEntries(
           (sess ?? []).map((s: any) => [
             s.user_id,
-            { elapsed_seconds: s.elapsed_seconds ?? 0, is_running: !!s.is_running, subject: s.subject ?? "" },
+            { elapsed_seconds: s.elapsed_seconds ?? 0, is_running: !!s.is_running, subject: s.subject ?? "", mission: s.mission ?? "" },
           ]),
         ),
       );
@@ -183,6 +214,15 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     }
   }, []);
 
+  useEffect(() => {
+    if (!userId || room) return;
+    loadPublicRooms();
+  }, [userId, room, loadPublicRooms]);
+
+  useEffect(() => {
+    onRoomMembershipChange?.(!!room);
+  }, [room, onRoomMembershipChange]);
+
   // Restore last room
   useEffect(() => {
     if (!userId) return;
@@ -190,7 +230,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     if (!saved) return;
     (async () => {
       const { data } = await supabase.from("study_rooms")
-        .select("id,code,name,owner_id").eq("id", saved).maybeSingle();
+        .select(roomColumns).eq("id", saved).maybeSingle();
       if (data) { setRoom(data as Room); loadRoom(data.id); }
       else localStorage.removeItem(LS_KEY);
     })();
@@ -273,8 +313,14 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
       let created: Room | null = null;
       for (let i = 0; i < 5 && !created; i++) {
         const { data, error } = await supabase.from("study_rooms")
-          .insert({ code: makeCode(), name: roomName.trim(), owner_id: userId })
-          .select("id,code,name,owner_id").maybeSingle();
+          .insert({
+            code: makeCode(),
+            name: roomName.trim(),
+            owner_id: userId,
+            is_public: roomVisibility === "public",
+            subject,
+          })
+          .select(roomColumns).maybeSingle();
         if (!error && data) created = data as Room;
         else if (error && !error.message.includes("duplicate")) throw error;
       }
@@ -284,6 +330,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
       localStorage.setItem(LS_KEY, created.id);
       setRoom(created);
       setRoomName("");
+      setRoomVisibility("private");
       loadRoom(created.id);
     } catch (e: any) {
       toast.error(e?.message ?? "Error");
@@ -303,7 +350,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     setBusy(true);
     try {
       const { data } = await supabase.from("study_rooms")
-        .select("id,code,name,owner_id").eq("code", code).eq("is_active", true).maybeSingle();
+        .select(roomColumns).eq("code", code).eq("is_active", true).maybeSingle();
       if (!data) { toast.error(L.notFound); return; }
       const { error } = await supabase.from("study_room_members")
         .upsert(
@@ -408,6 +455,7 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
     await supabase.from("study_room_members").delete().eq("room_id", room.id).eq("user_id", userId);
     localStorage.removeItem(LS_KEY);
     setRoom(null); setMembers([]); setMessages([]);
+    loadPublicRooms();
   };
 
   const send = async () => {
@@ -453,16 +501,49 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
           <DoorOpen className="w-4 h-4" /> <span>{L.title}</span>
         </div>
         <p className="text-xs text-muted-foreground mb-4">{L.hint}</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex gap-2">
-            <input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder={L.roomName}
-              className="flex-1 min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-sm" />
-            <button onClick={createRoom} disabled={busy}
-              className="rounded-xl bg-primary text-primary-foreground px-3 py-2 text-sm font-medium flex items-center gap-1 disabled:opacity-50">
-              <Plus className="w-4 h-4" /> {L.create}
-            </button>
+        <div className="mb-5">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Globe2 className="h-4 w-4 text-primary" /> {L.publicRooms}
           </div>
-          <div className="flex gap-2">
+          {publicRooms.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border px-4 py-3 text-center text-xs text-muted-foreground">{L.noPublicRooms}</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {publicRooms.map((publicRoom) => (
+                <button
+                  key={publicRoom.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => joinByCode(publicRoom.code)}
+                  className="flex items-center gap-3 rounded-xl border border-primary/25 bg-background/60 p-3 text-start transition hover:border-primary/60 hover:bg-primary/5 disabled:opacity-50"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Globe2 className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{publicRoom.name}</span><span className="block text-[11px] text-muted-foreground">{publicRoom.subject || L.publicRoom}</span></span>
+                  <span className="text-xs font-semibold text-primary">{L.joinPublic}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-primary/20 bg-background/40 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-muted-foreground">{L.visibility}</span>
+              <div className="flex rounded-lg bg-muted p-1 text-xs">
+                <button type="button" onClick={() => setRoomVisibility("private")} className={`flex items-center gap-1 rounded-md px-2 py-1 ${roomVisibility === "private" ? "bg-background font-bold shadow-sm" : "text-muted-foreground"}`}><Lock className="h-3 w-3" />{L.privateRoom}</button>
+                <button type="button" onClick={() => setRoomVisibility("public")} className={`flex items-center gap-1 rounded-md px-2 py-1 ${roomVisibility === "public" ? "bg-primary font-bold text-primary-foreground shadow-sm" : "text-muted-foreground"}`}><Globe2 className="h-3 w-3" />{L.publicRoom}</button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder={L.roomName}
+                className="flex-1 min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-sm" />
+              <button onClick={createRoom} disabled={busy}
+                className="rounded-xl bg-primary text-primary-foreground px-3 py-2 text-sm font-medium flex items-center gap-1 disabled:opacity-50">
+                <Plus className="w-4 h-4" /> {L.create}
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2 self-end rounded-xl border border-primary/20 bg-background/40 p-3">
             <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={L.enterCode}
               className="flex-1 min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-sm font-mono tracking-widest" />
             <button onClick={joinRoom} disabled={busy}
@@ -547,6 +628,11 @@ export default function PrivateStudyRooms({ language, children }: { language: "e
                   <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-[10px] font-medium max-w-[96px] truncate ${mine ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30 group-hover:border-primary/60"}`}>
                     {mine ? (ar ? "أنت" : "You") : m.display_name}
                   </div>
+                  {!!presence[m.user_id]?.mission && (
+                    <div className="mb-1 max-w-[96px] truncate rounded-full bg-background/75 px-2 py-0.5 text-[9px] text-muted-foreground" title={presence[m.user_id].mission}>
+                      {presence[m.user_id].mission}
+                    </div>
+                  )}
                   <div className="relative">
                     <CharacterAvatar gender={m.gender ?? "male"} traits={m.character ?? undefined} size={76} />
                     {/* Wooden desk */}
