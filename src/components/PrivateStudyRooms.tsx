@@ -11,7 +11,7 @@ import StudentProfileDialog from "./StudentProfileDialog";
 type Room = { id: string; code: string; name: string; owner_id: string; is_public: boolean; subject: string | null };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
 type Message = { id: string; user_id: string; display_name: string; body: string; created_at: string };
-type Presence = { elapsed_seconds: number; is_running: boolean; subject: string; mission: string };
+type Presence = { elapsed_seconds: number; is_running: boolean; last_seen_at: string; subject: string; mission: string };
 
 const LS_KEY = "study_room_active_v1";
 const MEMBER_PREVIEW_LIMIT = 30;
@@ -25,6 +25,9 @@ const fmtClock = (s: number) => {
   return h > 0 ? `${p(h)}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
 };
 
+const elapsedFromPresence = (p: Presence, now: number) =>
+  p.elapsed_seconds + (p.is_running ? Math.max(0, Math.floor((now - new Date(p.last_seen_at).getTime()) / 1000)) : 0);
+
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -35,11 +38,17 @@ export default function PrivateStudyRooms({
   children,
   subject = null,
   onRoomMembershipChange,
+  timerSeconds,
+  timerRunning,
+  timerStarted,
 }: {
   language: "en" | "ar";
   children?: React.ReactNode;
   subject?: string | null;
   onRoomMembershipChange?: (joined: boolean) => void;
+  timerSeconds?: number;
+  timerRunning?: boolean;
+  timerStarted?: boolean;
 }) {
   const ar = language === "ar";
   const [userId, setUserId] = useState<string | null>(null);
@@ -54,6 +63,7 @@ export default function PrivateStudyRooms({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [presence, setPresence] = useState<Record<string, Presence>>({});
+  const [now, setNow] = useState(Date.now());
   const [isAdmin, setIsAdmin] = useState(false);
   const [bans, setBans] = useState<{ user_id: string; display_name: string | null }[]>([]);
   const [showAllMembers, setShowAllMembers] = useState(false);
@@ -177,13 +187,13 @@ export default function PrivateStudyRooms({
       const profs = ids.map((id) => profById.get(id)).filter(Boolean);
       const { data: sess } = await supabase
         .from("active_sessions")
-        .select("user_id,elapsed_seconds,is_running,subject,mission")
+        .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
         .in("user_id", ids);
       setPresence(
         Object.fromEntries(
           (sess ?? []).map((s: any) => [
             s.user_id,
-            { elapsed_seconds: s.elapsed_seconds ?? 0, is_running: !!s.is_running, subject: s.subject ?? "", mission: s.mission ?? "" },
+            { elapsed_seconds: s.elapsed_seconds ?? 0, is_running: !!s.is_running, last_seen_at: s.last_seen_at, subject: s.subject ?? "", mission: s.mission ?? "" },
           ]),
         ),
       );
@@ -282,27 +292,48 @@ export default function PrivateStudyRooms({
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  // Member timers tick locally below; realtime handles server-side changes.
-
   useEffect(() => {
     setShowAllMembers(false);
   }, [room?.id]);
 
-  // Tick running timers locally between refreshes
+  // Derive the display from the heartbeat timestamp, so throttled tabs catch up.
   useEffect(() => {
-    const id = setInterval(() => {
-      setPresence((prev) => {
-        const next: Record<string, Presence> = {};
-        let changed = false;
-        for (const [k, v] of Object.entries(prev)) {
-          if (v.is_running) { next[k] = { ...v, elapsed_seconds: v.elapsed_seconds + 1 }; changed = true; }
-          else next[k] = v;
-        }
-        return changed ? next : prev;
-      });
-    }, 1000);
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Presence changes do not emit room membership events. Refresh it on its own
+  // so other members' pause, resume and stop are reflected without a chat event.
+  const roomId = room?.id;
+  const memberIds = members.map((m) => m.user_id).join(",");
+  useEffect(() => {
+    if (!roomId || !memberIds) return;
+    let active = true;
+    const ids = memberIds.split(",");
+    const refresh = async () => {
+      if (document.visibilityState === "hidden") return;
+      const { data, error } = await supabase.from("active_sessions")
+        .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
+        .in("user_id", ids);
+      if (active && !error) {
+        setPresence(Object.fromEntries((data ?? []).map((s) => [s.user_id, {
+          elapsed_seconds: s.elapsed_seconds ?? 0,
+          is_running: !!s.is_running,
+          last_seen_at: s.last_seen_at,
+          subject: s.subject ?? "",
+          mission: s.mission ?? "",
+        }])));
+      }
+    };
+    void refresh();
+    const interval = window.setInterval(refresh, 5000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [roomId, memberIds]);
 
   const createRoom = async () => {
     if (!userId) { toast.error(L.signIn); return; }
@@ -645,9 +676,11 @@ export default function PrivateStudyRooms({
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
-                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${presence[m.user_id]?.is_running ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(mine && timerStarted !== undefined ? timerStarted && timerRunning : presence[m.user_id]?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
                     <Timer className="w-2.5 h-2.5" />
-                    {presence[m.user_id] ? fmtClock(presence[m.user_id].elapsed_seconds) : "--:--"}
+                    {mine && timerStarted !== undefined
+                      ? timerStarted ? fmtClock(timerSeconds ?? 0) : "--:--"
+                      : presence[m.user_id] ? fmtClock(elapsedFromPresence(presence[m.user_id], now)) : "--:--"}
                   </span>
                 </button>
                 {isOwner && !mine && (

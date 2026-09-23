@@ -1074,7 +1074,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             ))}
           </div>
 
-        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom}>
+        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
           <div className="text-sm font-semibold mb-1">
             {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك" : "Start your study timer inside your room"}
           </div>
@@ -1126,7 +1126,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         </header>
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
-        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom}>
+        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
         <div className="rounded-[2rem] border border-border/70 bg-card/80 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] backdrop-blur md:p-8 space-y-5">
           {started && pomodoro && (
             <div className={`text-center text-sm font-semibold ${phase === "rest" ? "text-primary" : "text-muted-foreground"}`}>
@@ -1285,7 +1285,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur md:p-5">
           <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
-          <StudyRoom language={language} subject={subject} currentUserId={userId} />
+          <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={seconds} timerRunning={running} timerStarted={started} />
         </section>}
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/60 backdrop-blur">

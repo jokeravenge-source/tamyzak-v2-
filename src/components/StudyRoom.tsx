@@ -53,10 +53,16 @@ export default function StudyRoom({
   language,
   subject,
   currentUserId,
+  timerSeconds,
+  timerRunning,
+  timerStarted,
 }: {
   language: "en" | "ar";
   subject: string;
   currentUserId?: string | null;
+  timerSeconds?: number;
+  timerRunning?: boolean;
+  timerStarted?: boolean;
 }) {
   const [people, setPeople] = useState<Occupant[]>([]);
   const [now, setNow] = useState(Date.now());
@@ -228,8 +234,10 @@ export default function StudyRoom({
                       <div className="w-0.5 h-3.5 bg-primary/40" />
                     </div>
                   </div>
-                  <div className="mt-1.5 text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">
-                    {formatHMS(computeElapsedSeconds(p, now))}
+                  <div className={`mt-1.5 text-[11px] font-mono px-2 py-0.5 rounded-full border ${isMe && !timerRunning ? "bg-background/60 text-muted-foreground border-border" : "bg-primary/15 text-primary border-primary/30"}`}>
+                    {isMe && timerStarted !== undefined
+                      ? timerStarted ? formatHMS(timerSeconds ?? 0) : "--:--"
+                      : formatHMS(computeElapsedSeconds(p, now))}
                   </div>
                 </button>
               );
