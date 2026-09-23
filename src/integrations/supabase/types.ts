@@ -2904,18 +2904,21 @@ export type Database = {
       telegram_notifications_sent: {
         Row: {
           id: string
+          message_id: number | null
           notification_key: string
           sent_at: string
           telegram_user_id: number
         }
         Insert: {
           id?: string
+          message_id?: number | null
           notification_key: string
           sent_at?: string
           telegram_user_id: number
         }
         Update: {
           id?: string
+          message_id?: number | null
           notification_key?: string
           sent_at?: string
           telegram_user_id?: number
@@ -2955,6 +2958,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      topic_practice_attempts: {
+        Row: {
+          category_key: string
+          chapter: string
+          correct: boolean
+          created_at: string
+          id: string
+          question_key: string
+          source: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          category_key: string
+          chapter: string
+          correct: boolean
+          created_at?: string
+          id?: string
+          question_key: string
+          source: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          category_key?: string
+          chapter?: string
+          correct?: boolean
+          created_at?: string
+          id?: string
+          question_key?: string
+          source?: string
+          subject?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3122,6 +3161,54 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_learning_profiles: {
+        Row: {
+          chapter_key: string
+          chapter_number: number
+          created_at: string
+          id: string
+          iso_week: string
+          plan_tasks: Json
+          subject: string
+          topic_ar: string
+          topic_en: string
+          topic_key: string
+          updated_at: string
+          user_id: string
+          weakness_text: string
+        }
+        Insert: {
+          chapter_key: string
+          chapter_number: number
+          created_at?: string
+          id?: string
+          iso_week: string
+          plan_tasks?: Json
+          subject: string
+          topic_ar: string
+          topic_en: string
+          topic_key: string
+          updated_at?: string
+          user_id: string
+          weakness_text: string
+        }
+        Update: {
+          chapter_key?: string
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          iso_week?: string
+          plan_tasks?: Json
+          subject?: string
+          topic_ar?: string
+          topic_en?: string
+          topic_key?: string
+          updated_at?: string
+          user_id?: string
+          weakness_text?: string
         }
         Relationships: []
       }
