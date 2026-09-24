@@ -1455,14 +1455,14 @@ const Basics = ({
               onClick={() => navigate("ourCourses")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-violet-400/35 bg-gradient-to-br from-violet-500/20 via-card to-indigo-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-sky-400/40 bg-gradient-to-br from-sky-500/20 via-card to-cyan-400/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:p-6"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-300">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-500/15 text-sky-700 dark:text-sky-300">
                 <GraduationCap className="h-6 w-6" />
               </span>
               <span className="mt-5 block text-xl font-black">{isRTL ? "دوراتنا" : "Our Courses"}</span>
               <span className="mt-1 block pe-12 text-sm text-muted-foreground">{isRTL ? "تصفّح الدورات المتاحة وابدأ الدراسة" : "Browse available courses and start learning"}</span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-violet-600 text-white transition-transform group-hover:scale-110">
+              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-sky-600 text-white transition-transform group-hover:scale-110">
                 <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
             </motion.button>
