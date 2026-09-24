@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
+import { elapsedFromFreshPresence } from "@/lib/sessionPresenceClock";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
@@ -24,9 +25,6 @@ const fmtClock = (s: number) => {
   const p = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${p(h)}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
 };
-
-const elapsedFromPresence = (p: Presence, now: number) =>
-  p.elapsed_seconds + (p.is_running ? Math.max(0, Math.floor((now - new Date(p.last_seen_at).getTime()) / 1000)) : 0);
 
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -648,6 +646,9 @@ export default function PrivateStudyRooms({
           {visibleMembers.map((m) => {
             const mine = m.user_id === userId;
             const roomOwner = m.user_id === room.owner_id;
+            const memberPresence = presence[m.user_id];
+            const remoteSeconds = memberPresence ? elapsedFromFreshPresence(memberPresence, now) : null;
+            const hasLocalTimer = mine && timerStarted !== undefined;
             return (
               <div key={m.user_id} className="flex flex-col items-center" style={{ width: 96 }}>
                 <button
@@ -659,9 +660,9 @@ export default function PrivateStudyRooms({
                   <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-[10px] font-medium max-w-[96px] truncate ${mine ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30 group-hover:border-primary/60"}`}>
                     {mine ? (ar ? "أنت" : "You") : m.display_name}
                   </div>
-                  {!!presence[m.user_id]?.mission && (
-                    <div className="mb-1 max-w-[96px] truncate rounded-full bg-background/75 px-2 py-0.5 text-[9px] text-muted-foreground" title={presence[m.user_id].mission}>
-                      {presence[m.user_id].mission}
+                  {remoteSeconds !== null && !!memberPresence?.mission && (
+                    <div className="mb-1 max-w-[96px] truncate rounded-full bg-background/75 px-2 py-0.5 text-[9px] text-muted-foreground" title={memberPresence.mission}>
+                      {memberPresence.mission}
                     </div>
                   )}
                   <div className="relative">
@@ -676,11 +677,11 @@ export default function PrivateStudyRooms({
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
-                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(mine && timerStarted !== undefined ? timerStarted && timerRunning : presence[m.user_id]?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && memberPresence?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
                     <Timer className="w-2.5 h-2.5" />
-                    {mine && timerStarted !== undefined
+                    {hasLocalTimer
                       ? timerStarted ? fmtClock(timerSeconds ?? 0) : "--:--"
-                      : presence[m.user_id] ? fmtClock(elapsedFromPresence(presence[m.user_id], now)) : "--:--"}
+                      : remoteSeconds !== null ? fmtClock(remoteSeconds) : "--:--"}
                   </span>
                 </button>
                 {isOwner && !mine && (
