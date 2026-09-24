@@ -487,7 +487,14 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
-  const [showRecommendedStudy, setShowRecommendedStudy] = useState(false);
+  const [showRecommendedStudy, setShowRecommendedStudy] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("study") !== "today") return false;
+    params.delete("study");
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    return true;
+  });
   const [recommendedProfile, setRecommendedProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
   const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(() => {
     if (sessionStorage.getItem(RETURN_TO_PROGRESS_KEY) !== "1") return null;
@@ -734,10 +741,11 @@ const Basics = ({
   };
   const openRecommendedFlashcards = () => {
     try {
-      if (recommendedProfile) {
-        sessionStorage.setItem(DAILY_FLASHCARD_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
-      } else if (dueCards > 0) {
+      if (dueCards > 0) {
+        sessionStorage.removeItem(DAILY_FLASHCARD_TARGET_KEY);
         sessionStorage.setItem("flashcards:review", "1");
+      } else if (recommendedProfile) {
+        sessionStorage.setItem(DAILY_FLASHCARD_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
       }
     } catch { /* ignore */ }
     navigate("flashcards");
@@ -749,6 +757,11 @@ const Basics = ({
       }
     } catch { /* ignore */ }
     navigate("mcqBank");
+  };
+  const startTodaysStudy = () => {
+    if (dueMistakes > 0) navigate("mistakes");
+    else if (dueCards > 0 || recommendedProfile) openRecommendedFlashcards();
+    else openRecommendedMcqs();
   };
 
   const GROUP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -1125,15 +1138,15 @@ const Basics = ({
             <div className="relative max-w-2xl">
               <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" />
-                {isRTL ? "مختارة إلك" : "Picked for you"}
+                {isRTL ? "خطة اليوم" : "Today's plan"}
               </span>
               <h1 className="text-2xl font-black tracking-tight sm:text-4xl">
-                {isRTL ? "كمّل دراستك" : "Continue studying"}
+                {isRTL ? "ادرس اليوم" : "Study today"}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
                 {recommendationTopic
-                  ? (isRTL ? `راجع ${recommendationTopic} بالبطاقات والأسئلة المقترحة.` : `Review ${recommendationTopic} with recommended flashcards and MCQs.`)
-                  : (isRTL ? "اختَر بين بطاقات المراجعة والأسئلة المقترحة إلك." : "Choose between your review flashcards and recommended MCQs.")}
+                  ? (isRTL ? `ابدأ بالمراجعة المستحقة، وبعدين تدرب على ${recommendationTopic}.` : `Start with due reviews, then practise ${recommendationTopic}.`)
+                  : (isRTL ? "راجع أخطاءك وبطاقاتك المستحقة، وبعدين حل أسئلة جديدة." : "Review due mistakes and flashcards, then try new questions.")}
               </p>
               {recommendationSubject && (
                 <span className="mt-4 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
@@ -1144,7 +1157,32 @@ const Basics = ({
             </div>
           </header>
 
-          <section aria-label={isRTL ? "الدراسة المقترحة" : "Recommended study"} className="grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={startTodaysStudy}
+            className="mb-5 flex w-full min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 font-black text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <ArrowRight className={`h-5 w-5 ${isRTL ? "rotate-180" : ""}`} />
+            {isRTL ? "ابدأ دراسة اليوم" : "Start today's study"}
+          </button>
+
+          <section aria-label={isRTL ? "خطة دراسة اليوم" : "Today's study plan"} className="grid gap-4 sm:grid-cols-3">
+            <motion.button
+              type="button"
+              onClick={() => navigate("mistakes")}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-amber-400/35 bg-gradient-to-br from-amber-500/20 via-card to-orange-500/10 p-6 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500 text-slate-950"><AlertTriangle className="h-7 w-7" /></span>
+              <span className="mt-6 block text-xl font-black">{isRTL ? "١ · راجع أخطاءك" : "1 · Review mistakes"}</span>
+              <span className="mt-2 block pe-12 text-sm leading-6 text-muted-foreground">
+                {dueMistakes > 0
+                  ? (isRTL ? `${dueMistakes} أسئلة مستحقة للمراجعة` : `${dueMistakes} questions due for review`)
+                  : (isRTL ? "ما عندك أخطاء مستحقة اليوم" : "No mistakes due today")}
+              </span>
+              <span className="absolute bottom-6 end-6 grid h-10 w-10 place-items-center rounded-full bg-amber-500 text-slate-950 transition-transform group-hover:scale-110"><ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /></span>
+            </motion.button>
             <motion.button
               type="button"
               onClick={openRecommendedFlashcards}
@@ -1155,12 +1193,12 @@ const Basics = ({
               <span className="grid h-14 w-14 place-items-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
                 <BookOpen className="h-7 w-7" />
               </span>
-              <span className="mt-6 block text-xl font-black">{isRTL ? "البطاقات المقترحة" : "Recommended flashcards"}</span>
+              <span className="mt-6 block text-xl font-black">{isRTL ? "٢ · راجع بطاقاتك" : "2 · Review flashcards"}</span>
               <span className="mt-2 block pe-12 text-sm leading-6 text-muted-foreground">
-                {recommendedProfile
-                  ? (isRTL ? "10 بطاقات مختارة من موضوع ضعفك" : "10 cards selected from your weak topic")
-                  : dueCards > 0
-                    ? (isRTL ? `${dueCards} بطاقة مستحقة للمراجعة` : `${dueCards} flashcards due for review`)
+                {dueCards > 0
+                  ? (isRTL ? `${dueCards} بطاقة مستحقة للمراجعة` : `${dueCards} flashcards due for review`)
+                  : recommendedProfile
+                    ? (isRTL ? "10 بطاقات مختارة من موضوع ضعفك" : "10 cards selected from your weak topic")
                     : (isRTL ? "ارجع لآخر بطاقات درستها" : "Return to your latest flashcards")}
               </span>
               <span className="absolute bottom-6 end-6 grid h-10 w-10 place-items-center rounded-full bg-sky-500 text-white transition-transform group-hover:scale-110">
@@ -1178,7 +1216,7 @@ const Basics = ({
               <span className="grid h-14 w-14 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
                 <ListChecks className="h-7 w-7" />
               </span>
-              <span className="mt-6 block text-xl font-black">{isRTL ? "الأسئلة المقترحة" : "Recommended MCQs"}</span>
+              <span className="mt-6 block text-xl font-black">{isRTL ? "٣ · حل أسئلة" : "3 · Practise questions"}</span>
               <span className="mt-2 block pe-12 text-sm leading-6 text-muted-foreground">
                 {recommendedProfile
                   ? (isRTL ? "10 أسئلة مختارة من نفس الفصل والموضوع" : "10 questions selected from the same chapter and topic")
@@ -1193,8 +1231,8 @@ const Basics = ({
           <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
             <Target className="h-3.5 w-3.5 text-primary" />
             {recommendedProfile
-              ? (isRTL ? "الاقتراحات مبنية على خطة الضعف الأسبوعية" : "Recommendations are based on your weekly weakness plan")
-              : (isRTL ? "حدّث خطة الدراسة حتى تحصل على اقتراحات أدق" : "Update your study plan for more precise recommendations")}
+              ? (isRTL ? "الأسئلة الجديدة من خطة الضعف الأسبوعية" : "New questions follow your weekly weakness plan")
+              : (isRTL ? "حدّث خطة الدراسة حتى تحصل على أسئلة أدق" : "Update your study plan for more precise questions")}
           </p>
         </div>
       </main>
@@ -1418,6 +1456,8 @@ const Basics = ({
               type="button"
               onClick={() => {
                 setRecommendedProfile(readWeeklyLearningProfile());
+                void totalDueCount().then(setDueCards).catch(() => {});
+                void dueMistakesCount().then(setDueMistakes).catch(() => {});
                 setShowRecommendedStudy(true);
               }}
               whileHover={{ y: -4 }}
@@ -1428,9 +1468,9 @@ const Basics = ({
               <span className="relative grid h-12 w-12 place-items-center rounded-2xl bg-white/20 shadow-sm backdrop-blur">
                 <BookOpen className="h-6 w-6" />
               </span>
-              <span className="relative mt-5 block text-xl font-black">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
+              <span className="relative mt-5 block text-xl font-black">{isRTL ? "ادرس اليوم" : "Study today"}</span>
               <span className="relative mt-1 block pe-12 text-sm text-white/80">
-                {isRTL ? "بطاقات وأسئلة مقترحة إلك" : "Recommended flashcards and MCQs"}
+                {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
               </span>
               <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-white text-blue-600 transition-transform group-hover:scale-110">
                 <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
