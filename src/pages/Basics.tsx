@@ -20,6 +20,7 @@ import { missionsData, missionsOrder } from "@/data/missions";
 import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
 import StreakTree from "@/components/StreakTree";
+import ChapterProgressCircles from "@/components/ChapterProgressCircles";
 import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
@@ -901,6 +902,7 @@ const Basics = ({
             </h1>
           </header>
           {detailScreen === "progress" ? (
+            <>
             <section aria-label={isRTL ? "تفاصيل الرتبة" : "Rank details"} className="rounded-3xl border border-primary/25 bg-primary/5 p-4 sm:p-6">
                           <div className="pt-4">
             <div className="flex flex-wrap items-center gap-5 sm:gap-7">
@@ -962,6 +964,8 @@ const Basics = ({
             </div>
 
             </section>
+            <ChapterProgressCircles language={language} />
+            </>
           ) : detailScreen === "streak" ? (
             <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7">
               <p className="mb-4 text-lg font-bold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
@@ -1498,6 +1502,7 @@ const Basics = ({
             </motion.button>
           </section>
 
+          <ChapterProgressCircles language={language} />
           <section className="mt-6 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-border/70 bg-card/70 p-3 shadow-sm sm:gap-4 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
             <div className="rounded-2xl bg-primary/10 p-3 text-center">
               <p className="text-xl font-black text-primary sm:text-2xl">{streakDays || 0}</p>

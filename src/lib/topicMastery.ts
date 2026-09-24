@@ -106,3 +106,36 @@ export function topicSummary(attempts: PracticeAttempt[]) {
   const state = evidence.length < 3 ? "starting" : rate >= 0.8 ? "strong" : rate >= 0.5 ? "improving" : "practice";
   return { state, count: latest.length, objectiveCount: objective.length } as const;
 }
+
+export function topChaptersByPractice(attempts: PracticeAttempt[]) {
+  const chapters = new Map<string, { subject: string; chapter: string; attempts: PracticeAttempt[] }>();
+  for (const attempt of attempts) {
+    const key = `${attempt.subject}:${attempt.chapter}`;
+    const entry = chapters.get(key) ?? { subject: attempt.subject, chapter: attempt.chapter, attempts: [] };
+    entry.attempts.push(attempt);
+    chapters.set(key, entry);
+  }
+  return [...chapters.values()]
+    .sort((a, b) => b.attempts.length - a.attempts.length ||
+      b.attempts.reduce((latest, row) => row.created_at > latest ? row.created_at : latest, "")
+        .localeCompare(a.attempts.reduce((latest, row) => row.created_at > latest ? row.created_at : latest, "")))
+    .slice(0, 3)
+    .map(({ subject, chapter, attempts: chapterAttempts }) => {
+      const seen = new Set<string>();
+      const unique = [...chapterAttempts]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .filter((attempt) => {
+          const key = `${attempt.source}:${attempt.question_key}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 20);
+      const graded = unique.filter((attempt) => attempt.source === "mcq_bank");
+      const evidence = graded.length >= 3 ? graded : unique;
+      return {
+        subject, chapter, attempts: chapterAttempts.length, questions: evidence.length,
+        percent: evidence.length ? Math.round(100 * evidence.filter((attempt) => attempt.correct).length / evidence.length) : 0,
+        selfAssessed: graded.length < 3 && unique.some((attempt) => attempt.source !== "mcq_bank"),
+      };
+    });
+}
