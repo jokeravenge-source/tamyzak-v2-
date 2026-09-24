@@ -981,6 +981,9 @@ const Basics = ({
               </div>
               <GiftMcqButton language={language} />
             </div>
+            <div className="mt-5" aria-label={isRTL ? "سماء المثابرة" : "Streak sky"}>
+              <StreakTree language={language} compact />
+            </div>
             </div>
 
             </section>
@@ -1447,9 +1450,25 @@ const Basics = ({
             </div>
           </header>
 
-          <div className="mb-6" aria-label={isRTL ? "نجوم المثابرة" : "Streak stars"}>
-            <StreakTree language={language} compact />
-          </div>
+          <button
+            id="progress-details-trigger"
+            type="button"
+            onClick={() => openDetail("progress")}
+            className="group mb-6 flex w-full items-center gap-4 rounded-[1.75rem] border border-primary/20 p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
+            style={{ background: rankCardTheme.background, color: rankCardTheme.ink }}
+          >
+            <RankStone rank={currentRank} size={64} fillProgress={stoneFill} glow={currentRank === "royal" || currentRank === "diamond"} className="shrink-0" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-bold opacity-75">{isRTL ? "رتبتك" : "Your rank"}</span>
+              <span className="mt-1 block text-xl font-black sm:text-2xl">{rankLabel}</span>
+              <span className="mt-1 block text-xs font-medium opacity-80">
+                {nextRank
+                  ? (isRTL ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}` : `${pointsToNextRank} points to ${nextRank.label.en}`)
+                  : (isRTL ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
+              </span>
+            </span>
+            <ArrowRight className={`h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : ""}`} />
+          </button>
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             <motion.button
