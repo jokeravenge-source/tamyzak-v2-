@@ -72,11 +72,10 @@ export async function fetchProgress(): Promise<UserProgress> {
     .maybeSingle();
   if (error) throw error;
   const progress = (data as UserProgress | null) ?? empty;
-  // Older study activity predates user_progress. Show the actual recent study
-  // days while the historical streak backfill migration is being applied.
-  if (progress.current_streak > 0) return progress;
+  // Older study activity predates user_progress. A new login can create a
+  // server streak of 1 before its earlier study days have been backfilled.
   const historicalDays = await recentActivityStreak(u.user.id);
-  return { ...progress, current_streak: historicalDays };
+  return { ...progress, current_streak: Math.max(progress.current_streak, historicalDays) };
 }
 
 function baghdadDay(date: Date): string {
@@ -104,7 +103,11 @@ export function countConsecutiveDays(days: string[], today: string): number {
   return count;
 }
 
+const activityStreakCache = new Map<string, { days: number; checkedAt: number }>();
+
 async function recentActivityStreak(userId: string): Promise<number> {
+  const cached = activityStreakCache.get(userId);
+  if (cached && Date.now() - cached.checkedAt < 5 * 60_000) return cached.days;
   const since = new Date(Date.now() - 61 * 86400_000).toISOString();
   const [sessions, points] = await Promise.all([
     supabase.from("study_sessions").select("created_at").eq("user_id", userId)
@@ -120,7 +123,9 @@ async function recentActivityStreak(userId: string): Promise<number> {
       "summary", "flashcard", "mcq", "essay", "session", "live_battle",
     ].includes(row.source)).map((row) => baghdadDay(new Date(row.created_at))),
   ];
-  return countConsecutiveDays(activeDays, baghdadToday());
+  const days = countConsecutiveDays(activeDays, baghdadToday());
+  activityStreakCache.set(userId, { days, checkedAt: Date.now() });
+  return days;
 }
 
 export async function fetchUnlockedKeys(): Promise<FeatureKey[]> {
