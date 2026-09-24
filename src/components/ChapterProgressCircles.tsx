@@ -3,15 +3,28 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { missionsData } from "@/data/missions";
 import { loadTopicPractice, topChaptersByPractice, type PracticeAttempt } from "@/lib/topicMastery";
 
-export default function ChapterProgressCircles({ language }: { language: AppLanguage }) {
+export default function ChapterProgressCircles({ language, userId }: { language: AppLanguage; userId?: string }) {
   const [attempts, setAttempts] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
     const refresh = async () => {
-      const rows = await loadTopicPractice();
-      if (active) { setAttempts(rows); setLoading(false); }
+      if (userId) {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+          body: { action: "topic_practice", user_id: userId },
+        });
+        if (active) {
+          setAttempts(error || data?.error ? [] : (data?.attempts ?? []) as PracticeAttempt[]);
+          setFailed(Boolean(error || data?.error));
+          setLoading(false);
+        }
+      } else {
+        const rows = await loadTopicPractice();
+        if (active) { setAttempts(rows); setLoading(false); }
+      }
     };
     void refresh();
     const onFocus = () => { void refresh(); };
@@ -22,13 +35,15 @@ export default function ChapterProgressCircles({ language }: { language: AppLang
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("app:progress-updated", onFocus);
     };
-  }, []);
+  }, [userId]);
 
   const chapters = topChaptersByPractice(attempts);
   const isAr = language === "ar";
   return (
     <section className="mt-5 rounded-3xl border border-border/70 bg-card/80 p-4 shadow-sm sm:p-6" aria-label={isAr ? "تقدم فصولك الأكثر دراسة" : "Your most studied chapters"}>
-      <h2 className="text-lg font-bold text-foreground">{isAr ? "فصولك الأكثر دراسة" : "Your most studied chapters"}</h2>
+      <h2 className="text-lg font-bold text-foreground">{userId
+        ? (isAr ? "فصول الطالب الأكثر دراسة" : "Student's most studied chapters")
+        : (isAr ? "فصولك الأكثر دراسة" : "Your most studied chapters")}</h2>
       <p className="mt-1 text-xs text-muted-foreground">
         {isAr ? "نسبة الإجابات الصحيحة في آخر الأسئلة المختلفة التي تدربت عليها، وليست نسبة إكمال الفصل."
           : "Correct answers on your recent distinct practice questions, not chapter completion."}
@@ -65,7 +80,8 @@ export default function ChapterProgressCircles({ language }: { language: AppLang
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted-foreground">
-          {loading ? (isAr ? "جارٍ تحميل تقدمك…" : "Loading your progress…")
+          {loading ? (isAr ? "جارٍ تحميل التقدم…" : "Loading progress…")
+            : failed ? (isAr ? "تعذّر تحميل تقدم الفصول." : "Could not load chapter progress.")
             : (isAr ? "جاوب على أسئلة البنك أو الوزاريات أو راجع البطاقات حتى يظهر تقدمك هنا."
               : "Practice MCQs, ministerial questions, or flashcards to see your chapters here.")}
         </p>

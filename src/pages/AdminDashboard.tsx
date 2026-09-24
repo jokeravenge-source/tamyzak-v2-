@@ -8,6 +8,7 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import AdminNotesTab from "@/components/AdminNotesTab";
 import AdminBankTab from "@/components/AdminBankTab";
 import AdminAnalyticsTab from "@/components/AdminAnalyticsTab";
+import ChapterProgressCircles from "@/components/ChapterProgressCircles";
 import AdminCreditsTab from "@/components/AdminCreditsTab";
 import AdminPointsTab from "@/components/AdminPointsTab";
 import AdminMistakesTab from "@/components/AdminMistakesTab";
@@ -390,6 +391,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [userActionId, setUserActionId] = useState<string | null>(null);
   const [premiumBusyId, setPremiumBusyId] = useState<string | null>(null);
   const [streakBusyId, setStreakBusyId] = useState<string | null>(null);
+  const [openTopicProgressFor, setOpenTopicProgressFor] = useState<string | null>(null);
   const [streakDrafts, setStreakDrafts] = useState<Record<string, number>>({});
   const searchUsers = async () => {
     if (!userQuery.trim()) { setUserResults([]); return; }
@@ -1183,6 +1185,13 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                         {openSessionsFor === u.user_id ? "Hide sessions" : "Sessions"}
                       </button>
                       <button
+                        onClick={() => setOpenTopicProgressFor((current) => current === u.user_id ? null : u.user_id)}
+                        className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-white/10 hover:border-primary/40 text-sm"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        {openTopicProgressFor === u.user_id ? "Hide chapters" : "Chapter progress"}
+                      </button>
+                      <button
                         onClick={() => sendPasswordReset(u)}
                         disabled={resetBusyId === u.user_id || !u.email}
                         title={u.email ? "Email a password reset link to this user" : "No email on file"}
@@ -1209,6 +1218,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                         {u.banned ? "Unban" : "Ban"}
                       </button>
                     </div>
+                    {openTopicProgressFor === u.user_id && <ChapterProgressCircles language="en" userId={u.user_id} />}
                     <div className="mt-4 rounded-xl border border-orange-400/20 bg-orange-500/5 p-4">
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">

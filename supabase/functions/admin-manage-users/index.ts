@@ -57,6 +57,27 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || "");
 
+    if (action === "topic_practice") {
+      const targetId = String(body?.user_id || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+        return new Response(JSON.stringify({ error: "invalid_user_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const url = `${SUPABASE_URL}/rest/v1/topic_practice_attempts?user_id=eq.${targetId}&select=subject,chapter,category_key,source,question_key,correct,created_at&order=created_at.desc&limit=1000`;
+      const result = await fetch(url, {
+        headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
+      });
+      if (!result.ok) {
+        return new Response(JSON.stringify({ error: "failed_to_load_topic_practice" }), {
+          status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ attempts: await result.json() }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "search") {
       const q = String(body?.q || "").trim();
       if (!q) {
