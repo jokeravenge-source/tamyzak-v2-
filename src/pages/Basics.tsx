@@ -1409,6 +1409,10 @@ const Basics = ({
             </div>
           </header>
 
+          <div className="mb-6" aria-label={isRTL ? "نجوم المثابرة" : "Streak stars"}>
+            <StreakTree language={language} compact />
+          </div>
+
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             <motion.button
               type="button"
