@@ -21,6 +21,7 @@ import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
 import StreakTree from "@/components/StreakTree";
 import ChapterProgressCircles from "@/components/ChapterProgressCircles";
+import { RETURN_TO_PROGRESS_KEY, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
 import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
@@ -464,12 +465,14 @@ const Basics = ({
   onChangeLanguage,
   onSelect,
   onNav,
+  onPracticeTopic,
   initialShowAllTools = false,
 }: {
   language: AppLanguage;
   onChangeLanguage: () => void;
   onSelect: (c: BasicsChoice) => void;
   onNav: (c: MainMenuChoice) => void;
+  onPracticeTopic?: (target: TopicPracticeTarget) => void;
   initialShowAllTools?: boolean;
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
@@ -486,7 +489,11 @@ const Basics = ({
   const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
   const [showRecommendedStudy, setShowRecommendedStudy] = useState(false);
   const [recommendedProfile, setRecommendedProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
-  const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(null);
+  const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(() => {
+    if (sessionStorage.getItem(RETURN_TO_PROGRESS_KEY) !== "1") return null;
+    sessionStorage.removeItem(RETURN_TO_PROGRESS_KEY);
+    return "progress";
+  });
   const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
   const openDetail = (screen: "plan" | "progress" | "streak") => {
     detailOrigin.current = { scroll: window.scrollY, trigger: screen + "-details-trigger" };
@@ -964,7 +971,7 @@ const Basics = ({
             </div>
 
             </section>
-            <ChapterProgressCircles language={language} />
+            <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />
             </>
           ) : detailScreen === "streak" ? (
             <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7">
@@ -1502,7 +1509,7 @@ const Basics = ({
             </motion.button>
           </section>
 
-          <ChapterProgressCircles language={language} />
+          <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />
           <section className="mt-6 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-border/70 bg-card/70 p-3 shadow-sm sm:gap-4 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
             <div className="rounded-2xl bg-primary/10 p-3 text-center">
               <p className="text-xl font-black text-primary sm:text-2xl">{streakDays || 0}</p>

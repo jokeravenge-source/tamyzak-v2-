@@ -104,6 +104,7 @@ const ToolLanding = lazy(() => import("./pages/ToolLanding"));
 const ToolsIndex = lazy(() => import("./pages/ToolsIndex"));
 import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
 import { readWeeklyLearningProfile } from "@/lib/weeklyLearning";
+import { RETURN_TO_PROGRESS_KEY, TOPIC_PRACTICE_TARGET_KEY } from "@/lib/topicPracticeQuiz";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 // Onboarding page removed
@@ -610,7 +611,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(MENU_STORAGE_KEY) as MenuChoice | null;
   });
-  const [practiceReturnTarget, setPracticeReturnTarget] = useState<"physicsSchemes" | "biologySchemes" | null>(null);
+  const [practiceReturnTarget, setPracticeReturnTarget] = useState<"physicsSchemes" | "biologySchemes" | "basics" | null>(null);
   // Points-unlock state (lifetime points gate the 4 advanced tools)
   const [unlockedKeys, setUnlockedKeys] = useState<FeatureKey[]>([]);
   const [unlockHighlight, setUnlockHighlight] = useState<FeatureKey | null>(null);
@@ -887,6 +888,11 @@ const StudentApp = () => {
           onChangeLanguage={resetLanguage}
           onSelect={handleBasicsSelect}
           onNav={chooseMenu}
+          onPracticeTopic={(target) => {
+            sessionStorage.setItem(TOPIC_PRACTICE_TARGET_KEY, JSON.stringify(target));
+            setPracticeReturnTarget("basics");
+            chooseMenu("mcqBank");
+          }}
         />
       ) : menuChoice === "missions" ? (
         <Missions language={language} onBack={resetMenu} />
@@ -927,6 +933,7 @@ const StudentApp = () => {
         <McqBank language={language} onBack={() => {
           const returnTarget = practiceReturnTarget;
           setPracticeReturnTarget(null);
+          if (returnTarget === "basics") sessionStorage.setItem(RETURN_TO_PROGRESS_KEY, "1");
           chooseMenu(returnTarget ?? "basics");
         }} />
       ) : menuChoice === "mistakes" ? (

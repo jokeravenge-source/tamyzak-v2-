@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { missionsData } from "@/data/missions";
-import { chapterQuestionResults, loadTopicPractice, questionKey, topChaptersByPractice, type PracticeAttempt } from "@/lib/topicMastery";
+import { categoryLabel, chapterQuestionResults, loadTopicPractice, questionKey, topChaptersByPractice, type PracticeAttempt } from "@/lib/topicMastery";
+import { topicBaseline, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-export default function ChapterProgressCircles({ language, userId }: { language: AppLanguage; userId?: string }) {
+export default function ChapterProgressCircles({ language, userId, onPracticeTopic }: { language: AppLanguage; userId?: string; onPracticeTopic?: (target: TopicPracticeTarget) => void }) {
   const [attempts, setAttempts] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -66,6 +68,9 @@ export default function ChapterProgressCircles({ language, userId }: { language:
   const isAr = language === "ar";
   const selectedChapter = selected && chapters.find((item) => item.subject === selected.subject && item.chapter === selected.chapter);
   const results = selected ? chapterQuestionResults(attempts.filter((row) => row.subject === selected.subject && row.chapter === selected.chapter)) : [];
+  const categories = selected ? [...new Set(attempts.filter((row) => row.subject === selected.subject && row.chapter === selected.chapter).map((row) => row.category_key))]
+    .map((categoryKey) => ({ categoryKey, baseline: topicBaseline(attempts, { subject: selected.subject, chapter: Number(selected.chapter), categoryKey }) }))
+    .sort((a, b) => (a.baseline.percent ?? 101) - (b.baseline.percent ?? 101)) : [];
   const graded = results.filter((row) => row.source === "mcq_bank");
   const selfRated = results.filter((row) => row.source !== "mcq_bank");
   return (
@@ -135,6 +140,22 @@ export default function ChapterProgressCircles({ language, userId }: { language:
             <p className="text-sm text-muted-foreground">{isAr
               ? `${graded.filter((row) => row.correct).length} صحيحة من ${graded.length} أسئلة مصححة تلقائياً · ${selfRated.filter((row) => row.correct).length} جيدة من ${selfRated.length} تقييمات ذاتية`
               : `${graded.filter((row) => row.correct).length} right of ${graded.length} graded MCQs · ${selfRated.filter((row) => row.correct).length} good of ${selfRated.length} self ratings`}</p>
+            {!userId && onPracticeTopic && <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <h3 className="mb-2 font-semibold">{isAr ? "تدرّب على موضوع محدد" : "Practice a specific topic"}</h3>
+              <div className="space-y-2">
+                {categories.map(({ categoryKey, baseline }) => <div key={categoryKey} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background p-2">
+                  <div>
+                    <p className="text-sm font-medium">{categoryLabel(categoryKey, language)}</p>
+                    <p className="text-xs text-muted-foreground">{baseline.percent === null
+                      ? (isAr ? "لا توجد أسئلة مصححة بعد" : "No graded questions yet")
+                      : (isAr ? `${baseline.percent}% من ${baseline.count} أسئلة مصححة` : `${baseline.percent}% from ${baseline.count} graded questions`)}</p>
+                  </div>
+                  <Button size="sm" onClick={() => { setSelected(null); onPracticeTopic({ subject: selectedChapter.subject, chapter: Number(selectedChapter.chapter), categoryKey }); }}>
+                    {isAr ? "تدرّب على الموضوع" : "Practice this topic"}
+                  </Button>
+                </div>)}
+              </div>
+            </div>}
             {results.map((row) => {
               const prompt = row.question_text || olderQuestions[`${row.subject}:${row.chapter}:${row.question_key}`];
               const source = row.source === "mcq_bank"

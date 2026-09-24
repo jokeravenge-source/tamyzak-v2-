@@ -29,7 +29,8 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { awardPoints, showAward } from "@/lib/points";
 import { recordMistake } from "@/lib/mistakes";
-import { recordTopicPractice } from "@/lib/topicMastery";
+import { categoryLabel, loadTopicPractice, recordTopicPractice, type PracticeAttempt } from "@/lib/topicMastery";
+import { buildTopicQuiz, TOPIC_PRACTICE_TARGET_KEY, topicBaseline, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
@@ -100,6 +101,16 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const lang = isAr ? "ar" : "en";
   const Back = isAr ? ArrowRight : ArrowLeft;
 
+  const [topicTarget] = useState<TopicPracticeTarget | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(TOPIC_PRACTICE_TARGET_KEY);
+      sessionStorage.removeItem(TOPIC_PRACTICE_TARGET_KEY);
+      const value = raw ? JSON.parse(raw) as TopicPracticeTarget : null;
+      return value && typeof value.subject === "string" && Number.isInteger(value.chapter) && value.chapter > 0
+        && typeof value.categoryKey === "string" && value.categoryKey.startsWith(`${value.subject}:${value.chapter}:`) ? value : null;
+    } catch { return null; }
+  });
+
   const [personalizedTarget] = useState<WeeklyLearningProfile | null>(() => {
     try {
       const parsed = JSON.parse(sessionStorage.getItem(DAILY_MCQ_TARGET_KEY) || "null") as WeeklyLearningProfile | null;
@@ -108,8 +119,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     } catch { return null; }
   });
   const [rows, setRows] = useState<Row[]>([]);
+  const [topicAttempts, setTopicAttempts] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState<string | null>(personalizedTarget?.subject ?? null);
+  const [subject, setSubject] = useState<string | null>(topicTarget?.subject ?? personalizedTarget?.subject ?? null);
   const [chapter, setChapter] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -118,13 +130,14 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const [submitting, setSubmitting] = useState(false);
   const [delta, setDelta] = useState(0);
   const [score, setScore] = useState({ right: 0, wrong: 0 });
+  const [missedQuestions, setMissedQuestions] = useState<string[]>([]);
   const [dueQuestionIds, setDueQuestionIds] = useState<string[]>([]);
   const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data }, dueResult] = await Promise.all([
+      const [{ data }, dueResult, priorAttempts, focusedRows] = await Promise.all([
         supabase
           .from("mcq_banks")
           .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
@@ -134,8 +147,13 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .order("sort_order", { ascending: true })
           .limit(2000),
         supabase.rpc("get_due_mcq_bank_reviews"),
+        topicTarget ? loadTopicPractice() : Promise.resolve([] as PracticeAttempt[]),
+        topicTarget ? supabase.from("mcq_banks")
+          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
+          .eq("language", lang).eq("subject", topicTarget.subject)
+          .order("sort_order", { ascending: true }).limit(2000) : Promise.resolve({ data: [] as Row[] }),
       ]);
-      const databaseRows = (data ?? []) as Row[];
+      const databaseRows = [...new Map([...(data ?? []), ...(focusedRows.data ?? [])].map((row) => [row.id, row as Row])).values()];
       const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
         `${row.subject}\u0000${row.chapter}\u0000${row.question.trim()}`;
       const existingQuestions = new Set(databaseRows.map(rowKey));
@@ -152,10 +170,11 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         (row) => !existingQuestions.has(rowKey(row)),
       );
       setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
+      setTopicAttempts(priorAttempts);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
     })();
-  }, [lang]);
+  }, [lang, topicTarget]);
 
   const subjects = useMemo(() => {
     const map = new Map<string, number>();
@@ -176,6 +195,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       if (reviewing) return dueRows;
       const ids = new Set(chapters.find(c => c.key === chapter)?.questionIds ?? []);
       const chapterRows = rows.filter(r => ids.has(r.id));
+      if (topicTarget) return buildTopicQuiz(chapterRows, topicAttempts, topicTarget);
       if (personalizedTarget && personalizedTarget.subject === subject && personalizedTarget.chapterNumber === chapters.find(c => c.key === chapter)?.chapter) {
         const terms = `${personalizedTarget.topicEn} ${personalizedTarget.topicAr}`.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 3);
         const related = chapterRows.filter((row) => {
@@ -186,14 +206,20 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       }
       return chapterRows;
     },
-    [rows, chapters, chapter, reviewing, dueRows, personalizedTarget, subject],
+    [rows, chapters, chapter, reviewing, dueRows, personalizedTarget, subject, topicTarget, topicAttempts],
   );
 
   useEffect(() => {
+    if (topicTarget && !chapter && chapters.length) {
+      const match = chapters.find((item) => item.chapter === topicTarget.chapter);
+      if (match) setChapter(match.key);
+      return;
+    }
     if (!personalizedTarget || chapter || !chapters.length) return;
     const match = chapters.find((item) => item.chapter === personalizedTarget.chapterNumber && item.count > 0);
     if (match) setChapter(match.key);
-  }, [personalizedTarget, chapters, chapter]);
+  }, [personalizedTarget, chapters, chapter, topicTarget]);
+  const baseline = topicTarget ? topicBaseline(topicAttempts, topicTarget) : null;
   const current = quiz[index];
   const choices = useMemo(
     () => (Array.isArray(current?.choices) ? (current!.choices as unknown[]).map(String) : []),
@@ -246,6 +272,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       setAnswerIndex(current.answer_index);
       setExplanation(current.explanation);
       setScore((s) => ({ right: s.right + (ok ? 1 : 0), wrong: s.wrong + (ok ? 0 : 1) }));
+      if (!ok) setMissedQuestions((old) => [...old, current.question]);
       if (ok) {
         celebrate();
         if (current.id.startsWith("builtin-")) {
@@ -264,6 +291,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     setExplanation(res.explanation ?? current.explanation);
     setDelta(res.points);
     setScore((s) => ({ right: s.right + (res.correct ? 1 : 0), wrong: s.wrong + (res.correct ? 0 : 1) }));
+    if (!res.correct) setMissedQuestions((old) => [...old, current.question]);
     if (res.correct) {
       celebrate();
       if (res.points > 0) showAward("mcq", res.points);
@@ -274,7 +302,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }, [current, picked, submitting, choices, lang]);
 
   const next = () => { resetQ(); setIndex((i) => Math.min(i + 1, quiz.length - 1)); };
-  const restart = () => { resetQ(); setIndex(0); setScore({ right: 0, wrong: 0 }); };
+  const restart = () => { resetQ(); setIndex(0); setScore({ right: 0, wrong: 0 }); setMissedQuestions([]); };
 
   const header = (title: string, back: () => void) => (
     <div className="mb-6 flex items-center gap-3">
@@ -291,6 +319,24 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </main>
     );
+  }
+
+  if (topicTarget && (subject === "arabic" || !chapters.some((item) => item.chapter === topicTarget.chapter) || chapter !== null && quiz.length === 0)) {
+    return <main className="min-h-screen px-4 py-8" dir={isAr ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-2xl">
+        {header(isAr ? "تدريب الموضوع" : "Topic practice", onBack)}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="text-lg font-bold">{categoryLabel(topicTarget.categoryKey, lang)}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{isAr ? "لا توجد أسئلة اختيار من متعدد متاحة لهذا الموضوع حالياً. لن نعرض أسئلة من موضوع آخر." : "There are no MCQs available for this topic yet. Questions from other topics will not be substituted."}</p>
+          <Button className="mt-4" onClick={onBack}>{isAr ? "العودة للتقدم" : "Back to progress"}</Button>
+        </div>
+      </div>
+    </main>;
+  }
+  if (topicTarget && chapter === null) {
+    return <main className="min-h-screen grid place-items-center" dir={isAr ? "rtl" : "ltr"}>
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    </main>;
   }
 
   // ---- Subject picker ----
@@ -437,13 +483,19 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       {header(
         reviewing
           ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
+          : topicTarget ? `${subjectLabel(subject!, isAr)} · ${categoryLabel(topicTarget.categoryKey, lang)}`
           : `${subjectLabel(subject!, isAr)} · ${chapters.find((item) => item.key === chapter)?.title ?? ""}`,
         () => {
+          if (topicTarget) { onBack(); return; }
           if (reviewing) setReviewing(false);
           else setChapter(null);
           resetQ();
         },
       )}
+
+      {topicTarget && <p className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+        {isAr ? `تدريب قصير على ${categoryLabel(topicTarget.categoryKey, lang)} · ${quiz.length} أسئلة من نفس الموضوع` : `Focused practice: ${categoryLabel(topicTarget.categoryKey, lang)} · ${quiz.length} matching questions`}
+      </p>}
 
       <div>
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -552,8 +604,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                         <Button onClick={restart} variant="secondary">
                           <RotateCcw className="w-4 h-4 me-1" />{isAr ? "إعادة" : "Restart"}
                         </Button>
-                        <Button onClick={() => { setReviewing(false); setChapter(null); resetQ(); }}>
-                          {reviewing ? (isAr ? "العودة للبنك" : "Back to bank") : (isAr ? "فصل آخر" : "Another chapter")}
+                        <Button onClick={() => { if (topicTarget) { onBack(); return; } setReviewing(false); setChapter(null); resetQ(); }}>
+                          {topicTarget ? (isAr ? "العودة للتقدم" : "Back to progress") : reviewing ? (isAr ? "العودة للبنك" : "Back to bank") : (isAr ? "فصل آخر" : "Another chapter")}
                         </Button>
                       </>
                     )}
@@ -561,6 +613,17 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                 </motion.div>
               )}
             </AnimatePresence>
+            {finished && topicTarget && <div className="mt-5 rounded-2xl border border-border bg-card p-5" aria-live="polite">
+              <h2 className="font-bold">{isAr ? "نتيجة تدريبك" : "Your topic practice result"}</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-center">
+                <div className="rounded-xl bg-secondary p-3"><p className="text-xl font-black">{baseline?.percent === null ? "—" : `${baseline?.percent}%`}</p><p className="text-xs text-muted-foreground">{isAr ? `قبل التدريب · ${baseline?.count ?? 0} أسئلة مختلفة` : `Earlier practice · ${baseline?.count ?? 0} distinct MCQs`}</p></div>
+                <div className="rounded-xl bg-primary/10 p-3"><p className="text-xl font-black text-primary">{Math.round(score.right * 100 / quiz.length)}%</p><p className="text-xs text-muted-foreground">{isAr ? `هذه الجولة · ${score.right} من ${quiz.length}` : `This session · ${score.right} of ${quiz.length}`}</p></div>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">{isAr ? "النسبتان من مجموعتين مختلفتين من المحاولات؛ راجع الدائرة لتشوف أحدث نتائجك." : "These percentages use different sets of attempts. Check your progress circle for the latest results."}</p>
+              {missedQuestions.length ? <div className="mt-4"><p className="font-semibold">{isAr ? "أسئلة تحتاج مراجعة" : "Questions to review"}</p><ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">{missedQuestions.map((question, n) => <li key={n}>{question}</li>)}</ul></div>
+                : <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-400">{isAr ? "أجبت عن أسئلة هذه الجولة كلها بشكل صحيح." : "You answered every question in this session correctly."}</p>}
+              <p className="mt-4 text-sm">{missedQuestions.length ? (isAr ? "خطوتك التالية: راجع الأسئلة أعلاه ثم جرّب الموضوع مجدداً." : "Next: review the questions above, then practise this topic again.") : (isAr ? "خطوتك التالية: انتقل إلى موضوع آخر أو راجع أسئلتك لاحقاً." : "Next: try another topic or revisit these questions later.")}</p>
+            </div>}
           </motion.div>
         )}
       </div>
