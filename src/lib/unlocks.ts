@@ -65,12 +65,62 @@ export async function fetchProgress(): Promise<UserProgress> {
   const { data: u } = await supabase.auth.getUser();
   const empty: UserProgress = { lifetime_points: 0, current_streak: 0, longest_streak: 0, last_active_date: null };
   if (!u.user) return empty;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_progress")
     .select("lifetime_points, current_streak, longest_streak, last_active_date")
     .eq("user_id", u.user.id)
     .maybeSingle();
-  return (data as UserProgress | null) ?? empty;
+  if (error) throw error;
+  const progress = (data as UserProgress | null) ?? empty;
+  // Older study activity predates user_progress. Show the actual recent study
+  // days while the historical streak backfill migration is being applied.
+  if (progress.current_streak > 0) return progress;
+  const historicalDays = await recentActivityStreak(u.user.id);
+  return { ...progress, current_streak: historicalDays };
+}
+
+function baghdadDay(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function dateBefore(day: string): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+export function countConsecutiveDays(days: string[], today: string): number {
+  const activeDays = new Set(days);
+  let day = activeDays.has(today) ? today : dateBefore(today);
+  let count = 0;
+  while (count < 60 && activeDays.has(day)) {
+    count++;
+    day = dateBefore(day);
+  }
+  return count;
+}
+
+async function recentActivityStreak(userId: string): Promise<number> {
+  const since = new Date(Date.now() - 61 * 86400_000).toISOString();
+  const [sessions, points] = await Promise.all([
+    supabase.from("study_sessions").select("created_at").eq("user_id", userId)
+      .gt("duration_seconds", 0).gte("created_at", since).order("created_at", { ascending: false }).limit(1000),
+    supabase.from("user_points").select("created_at,source").eq("user_id", userId)
+      .gt("points", 0).gte("created_at", since).order("created_at", { ascending: false }).limit(1000),
+  ]);
+  if (sessions.error || points.error) return 0;
+  const activeDays = [
+    ...(sessions.data ?? []).map((row) => baghdadDay(new Date(row.created_at))),
+    ...(points.data ?? []).filter((row) => [
+      "daily_login", "flashcard_session", "mcq_quiz", "ministerial_set", "video_to_notes", "accuracy_bonus",
+      "summary", "flashcard", "mcq", "essay", "session", "live_battle",
+    ].includes(row.source)).map((row) => baghdadDay(new Date(row.created_at))),
+  ];
+  return countConsecutiveDays(activeDays, baghdadToday());
 }
 
 export async function fetchUnlockedKeys(): Promise<FeatureKey[]> {
@@ -120,11 +170,7 @@ const LOGIN_KEY = "daily_login_awarded_v2";
 const pendingLogins = new Map<string, Promise<void>>();
 
 function baghdadToday(): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
-  }).formatToParts(new Date());
-  const part = (type: string) => parts.find((item) => item.type === type)?.value;
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  return baghdadDay(new Date());
 }
 
 /** Awards `daily_login` at most once per Baghdad day (server enforces the real cap). */

@@ -14,7 +14,7 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { ensureDailyLogin } from "./unlocks";
+import { countConsecutiveDays, ensureDailyLogin } from "./unlocks";
 
 describe("daily login streak", () => {
   beforeEach(() => {
@@ -39,5 +39,17 @@ describe("daily login streak", () => {
     await ensureDailyLogin();
     expect(rpc).toHaveBeenCalledTimes(3);
     vi.useRealTimers();
+  });
+});
+
+describe("historical activity streak", () => {
+  it("counts distinct Baghdad days through today or yesterday", () => {
+    expect(countConsecutiveDays(["2026-09-24", "2026-09-24", "2026-09-23", "2026-09-22"], "2026-09-24")).toBe(3);
+    expect(countConsecutiveDays(["2026-09-23", "2026-09-22"], "2026-09-24")).toBe(2);
+  });
+
+  it("does not award an old or interrupted streak", () => {
+    expect(countConsecutiveDays(["2026-09-20"], "2026-09-24")).toBe(0);
+    expect(countConsecutiveDays(["2026-09-24", "2026-09-22"], "2026-09-24")).toBe(1);
   });
 });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
+import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
 import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
@@ -52,28 +53,27 @@ function subjectLabel(subject: string, language: AppLanguage): string {
   return m ? (language === "ar" ? m.ar : m.en) : subject;
 }
 
-function useStreakDays(): number {
-  const [days, setDays] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem("streak_state_v1");
-      if (raw) return JSON.parse(raw).days ?? 0;
-    } catch {}
-    return 0;
-  });
+function useStreakDays(): number | null {
+  const [days, setDays] = useState<number | null>(null);
   useEffect(() => {
-    const read = () => {
-      try {
-        const raw = localStorage.getItem("streak_state_v1");
-        if (raw) setDays(JSON.parse(raw).days ?? 0);
-      } catch {}
+    let active = true;
+    const refresh = async () => {
+      await ensureDailyLogin();
+      const progress = await fetchProgress();
+      if (active) setDays(progress.current_streak);
     };
-    read();
-    const id = window.setInterval(read, 1500);
-    window.addEventListener("storage", read);
-    return () => { window.clearInterval(id); window.removeEventListener("storage", read); };
+    const onRefresh = () => { void refresh().catch(() => {}); };
+    onRefresh();
+    window.addEventListener("app:progress-updated", onRefresh);
+    window.addEventListener("focus", onRefresh);
+    return () => {
+      active = false;
+      window.removeEventListener("app:progress-updated", onRefresh);
+      window.removeEventListener("focus", onRefresh);
+    };
   }, []);
   useEffect(() => {
-    if (!days) return;
+    if (days === null || days <= 0) return;
     try {
       const key = "tmz_streak_tracked_v1";
       const today = new Date().toISOString().slice(0, 10);
@@ -939,7 +939,7 @@ const Basics = ({
                 </p>
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   <div className="rounded-2xl border border-border bg-background px-3 py-2.5">
-                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays || 0}</p>
+                    <p className="font-mono text-ember text-xl font-semibold tabular-nums leading-none">{streakDays ?? "—"}</p>
                     <p className="mt-1 text-[11px] text-ash">
                       {language === "ar" ? (streakDays === 1 ? "يوم متواصل" : "أيام متواصلة") : `day${streakDays === 1 ? "" : "s"} in a row`}
                     </p>
@@ -975,7 +975,7 @@ const Basics = ({
             </>
           ) : detailScreen === "streak" ? (
             <section aria-label={isRTL ? "شجرة الاستمرارية" : "Study streak tree"} className="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-white via-emerald-50 to-teal-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(5,150,105,0.65)] sm:p-7">
-              <p className="mb-4 text-lg font-bold">{streakDays || 0} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
+              <p className="mb-4 text-lg font-bold">{streakDays ?? "—"} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
               <StreakTree language={language} />
             </section>
           ) : (
@@ -1516,7 +1516,7 @@ const Basics = ({
           <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />
           <section className="mt-6 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-border/70 bg-card/70 p-3 shadow-sm sm:gap-4 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
             <div className="rounded-2xl bg-primary/10 p-3 text-center">
-              <p className="text-xl font-black text-primary sm:text-2xl">{streakDays || 0}</p>
+              <p className="text-xl font-black text-primary sm:text-2xl">{streakDays ?? "—"}</p>
               <p className="mt-1 text-[10px] font-bold text-muted-foreground sm:text-xs">{isRTL ? "أيام متواصلة" : "day streak"}</p>
             </div>
             <div className="rounded-2xl bg-amber-500/10 p-3 text-center">

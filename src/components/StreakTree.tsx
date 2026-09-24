@@ -8,12 +8,12 @@ const KEY = "streak_sky_celebrated_v2";
 const FULL_DAYS = 5;
 const MAX_STREAK_DAYS = 60;
 
-type StreakState = { userId: string | null; days: number; celebrated: boolean };
+type StreakState = { userId: string | null; days: number; celebrated: boolean; loaded: boolean };
 
 // The server stores the account's streak, so it survives deployments, browser
 // storage cleanup, and moves between the Lovable and custom-domain addresses.
 function useStreak(enabled = true) {
-  const [state, setState] = useState<StreakState>({ userId: null, days: 0, celebrated: false });
+  const [state, setState] = useState<StreakState>({ userId: null, days: 0, celebrated: false, loaded: false });
 
   useEffect(() => {
     if (!enabled) return;
@@ -24,7 +24,7 @@ function useStreak(enabled = true) {
       if (!active) return;
       const userId = auth.user?.id ?? null;
       if (!userId) {
-        setState({ userId: null, days: 0, celebrated: false });
+        setState({ userId: null, days: 0, celebrated: false, loaded: true });
         return;
       }
       // Safe to call repeatedly: the server awards a daily login only once.
@@ -37,27 +37,28 @@ function useStreak(enabled = true) {
         const days = progress.current_streak;
         let celebrated = false;
         try { celebrated = localStorage.getItem(`${KEY}:${userId}`) === "true"; } catch {}
-        return { userId, days, celebrated: days >= MAX_STREAK_DAYS && (celebrated || (prev.userId === userId && prev.celebrated)) };
+        return { userId, days, celebrated: days >= MAX_STREAK_DAYS && (celebrated || (prev.userId === userId && prev.celebrated)), loaded: true };
       });
     };
 
-    void refresh();
-    window.addEventListener("app:progress-updated", refresh);
+    const onRefresh = () => { void refresh().catch(() => {}); };
+    onRefresh();
+    window.addEventListener("app:progress-updated", onRefresh);
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
       setState((prev) => prev.userId === (session?.user.id ?? null)
         ? prev
-        : { userId: null, days: 0, celebrated: false });
+        : { userId: null, days: 0, celebrated: false, loaded: false });
       // Supabase auth callbacks must not await another auth request.
-      window.setTimeout(() => { if (active) void refresh(); }, 0);
+      window.setTimeout(() => { if (active) onRefresh(); }, 0);
     });
-    const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+    const onVisible = () => { if (document.visibilityState === "visible") onRefresh(); };
     document.addEventListener("visibilitychange", onVisible);
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 60_000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") onRefresh(); }, 60_000);
     return () => {
       active = false;
       authListener.subscription.unsubscribe();
-      window.removeEventListener("app:progress-updated", refresh);
+      window.removeEventListener("app:progress-updated", onRefresh);
       document.removeEventListener("visibilitychange", onVisible);
       window.clearInterval(interval);
     };
@@ -218,6 +219,14 @@ const StreakTree = ({
   const T = language === "ar"
     ? { days: days === 1 ? "يوم" : "يوماً", label: "سماء المثابرة", stars: earnedStars === 1 ? "نجمة" : "نجوم", next: "للنجمة القادمة", complete: "اكتملت سماء المثابرة" }
     : { days: days === 1 ? "day" : "days", label: "Streak sky", stars: earnedStars === 1 ? "star" : "stars", next: "until your next star", complete: "Your streak sky is complete" };
+
+  if (daysOverride === undefined && !state.loaded) {
+    return <section aria-busy="true" className={`w-full ${compact ? "my-0" : "mt-12 mb-6"}`}>
+      <div className={`mx-auto rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground ${compact ? "min-h-72" : "max-w-lg min-h-96"}`}>
+        {language === "ar" ? "جاري تحميل أيام المثابرة..." : "Loading your streak..."}
+      </div>
+    </section>;
+  }
 
   return (
     <section dir={language === "ar" ? "rtl" : "ltr"} className={`w-full ${compact ? "my-0" : "mt-12 mb-6"}`}>
