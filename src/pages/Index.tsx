@@ -71,6 +71,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
 import { recordTopicPractice } from "@/lib/topicMastery";
+import { recordMistake } from "@/lib/mistakes";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
 import { useTodos } from "@/lib/todoTopicProgress";
@@ -511,6 +512,18 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const handleRate = async (rating: SrsRating) => {
     const current = cards[index];
     if (!current) return;
+    if (rating === "forgot" || rating === "hard") {
+      void recordMistake({
+        source: "flashcard",
+        refId: `card:${keyOf(current)}:${language}`,
+        subject,
+        chapter: String(chapter),
+        language,
+        question: current.q,
+        correctAnswer: current.a,
+        userAnswer: rating === "forgot" ? (language === "ar" ? "نسيت" : "Forgot") : (language === "ar" ? "صعبة" : "Hard"),
+      });
+    }
     void recordTopicPractice({
       subject,
       chapter,
@@ -690,6 +703,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       awardAction("flashcard_session", { subject, chapter });
       toast.success(language === "ar" ? "أحسنت! استمر." : "Great work — keep it up!");
     } else {
+      void recordMistake({
+        source: "flashcard",
+        refId: `deck:${subject}:${chapter}:${language}`,
+        subject,
+        chapter: String(chapter),
+        language,
+        question: language === "ar" ? `مراجعة بطاقات ${subject} — الفصل ${chapter}` : `Review ${subject} flashcards — chapter ${chapter}`,
+        userAnswer: language === "ar" ? "سيئ 👎" : "Bad 👎",
+        correctAnswer: language === "ar" ? "راجع البطاقات وحدد (نسيت) أو (صعبة) على البطاقة التي تحتاج تدريباً." : "Review the cards and select Forgot or Hard on any card that needs practice.",
+      });
       setRedoRequired(subject, String(chapter), 10);
       toast.warning(
         language === "ar"
