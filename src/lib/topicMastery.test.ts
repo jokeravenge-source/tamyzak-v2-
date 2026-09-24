@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { questionKey, topChaptersByPractice, topicForQuestion, topicSummary, type PracticeAttempt } from "./topicMastery";
+import { chapterQuestionResults, questionKey, topChaptersByPractice, topicForQuestion, topicSummary, type PracticeAttempt } from "./topicMastery";
 
 describe("shared practice categories", () => {
   it("groups a ministerial question and an MCQ about the same concept", () => {
@@ -42,5 +42,17 @@ describe("shared practice categories", () => {
     expect(chapters).toHaveLength(3);
     expect(chapters[0]).toMatchObject({ subject: "physics", chapter: "1", attempts: 4, questions: 3, percent: 67 });
     expect(chapters[1]).toMatchObject({ subject: "biology", chapter: "2", attempts: 2, percent: 50 });
+  });
+
+  it("shows the same latest question results that contribute to the chapter percentage", () => {
+    const row = (key: string, correct: boolean, day: number, source: PracticeAttempt["source"] = "mcq_bank"): PracticeAttempt => ({
+      subject: "physics", chapter: "1", category_key: "physics:1:general", source,
+      question_key: key, question_text: key, correct,
+      created_at: `2026-09-${String(day).padStart(2, "0")}T12:00:00Z`,
+    });
+    const attempts = [row("a", false, 20), row("a", true, 21), row("b", false, 22), row("c", true, 23), row("card", true, 24, "flashcards")];
+    const results = chapterQuestionResults(attempts);
+    expect(results.map(({ question_key, correct }) => [question_key, correct])).toEqual([["c", true], ["b", false], ["a", true]]);
+    expect(topChaptersByPractice(attempts)[0]).toMatchObject({ percent: 67, questions: 3, selfAssessed: false });
   });
 });

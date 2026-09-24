@@ -64,10 +64,16 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const url = `${SUPABASE_URL}/rest/v1/topic_practice_attempts?user_id=eq.${targetId}&select=subject,chapter,category_key,source,question_key,correct,created_at&order=created_at.desc&limit=1000`;
-      const result = await fetch(url, {
+      const url = `${SUPABASE_URL}/rest/v1/topic_practice_attempts?user_id=eq.${targetId}&select=subject,chapter,category_key,source,question_key,question_text,correct,created_at&order=created_at.desc&limit=1000`;
+      let result = await fetch(url, {
         headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
       });
+      if (!result.ok) {
+        const legacyUrl = url.replace("question_key,question_text,correct", "question_key,correct");
+        result = await fetch(legacyUrl, {
+          headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
+        });
+      }
       if (!result.ok) {
         return new Response(JSON.stringify({ error: "failed_to_load_topic_practice" }), {
           status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },

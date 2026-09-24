@@ -2969,6 +2969,7 @@ export type Database = {
           created_at: string
           id: string
           question_key: string
+          question_text: string | null
           source: string
           subject: string
           user_id: string
@@ -2980,6 +2981,7 @@ export type Database = {
           created_at?: string
           id?: string
           question_key: string
+          question_text?: string | null
           source: string
           subject: string
           user_id: string
@@ -2991,6 +2993,7 @@ export type Database = {
           created_at?: string
           id?: string
           question_key?: string
+          question_text?: string | null
           source?: string
           subject?: string
           user_id?: string

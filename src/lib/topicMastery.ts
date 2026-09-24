@@ -9,6 +9,7 @@ export type PracticeAttempt = {
   category_key: string;
   source: PracticeSource;
   question_key: string;
+  question_text?: string | null;
   correct: boolean;
   created_at: string;
 };
@@ -47,7 +48,7 @@ export function categoryLabel(key: string, language: "ar" | "en") {
   return topic?.[language] ?? mission?.[language] ?? (language === "ar" ? "أسئلة عامة للفصل" : "Other chapter questions");
 }
 
-// The question hash avoids storing question or answer text in practice events.
+// The stable hash identifies repeat attempts at the same question.
 export function questionKey(question: string) {
   const normalized = question.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
   let hash = 2166136261;
@@ -70,24 +71,51 @@ export async function recordTopicPractice(input: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const category = topicForQuestion(input.subject, input.chapter, input.question, input.context);
-    await supabase.from("topic_practice_attempts" as never).insert({
+    const row = {
       user_id: user.id,
       subject: input.subject,
       chapter: String(input.chapter),
       category_key: category.key,
       source: input.source,
       question_key: questionKey(input.question),
+      question_text: input.question.trim().slice(0, 5000),
       correct: input.correct,
-    } as never);
+    };
+    const { error } = await supabase.from("topic_practice_attempts").insert(row);
+    // Keep collecting results if the app deploys ahead of the database migration.
+    if (error) {
+      const { question_text: _text, ...legacyRow } = row;
+      await supabase.from("topic_practice_attempts").insert(legacyRow);
+    }
   } catch { /* Practice tracking must never interrupt studying. */ }
 }
 
 export async function loadTopicPractice(): Promise<PracticeAttempt[]> {
-  const { data, error } = await supabase.from("topic_practice_attempts" as never)
-    .select("subject,chapter,category_key,source,question_key,correct,created_at")
+  const { data, error } = await supabase.from("topic_practice_attempts")
+    .select("subject,chapter,category_key,source,question_key,question_text,correct,created_at")
     .order("created_at", { ascending: false }).limit(1000);
-  if (error) return [];
+  if (error) {
+    const legacy = await supabase.from("topic_practice_attempts")
+      .select("subject,chapter,category_key,source,question_key,correct,created_at")
+      .order("created_at", { ascending: false }).limit(1000);
+    return (legacy.data ?? []) as PracticeAttempt[];
+  }
   return (data ?? []) as PracticeAttempt[];
+}
+
+/** The same distinct, recent questions that contribute to the chapter circle. */
+export function chapterQuestionResults(attempts: PracticeAttempt[]) {
+  const seen = new Set<string>();
+  const unique = [...attempts]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .filter((attempt) => {
+      const key = `${attempt.source}:${attempt.question_key}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 20);
+  const graded = unique.filter((attempt) => attempt.source === "mcq_bank");
+  return graded.length >= 3 ? graded : unique;
 }
 
 export function topicSummary(attempts: PracticeAttempt[]) {
@@ -121,21 +149,12 @@ export function topChaptersByPractice(attempts: PracticeAttempt[]) {
         .localeCompare(a.attempts.reduce((latest, row) => row.created_at > latest ? row.created_at : latest, "")))
     .slice(0, 3)
     .map(({ subject, chapter, attempts: chapterAttempts }) => {
-      const seen = new Set<string>();
-      const unique = [...chapterAttempts]
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))
-        .filter((attempt) => {
-          const key = `${attempt.source}:${attempt.question_key}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).slice(0, 20);
-      const graded = unique.filter((attempt) => attempt.source === "mcq_bank");
-      const evidence = graded.length >= 3 ? graded : unique;
+      const evidence = chapterQuestionResults(chapterAttempts);
+      const gradedCount = evidence.filter((attempt) => attempt.source === "mcq_bank").length;
       return {
         subject, chapter, attempts: chapterAttempts.length, questions: evidence.length,
         percent: evidence.length ? Math.round(100 * evidence.filter((attempt) => attempt.correct).length / evidence.length) : 0,
-        selfAssessed: graded.length < 3 && unique.some((attempt) => attempt.source !== "mcq_bank"),
+        selfAssessed: gradedCount < 3 && evidence.some((attempt) => attempt.source !== "mcq_bank"),
       };
     });
 }
