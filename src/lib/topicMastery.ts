@@ -85,8 +85,10 @@ export async function recordTopicPractice(input: {
     // Keep collecting results if the app deploys ahead of the database migration.
     if (error) {
       const { question_text: _text, ...legacyRow } = row;
-      await supabase.from("topic_practice_attempts").insert(legacyRow);
+      const fallback = await supabase.from("topic_practice_attempts").insert(legacyRow);
+      if (fallback.error) return;
     }
+    window.dispatchEvent(new Event("app:progress-updated"));
   } catch { /* Practice tracking must never interrupt studying. */ }
 }
 
@@ -103,7 +105,7 @@ export async function loadTopicPractice(): Promise<PracticeAttempt[]> {
   return (data ?? []) as PracticeAttempt[];
 }
 
-/** The same distinct, recent questions that contribute to the chapter circle. */
+/** Latest result per question, across all practice types. */
 export function chapterQuestionResults(attempts: PracticeAttempt[]) {
   const seen = new Set<string>();
   const unique = [...attempts]
@@ -114,8 +116,7 @@ export function chapterQuestionResults(attempts: PracticeAttempt[]) {
       seen.add(key);
       return true;
     }).slice(0, 20);
-  const graded = unique.filter((attempt) => attempt.source === "mcq_bank");
-  return graded.length >= 3 ? graded : unique;
+  return unique;
 }
 
 export function topicSummary(attempts: PracticeAttempt[]) {
@@ -150,11 +151,13 @@ export function topChaptersByPractice(attempts: PracticeAttempt[]) {
     .slice(0, 3)
     .map(({ subject, chapter, attempts: chapterAttempts }) => {
       const evidence = chapterQuestionResults(chapterAttempts);
-      const gradedCount = evidence.filter((attempt) => attempt.source === "mcq_bank").length;
+      const graded = evidence.filter((attempt) => attempt.source === "mcq_bank");
+      const selfRated = evidence.filter((attempt) => attempt.source !== "mcq_bank");
       return {
         subject, chapter, attempts: chapterAttempts.length, questions: evidence.length,
-        percent: evidence.length ? Math.round(100 * evidence.filter((attempt) => attempt.correct).length / evidence.length) : 0,
-        selfAssessed: gradedCount < 3 && evidence.some((attempt) => attempt.source !== "mcq_bank"),
+        gradedCount: graded.length, selfRatedCount: selfRated.length,
+        percent: graded.length >= 3 ? Math.round(100 * graded.filter((attempt) => attempt.correct).length / graded.length) : null,
+        selfPercent: selfRated.length ? Math.round(100 * selfRated.filter((attempt) => attempt.correct).length / selfRated.length) : null,
       };
     });
 }

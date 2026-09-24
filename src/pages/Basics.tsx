@@ -1471,13 +1471,13 @@ const Basics = ({
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <span className="mt-5 flex items-center gap-2 text-xl font-black">
-                {isRTL ? "راجع أخطاءك" : "Review mistakes"}
+                {isRTL ? "مراجعة اليوم" : "Daily review"}
                 {dueMistakes > 0 && <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-slate-950">{dueMistakes}</span>}
               </span>
               <span className="mt-1 block pe-12 text-sm text-muted-foreground">
                 {dueMistakes > 0
-                  ? (isRTL ? "أسئلة تحتاج تعيد حلّها" : "Questions ready to try again")
-                  : (isRTL ? "راجع كل الأسئلة الي أخطأت بيها" : "Revisit questions you missed")}
+                  ? (isRTL ? "راجع الأخطاء والبطاقات المستحقة اليوم" : "Review due mistakes and flashcards")
+                  : (isRTL ? "راجع بطاقاتك المستحقة أو تدرب على أخطائك" : "Practice due flashcards or revisit mistakes")}
               </span>
               <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-amber-500 text-slate-950 transition-transform group-hover:scale-110">
                 <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />

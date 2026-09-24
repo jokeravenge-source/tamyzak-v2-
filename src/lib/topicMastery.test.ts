@@ -41,7 +41,7 @@ describe("shared practice categories", () => {
     ]);
     expect(chapters).toHaveLength(3);
     expect(chapters[0]).toMatchObject({ subject: "physics", chapter: "1", attempts: 4, questions: 3, percent: 67 });
-    expect(chapters[1]).toMatchObject({ subject: "biology", chapter: "2", attempts: 2, percent: 50 });
+    expect(chapters[1]).toMatchObject({ subject: "biology", chapter: "2", attempts: 2, percent: null });
   });
 
   it("shows the same latest question results that contribute to the chapter percentage", () => {
@@ -52,7 +52,13 @@ describe("shared practice categories", () => {
     });
     const attempts = [row("a", false, 20), row("a", true, 21), row("b", false, 22), row("c", true, 23), row("card", true, 24, "flashcards")];
     const results = chapterQuestionResults(attempts);
-    expect(results.map(({ question_key, correct }) => [question_key, correct])).toEqual([["c", true], ["b", false], ["a", true]]);
-    expect(topChaptersByPractice(attempts)[0]).toMatchObject({ percent: 67, questions: 3, selfAssessed: false });
+    expect(results.map(({ question_key, correct }) => [question_key, correct])).toEqual([["card", true], ["c", true], ["b", false], ["a", true]]);
+    expect(topChaptersByPractice(attempts)[0]).toMatchObject({ percent: 67, questions: 4, gradedCount: 3, selfPercent: 100 });
+  });
+
+  it("does not show self ratings as a graded chapter score", () => {
+    const cards: PracticeAttempt[] = ["a", "b", "c"].map((key) => ({ subject: "physics", chapter: "1",
+      category_key: "physics:1:general", source: "flashcards", question_key: key, correct: key !== "c", created_at: "2026-09-24T00:00:00Z" }));
+    expect(topChaptersByPractice(cards)[0]).toMatchObject({ percent: null, selfPercent: 67, gradedCount: 0 });
   });
 });

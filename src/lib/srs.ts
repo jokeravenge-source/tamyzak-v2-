@@ -194,6 +194,21 @@ export async function totalDueCount(): Promise<number> {
   return count ?? localDue;
 }
 
+export type DueFlashcard = { card_key: string; subject: string; chapter: string; question: string; answer: string; language: string };
+
+/** Due cards from all studied decks for the combined daily review. */
+export async function fetchDueFlashcards(limit = 20): Promise<DueFlashcard[]> {
+  const user = await uid();
+  if (!user) return [];
+  const { data } = await supabase.from("flashcard_reviews")
+    .select("card_key,subject,chapter,question,answer,language")
+    .eq("user_id", user)
+    .lte("due_at", new Date().toISOString())
+    .order("due_at", { ascending: true })
+    .limit(limit);
+  return (data ?? []) as DueFlashcard[];
+}
+
 /** Cards the student has repeatedly failed — the "leech" / weak-points list. */
 export type DueGroup = { subject: string; chapter: string; count: number };
 

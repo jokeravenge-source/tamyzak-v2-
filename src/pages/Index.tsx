@@ -464,6 +464,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   /* ---------------- spaced repetition ---------------- */
   const [srs, setSrs] = useState<Map<string, SrsState>>(new Map());
   const [reviewMode, setReviewMode] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const seenCards = useRef(new Map<string, { q: string; a: string }>());
+  const ratedDifficult = useRef(new Set<string>());
+  const [showDifficultPicker, setShowDifficultPicker] = useState(false);
+  const [selectedDifficult, setSelectedDifficult] = useState<string[]>([]);
+  const [savingDifficult, setSavingDifficult] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -474,6 +480,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   }, [subject, chapter]);
 
   const keyOf = (c: { q: string }) => srsCardKey(subject, String(chapter), c.q);
+
+  useEffect(() => {
+    seenCards.current.clear();
+    ratedDifficult.current.clear();
+  }, [subject, chapter, language]);
 
   const { dueCards, newCards } = useMemo(() => {
     const now = Date.now();
@@ -513,6 +524,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     const current = cards[index];
     if (!current) return;
     if (rating === "forgot" || rating === "hard") {
+      ratedDifficult.current.add(keyOf(current));
       void recordMistake({
         source: "flashcard",
         refId: `card:${keyOf(current)}:${language}`,
@@ -659,6 +671,10 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   });
 
   const card = cards[index];
+  useEffect(() => {
+    if (card && !showRating && !showDifficultPicker) seenCards.current.set(keyOf(card), card);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card, subject, chapter, showRating, showDifficultPicker]);
   const cardProgress = cards.length ? ((index + 1) / cards.length) * 100 : 0;
   // Keep deck progress and weekly to-do progress separate. Mixing them made
   // the card counter appear to jump when an unrelated task was completed.
@@ -692,7 +708,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
   // User-submitted flashcards (await admin approval)
   const [showSubmit, setShowSubmit] = useState(false);
-  const [showRating, setShowRating] = useState(false);
 
   const handleRating = (level: "good" | "bad") => {
     setShowRating(false);
@@ -703,16 +718,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       awardAction("flashcard_session", { subject, chapter });
       toast.success(language === "ar" ? "أحسنت! استمر." : "Great work — keep it up!");
     } else {
-      void recordMistake({
-        source: "flashcard",
-        refId: `deck:${subject}:${chapter}:${language}`,
-        subject,
-        chapter: String(chapter),
-        language,
-        question: language === "ar" ? `مراجعة بطاقات ${subject} — الفصل ${chapter}` : `Review ${subject} flashcards — chapter ${chapter}`,
-        userAnswer: language === "ar" ? "سيئ 👎" : "Bad 👎",
-        correctAnswer: language === "ar" ? "راجع البطاقات وحدد (نسيت) أو (صعبة) على البطاقة التي تحتاج تدريباً." : "Review the cards and select Forgot or Hard on any card that needs practice.",
-      });
+      setSelectedDifficult([...ratedDifficult.current].filter((key) => seenCards.current.has(key)));
+      setShowDifficultPicker(true);
       setRedoRequired(subject, String(chapter), 10);
       toast.warning(
         language === "ar"
@@ -721,6 +728,28 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         { duration: 8000 }
       );
     }
+  };
+  const saveDifficultCards = async () => {
+    setSavingDifficult(true);
+    const selected = selectedDifficult.filter((key) => !ratedDifficult.current.has(key));
+    await Promise.all(selected.map(async (key) => {
+      const selectedCard = seenCards.current.get(key);
+      if (!selectedCard) return;
+      const [, , updated] = await Promise.all([
+        recordMistake({
+          source: "flashcard", refId: `card:${key}:${language}`, subject,
+          chapter: String(chapter), language, question: selectedCard.q,
+          correctAnswer: selectedCard.a, userAnswer: language === "ar" ? "صعبة" : "Hard",
+        }),
+        recordTopicPractice({ subject, chapter, question: selectedCard.q, context: selectedCard.a, source: "flashcards", correct: false }),
+        rateCard({ subject, chapter: String(chapter), language, card: selectedCard, rating: "hard", prev: srs.get(key) ?? defaultState(key) }),
+      ]);
+      setSrs((previous) => new Map(previous).set(key, updated));
+      ratedDifficult.current.add(key);
+    }));
+    setSavingDifficult(false);
+    setShowDifficultPicker(false);
+    toast.success(language === "ar" ? "أُضيفت البطاقات المختارة إلى أخطائي" : "Selected cards added to My Mistakes");
   };
   const [submitQ, setSubmitQ] = useState("");
   const [submitA, setSubmitA] = useState("");
@@ -1068,6 +1097,27 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               >
                 {language === "ar" ? "سيئ 👎" : "Bad 👎"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDifficultPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-5 shadow-xl" dir={language === "ar" ? "rtl" : "ltr"}>
+            <h2 className="text-xl font-bold">{language === "ar" ? "أي بطاقات كانت صعبة؟" : "Which cards were difficult?"}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{language === "ar" ? "اختر البطاقات لتظهر بأسئلتها وإجاباتها في أخطائي. البطاقات التي قيّمتها نسيت أو صعبة محفوظة مسبقاً." : "Select the cards to save with their questions and answers in My Mistakes. Cards rated Forgot or Hard are already saved."}</p>
+            <div className="mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
+              {[...seenCards.current].map(([key, seen]) => (
+                <label key={key} className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm">
+                  <input type="checkbox" className="mt-1 accent-primary" checked={selectedDifficult.includes(key)} onChange={() => setSelectedDifficult((old) => old.includes(key) ? old.filter((item) => item !== key) : [...old, key])} />
+                  <span className="flex-1">{seen.q}</span>
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 flex gap-2">
+              <Button onClick={() => void saveDifficultCards()} disabled={savingDifficult || selectedDifficult.length === 0} className="flex-1">{savingDifficult ? (language === "ar" ? "جارٍ الحفظ…" : "Saving…") : (language === "ar" ? "احفظ البطاقات" : "Save cards")}</Button>
+              <Button variant="outline" disabled={savingDifficult} onClick={() => setShowDifficultPicker(false)}>{language === "ar" ? "تخطي" : "Skip"}</Button>
             </div>
           </div>
         </div>

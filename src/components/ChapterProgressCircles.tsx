@@ -66,7 +66,8 @@ export default function ChapterProgressCircles({ language, userId }: { language:
   const isAr = language === "ar";
   const selectedChapter = selected && chapters.find((item) => item.subject === selected.subject && item.chapter === selected.chapter);
   const results = selected ? chapterQuestionResults(attempts.filter((row) => row.subject === selected.subject && row.chapter === selected.chapter)) : [];
-  const correctCount = results.filter((row) => row.correct).length;
+  const graded = results.filter((row) => row.source === "mcq_bank");
+  const selfRated = results.filter((row) => row.source !== "mcq_bank");
   return (
     <>
     <section className="mt-5 rounded-3xl border border-border/70 bg-card/80 p-4 shadow-sm sm:p-6" aria-label={isAr ? "تقدم فصولك الأكثر دراسة" : "Your most studied chapters"}>
@@ -74,8 +75,8 @@ export default function ChapterProgressCircles({ language, userId }: { language:
         ? (isAr ? "فصول الطالب الأكثر دراسة" : "Student's most studied chapters")
         : (isAr ? "فصولك الأكثر دراسة" : "Your most studied chapters")}</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        {isAr ? "نسبة الإجابات الصحيحة في آخر الأسئلة المختلفة التي تدربت عليها، وليست نسبة إكمال الفصل."
-          : "Correct answers on your recent distinct practice questions, not chapter completion."}
+        {isAr ? "الدائرة تعرض دقة أسئلة الاختيار المصححة تلقائياً فقط (بعد ٣ أسئلة). تقييم البطاقات والوزاريات يظهر منفصلاً."
+          : "The circle shows automatically graded MCQ accuracy after 3 questions. Self-rated practice is separate."}
       </p>
       {chapters.length ? (
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -92,20 +93,21 @@ export default function ChapterProgressCircles({ language, userId }: { language:
                 className="flex items-center gap-4 rounded-2xl border border-border bg-background/80 p-3 text-start transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-col sm:text-center"
                 aria-label={isAr ? `عرض إجابات ${subjectName} ${chapterName}` : `Review answers for ${subjectName} ${chapterName}`}
                 dir={isAr ? "rtl" : "ltr"}>
-                <div className="relative size-24 shrink-0" role="img" aria-label={`${subjectName} · ${chapterName}: ${item.percent}%`}>
+                <div className="relative size-24 shrink-0" role="img" aria-label={`${subjectName} · ${chapterName}: ${item.percent === null ? (isAr ? "لا توجد بيانات كافية" : "Not enough graded answers") : `${item.percent}%`}`}>
                   <svg className="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
                     <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="9" />
-                    <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth="9" strokeLinecap="round"
-                      strokeDasharray={circumference} strokeDashoffset={circumference * (1 - item.percent / 100)} />
+                    {item.percent !== null && <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth="9" strokeLinecap="round"
+                      strokeDasharray={circumference} strokeDashoffset={circumference * (1 - item.percent / 100)} />}
                   </svg>
-                  <span className="absolute inset-0 grid place-items-center text-xl font-bold tabular-nums text-foreground" dir="ltr">{item.percent}%</span>
+                  <span className="absolute inset-0 grid place-items-center text-xl font-bold tabular-nums text-foreground" dir="ltr">{item.percent === null ? "—" : `${item.percent}%`}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-foreground">{subjectName} · {chapterName}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {isAr ? `${item.questions} أسئلة مختلفة · ${item.attempts} محاولات` : `${item.questions} distinct questions · ${item.attempts} attempts`}
                   </p>
-                  {item.selfAssessed && <p className="mt-1 text-[11px] text-muted-foreground">{isAr ? "يشمل التقييم الذاتي" : "Includes self ratings"}</p>}
+                  <p className="mt-1 text-[11px] text-muted-foreground">{isAr ? `${item.gradedCount} أسئلة مصححة تلقائياً` : `${item.gradedCount} graded MCQs`}</p>
+                  {item.selfPercent !== null && <p className="mt-1 text-[11px] text-muted-foreground">{isAr ? `تقييمك الذاتي: ${item.selfPercent}% من ${item.selfRatedCount}` : `Self ratings: ${item.selfPercent}% of ${item.selfRatedCount}`}</p>}
                 </div>
               </button>
             );
@@ -130,10 +132,9 @@ export default function ChapterProgressCircles({ language, userId }: { language:
             <p className="text-sm font-semibold">
               {missionsData[selectedChapter.subject]?.[language] ?? selectedChapter.subject} · {isAr ? `الفصل ${selectedChapter.chapter}` : `Chapter ${selectedChapter.chapter}`}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {isAr ? `${correctCount} صحيحة · ${results.length - correctCount} خاطئة من ${results.length} أسئلة محتسبة في الدائرة`
-                : `${correctCount} right · ${results.length - correctCount} wrong out of ${results.length} questions counted in the circle`}
-            </p>
+            <p className="text-sm text-muted-foreground">{isAr
+              ? `${graded.filter((row) => row.correct).length} صحيحة من ${graded.length} أسئلة مصححة تلقائياً · ${selfRated.filter((row) => row.correct).length} جيدة من ${selfRated.length} تقييمات ذاتية`
+              : `${graded.filter((row) => row.correct).length} right of ${graded.length} graded MCQs · ${selfRated.filter((row) => row.correct).length} good of ${selfRated.length} self ratings`}</p>
             {results.map((row) => {
               const prompt = row.question_text || olderQuestions[`${row.subject}:${row.chapter}:${row.question_key}`];
               const source = row.source === "mcq_bank"
@@ -155,8 +156,8 @@ export default function ChapterProgressCircles({ language, userId }: { language:
               );
             })}
             <p className="text-xs text-muted-foreground">
-              {isAr ? "تُحتسب آخر إجابة لكل سؤال مختلف ضمن أحدث ٢٠ سؤالاً. عند وجود ٣ أسئلة اختيار من متعدد أو أكثر، تعتمد النسبة عليها فقط."
-                : "The latest answer to each distinct question is counted among the 20 most recent. With 3 or more MCQs, the percentage uses MCQs only."}
+              {isAr ? "تُعرض آخر إجابة لكل سؤال مختلف ضمن أحدث ٢٠ سؤالاً. نسبة الدائرة تعتمد فقط على الاختيارات المصححة تلقائياً بعد ٣ أسئلة."
+                : "Shows the latest answer per question among the 20 most recent. The circle uses graded MCQs only, after 3 questions."}
             </p>
           </div>
         )}
