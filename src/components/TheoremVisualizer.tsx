@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { Eye, EyeOff, Hand, Layers3, Lock } from "lucide-react";
 
 export type TheoremPoint = "A" | "B" | "C" | "D" | "E" | "T";
 
@@ -44,6 +45,12 @@ const DEFAULT_SEGMENTS: readonly TheoremSegment[] = [
 ];
 
 const POINTS: readonly TheoremPoint[] = ["A", "B", "C", "D", "E", "T"];
+const SEGMENT_LABELS: Record<string, string> = {
+  intersection: "مستقيم التقاطع AB",
+  "horizontal-perpendicular": "المستقيم DE",
+  "hinged-perpendicular": "المستقيم CD",
+  test: "مستقيم الاختبار",
+};
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
 
 /** AB is the x axis; plane Y is y=0. Rotating X around AB moves C only. */
@@ -90,19 +97,40 @@ function makeLabel(text: string, color: string): THREE.Sprite {
 }
 
 type SceneUpdate = (dihedral: number, testRotation: number) => void;
+type SceneVisibility = {
+  planes: { X: boolean; Y: boolean };
+  segments: Record<string, boolean>;
+};
+type VisibilityUpdate = (visibility: SceneVisibility) => void;
+type InteractionUpdate = (enabled: boolean) => void;
 
 export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS, className = "" }: TheoremVisualizerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const updateRef = useRef<SceneUpdate | null>(null);
+  const visibilityRef = useRef<VisibilityUpdate | null>(null);
+  const interactionRef = useRef<InteractionUpdate | null>(null);
   const [dihedral, setDihedral] = useState(90);
   const [testRotation, setTestRotation] = useState(0);
   const [activeStep, setActiveStep] = useState(-1);
+  const [interactionEnabled, setInteractionEnabled] = useState(false);
+  const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const [planeVisibility, setPlaneVisibility] = useState({ X: true, Y: true });
 
   const segments = geometry?.segments ?? DEFAULT_SEGMENTS;
+  const [segmentVisibility, setSegmentVisibility] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(segments.map((segment) => [segment.id, true])),
+  );
   const pointLabels = geometry?.pointLabels;
   const planeLabels = geometry?.planeLabels;
   // Keep one WebGL scene while only the movable geometry is updated by sliders.
   const drawing = useMemo(() => ({ segments, pointLabels, planeLabels }), [segments, pointLabels, planeLabels]);
+  const sceneVisibility = useMemo<SceneVisibility>(() => ({ planes: planeVisibility, segments: segmentVisibility }), [planeVisibility, segmentVisibility]);
+
+  useEffect(() => {
+    setSegmentVisibility((current) => Object.fromEntries(
+      segments.map((segment) => [segment.id, current[segment.id] ?? true]),
+    ));
+  }, [segments]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -126,6 +154,13 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     controls.minDistance = 3;
     controls.maxDistance = 12;
     controls.update();
+    const setInteraction: InteractionUpdate = (enabled) => {
+      controls.enabled = enabled;
+      renderer.domElement.style.pointerEvents = enabled ? "auto" : "none";
+      controls.update();
+    };
+    interactionRef.current = setInteraction;
+    setInteraction(interactionEnabled);
 
     // Keep the faces translucent and draw their perimeter separately, like the
     // two blue/red planes in the classroom sketch. X and its border share a hinge.
@@ -189,6 +224,28 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     const yLabel = makeLabel(drawing.planeLabels?.Y ?? "Y", "#2563eb");
     scene.add(xLabel, yLabel);
 
+    const applyVisibility: VisibilityUpdate = (visibility) => {
+      planeY.visible = visibility.planes.Y;
+      yBorder.visible = visibility.planes.Y;
+      yLabel.visible = visibility.planes.Y;
+      hingedPlane.visible = visibility.planes.X;
+      xLabel.visible = visibility.planes.X;
+      for (const { segment, line } of lineObjects) {
+        line.visible = visibility.segments[segment.id] !== false;
+      }
+      angleMark.visible = visibility.segments["hinged-perpendicular"] !== false
+        && visibility.segments["horizontal-perpendicular"] !== false;
+      for (const point of POINTS) {
+        const visible = drawing.segments.some((segment) =>
+          (segment.from === point || segment.to === point) && visibility.segments[segment.id] !== false,
+        );
+        dots.get(point)!.visible = visible;
+        labels.get(point)!.visible = visible;
+      }
+    };
+    visibilityRef.current = applyVisibility;
+    applyVisibility(sceneVisibility);
+
     const update: SceneUpdate = (angle, rotation) => {
       const p = positions(angle, rotation);
       for (const { segment, line } of lineObjects) {
@@ -245,6 +302,8 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     render();
     return () => {
       updateRef.current = null;
+      visibilityRef.current = null;
+      interactionRef.current = null;
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", handleWindowResize);
@@ -265,12 +324,18 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
   }, [drawing]);
 
   useEffect(() => { updateRef.current?.(dihedral, testRotation); }, [dihedral, testRotation]);
+  useEffect(() => { visibilityRef.current?.(sceneVisibility); }, [sceneVisibility]);
+  useEffect(() => { interactionRef.current?.(interactionEnabled); }, [interactionEnabled]);
 
   const measured = testSegmentAngle(dihedral, testRotation);
   const perpendicular = dihedral === 90;
   const chooseStep = (index: number) => {
     setActiveStep(index);
     if (index >= 3) setDihedral(90);
+  };
+  const setAllVisible = (visible: boolean) => {
+    setPlaneVisibility({ X: visible, Y: visible });
+    setSegmentVisibility(Object.fromEntries(segments.map((segment) => [segment.id, visible])));
   };
 
   return (
@@ -280,7 +345,64 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(270px,1fr)]">
         <div>
-          <div ref={mountRef} role="img" aria-label="مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران" className="h-[340px] w-full overflow-hidden rounded-2xl border border-blue-100 bg-[#fcfbf5] touch-none sm:h-[440px]" />
+          <div className="relative">
+            <div ref={mountRef} role="img" aria-label="مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران"
+              className={`h-[340px] w-full overflow-hidden rounded-2xl border border-blue-100 bg-[#fcfbf5] sm:h-[440px] ${interactionEnabled ? "touch-none" : "touch-pan-y"}`} />
+
+            <div className="absolute left-3 top-3 z-20 flex gap-2" dir="rtl">
+              <button type="button" onClick={() => setInteractionEnabled((enabled) => !enabled)} aria-pressed={interactionEnabled}
+                title={interactionEnabled ? "قفل تحريك المجسم" : "تفعيل تحريك المجسم"}
+                className={`inline-flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold shadow-md backdrop-blur transition ${interactionEnabled ? "border-[#183A72] bg-[#183A72] text-white" : "border-slate-200 bg-white/95 text-slate-700 hover:bg-slate-50"}`}>
+                {interactionEnabled ? <Lock className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
+                <span className="hidden sm:inline">{interactionEnabled ? "قفل العرض" : "حرّك المجسم"}</span>
+              </button>
+              <button type="button" onClick={() => setVisibilityOpen((open) => !open)} aria-expanded={visibilityOpen}
+                title="إظهار وإخفاء المستويات والمستقيمات"
+                className={`inline-flex h-11 items-center gap-2 rounded-xl border px-3 text-xs font-bold shadow-md backdrop-blur transition ${visibilityOpen ? "border-violet-600 bg-violet-600 text-white" : "border-slate-200 bg-white/95 text-slate-700 hover:bg-slate-50"}`}>
+                <Layers3 className="h-4 w-4" />
+                <span className="hidden sm:inline">العناصر</span>
+              </button>
+            </div>
+
+            {visibilityOpen && (
+              <div className="absolute left-3 top-16 z-20 w-64 max-w-[calc(100%-1.5rem)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur" dir="rtl">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <strong className="text-sm text-[#183A72]">إظهار وإخفاء العناصر</strong>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => setAllVisible(true)} className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold hover:bg-slate-200">الكل</button>
+                    <button type="button" onClick={() => setAllVisible(false)} className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold hover:bg-slate-200">إخفاء</button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {(["X", "Y"] as const).map((plane) => {
+                    const visible = planeVisibility[plane];
+                    return (
+                      <button key={plane} type="button" onClick={() => setPlaneVisibility((current) => ({ ...current, [plane]: !current[plane] }))}
+                        aria-pressed={visible} className="flex min-h-10 w-full items-center justify-between rounded-xl px-2.5 text-sm hover:bg-slate-100">
+                        <span>المستوي {drawing.planeLabels?.[plane] ?? plane}</span>
+                        {visible ? <Eye className="h-4 w-4 text-blue-600" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
+                      </button>
+                    );
+                  })}
+                  <div className="my-2 border-t border-slate-200" />
+                  {segments.map((segment) => {
+                    const visible = segmentVisibility[segment.id] !== false;
+                    return (
+                      <button key={segment.id} type="button" onClick={() => setSegmentVisibility((current) => ({ ...current, [segment.id]: !visible }))}
+                        aria-pressed={visible} className="flex min-h-10 w-full items-center justify-between rounded-xl px-2.5 text-sm hover:bg-slate-100">
+                        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color ?? "#64748b" }} />{SEGMENT_LABELS[segment.id] ?? segment.id}</span>
+                        {visible ? <Eye className="h-4 w-4 text-blue-600" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className={`pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1.5 text-xs font-bold shadow-sm backdrop-blur transition ${interactionEnabled ? "bg-[#183A72]/90 text-white" : "bg-white/90 text-slate-600"}`}>
+              {interactionEnabled ? "اسحب للتدوير • قرّب بإصبعين" : "اضغط زر اليد لتحريك المجسم"}
+            </div>
+          </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
             <span className="text-blue-600">▰ المستوي Y</span><span className="text-red-600">▰ المستوي X</span>
             <span className="text-green-700">━ CD</span><span className="text-amber-700">━ DE</span>
