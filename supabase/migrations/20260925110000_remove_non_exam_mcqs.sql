@@ -1,0 +1,28 @@
+-- Remove document trivia and extraction artifacts that do not test curriculum
+-- knowledge. Related review rows are removed through their ON DELETE CASCADE.
+DELETE FROM public.mcq_banks
+WHERE question ILIKE '%on which page%'
+   OR question ILIKE '%what page%'
+   OR question ILIKE '%which page%'
+   OR question ILIKE '%page number%'
+   OR question ILIKE '%name of the teacher%'
+   OR question ILIKE '%teacher name%'
+   OR question ILIKE '%teacher''s name%'
+   OR question ILIKE '%name of the instructor%'
+   OR question ILIKE '%instructor name%'
+   OR question ILIKE '%source file name%'
+   OR question ILIKE '%document title%'
+   OR question ILIKE '%layout attribution%'
+   OR question ILIKE '%parsed-documents%'
+   OR question ILIKE '%OCR%'
+   OR question LIKE '%في أي صفحة%'
+   OR question LIKE '%في اى صفحة%'
+   OR question LIKE '%على أي صفحة%'
+   OR question LIKE '%رقم الصفحة%'
+   OR question LIKE '%اسم المدرس%'
+   OR question LIKE '%اسم الأستاذ%'
+   OR question LIKE '%اسم الاستاذ%'
+   OR question LIKE '%اسم الملف%'
+   OR question LIKE '%عنوان الملف%'
+   OR question LIKE '%توزيع التخطيط%'
+   OR question LIKE '%معرفات مناطق التخطيط%';
