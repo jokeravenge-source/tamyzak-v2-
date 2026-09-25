@@ -16,6 +16,7 @@ import { edgeErrorMessage } from "@/lib/edgeError";
 import { SUBJECTS_ORDER } from "@/data/subjectChapters";
 import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
 import { validatedGeneratedChapter } from "@/lib/mcqChapters";
+import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 
 
 const copy = {
@@ -146,7 +147,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
       toast.dismiss("gen");
       if (error) throw new Error(await edgeErrorMessage(error, "Failed to generate"));
       if (data?.error) throw new Error(data.message || data.error);
-      const qs: MCQ[] = (data?.questions || []).filter((q: MCQ) => q?.choices?.length === 4)
+      const qs: MCQ[] = (data?.questions || []).filter((q: MCQ) => q?.choices?.length === 4 && isExamRelevantQuestion(q.question))
         .map((q: MCQ) => ({ ...q, subject: subject === "english" && section !== "grammar" ? `english_${section}` : subject, chapter: validatedGeneratedChapter(q.chapter, subject, section, chapterN) }));
       if (!qs.length) throw new Error("No questions returned");
       setQuestions(qs);
