@@ -115,7 +115,9 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
             ? (language === "ar"
                 ? "اختر المدرّس لعرض فصول الفيزياء وبطاقاتها التعليمية."
                 : "Choose a teacher to view all eight physics chapters and their flashcards.")
-            : text.description}
+            : subject === "math"
+              ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
+              : text.description}
         </p>
       </header>
 

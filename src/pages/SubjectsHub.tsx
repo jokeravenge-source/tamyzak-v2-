@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { trackFeature, trackFeatureUnlocked } from "@/lib/analytics";
 import { ArrowLeft, ArrowRight, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, Moon, ScrollText, Microscope, PenLine, MousePointerClick, Layers, BookMarked, Lock, Bot, Calculator, Ruler, Zap, Boxes, GraduationCap, Wand2, SpellCheck2, FileQuestion, Images } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,12 +9,14 @@ import { toast } from "sonner";
 import { TOOL_PLACEHOLDER_KEY } from "@/pages/ToolPlaceholder";
 import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
 
-type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic";
+const TheoremVisualizer = lazy(() => import("@/components/TheoremVisualizer"));
+
+type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic" | "math";
 
 // A tool either points to a real MainMenuChoice route, or is a placeholder
 // with its own display metadata (routed through the shared ToolPlaceholder page).
 type Tool = {
-  key: MainMenuChoice;
+  key: MainMenuChoice | "theoremVisualizer";
   en: string;
   ar: string;
   Icon: React.ComponentType<{ className?: string }>;
@@ -71,6 +73,15 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "biologyDrawings", en: "Biology Drawings", ar: "رسومات الأحياء", Icon: Microscope },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
       { key: "malazam", en: "Malazam", ar: "الملازم", Icon: BookMarked },
+    ],
+  },
+  {
+    code: "math", en: "Mathematics", ar: "الرياضيات", Icon: Calculator,
+    tools: [
+      { key: "flashcards", en: "Math Flashcards", ar: "بطاقات الرياضيات", Icon: Layers,
+        descEn: "Review the available mathematics chapters with flashcards.", descAr: "راجع فصول الرياضيات المتاحة بالبطاقات." },
+      { key: "theoremVisualizer", en: "3D Geometry Theorem", ar: "مبرهنة الهندسة المجسمة", Icon: Ruler, free: true,
+        descEn: "Explore perpendicular planes in 3D.", descAr: "اكتشف تعامد المستويين بمجسم تفاعلي." },
     ],
   },
   {
@@ -132,8 +143,10 @@ const SubjectsHub = ({
 }) => {
   const isRTL = language === "ar";
   const [showSpecialistTools, setShowSpecialistTools] = useState(false);
+  const [showTheorem, setShowTheorem] = useState(false);
   const [open, setOpen] = useState<SubjectKey | null>(null);
   useEffect(() => setShowSpecialistTools(false), [open]);
+  useEffect(() => setShowTheorem(false), [open]);
   useEffect(() => {
     try {
       const focus = localStorage.getItem("app_subject_focus_v1") as SubjectKey | null;
@@ -150,6 +163,11 @@ const SubjectsHub = ({
   const current = SUBJECTS.find((s) => s.code === open);
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const handleToolClick = (t: Tool) => {
+    if (t.key === "theoremVisualizer") {
+      trackFeature("tool_theoremVisualizer");
+      setShowTheorem(true);
+      return;
+    }
     if (t.disabled) {
       toast.error(isRTL ? "هذه الأداة مقفلة حالياً." : "This tool is currently locked.");
       return;
@@ -194,6 +212,22 @@ const SubjectsHub = ({
     }
     onSelect(t.key);
   };
+
+  if (showTheorem && current?.code === "math") {
+    return (
+      <main dir="rtl" className="min-h-screen bg-background px-4 pb-28 pt-6 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <button type="button" onClick={() => setShowTheorem(false)} className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold">
+            <ArrowLeft className="h-4 w-4 rotate-180" />
+            {isRTL ? "العودة للرياضيات" : "Back to Mathematics"}
+          </button>
+          <Suspense fallback={<div className="rounded-2xl border border-border p-6 text-center">{isRTL ? "جارٍ تحميل المجسم..." : "Loading visualization..."}</div>}>
+            <TheoremVisualizer />
+          </Suspense>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background pb-28">
@@ -291,7 +325,7 @@ const SubjectsHub = ({
                 {showSpecialistTools ? (isRTL ? "عرض الأساسيات فقط" : "Show essentials only") : (isRTL ? "عرض الأدوات الإضافية" : "Show extra tools")}
               </button>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {current.tools.filter((t) => showSpecialistTools || ["flashcards", "malazam", "ministerialBank"].includes(t.key)).sort((a, b) => {
+                {current.tools.filter((t) => showSpecialistTools || ["flashcards", "theoremVisualizer", "malazam", "ministerialBank"].includes(t.key)).sort((a, b) => {
                   const order = ["flashcards", "malazam", "ministerialBank"];
                   return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
                 }).map((t) => {
