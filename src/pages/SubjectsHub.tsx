@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { trackFeature, trackFeatureUnlocked } from "@/lib/analytics";
 import { ArrowLeft, ArrowRight, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, Moon, ScrollText, Microscope, PenLine, MousePointerClick, Layers, BookMarked, Lock, Bot, Calculator, Ruler, Zap, Boxes, GraduationCap, Wand2, SpellCheck2, FileQuestion, Images } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,8 +8,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { TOOL_PLACEHOLDER_KEY } from "@/pages/ToolPlaceholder";
 import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
-
-const TheoremVisualizer = lazy(() => import("@/components/TheoremVisualizer"));
 
 type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic" | "math";
 
@@ -143,10 +141,8 @@ const SubjectsHub = ({
 }) => {
   const isRTL = language === "ar";
   const [showSpecialistTools, setShowSpecialistTools] = useState(false);
-  const [showTheorem, setShowTheorem] = useState(false);
   const [open, setOpen] = useState<SubjectKey | null>(null);
   useEffect(() => setShowSpecialistTools(false), [open]);
-  useEffect(() => setShowTheorem(false), [open]);
   useEffect(() => {
     try {
       const focus = localStorage.getItem("app_subject_focus_v1") as SubjectKey | null;
@@ -165,7 +161,7 @@ const SubjectsHub = ({
   const handleToolClick = (t: Tool) => {
     if (t.key === "theoremVisualizer") {
       trackFeature("tool_theoremVisualizer");
-      setShowTheorem(true);
+      window.location.assign("/math/theorem-visualizer");
       return;
     }
     if (t.disabled) {
@@ -212,22 +208,6 @@ const SubjectsHub = ({
     }
     onSelect(t.key);
   };
-
-  if (showTheorem && current?.code === "math") {
-    return (
-      <main dir="rtl" className="min-h-screen bg-background px-4 pb-28 pt-6 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <button type="button" onClick={() => setShowTheorem(false)} className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold">
-            <ArrowLeft className="h-4 w-4 rotate-180" />
-            {isRTL ? "العودة للرياضيات" : "Back to Mathematics"}
-          </button>
-          <Suspense fallback={<div className="rounded-2xl border border-border p-6 text-center">{isRTL ? "جارٍ تحميل المجسم..." : "Loading visualization..."}</div>}>
-            <TheoremVisualizer />
-          </Suspense>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background pb-28">
