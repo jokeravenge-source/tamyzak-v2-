@@ -80,6 +80,7 @@ const OrganicEquations = lazy(() => import("./pages/OrganicEquations"));
 const ChemicalEquations = lazy(() => import("./pages/ChemicalEquations"));
 const LiveBattle = lazy(() => import("./pages/LiveBattle"));
 const SubjectsHub = lazy(() => import("./pages/SubjectsHub"));
+const TheoremVisualizerPage = lazy(() => import("./pages/TheoremVisualizerPage"));
 const TextToVideo = lazy(() => import("./pages/TextToVideo"));
 const SubjectTutor = lazy(() => import("./pages/SubjectTutor"));
 const PhysicsLaws = lazy(() => import("./pages/PhysicsLaws"));
@@ -228,6 +229,19 @@ const App = () => {
           <Sonner />
           <Suspense fallback={null}>
             <ResetPassword />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Public standalone mathematics visualizer with a shareable direct URL.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/math/theorem-visualizer") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <TheoremVisualizerPage />
           </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
