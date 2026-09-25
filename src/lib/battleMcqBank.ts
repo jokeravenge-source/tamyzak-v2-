@@ -73,6 +73,7 @@ import { flashcardsFrenchRelativePronounsAr } from "@/data/flashcardsFrenchRelat
 import { flashcardsIslamicMeaningsAr } from "@/data/flashcardsIslamicMeaningsAr";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
+import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 
 export type BattleSubject =
   | "general"
@@ -138,6 +139,7 @@ const islamicPool: QA[] = [
 
 const isMcqFriendly = (qa: QA) =>
   !!qa && typeof qa.q === "string" && typeof qa.a === "string"
+  && isExamRelevantQuestion(qa.q)
   && qa.q.length > 0 && qa.q.length <= 220
   && qa.a.length > 0 && qa.a.length <= 90
   && !qa.a.includes("\n");
