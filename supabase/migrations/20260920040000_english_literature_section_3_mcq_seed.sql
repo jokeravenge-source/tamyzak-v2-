@@ -5,7 +5,6 @@ WITH questions AS (
   FROM jsonb_to_recordset($questions$
   [
     {"sort_order":1,"question":"From which novel is the extract taken?","choices":["Jane Eyre","Pride and Prejudice","Great Expectations","Oliver Twist"],"answer_index":1},
-    {"sort_order":2,"question":"On which page of the Student’s Book can the extract be found?","choices":["Page 105","Page 172","Page 173","Page 115"],"answer_index":0},
     {"sort_order":3,"question":"What happens first in the extract?","choices":["Mr Darcy compliments Elizabeth’s eyes.","Louisa discusses the Bennets’ social class.","Elizabeth goes to see her sick sister.","Caroline mentions Mr Darcy’s sister."],"answer_index":2},
     {"sort_order":4,"question":"Why does Elizabeth go to the estate?","choices":["To meet Mr Darcy","To visit her sick sister, Jane","To attend a party","To speak to Louisa"],"answer_index":1},
     {"sort_order":5,"question":"What happens immediately after Elizabeth goes to see Jane?","choices":["Mr Darcy compliments Elizabeth.","The Bingley sisters discuss Elizabeth’s clothes.","Caroline talks about Jane’s marriage.","Louisa discusses the Bennet family."],"answer_index":1},
