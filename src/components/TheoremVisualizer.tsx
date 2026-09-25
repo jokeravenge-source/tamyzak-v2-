@@ -113,6 +113,12 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     camera.position.set(4.5, 3.7, 5.4);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // The component can mount while its lazy-loaded parent is still settling.
+    // Give the canvas a stable CSS size and only resize its drawing buffer after
+    // ResizeObserver reports a usable content box.
+    renderer.domElement.style.display = "block";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
     mount.appendChild(renderer.domElement);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -209,16 +215,27 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     updateRef.current = update;
     update(dihedral, testRotation);
 
-    const resize = () => {
-      const width = Math.max(1, mount.clientWidth);
-      const height = Math.max(1, mount.clientHeight);
+    const resize = (width: number, height: number) => {
+      // Never replace Three.js's valid default buffer with a 1 px buffer when
+      // the responsive grid has not completed layout yet.
+      if (width < 2 || height < 2) return;
+      width = Math.round(width);
+      height = Math.round(height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
     };
-    const observer = new ResizeObserver(resize);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) resize(entry.contentRect.width, entry.contentRect.height);
+    });
     observer.observe(mount);
-    resize();
+    const initialRect = mount.getBoundingClientRect();
+    resize(initialRect.width, initialRect.height);
+    const handleWindowResize = () => {
+      const rect = mount.getBoundingClientRect();
+      resize(rect.width, rect.height);
+    };
+    window.addEventListener("resize", handleWindowResize);
     let frame = 0;
     const render = () => {
       frame = requestAnimationFrame(render);
@@ -230,6 +247,7 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
       updateRef.current = null;
       cancelAnimationFrame(frame);
       observer.disconnect();
+      window.removeEventListener("resize", handleWindowResize);
       controls.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Sprite) {
