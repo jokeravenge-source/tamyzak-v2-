@@ -3,7 +3,6 @@ import type { BuiltInMcqRow } from "@/lib/physicsChapter2Mcqs";
 // Built-in fallback so Section 3 is visible before the database seed is applied.
 const SECTION_3: Array<readonly [string, readonly string[], number]> = [
   ["From which novel is the extract taken?", ["Jane Eyre", "Pride and Prejudice", "Great Expectations", "Oliver Twist"], 1],
-  ["On which page of the Student’s Book can the extract be found?", ["Page 105", "Page 172", "Page 173", "Page 115"], 0],
   ["What happens first in the extract?", ["Mr Darcy compliments Elizabeth’s eyes.", "Louisa discusses the Bennets’ social class.", "Elizabeth goes to see her sick sister.", "Caroline mentions Mr Darcy’s sister."], 2],
   ["Why does Elizabeth go to the estate?", ["To meet Mr Darcy", "To visit her sick sister, Jane", "To attend a party", "To speak to Louisa"], 1],
   ["What happens immediately after Elizabeth goes to see Jane?", ["Mr Darcy compliments Elizabeth.", "The Bingley sisters discuss Elizabeth’s clothes.", "Caroline talks about Jane’s marriage.", "Louisa discusses the Bennet family."], 1],
