@@ -241,6 +241,24 @@ const parseQuestionsFromText = (raw: string): Question[] => {
 
 const normalizeKey = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
 
+const isExamRelevantQuestion = (question: string): boolean => {
+  const normalized = question.replace(/\s+/g, " ").trim();
+  const nonExamPatterns = [
+    /\b(?:on\s+)?(?:what|which)\s+page\b/i,
+    /\bpage\s+(?:number|no\.?|#|\d+)\b/i,
+    /\b(?:name\s+of\s+the|who\s+is\s+the)\s+(?:teacher|instructor|author|writer|compiler)\b/i,
+    /\b(?:teacher|instructor|author|writer|compiler)(?:'s)?\s+name\b/i,
+    /\b(?:source|file|document)\s+(?:name|title)\b/i,
+    /(?:في|على)\s+(?:أي|اى)\s+صفحة/u,
+    /رقم\s+الصفحة/u,
+    /(?:ما|ماذا)\s+(?:هو|هي)?\s*اسم\s+(?:المدرس|الأستاذ|الاستاذ|المؤلف|الكاتب)/u,
+    /من\s+هو\s+(?:المدرس|الأستاذ|الاستاذ|المؤلف|الكاتب)/u,
+    /(?:اسم|عنوان)\s+(?:الملف|المصدر|الوثيقة)/u,
+    /layout attribution|parsed-documents|\bocr\b|توزيع التخطيط|معرفات مناطق التخطيط/i,
+  ];
+  return normalized.length >= 4 && !nonExamPatterns.some((pattern) => pattern.test(normalized));
+};
+
 /**
  * Fisher-Yates shuffle over tagged options, so the correct answer is tracked by
  * identity rather than by text (indexOf breaks on duplicate choice text).
@@ -262,7 +280,7 @@ const finalizeQuestions = (questions: Question[], limit: number): Question[] => 
   for (const question of questions) {
     if (output.length >= limit) break;
     const key = normalizeKey(question.question);
-    if (!key || seen.has(key)) continue;
+    if (!key || seen.has(key) || !isExamRelevantQuestion(question.question)) continue;
     seen.add(key);
     const shuffled = shuffleChoices(question);
     if (shuffled.answer_index < 0 || shuffled.answer_index > 3) continue;
@@ -288,7 +306,7 @@ CONTENT COVERAGE
 - Prefer scientific substance: definitions, mechanisms, formulas, reactions, processes, diagrams, tables, numeric values, classifications, and stated cause-and-effect relationships.
 - Cover as many DIFFERENT concepts as possible; never repeat or rephrase the same fact twice.
 - Vary difficulty: mix straightforward recall, applied reasoning, and comparison/analysis questions.
-- Never ask about document metadata, page numbers, titles, authors, or "what the document discusses".
+- Never ask about document metadata, page numbers, teacher/instructor names, source file names, titles, authors, OCR labels, or "what the document discusses".
 - Distractors must be plausible, mutually exclusive, textually distinct, and from the same topic.
 - Ignore unreadable sections rather than guessing their content.
 - Write every field only in ${language}.`;
