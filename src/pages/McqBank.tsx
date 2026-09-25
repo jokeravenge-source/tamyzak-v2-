@@ -35,6 +35,7 @@ import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
 import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
+import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
 import { DAILY_MCQ_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
@@ -153,7 +154,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .eq("language", lang).eq("subject", topicTarget.subject)
           .order("sort_order", { ascending: true }).limit(2000) : Promise.resolve({ data: [] as Row[] }),
       ]);
-      const databaseRows = [...new Map([...(data ?? []), ...(focusedRows.data ?? [])].map((row) => [row.id, row as Row])).values()];
+      const databaseRows = [...new Map([...(data ?? []), ...(focusedRows.data ?? [])].map((row) => [row.id, row as Row])).values()]
+        .filter((row) => isExamRelevantQuestion(row.question));
       const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
         `${row.subject}\u0000${row.chapter}\u0000${row.question.trim()}`;
       const existingQuestions = new Set(databaseRows.map(rowKey));
