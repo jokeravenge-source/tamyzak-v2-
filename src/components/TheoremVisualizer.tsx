@@ -37,10 +37,10 @@ const DEFAULT_STEPS = [
 ] as const;
 
 const DEFAULT_SEGMENTS: readonly TheoremSegment[] = [
-  { id: "intersection", from: "A", to: "B", color: "#fbbf24" },
-  { id: "horizontal-perpendicular", from: "D", to: "E", color: "#38bdf8" },
-  { id: "hinged-perpendicular", from: "D", to: "C", color: "#fb7185" },
-  { id: "test", from: "D", to: "T", color: "#a78bfa", dashed: true },
+  { id: "intersection", from: "A", to: "B", color: "#172554" },
+  { id: "horizontal-perpendicular", from: "D", to: "E", color: "#d48b16" },
+  { id: "hinged-perpendicular", from: "D", to: "C", color: "#16a34a" },
+  { id: "test", from: "D", to: "T", color: "#7c3aed", dashed: true },
 ];
 
 const POINTS: readonly TheoremPoint[] = ["A", "B", "C", "D", "E", "T"];
@@ -73,7 +73,7 @@ function makeLabel(text: string, color: string): THREE.Sprite {
   canvas.width = 256;
   canvas.height = 128;
   const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "rgba(15,23,42,0.88)";
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
   ctx.beginPath();
   ctx.roundRect(12, 24, 232, 80, 20);
   ctx.fill();
@@ -108,9 +108,9 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     const mount = mountRef.current;
     if (!mount) return;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0f172a");
+    scene.background = new THREE.Color("#fcfbf5");
     const camera = new THREE.PerspectiveCamera(43, 1, 0.1, 100);
-    camera.position.set(4.2, 3.2, 4.7);
+    camera.position.set(4.5, 3.7, 5.4);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     mount.appendChild(renderer.domElement);
@@ -121,14 +121,37 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     controls.maxDistance = 12;
     controls.update();
 
-    const materialY = new THREE.MeshBasicMaterial({ color: "#38bdf8", side: THREE.DoubleSide, transparent: true, opacity: 0.22, depthWrite: false });
-    const materialX = new THREE.MeshBasicMaterial({ color: "#fb7185", side: THREE.DoubleSide, transparent: true, opacity: 0.3, depthWrite: false });
+    // Keep the faces translucent and draw their perimeter separately, like the
+    // two blue/red planes in the classroom sketch. X and its border share a hinge.
+    const materialY = new THREE.MeshBasicMaterial({ color: "#bfdbfe", side: THREE.DoubleSide, transparent: true, opacity: 0.22, depthWrite: false });
+    const materialX = new THREE.MeshBasicMaterial({ color: "#fecaca", side: THREE.DoubleSide, transparent: true, opacity: 0.18, depthWrite: false });
     const planeY = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 3.6), materialY);
     planeY.rotation.x = -Math.PI / 2;
     scene.add(planeY);
-    // The lower edge of this rectangle lies on the AB hinge, even as it tilts.
-    const planeX = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 3), materialX);
-    scene.add(planeX);
+    const yBorder = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2.2, 0, -1.8), new THREE.Vector3(2.2, 0, -1.8),
+        new THREE.Vector3(2.2, 0, 1.8), new THREE.Vector3(-2.2, 0, 1.8),
+      ]),
+      new THREE.LineBasicMaterial({ color: "#2563eb", depthTest: false }),
+    );
+    yBorder.renderOrder = 4;
+    scene.add(yBorder);
+    // Local y runs from the hinge at y=0 to the top edge at y=2.6.
+    const hingedPlane = new THREE.Group();
+    const planeX = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.6), materialX);
+    planeX.position.y = 1.3;
+    hingedPlane.add(planeX);
+    const xBorder = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2.2, 0, 0), new THREE.Vector3(2.2, 0, 0),
+        new THREE.Vector3(2.2, 2.6, 0), new THREE.Vector3(-2.2, 2.6, 0),
+      ]),
+      new THREE.LineBasicMaterial({ color: "#ef4444", depthTest: false }),
+    );
+    xBorder.renderOrder = 5;
+    hingedPlane.add(xBorder);
+    scene.add(hingedPlane);
 
     const lineObjects = drawing.segments.map((segment) => {
       const material = segment.dashed
@@ -140,7 +163,7 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
       return { segment, line };
     });
 
-    const markMaterial = new THREE.LineBasicMaterial({ color: "#facc15", depthTest: false });
+    const markMaterial = new THREE.LineBasicMaterial({ color: "#dc2626", depthTest: false });
     const angleMark = new THREE.Line(new THREE.BufferGeometry(), markMaterial);
     angleMark.renderOrder = 9;
     scene.add(angleMark);
@@ -148,16 +171,16 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
     const dots = new Map<TheoremPoint, THREE.Mesh>();
     const labels = new Map<TheoremPoint, THREE.Sprite>();
     for (const key of POINTS) {
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 8), new THREE.MeshBasicMaterial({ color: "#ffffff", depthTest: false }));
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), new THREE.MeshBasicMaterial({ color: key === "T" ? "#7c3aed" : "#172554", depthTest: false }));
       dot.renderOrder = 10;
       scene.add(dot);
       dots.set(key, dot);
-      const label = makeLabel(drawing.pointLabels?.[key] ?? key, key === "T" ? "#c4b5fd" : "#ffffff");
+      const label = makeLabel(drawing.pointLabels?.[key] ?? key, key === "T" ? "#7c3aed" : "#172554");
       scene.add(label);
       labels.set(key, label);
     }
-    const xLabel = makeLabel(drawing.planeLabels?.X ?? "X", "#fda4af");
-    const yLabel = makeLabel(drawing.planeLabels?.Y ?? "Y", "#7dd3fc");
+    const xLabel = makeLabel(drawing.planeLabels?.X ?? "X", "#dc2626");
+    const yLabel = makeLabel(drawing.planeLabels?.Y ?? "Y", "#2563eb");
     scene.add(xLabel, yLabel);
 
     const update: SceneUpdate = (angle, rotation) => {
@@ -172,11 +195,10 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
         labels.get(key)!.position.copy(p[key]).add(new THREE.Vector3(key === "B" ? 0.26 : -0.18, 0.2, key === "D" ? -0.24 : 0));
       }
       const theta = radians(angle);
-      // PlaneGeometry starts in xy: local y maps to (0, sinθ, cosθ).
-      planeX.rotation.x = Math.PI / 2 - theta;
-      planeX.position.set(0, 1.5 * Math.sin(theta), 1.5 * Math.cos(theta));
-      xLabel.position.set(-1.45, 1.38 * Math.sin(theta) + 0.13, 1.38 * Math.cos(theta));
-      yLabel.position.set(1.5, 0.14, 1.2);
+      // Group local +y maps to (0, sinθ, cosθ), exactly like segment CD.
+      hingedPlane.rotation.x = Math.PI / 2 - theta;
+      xLabel.position.set(-1.6, 2.36 * Math.sin(theta) + 0.14, 2.36 * Math.cos(theta));
+      yLabel.position.set(1.65, 0.16, -1.25);
       const arc = Array.from({ length: 41 }, (_, index) => {
         const a = (theta * index) / 40;
         return new THREE.Vector3(0, 0.48 * Math.sin(a), 0.48 * Math.cos(a));
@@ -240,7 +262,12 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(270px,1fr)]">
         <div>
-          <div ref={mountRef} role="img" aria-label="مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران" className="h-[340px] w-full overflow-hidden rounded-2xl bg-slate-900 touch-none sm:h-[440px]" />
+          <div ref={mountRef} role="img" aria-label="مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران" className="h-[340px] w-full overflow-hidden rounded-2xl border border-blue-100 bg-[#fcfbf5] touch-none sm:h-[440px]" />
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
+            <span className="text-blue-600">▰ المستوي Y</span><span className="text-red-600">▰ المستوي X</span>
+            <span className="text-green-700">━ CD</span><span className="text-amber-700">━ DE</span>
+            <span className="text-violet-700">┄ مستقيم الاختبار</span>
+          </div>
           <p className="mt-2 text-xs text-slate-500">اسحب الشكل لتدويره، وحرّك المؤشرين لتختبر صحة المبرهنة.</p>
           <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
             <label className="block text-sm font-semibold">
