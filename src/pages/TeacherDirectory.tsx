@@ -27,12 +27,23 @@ import {
   TEACHER_TOOL_CATALOG,
   type TeacherToolKey,
 } from "@/lib/teacherTools";
+import {
+  DEFAULT_PHYSICS_FLASHCARD_LIST_ID,
+  FLASHCARD_LISTS,
+  isFlashcardListId,
+  type FlashcardListDefinition,
+} from "@/lib/flashcardLists";
+import {
+  PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
+  SUBJECT_STORAGE_KEY,
+} from "@/pages/Subjects";
 
 type TeacherProfile = {
   id: string;
   name: string;
   background_image_url: string;
   tools: string[] | null;
+  flashcard_list_ids: string[] | null;
   sort_order: number;
 };
 
@@ -78,6 +89,8 @@ const copy = {
     manage: "إضافة وإدارة المدرسين",
     manageTitle: "إدارة المدرسين",
     closeManage: "العودة إلى قائمة المدرسين",
+    flashcardLists: "قوائم البطاقات التعليمية",
+    chooseList: "اختَر قائمة البطاقات",
   },
   en: {
     title: "Our Teachers",
@@ -92,6 +105,8 @@ const copy = {
     manage: "Add and manage teachers",
     manageTitle: "Manage teachers",
     closeManage: "Back to teacher list",
+    flashcardLists: "Flashcard lists",
+    chooseList: "Choose a flashcard list",
   },
 } as const;
 
@@ -113,6 +128,7 @@ const TeacherDirectory = ({
   const [canManage, setCanManage] = useState(false);
   const [managing, setManaging] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [choosingFlashcardList, setChoosingFlashcardList] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -135,7 +151,7 @@ const TeacherDirectory = ({
       setError(false);
       const { data, error: loadError } = await supabase
         .from("platform_teachers")
-        .select("id,name,background_image_url,tools,sort_order")
+        .select("id,name,background_image_url,tools,flashcard_list_ids,sort_order")
         .eq("is_published", true)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
@@ -160,11 +176,45 @@ const TeacherDirectory = ({
     return TEACHER_TOOL_CATALOG.filter((tool) => assigned.has(tool.key));
   }, [selected]);
 
+  const selectedFlashcardLists = useMemo(() => {
+    if (!selected) return [];
+    const configured = (selected.flashcard_list_ids ?? []).filter(isFlashcardListId);
+    const listIds = configured.length > 0 ? configured : [DEFAULT_PHYSICS_FLASHCARD_LIST_ID];
+    return FLASHCARD_LISTS.filter((list) => listIds.includes(list.id));
+  }, [selected]);
+
+  const openFlashcardList = (list: FlashcardListDefinition) => {
+    localStorage.setItem(SUBJECT_STORAGE_KEY, list.subject);
+    if (list.subject === "physics") {
+      sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, list.selectorValue);
+    }
+    window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: list.subject } }));
+    onSelect("flashcards");
+  };
+
+  const openTeacherTool = (key: TeacherToolKey) => {
+    if (key !== "flashcards") {
+      onSelect(key);
+      return;
+    }
+    if (selectedFlashcardLists.length === 1) {
+      openFlashcardList(selectedFlashcardLists[0]);
+      return;
+    }
+    setChoosingFlashcardList(true);
+  };
+
   const closeManager = () => {
     setManaging(false);
     setRefreshVersion((version) => version + 1);
   };
-  const backAction = managing ? closeManager : selected ? () => setSelectedId(null) : onBack;
+  const backAction = managing
+    ? closeManager
+    : choosingFlashcardList
+      ? () => setChoosingFlashcardList(false)
+      : selected
+        ? () => setSelectedId(null)
+        : onBack;
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 pb-32 pt-6 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -176,7 +226,7 @@ const TeacherDirectory = ({
             className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold transition-colors hover:border-primary/40 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-            {managing ? text.closeManage : selected ? text.backToTeachers : text.back}
+            {managing ? text.closeManage : choosingFlashcardList ? text.backToTeachers : selected ? text.backToTeachers : text.back}
           </button>
           {canManage && !managing && !selected && (
             <button
@@ -203,6 +253,30 @@ const TeacherDirectory = ({
             </header>
             <AdminTeachersTab />
           </>
+        ) : selected && choosingFlashcardList ? (
+          <>
+            <header className="mb-7 text-center">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-2 text-xs font-black text-blue-600 dark:text-blue-300">
+                <Layers className="h-4 w-4" /> {text.flashcardLists}
+              </span>
+              <h1 className="text-3xl font-black sm:text-4xl">{text.chooseList}</h1>
+              <p className="mt-2 text-muted-foreground">{selected.name}</p>
+            </header>
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {selectedFlashcardLists.map((list) => (
+                <button
+                  type="button"
+                  key={list.id}
+                  onClick={() => openFlashcardList(list)}
+                  className="group rounded-3xl border border-blue-500/25 bg-gradient-to-br from-blue-500/15 via-card to-indigo-500/10 p-5 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-lg"
+                >
+                  <span className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-white"><Layers className="h-6 w-6" /></span>
+                  <h2 className="text-lg font-black">{isRTL ? list.nameAr : list.nameEn}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{isRTL ? list.subjectAr : list.subjectEn}</p>
+                </button>
+              ))}
+            </section>
+          </>
         ) : selected ? (
           <>
             <section
@@ -228,13 +302,18 @@ const TeacherDirectory = ({
                     <button
                       type="button"
                       key={tool.key}
-                      onClick={() => onSelect(tool.key)}
+                      onClick={() => openTeacherTool(tool.key)}
                       className="group min-h-40 rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-sky-500/10 p-5 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-primary/45 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
                         <Icon className="h-6 w-6" />
                       </span>
                       <h2 className="text-lg font-black">{isRTL ? tool.labelAr : tool.labelEn}</h2>
+                      {tool.key === "flashcards" && selectedFlashcardLists.length > 0 && (
+                        <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                          {selectedFlashcardLists.map((list) => isRTL ? list.nameAr : list.nameEn).join(" · ")}
+                        </p>
+                      )}
                       <span className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary">
                         {text.open}
                         <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
