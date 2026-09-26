@@ -1310,6 +1310,36 @@ export type Database = {
         }
         Relationships: []
       }
+      inactivity_push_log: {
+        Row: {
+          batch_id: string
+          claimed_at: string
+          last_activity_at: string
+          sent_at: string | null
+          stage: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          claimed_at?: string
+          last_activity_at: string
+          sent_at?: string | null
+          stage: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          claimed_at?: string
+          last_activity_at?: string
+          sent_at?: string | null
+          stage?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       join_requests: {
         Row: {
           created_at: string
@@ -1684,45 +1714,6 @@ export type Database = {
           push_sent?: boolean
           telegram_sent?: boolean
           title?: string
-        }
-        Relationships: []
-      }
-      platform_teachers: {
-        Row: {
-          background_image_path: string
-          background_image_url: string
-          created_at: string
-          created_by: string | null
-          id: string
-          is_published: boolean
-          name: string
-          sort_order: number
-          tools: string[]
-          updated_at: string
-        }
-        Insert: {
-          background_image_path: string
-          background_image_url: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_published?: boolean
-          name: string
-          sort_order?: number
-          tools?: string[]
-          updated_at?: string
-        }
-        Update: {
-          background_image_path?: string
-          background_image_url?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_published?: boolean
-          name?: string
-          sort_order?: number
-          tools?: string[]
-          updated_at?: string
         }
         Relationships: []
       }
@@ -3358,6 +3349,12 @@ export type Database = {
       claim_daily_feature_limit: {
         Args: { _feature: string; _limit?: number }
         Returns: boolean
+      }
+      claim_inactive_push_recipients_stage: {
+        Args: { _batch_id: string; _limit?: number; _stage: string }
+        Returns: {
+          user_id: string
+        }[]
       }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       get_due_mcq_bank_reviews: {
