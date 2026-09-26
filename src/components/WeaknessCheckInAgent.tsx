@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bot, CheckCircle2, Loader2, Send, Sparkles, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -245,6 +246,20 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [session?.messages, sending]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
   const send = async () => {
     const text = input.trim();
     if (!text || !session || sending) return;
@@ -358,21 +373,40 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
     ) : null;
   }
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-4" dir={language === "ar" ? "rtl" : "ltr"}>
-      <section className="flex h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-[2rem] border border-primary/25 bg-background shadow-2xl sm:h-[720px] sm:rounded-[2rem]" aria-labelledby="weakness-agent-title">
-        <header className="border-b border-border bg-card/90 p-4 backdrop-blur sm:p-5">
+  const modal = (
+    <div
+      className="fixed inset-0 z-[90] isolate flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      dir={language === "ar" ? "rtl" : "ltr"}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        aria-label={t.close}
+        title={t.close}
+        className="fixed end-3 top-3 z-[100] inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-background px-3 text-sm font-black text-foreground shadow-xl transition-colors hover:bg-secondary sm:end-5 sm:top-5"
+      >
+        <X className="h-5 w-5" />
+        <span>{t.close}</span>
+      </button>
+      <section
+        className="flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden border border-primary/25 bg-background shadow-2xl sm:h-[min(720px,calc(100dvh-2rem))] sm:rounded-[2rem]"
+        aria-labelledby="weakness-agent-title"
+        aria-modal="true"
+        role="dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-card/95 p-4 pe-28 backdrop-blur sm:p-5 sm:pe-32">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><Bot className="h-5 w-5" /></span>
             <div className="min-w-0 flex-1">
               <h2 id="weakness-agent-title" className="font-black text-foreground">{t.title}</h2>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.subtitle}</p>
             </div>
-            <button type="button" onClick={() => setOpen(false)} aria-label={t.close} title={t.close} className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-secondary"><X className="h-5 w-5" /></button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
           <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-sm font-black text-foreground">{t.detected}</span>
@@ -407,7 +441,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
           </div>
         </div>
 
-        <footer className="border-t border-border bg-card/90 p-3 backdrop-blur sm:p-4">
+        <footer className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-card/95 p-3 backdrop-blur sm:p-4">
           <div className="flex items-end gap-2 rounded-2xl border border-border bg-background p-2 ps-4 focus-within:border-primary/50">
             <textarea
               value={input}
@@ -429,4 +463,5 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       </section>
     </div>
   );
+  return typeof document === "undefined" ? modal : createPortal(modal, document.body);
 }
