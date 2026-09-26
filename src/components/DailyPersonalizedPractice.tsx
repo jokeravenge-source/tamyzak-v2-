@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   DAILY_FLASHCARD_TARGET_KEY,
   DAILY_MCQ_TARGET_KEY,
+  dailyLearningProfile,
   readWeeklyLearningProfile,
   todayKey,
   type WeeklyLearningProfile,
@@ -20,12 +21,12 @@ export default function DailyPersonalizedPractice({
   onOpenMcqs: () => void;
 }) {
   const isAr = language === "ar";
-  const [profile, setProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
+  const [profile, setProfile] = useState<WeeklyLearningProfile | null>(() => dailyLearningProfile(readWeeklyLearningProfile()));
   const [counts, setCounts] = useState({ flashcards: 10, mcqs: 0 });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const refresh = () => setProfile(readWeeklyLearningProfile());
+    const refresh = () => setProfile(dailyLearningProfile(readWeeklyLearningProfile()));
     window.addEventListener("app:weekly-learning-updated", refresh);
     return () => window.removeEventListener("app:weekly-learning-updated", refresh);
   }, []);
