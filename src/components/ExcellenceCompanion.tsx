@@ -280,6 +280,7 @@ const ExcellenceCompanion = ({ language, embedded = false }: { language: AppLang
       topic_en: profile.topicEn,
       topic_ar: profile.topicAr,
       weakness_text: profile.weaknessText,
+      weak_areas: profile.weakAreas ?? [],
       plan_tasks: profile.planTasks ?? [],
       updated_at: profile.updatedAt,
     }, { onConflict: "user_id,iso_week" });
