@@ -196,9 +196,11 @@ const BottomGroupNav = ({
     onSelect(it.key);
   };
 
+  // Keep the persistent navigation below every modal/backdrop (z-40+).
+  // The navigation's own expanded sheet remains at z-110 below.
   const bar = (
     <div
-      className="fixed left-0 right-0 z-[100] flex justify-center pointer-events-none px-3 transition-transform duration-300 ease-out"
+      className="fixed left-0 right-0 z-[35] flex justify-center pointer-events-none px-3 transition-transform duration-300 ease-out"
       style={{
         bottom: 0,
         paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 0.75rem)`,
