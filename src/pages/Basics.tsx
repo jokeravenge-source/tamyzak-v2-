@@ -244,6 +244,13 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
     ],
   },
   {
+    titleEn: "Our Teachers",
+    titleAr: "مدرسونا",
+    items: [
+      { key: "ourTeachers", labelEn: "Our Teachers", labelAr: "مدرسونا", Icon: GraduationCap },
+    ],
+  },
+  {
     titleEn: "Account",
     titleAr: "الحساب",
     items: [
@@ -323,6 +330,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   advices: { card: "border-amber-400/40 bg-gradient-to-br from-yellow-500/25 via-amber-500/10 to-orange-300/20", icon: "bg-amber-500 text-white shadow-lg shadow-amber-500/25" },
   dailyGame: { card: "border-purple-400/40 bg-gradient-to-br from-purple-500/25 via-indigo-500/10 to-blue-400/20", icon: "bg-purple-600 text-white shadow-lg shadow-purple-500/25" },
   account: { card: "border-slate-400/40 bg-gradient-to-br from-slate-500/25 via-zinc-500/10 to-slate-300/20", icon: "bg-slate-700 text-white shadow-lg shadow-slate-500/25" },
+  ourTeachers: { card: "border-indigo-400/40 bg-gradient-to-br from-indigo-500/25 via-sky-500/10 to-cyan-400/20", icon: "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25" },
 };
 
 const DEFAULT_HOME_TINT = {
@@ -406,6 +414,10 @@ const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
     active: "border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-500/20",
     idle: "border-rose-400/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300",
   },
+  "Our Teachers": {
+    active: "border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20",
+    idle: "border-indigo-400/40 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-300",
+  },
   Account: {
     active: "border-slate-700 bg-slate-700 text-white shadow-lg shadow-slate-500/20",
     idle: "border-slate-400/40 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 dark:text-slate-300",
@@ -437,6 +449,7 @@ const FEATURED_COPY = {
     liveBattle: { title: "Live Battle", subtitle: "Challenge a friend in a 10-question MCQ duel." },
     subjectsHub: { title: "Subjects", subtitle: "All your subjects, chapter by chapter." },
     sessions: { title: "Study Sessions", subtitle: "Time your study and join study rooms." },
+    ourTeachers: { title: "Our Teachers", subtitle: "Choose a teacher and open their selected learning tools." },
   },
   ar: {
     chemicalEquations: { title: "المعادلات الكيميائية", subtitle: "19 معادلة كيميائية مرتبة حسب الموضوع، مع تلميح لحفظ كل معادلة." },
@@ -457,6 +470,7 @@ const FEATURED_COPY = {
     liveBattle: { title: "المعركة المباشرة", subtitle: "تحد صديقك" },
     subjectsHub: { title: "المواد", subtitle: "كل موادك، فصلاً بفصل." },
     sessions: { title: "جلسات الدراسة", subtitle: "احسب وقت دراستك وادخل غرف الدراسة." },
+    ourTeachers: { title: "مدرسونا", subtitle: "اختَر المدرّس وافتح الأدوات والمحتوى الخاص بيه." },
   },
 } as const;
 
