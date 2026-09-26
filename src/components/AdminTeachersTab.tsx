@@ -3,6 +3,11 @@ import { ImagePlus, Loader2, Pencil, Plus, Save, Trash2, X } from "lucide-react"
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TEACHER_TOOL_CATALOG, type TeacherToolKey } from "@/lib/teacherTools";
+import {
+  FLASHCARD_LISTS,
+  isFlashcardListId,
+  type FlashcardListId,
+} from "@/lib/flashcardLists";
 
 type TeacherRow = {
   id: string;
@@ -10,6 +15,7 @@ type TeacherRow = {
   background_image_url: string;
   background_image_path: string;
   tools: string[] | null;
+  flashcard_list_ids: string[] | null;
   is_published: boolean;
   sort_order: number;
   created_at: string;
@@ -18,6 +24,7 @@ type TeacherRow = {
 type TeacherForm = {
   name: string;
   tools: TeacherToolKey[];
+  flashcardListIds: FlashcardListId[];
   isPublished: boolean;
   sortOrder: number;
   image: File | null;
@@ -26,6 +33,7 @@ type TeacherForm = {
 const EMPTY_FORM: TeacherForm = {
   name: "",
   tools: [],
+  flashcardListIds: [],
   isPublished: true,
   sortOrder: 0,
   image: null,
@@ -67,10 +75,12 @@ export default function AdminTeachersTab() {
     const validTools = (teacher.tools ?? []).filter((key): key is TeacherToolKey =>
       TEACHER_TOOL_CATALOG.some((tool) => tool.key === key)
     );
+    const flashcardListIds = (teacher.flashcard_list_ids ?? []).filter(isFlashcardListId);
     setEditing(teacher);
     setForm({
       name: teacher.name,
       tools: validTools,
+      flashcardListIds,
       isPublished: teacher.is_published,
       sortOrder: teacher.sort_order,
       image: null,
@@ -85,6 +95,19 @@ export default function AdminTeachersTab() {
       tools: current.tools.includes(key)
         ? current.tools.filter((tool) => tool !== key)
         : [...current.tools, key],
+      flashcardListIds:
+        key === "flashcards" && current.tools.includes(key)
+          ? []
+          : current.flashcardListIds,
+    }));
+  };
+
+  const toggleFlashcardList = (id: FlashcardListId) => {
+    setForm((current) => ({
+      ...current,
+      flashcardListIds: current.flashcardListIds.includes(id)
+        ? current.flashcardListIds.filter((listId) => listId !== id)
+        : [...current.flashcardListIds, id],
     }));
   };
 
@@ -93,6 +116,9 @@ export default function AdminTeachersTab() {
     if (!name) return toast.error("Teacher name is required");
     if (!editing && !form.image) return toast.error("Background image is required");
     if (form.tools.length === 0) return toast.error("Select at least one tool");
+    if (form.tools.includes("flashcards") && form.flashcardListIds.length === 0) {
+      return toast.error("Select at least one flashcard list");
+    }
     if (form.image && !form.image.type.startsWith("image/")) return toast.error("Please select an image file");
     if (form.image && form.image.size > 5 * 1024 * 1024) return toast.error("Image must be smaller than 5MB");
 
@@ -119,6 +145,7 @@ export default function AdminTeachersTab() {
         background_image_url: imageUrl,
         background_image_path: imagePath,
         tools: form.tools,
+        flashcard_list_ids: form.tools.includes("flashcards") ? form.flashcardListIds : [],
         is_published: form.isPublished,
         sort_order: Number.isFinite(form.sortOrder) ? form.sortOrder : 0,
       };
@@ -236,6 +263,34 @@ export default function AdminTeachersTab() {
             })}
           </div>
         </div>
+
+        {form.tools.includes("flashcards") && (
+          <div className="mt-5 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold">Flashcard lists</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Choose which Physics flashcard lists belong to this teacher.</p>
+              </div>
+              <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-blue-300">
+                {form.flashcardListIds.length} selected
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {FLASHCARD_LISTS.map((list) => {
+                const checked = form.flashcardListIds.includes(list.id);
+                return (
+                  <label key={list.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${checked ? "border-blue-500 bg-blue-500/10" : "border-white/10 bg-background/60 hover:border-blue-500/30"}`}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleFlashcardList(list.id)} className="h-4 w-4 accent-blue-600" />
+                    <span>
+                      <span className="block font-bold">{list.nameEn}</span>
+                      <span className="block text-xs text-muted-foreground">{list.subjectEn} · {list.nameAr}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <label className="mt-5 inline-flex items-center gap-3 text-sm font-semibold">
           <input
