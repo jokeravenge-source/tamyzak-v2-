@@ -13,9 +13,12 @@ import {
   Loader2,
   Network,
   PlayCircle,
+  Plus,
   ScrollText,
+  Settings,
   Sparkles,
 } from "lucide-react";
+import AdminTeachersTab from "@/components/AdminTeachersTab";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,6 +75,9 @@ const copy = {
     empty: "ماكو مدرسين مضافين حالياً.",
     noTools: "لم تُضف أدوات لهذا المدرّس بعد.",
     loadError: "تعذر تحميل المدرسين. جرّب مرة ثانية.",
+    manage: "إضافة وإدارة المدرسين",
+    manageTitle: "إدارة المدرسين",
+    closeManage: "العودة إلى قائمة المدرسين",
   },
   en: {
     title: "Our Teachers",
@@ -83,6 +89,9 @@ const copy = {
     empty: "No teachers have been added yet.",
     noTools: "No tools have been assigned to this teacher yet.",
     loadError: "Teachers could not be loaded. Please try again.",
+    manage: "Add and manage teachers",
+    manageTitle: "Manage teachers",
+    closeManage: "Back to teacher list",
   },
 } as const;
 
@@ -101,6 +110,23 @@ const TeacherDirectory = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [canManage, setCanManage] = useState(false);
+  const [managing, setManaging] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) return;
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: authData.user.id,
+        _role: "admin",
+      });
+      if (active) setCanManage(Boolean(data));
+    })();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -125,7 +151,7 @@ const TeacherDirectory = ({
       setLoading(false);
     })();
     return () => { active = false; };
-  }, []);
+  }, [refreshVersion]);
 
   const selected = teachers.find((teacher) => teacher.id === selectedId) ?? null;
   const selectedTools = useMemo(() => {
@@ -134,21 +160,50 @@ const TeacherDirectory = ({
     return TEACHER_TOOL_CATALOG.filter((tool) => assigned.has(tool.key));
   }, [selected]);
 
-  const backAction = selected ? () => setSelectedId(null) : onBack;
+  const closeManager = () => {
+    setManaging(false);
+    setRefreshVersion((version) => version + 1);
+  };
+  const backAction = managing ? closeManager : selected ? () => setSelectedId(null) : onBack;
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 pb-32 pt-6 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
       <div className="mx-auto max-w-6xl">
-        <button
-          type="button"
-          onClick={backAction}
-          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold transition-colors hover:border-primary/40 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-          {selected ? text.backToTeachers : text.back}
-        </button>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={backAction}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold transition-colors hover:border-primary/40 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+            {managing ? text.closeManage : selected ? text.backToTeachers : text.back}
+          </button>
+          {canManage && !managing && !selected && (
+            <button
+              type="button"
+              onClick={() => setManaging(true)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" /> {text.manage}
+            </button>
+          )}
+        </div>
 
-        {selected ? (
+        {managing && canManage ? (
+          <>
+            <header className="mb-6 rounded-3xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+              <span className="mb-2 inline-flex items-center gap-2 text-sm font-black text-primary">
+                <Settings className="h-4 w-4" /> {text.manageTitle}
+              </span>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {isRTL
+                  ? "أضف اسم المدرّس وصورة الخلفية، وحدد الأدوات التي تظهر للطلاب عند الضغط عليه."
+                  : "Add the teacher name and background, then select the tools students see when opening the teacher."}
+              </p>
+            </header>
+            <AdminTeachersTab />
+          </>
+        ) : selected ? (
           <>
             <section
               className="relative isolate mb-8 min-h-[260px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center shadow-xl"
