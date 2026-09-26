@@ -88,11 +88,74 @@ const SYSTEM_PSYCH_AR = `أنت وضع الدعم النفسي داخل "رفي�
 6. إذا هدأ وصار مستعد يرجع للدراسة، ممكن تساعده بخطوات خفيفة، بس لا تستعجل عليه بالخطة.
 7. احچي دائماً باللهجة العراقية الطبيعية والبسيطة، مثل أخ أكبر واعي وهادئ. استخدم "آني" و"إنت" و"خلّينا" باعتدال ومن دون تصنّع، ولا تذكر أنك تستخدم لهجة عراقية.`;
 
+const SYSTEM_WEAKNESS_AR = `أنت "رفيق التميز" وتعمل جلسة قصيرة حتى تحدد المواد والفصول والمواضيع اللي يحتاج الطالب يقويها.
+
+قواعد الجلسة:
+1. ابدأ من نتائج الطالب المكتشفة من أسئلة الاختيار والبطاقات إذا موجودة، واشرح له أن هذه مؤشرات مو حكم نهائي.
+2. اسأله إذا النتائج دقيقة، وشنو المواد أو الفصول الأخرى اللي يحس نفسه ضعيف بيها.
+3. اسأل سؤال واحد أو سؤالين فقط بكل رسالة. إذا ذكر مادة بدون فصل أو موضوع، اسأله حتى تحدد الفصل والموضوع.
+4. فرّق بين نتيجة أسئلة الاختيار الموضوعية وبين تقييمه لنفسه بالبطاقات.
+5. لا تنهِ الجلسة من نفسك. ذكّره يضغط زر "إنهاء وحفظ" من يتأكد من القائمة.
+6. احچي باللهجة العراقية البسيطة وباختصار.
+7. في نهاية كل رد، أضف كتلة بيانات كاملة ومحدثة بهذا الشكل بالضبط، ولا تعرض شرحاً بعدها:
+
+\`\`\`weakness
+{"areas":[{"subject":"physics","chapterNumber":1,"topicAr":"المتسعات","topicEn":"Capacitors","weaknessText":"يخلط بين ربط المتسعات"}]}
+\`\`\`
+
+المواد المسموحة فقط: physics, chemistry, biology, english, french, arabic, islamic, math.
+احتفظ بكل النقاط المؤكدة في كل كتلة جديدة، واحذف النقطة فقط إذا قال الطالب إنها غير صحيحة. الحد الأقصى 8 نقاط.`;
+
+const SYSTEM_WEAKNESS_EN = `You are Tamayzak's study companion running a short check-in to identify the subjects, chapters and topics the student should strengthen.
+
+Rules:
+1. Start from detected MCQ and flashcard evidence when available, explaining that these are indicators rather than a final judgment.
+2. Ask whether the detection is accurate and which other subjects or chapters feel difficult.
+3. Ask only one or two questions per message. If a subject lacks a chapter or topic, clarify it.
+4. Keep objective MCQ evidence separate from self-rated flashcard evidence.
+5. Never finish automatically. Remind the student to press "Finish and save" when the list is correct.
+6. Be concise and supportive.
+7. End every reply with a complete updated data block in exactly this form, with nothing after it:
+
+\`\`\`weakness
+{"areas":[{"subject":"physics","chapterNumber":1,"topicAr":"المتسعات","topicEn":"Capacitors","weaknessText":"Confuses capacitor combinations"}]}
+\`\`\`
+
+Allowed subjects only: physics, chemistry, biology, english, french, arabic, islamic, math.
+Keep every confirmed area in each new block and remove one only when the student says it is inaccurate. Maximum 8 areas.`;
+
 function systemFor(mode: string, language: string): string {
   // The companion has one consistent Iraqi personality regardless of the app UI language.
   if (mode === "schedule") return SYSTEM_SCHEDULE_AR;
+  if (mode === "weakness") return language === "ar" ? SYSTEM_WEAKNESS_AR : SYSTEM_WEAKNESS_EN;
   if (mode === "psych") return SYSTEM_PSYCH_AR;
   return SYSTEM_PROBLEM_AR;
+}
+
+function safeWeaknessAreas(value: unknown): Array<Record<string, unknown>> {
+  const subjects = new Set(["physics", "chemistry", "biology", "english", "french", "arabic", "islamic", "math"]);
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 8).flatMap((raw) => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const subject = String(item.subject ?? "").trim().toLowerCase();
+    const chapterNumber = Math.trunc(Number(item.chapterNumber));
+    if (!subjects.has(subject) || !Number.isFinite(chapterNumber) || chapterNumber < 1 || chapterNumber > 20) return [];
+    return [{
+      subject,
+      chapterNumber,
+      chapterKey: String(item.chapterKey ?? "").trim().slice(0, 120),
+      categoryKey: String(item.categoryKey ?? "").trim().slice(0, 240),
+      topicKey: String(item.topicKey ?? "").trim().slice(0, 160),
+      topicAr: String(item.topicAr ?? "").trim().slice(0, 180),
+      topicEn: String(item.topicEn ?? "").trim().slice(0, 180),
+      weaknessText: String(item.weaknessText ?? "").trim().slice(0, 700),
+      source: item.source === "performance" || item.source === "combined" ? item.source : "student",
+      evidenceCount: Math.max(0, Math.trunc(Number(item.evidenceCount ?? 0))) || undefined,
+      mcqAccuracy: item.mcqAccuracy == null ? null : Math.max(0, Math.min(100, Math.round(Number(item.mcqAccuracy)))),
+      flashcardAccuracy: item.flashcardAccuracy == null ? null : Math.max(0, Math.min(100, Math.round(Number(item.flashcardAccuracy)))),
+    }];
+  });
 }
 
 Deno.serve(async (req) => {
@@ -124,6 +187,8 @@ Deno.serve(async (req) => {
 
     const profileContext = mode === "schedule" && learningProfile && typeof learningProfile === "object"
       ? `\n\nVERIFIED AL-FAHRAST WEAKNESS FOR THIS WEEK:\nSubject: ${String(learningProfile.subject ?? "").slice(0, 80)}\nChapter: ${String(learningProfile.chapterKey ?? "").slice(0, 80)}\nMatched topic: ${String(language === "ar" ? learningProfile.topicAr : learningProfile.topicEn).slice(0, 180)}\nStudent's description: ${String(learningProfile.weaknessText ?? "").slice(0, 700)}\n\nTreat this as confirmed curriculum context. Build the weekly plan around this weak topic. Include a short flashcard review and an MCQ practice task from this same subject and chapter on multiple days. Do not ask the student to repeat the subject, chapter, topic, or weakness.`
+      : mode === "weakness" && learningProfile && typeof learningProfile === "object"
+        ? `\n\nDETECTED PERFORMANCE AREAS (from latest distinct answers):\n${JSON.stringify(safeWeaknessAreas(learningProfile.detectedAreas)).slice(0, 7000)}\n\nCURRENT CONFIRMED/DISCUSSED AREAS:\n${JSON.stringify(safeWeaknessAreas(learningProfile.weakAreas)).slice(0, 7000)}\n\nUse the performance areas as evidence to discuss, not as guaranteed facts. The current list is the structured state you must update in the weakness block.`
       : "";
     const convo: Array<{ role: string; content: string }> = [
       { role: "system", content: systemFor(mode, language) + profileContext },
@@ -218,6 +283,19 @@ Deno.serve(async (req) => {
     }
 
     if (!fullReply) fullReply = ar ? "تعذر الرد الآن." : "Couldn't respond right now.";
+
+    if (mode === "weakness") {
+      const block = fullReply.match(/```weakness\s*([\s\S]*?)```/i);
+      let weakAreas: Array<Record<string, unknown>> | undefined;
+      if (block) {
+        try {
+          const parsed = JSON.parse(block[1].trim()) as { areas?: unknown };
+          weakAreas = safeWeaknessAreas(parsed.areas);
+        } catch { /* Keep the conversation usable if structured extraction fails. */ }
+        fullReply = fullReply.replace(block[0], "").trim();
+      }
+      return json200({ reply: fullReply, weakAreas });
+    }
 
     return json200({ reply: fullReply });
   } catch (e) {
