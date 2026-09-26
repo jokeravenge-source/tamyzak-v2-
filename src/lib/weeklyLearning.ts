@@ -1,4 +1,5 @@
 import { missionsData, type MissionChapter, type MissionTopic } from "@/data/missions";
+import type { WeakArea } from "@/lib/weaknessProfile";
 
 export const WEEKLY_LEARNING_KEY = "tamayzak:weekly-learning-profile:v1";
 export const DAILY_FLASHCARD_TARGET_KEY = "tamayzak:daily-flashcard-target";
@@ -13,6 +14,7 @@ export type WeeklyLearningProfile = {
   topicEn: string;
   topicAr: string;
   weaknessText: string;
+  weakAreas?: WeakArea[];
   planTasks?: Array<{ day: string; text: string }>;
   updatedAt: string;
 };
@@ -45,6 +47,44 @@ export function readWeeklyLearningProfile(): WeeklyLearningProfile | null {
 export function saveWeeklyLearningProfile(profile: WeeklyLearningProfile): void {
   localStorage.setItem(WEEKLY_LEARNING_KEY, JSON.stringify(profile));
   window.dispatchEvent(new CustomEvent("app:weekly-learning-updated", { detail: profile }));
+}
+
+export function profileFromWeakAreas(areas: WeakArea[]): WeeklyLearningProfile | null {
+  const primary = areas[0];
+  if (!primary) return null;
+  return {
+    isoWeek: getISOWeek(),
+    subject: primary.subject,
+    chapterKey: primary.chapterKey,
+    chapterNumber: primary.chapterNumber,
+    topicKey: primary.topicKey,
+    topicEn: primary.topicEn,
+    topicAr: primary.topicAr,
+    weaknessText: primary.weaknessText,
+    weakAreas: areas,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/** Rotate multiple confirmed weak areas by day while keeping the existing
+ * single-target contract used by the MCQ and flashcard pages. */
+export function dailyLearningProfile(profile: WeeklyLearningProfile | null, date = todayKey()): WeeklyLearningProfile | null {
+  if (!profile) return null;
+  const areas = profile.weakAreas?.filter(Boolean) ?? [];
+  if (areas.length < 2) return profile;
+  let seed = 0;
+  for (const char of date) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;
+  const area = areas[seed % areas.length];
+  return {
+    ...profile,
+    subject: area.subject,
+    chapterKey: area.chapterKey,
+    chapterNumber: area.chapterNumber,
+    topicKey: area.topicKey,
+    topicEn: area.topicEn,
+    topicAr: area.topicAr,
+    weaknessText: area.weaknessText,
+  };
 }
 
 const normalize = (value: string) => value
