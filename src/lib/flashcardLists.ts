@@ -33,6 +33,33 @@ export const FLASHCARD_LISTS = [
     subjectAr: "الكيمياء",
     subjectEn: "Chemistry",
   },
+  {
+    id: "french-mohammed-ali-al-kinani",
+    subject: "french",
+    selectorValue: "mohammed-ali-al-kinani",
+    nameAr: "محمد علي الكناني",
+    nameEn: "Mohammed Ali Al-Kinani",
+    subjectAr: "الفرنسية",
+    subjectEn: "French",
+  },
+  {
+    id: "english-mohammed-al-nadawi",
+    subject: "english",
+    selectorValue: "mohammed-al-nadawi",
+    nameAr: "محمد النداوي",
+    nameEn: "Mohammed Al-Nadawi",
+    subjectAr: "الإنجليزية",
+    subjectEn: "English",
+  },
+  {
+    id: "math-ahmed-fathi",
+    subject: "math",
+    selectorValue: "ahmed-fathi",
+    nameAr: "احمد فتحي",
+    nameEn: "Ahmed Fathi",
+    subjectAr: "الرياضيات",
+    subjectEn: "Mathematics",
+  },
 ] as const satisfies ReadonlyArray<{
   id: string;
   subject: AppSubject;
