@@ -29,6 +29,13 @@
       "when": 1790400060228,
       "tag": "0003_platform_teachers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790401267423,
+      "tag": "0004_teacher_flashcard_lists",
+      "breakpoints": true
     }
   ]
 }
