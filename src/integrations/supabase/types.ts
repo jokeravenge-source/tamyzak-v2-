@@ -1900,6 +1900,45 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_teachers: {
+        Row: {
+          background_image_path: string
+          background_image_url: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          name: string
+          sort_order: number
+          tools: string[]
+          updated_at: string
+        }
+        Insert: {
+          background_image_path: string
+          background_image_url: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          name: string
+          sort_order?: number
+          tools?: string[]
+          updated_at?: string
+        }
+        Update: {
+          background_image_path?: string
+          background_image_url?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          name?: string
+          sort_order?: number
+          tools?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       player_teachers: {
         Row: {
           created_at: string
