@@ -2,8 +2,8 @@ import type { AppSubject } from "@/pages/Subjects";
 
 /**
  * Flashcard collections that can be assigned to a teacher profile.
- * The current Physics collection already exists in the app; this catalog
- * gives it a stable display name and leaves room for more teacher lists.
+ * The current subject collections already exist in the app; this catalog
+ * gives each one a stable teacher-facing name and supports future lists.
  */
 export const FLASHCARD_LISTS = [
   {
@@ -14,6 +14,24 @@ export const FLASHCARD_LISTS = [
     nameEn: "Hydar Diwan",
     subjectAr: "الفيزياء",
     subjectEn: "Physics",
+  },
+  {
+    id: "biology-mohammed-al-anzi",
+    subject: "biology",
+    selectorValue: "mohammed-al-anzi",
+    nameAr: "محمد العنزي",
+    nameEn: "Mohammed Al-Anzi",
+    subjectAr: "الأحياء",
+    subjectEn: "Biology",
+  },
+  {
+    id: "chemistry-ahmed-al-nadawi",
+    subject: "chemistry",
+    selectorValue: "ahmed-al-nadawi",
+    nameAr: "احمد النداوي",
+    nameEn: "Ahmed Al-Nadawi",
+    subjectAr: "الكيمياء",
+    subjectEn: "Chemistry",
   },
 ] as const satisfies ReadonlyArray<{
   id: string;
@@ -33,4 +51,3 @@ export const DEFAULT_PHYSICS_FLASHCARD_LIST_ID: FlashcardListId = "physics-hydar
 export function isFlashcardListId(value: string): value is FlashcardListId {
   return FLASHCARD_LISTS.some((list) => list.id === value);
 }
-
