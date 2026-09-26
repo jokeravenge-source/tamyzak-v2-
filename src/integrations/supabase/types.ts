@@ -1906,6 +1906,7 @@ export type Database = {
           background_image_url: string
           created_at: string
           created_by: string | null
+          flashcard_list_ids: string[]
           id: string
           is_published: boolean
           name: string
@@ -1918,6 +1919,7 @@ export type Database = {
           background_image_url: string
           created_at?: string
           created_by?: string | null
+          flashcard_list_ids?: string[]
           id?: string
           is_published?: boolean
           name: string
@@ -1930,6 +1932,7 @@ export type Database = {
           background_image_url?: string
           created_at?: string
           created_by?: string | null
+          flashcard_list_ids?: string[]
           id?: string
           is_published?: boolean
           name?: string
