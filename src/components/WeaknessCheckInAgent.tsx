@@ -8,6 +8,8 @@ import { loadTopicPractice } from "@/lib/topicMastery";
 import {
   detectWeakAreas,
   mergeWeakAreas,
+  weakAreaDisplayLabel,
+  weaknessAutoOpenDue,
   type WeakArea,
   type WeaknessMessage,
   type WeaknessSession,
@@ -70,7 +72,7 @@ function initialMessage(language: AppLanguage, areas: WeakArea[]): WeaknessMessa
     };
   }
   const list = areas.slice(0, 4).map((area) =>
-    `• ${language === "ar" ? area.topicAr : area.topicEn} — ${language === "ar" ? "الفصل" : "chapter"} ${area.chapterNumber}`).join("\n");
+    `• ${weakAreaDisplayLabel(area, language)}`).join("\n");
   return {
     role: "assistant",
     content: language === "ar"
@@ -173,9 +175,33 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       const remoteActive = activeRow ? rowToSession(activeRow as Record<string, unknown>) : null;
       const unfinished = remoteActive ?? (local?.status === "active" ? local : null);
       if (unfinished) {
-        setSession(unfinished);
-        setOpen(true);
+        // Recalculate performance evidence locally so old one-question or generic
+        // results are corrected without spending an AI request.
+        const refreshedDetected = detectWeakAreas(await loadTopicPractice());
+        const studentConfirmed = unfinished.weakAreas.filter((area) => area.source !== "performance");
+        const refreshedWeakAreas = mergeWeakAreas(refreshedDetected, studentConfirmed);
+        const hasStudentReply = unfinished.messages.some((message) => message.role === "user");
+        const refreshed = {
+          ...unfinished,
+          detectedAreas: refreshedDetected,
+          weakAreas: refreshedWeakAreas,
+          messages: hasStudentReply ? unfinished.messages : [initialMessage(language, refreshedDetected)],
+        };
+        const evidenceChanged = JSON.stringify({
+          detectedAreas: unfinished.detectedAreas,
+          weakAreas: unfinished.weakAreas,
+        }) !== JSON.stringify({
+          detectedAreas: refreshed.detectedAreas,
+          weakAreas: refreshed.weakAreas,
+        });
+        const shouldOpen = weaknessAutoOpenDue(unfinished.updatedAt);
+        const next = shouldOpen || evidenceChanged
+          ? { ...refreshed, updatedAt: new Date().toISOString() }
+          : refreshed;
+        setSession(next);
+        setOpen(shouldOpen);
         setInitializing(false);
+        if (shouldOpen || evidenceChanged) void persist(next);
         return;
       }
 
@@ -195,6 +221,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
 
       const detectedAreas = detectWeakAreas(await loadTopicPractice());
       const now = new Date().toISOString();
+      const shouldOpen = weaknessAutoOpenDue(local?.updatedAt);
       const created: WeaknessSession = {
         isoWeek: week,
         status: "active",
@@ -207,7 +234,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       };
       if (!active) return;
       setSession(created);
-      setOpen(true);
+      setOpen(shouldOpen);
       setInitializing(false);
       void persist(created);
     })().catch(() => { if (active) setInitializing(false); });
@@ -318,7 +345,12 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
     return session.status === "active" ? (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          const next = { ...session, updatedAt: new Date().toISOString() };
+          setSession(next);
+          setOpen(true);
+          void persist(next);
+        }}
         className="fixed bottom-32 end-5 z-[56] inline-flex min-h-12 items-center gap-2 rounded-full border border-primary/40 bg-primary px-4 text-sm font-black text-primary-foreground shadow-xl"
       >
         <Target className="h-4 w-4" /> {t.reopen}
@@ -350,8 +382,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
               <div className="flex flex-wrap gap-2">
                 {session.weakAreas.map((area) => (
                   <span key={`${area.subject}:${area.chapterNumber}:${area.topicKey}`} className="rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-foreground">
-                    {language === "ar" ? area.topicAr : area.topicEn}
-                    <span className="ms-1 text-muted-foreground">· {language === "ar" ? "ف" : "Ch"} {area.chapterNumber}</span>
+                    {weakAreaDisplayLabel(area, language)}
                     {area.mcqAccuracy != null && <span className="ms-2 text-violet-600 dark:text-violet-300">{t.mcq} {area.mcqAccuracy}%</span>}
                     {area.flashcardAccuracy != null && <span className="ms-2 text-sky-600 dark:text-sky-300">{t.flashcards} {area.flashcardAccuracy}%</span>}
                   </span>
