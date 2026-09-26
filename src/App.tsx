@@ -118,6 +118,7 @@ const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
 const PremiumWelcomeOverlay = lazy(() => import("./components/PremiumWelcomeOverlay").then((m) => ({ default: m.PremiumWelcomeOverlay })));
 const SearchFAB = lazy(() => import("./components/SearchFAB"));
 const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"));
+const WeaknessCheckInAgent = lazy(() => import("./components/WeaknessCheckInAgent"));
 import TelegramGate from "./components/TelegramGate";
 const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
@@ -129,7 +130,6 @@ captureSignupSource();
 captureReferralCode();
 
 const MENU_STORAGE_KEY = "app_menu_choice_v1";
-const COMPANION_PLANNED_WEEK_KEY = "app_companion_planned_week_v2";
 
 // Reading the persisted auth snapshot is synchronous. This lets returning
 // users render immediately instead of waiting on a refresh request that can
@@ -150,31 +150,6 @@ function hasPersistedAuthSession(): boolean {
   }
   return false;
 }
-
-function currentISOWeek(d = new Date()): string {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return `${date.getUTCFullYear()}-W${weekNo}`;
-}
-
-// Force-open the Excellence Companion on the user's first visit ever AND at the
-// start of every new week, so they always chat to build a weekly plan.
-const CompanionWelcomeTrigger = () => {
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(COMPANION_PLANNED_WEEK_KEY);
-      if (stored === currentISOWeek()) return;
-    } catch { /* ignore */ }
-    const id = window.setTimeout(() => {
-      window.dispatchEvent(new Event("app:welcome-excellence-companion"));
-    }, 400);
-    return () => window.clearTimeout(id);
-  }, []);
-  return null;
-};
 
 const SpotifyAuthCallback = () => {
   useEffect(() => {
@@ -841,7 +816,7 @@ const StudentApp = () => {
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
-        <CompanionWelcomeTrigger />
+        <WeaknessCheckInAgent language={language} />
       )}
       {authed && language && authRole !== "admin" && channelVerified && onboarded && (
         <BottomGroupNav
