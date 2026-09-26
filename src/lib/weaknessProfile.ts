@@ -33,6 +33,9 @@ export type WeaknessSession = {
 };
 
 const VALID_SUBJECTS = new Set(Object.keys(missionsData));
+const MIN_WEAKNESS_EVIDENCE = 3;
+const WEAKNESS_ACCURACY_THRESHOLD = 0.7;
+export const WEAKNESS_AUTO_OPEN_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
 
 function chapterKeyFor(subject: string, chapterNumber: number): string {
   const chapters = missionsData[subject]?.chapters ?? [];
@@ -72,6 +75,29 @@ function accuracy(rows: PracticeAttempt[], source: PracticeAttempt["source"]): n
   return matching.length ? Math.round(100 * matching.filter((row) => row.correct).length / matching.length) : null;
 }
 
+/** A student-facing label that never falls back to the vague "Other questions" text. */
+export function weakAreaDisplayLabel(area: WeakArea, language: "ar" | "en"): string {
+  const subject = missionsData[area.subject];
+  const chapter = subject?.chapters.find((item, index) => {
+    const keyNumber = Number(item.key.match(/(\d+)(?!.*\d)/)?.[1]);
+    return (Number.isFinite(keyNumber) ? keyNumber : index + 1) === area.chapterNumber;
+  });
+  const subjectLabel = subject?.[language] ?? area.subject;
+  const chapterLabel = chapter?.[language]
+    ?? (language === "ar" ? `الفصل ${area.chapterNumber}` : `Chapter ${area.chapterNumber}`);
+  const isGeneric = area.topicKey === "general" || area.categoryKey.endsWith(":general");
+  const topicLabel = language === "ar" ? area.topicAr : area.topicEn;
+  return isGeneric
+    ? `${subjectLabel} — ${chapterLabel}`
+    : `${subjectLabel} — ${topicLabel}`;
+}
+
+/** Unfinished interviews may prompt automatically only after three quiet days. */
+export function weaknessAutoOpenDue(lastActivityAt: string | null | undefined, now = Date.now()): boolean {
+  const lastActivity = Date.parse(lastActivityAt ?? "");
+  return !Number.isFinite(lastActivity) || now - lastActivity >= WEAKNESS_AUTO_OPEN_INTERVAL_MS;
+}
+
 /**
  * Finds weak curriculum areas from the latest answer to each distinct question.
  * MCQs are objective evidence; flashcard "forgot"/"hard" ratings are self-rated
@@ -107,7 +133,11 @@ export function detectWeakAreas(attempts: PracticeAttempt[], limit = 6): WeakAre
       }, "performance");
       return area ? { area, wrong, correctRate, latestAt } : null;
     })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry?.area) && entry.wrong > 0)
+    .filter((entry): entry is NonNullable<typeof entry> =>
+      Boolean(entry?.area)
+      && entry.wrong > 0
+      && entry.area.evidenceCount! >= MIN_WEAKNESS_EVIDENCE
+      && entry.correctRate < WEAKNESS_ACCURACY_THRESHOLD)
     .sort((a, b) =>
       a.correctRate - b.correctRate
       || b.area.evidenceCount! - a.area.evidenceCount!
