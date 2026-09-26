@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2 } from "lucide-react";
+import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SUMMARY_SUBJECTS } from "./Summaries";
@@ -13,6 +13,7 @@ import AdminCreditsTab from "@/components/AdminCreditsTab";
 import AdminPointsTab from "@/components/AdminPointsTab";
 import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
+import AdminTeachersTab from "@/components/AdminTeachersTab";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
 import { flashcardsCh8 } from "@/data/flashcardsCh8";
@@ -32,7 +33,7 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes";
+  type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers";
   const [tab, setTab] = useState<Tab>("pending");
   // Owner gate: only this email sees every tab. Other admins are moderators
   // and only see acceptance/review-related tabs (summaries pending, flashcards
@@ -809,6 +810,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
             </button>
           )}
           {isOwner && (
+            <button onClick={() => setTab("teachers")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "teachers" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <GraduationCap className="w-4 h-4 inline mr-1.5" />Our Teachers
+            </button>
+          )}
+          {isOwner && (
             <button onClick={() => setTab("analytics")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "analytics" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               Analytics
             </button>
@@ -840,7 +846,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           )}
         </div>
 
-        {tab === "mistakes" ? (
+        {tab === "teachers" ? (
+          <AdminTeachersTab />
+        ) : tab === "mistakes" ? (
           <AdminMistakesTab />
         ) : tab === "announcements" ? (
           <AdminAnnouncementsTab />
