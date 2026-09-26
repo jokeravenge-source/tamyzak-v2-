@@ -32,6 +32,7 @@ import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import {
   DAILY_FLASHCARD_TARGET_KEY,
   DAILY_MCQ_TARGET_KEY,
+  dailyLearningProfile,
   readWeeklyLearningProfile,
   todayKey,
   type WeeklyLearningProfile,
@@ -729,9 +730,10 @@ const Basics = ({
     const meta = weakTopicsFor(onboarding.subject).find((c) => c.n === onboarding.weakestTopic);
     return meta ? topicLabel(meta, language === "ar" ? "ar" : "en") : "";
   }, [onboarding, language]);
-  const recommendationSubject = recommendedProfile?.subject ?? (onboarding?.completed ? onboarding.subject : "");
-  const recommendationTopic = recommendedProfile
-    ? (isRTL ? recommendedProfile.topicAr : recommendedProfile.topicEn)
+  const dailyRecommendedProfile = useMemo(() => dailyLearningProfile(recommendedProfile), [recommendedProfile]);
+  const recommendationSubject = dailyRecommendedProfile?.subject ?? (onboarding?.completed ? onboarding.subject : "");
+  const recommendationTopic = dailyRecommendedProfile
+    ? (isRTL ? dailyRecommendedProfile.topicAr : dailyRecommendedProfile.topicEn)
     : weakTopicLabel;
   const navigate = (k: MainMenuChoice) => {
     if (TEMP_LOCKED_TOOLS.has(k)) return;
@@ -755,26 +757,35 @@ const Basics = ({
   };
   const openRecommendedFlashcards = () => {
     try {
+      if (dailyRecommendedProfile) {
+        sessionStorage.setItem(DAILY_FLASHCARD_TARGET_KEY, JSON.stringify({ ...dailyRecommendedProfile, date: todayKey() }));
+        window.dispatchEvent(new CustomEvent("app:open-personalized-practice", {
+          detail: { kind: "flashcards", subject: dailyRecommendedProfile.subject, chapterNumber: dailyRecommendedProfile.chapterNumber },
+        }));
+        return;
+      }
       if (dueCards > 0) {
         sessionStorage.removeItem(DAILY_FLASHCARD_TARGET_KEY);
         sessionStorage.setItem("flashcards:review", "1");
-      } else if (recommendedProfile) {
-        sessionStorage.setItem(DAILY_FLASHCARD_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
       }
     } catch { /* ignore */ }
     navigate("flashcards");
   };
   const openRecommendedMcqs = () => {
     try {
-      if (recommendedProfile) {
-        sessionStorage.setItem(DAILY_MCQ_TARGET_KEY, JSON.stringify({ ...recommendedProfile, date: todayKey() }));
+      if (dailyRecommendedProfile) {
+        sessionStorage.setItem(DAILY_MCQ_TARGET_KEY, JSON.stringify({ ...dailyRecommendedProfile, date: todayKey() }));
+        window.dispatchEvent(new CustomEvent("app:open-personalized-practice", {
+          detail: { kind: "mcq", subject: dailyRecommendedProfile.subject, chapterNumber: dailyRecommendedProfile.chapterNumber },
+        }));
+        return;
       }
     } catch { /* ignore */ }
     navigate("mcqBank");
   };
   const startTodaysStudy = () => {
     if (dueMistakes > 0) navigate("mistakes");
-    else if (dueCards > 0 || recommendedProfile) openRecommendedFlashcards();
+    else if (dueCards > 0 || dailyRecommendedProfile) openRecommendedFlashcards();
     else openRecommendedMcqs();
   };
 
@@ -1168,7 +1179,7 @@ const Basics = ({
               {recommendationSubject && (
                 <span className="mt-4 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
                   {subjectLabel(recommendationSubject, language)}
-                  {recommendedProfile ? ` · ${isRTL ? "الفصل" : "Chapter"} ${recommendedProfile.chapterNumber}` : ""}
+                  {dailyRecommendedProfile ? ` · ${isRTL ? "الفصل" : "Chapter"} ${dailyRecommendedProfile.chapterNumber}` : ""}
                 </span>
               )}
             </div>
