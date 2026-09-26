@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { PracticeAttempt } from "./topicMastery";
-import { detectWeakAreas, mergeWeakAreas, type WeakArea } from "./weaknessProfile";
+import {
+  detectWeakAreas,
+  mergeWeakAreas,
+  weakAreaDisplayLabel,
+  weaknessAutoOpenDue,
+  type WeakArea,
+} from "./weaknessProfile";
 import { dailyLearningProfile, profileFromWeakAreas } from "./weeklyLearning";
 
 const attempt = (
@@ -43,13 +49,38 @@ describe("unified weakness profile", () => {
   });
 
   it("combines student confirmation with performance evidence", () => {
-    const detected = detectWeakAreas([attempt("card", false, "flashcards")]);
+    const detected = detectWeakAreas([
+      attempt("card-a", false, "flashcards"),
+      attempt("card-b", false, "flashcards"),
+      attempt("card-c", false, "flashcards"),
+    ]);
     const merged = mergeWeakAreas(detected, [{
       ...detected[0],
       source: "student",
       weaknessText: "I forget when capacitance increases.",
     }]);
     expect(merged[0]).toMatchObject({ source: "combined", flashcardAccuracy: 0, weaknessText: "I forget when capacitance increases." });
+  });
+
+  it("does not declare a weak area from only one wrong answer", () => {
+    expect(detectWeakAreas([attempt("single", false, "mcq_bank")])).toEqual([]);
+  });
+
+  it("names a generic area with its real subject and chapter", () => {
+    const area: WeakArea = {
+      subject: "physics", chapterNumber: 1, chapterKey: "phys-1",
+      categoryKey: "physics:1:general", topicKey: "general",
+      topicAr: "أسئلة عامة للفصل", topicEn: "Other chapter questions",
+      weaknessText: "", source: "performance",
+    };
+    expect(weakAreaDisplayLabel(area, "en")).toBe("Physics — Chapter 1: Capacitors");
+    expect(weakAreaDisplayLabel(area, "ar")).toBe("الفيزياء — الفصل 1: المتسعات");
+  });
+
+  it("waits three days before automatically reopening an unfinished interview", () => {
+    const now = Date.parse("2026-09-26T12:00:00Z");
+    expect(weaknessAutoOpenDue("2026-09-24T12:00:01Z", now)).toBe(false);
+    expect(weaknessAutoOpenDue("2026-09-23T12:00:00Z", now)).toBe(true);
   });
 
   it("rotates confirmed areas into the existing single target used by both practice tools", () => {
