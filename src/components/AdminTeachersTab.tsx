@@ -269,7 +269,7 @@ export default function AdminTeachersTab() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-bold">Flashcard lists</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Choose which Physics flashcard lists belong to this teacher.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Choose the subject flashcard lists that belong to this teacher.</p>
               </div>
               <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-blue-300">
                 {form.flashcardListIds.length} selected
