@@ -30,6 +30,10 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
   const t = copy[language];
   const [chapter, setChapter] = useState<number | null>(null);
   const [diagramIdx, setDiagramIdx] = useState(0);
+  const availableChapters = Object.keys(CHAPTER_DIAGRAMS)
+    .map(Number)
+    .filter((chapterNumber) => CHAPTER_DIAGRAMS[chapterNumber]?.length > 0)
+    .sort((a, b) => a - b);
 
   return (
     <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
@@ -63,7 +67,7 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
             transition={{ duration: 0.3 }}
             className="max-w-3xl mx-auto mt-14 grid grid-cols-2 sm:grid-cols-5 gap-4 z-10 relative"
           >
-            {[1, 3].map((n, i) => (
+            {availableChapters.map((n, i) => (
               <motion.button
                 key={n}
                 initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
