@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PracticeAttempt } from "./topicMastery";
 import {
+  conciseWeaknessReply,
   detectWeakAreas,
   inferWeakAreaFromText,
   mergeWeakAreas,
@@ -99,6 +100,13 @@ describe("unified weakness profile", () => {
       chapterNumber: 1,
       topicKey: "phys-1-4",
     });
+  });
+
+  it("limits the intake agent to two short sentences", () => {
+    expect(conciseWeaknessReply("First question? Second sentence. Unrelated third sentence.")).toBe(
+      "First question? Second sentence.",
+    );
+    expect(conciseWeaknessReply("one two three four five", 3)).toBe("one two three");
   });
 
   it("rotates confirmed areas into the existing single target used by both practice tools", () => {
