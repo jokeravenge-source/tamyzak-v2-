@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PracticeAttempt } from "./topicMastery";
 import {
   detectWeakAreas,
+  inferWeakAreaFromText,
   mergeWeakAreas,
   weakAreaDisplayLabel,
   weaknessAutoOpenDue,
@@ -81,6 +82,23 @@ describe("unified weakness profile", () => {
     const now = Date.parse("2026-09-26T12:00:00Z");
     expect(weaknessAutoOpenDue("2026-09-24T12:00:01Z", now)).toBe(false);
     expect(weaknessAutoOpenDue("2026-09-23T12:00:00Z", now)).toBe(true);
+  });
+
+  it("recognizes an obvious chapter even when the student makes a spelling mistake", () => {
+    expect(inferWeakAreaFromText("I am having difficulty with the capictors")).toMatchObject({
+      subject: "physics",
+      chapterNumber: 1,
+      chapterKey: "phys-1",
+      topicKey: "general",
+    });
+  });
+
+  it("recognizes an Arabic curriculum topic without an AI response", () => {
+    expect(inferWeakAreaFromText("عندي مشكلة بموضوع العازل الكهربائي")).toMatchObject({
+      subject: "physics",
+      chapterNumber: 1,
+      topicKey: "phys-1-4",
+    });
   });
 
   it("rotates confirmed areas into the existing single target used by both practice tools", () => {
