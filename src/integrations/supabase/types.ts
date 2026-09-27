@@ -2530,6 +2530,45 @@ export type Database = {
         }
         Relationships: []
       }
+      student_weakness_sessions: {
+        Row: {
+          detected_areas: Json
+          finished_at: string | null
+          id: string
+          iso_week: string
+          messages: Json
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+          weak_areas: Json
+        }
+        Insert: {
+          detected_areas?: Json
+          finished_at?: string | null
+          id?: string
+          iso_week: string
+          messages?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          weak_areas?: Json
+        }
+        Update: {
+          detected_areas?: Json
+          finished_at?: string | null
+          id?: string
+          iso_week?: string
+          messages?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          weak_areas?: Json
+        }
+        Relationships: []
+      }
       study_room_bans: {
         Row: {
           banned_by: string
@@ -3253,6 +3292,7 @@ export type Database = {
           topic_key: string
           updated_at: string
           user_id: string
+          weak_areas: Json
           weakness_text: string
         }
         Insert: {
@@ -3268,6 +3308,7 @@ export type Database = {
           topic_key: string
           updated_at?: string
           user_id: string
+          weak_areas?: Json
           weakness_text: string
         }
         Update: {
@@ -3283,6 +3324,7 @@ export type Database = {
           topic_key?: string
           updated_at?: string
           user_id?: string
+          weak_areas?: Json
           weakness_text?: string
         }
         Relationships: []
