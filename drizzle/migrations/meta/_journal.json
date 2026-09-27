@@ -36,6 +36,13 @@
       "when": 1790401267423,
       "tag": "0004_teacher_flashcard_lists",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790539278184,
+      "tag": "0005_student_weakness_sessions",
+      "breakpoints": true
     }
   ]
 }
