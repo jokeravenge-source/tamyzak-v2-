@@ -489,6 +489,93 @@ const plasmaMembrane: DiagramDef = {
   })(),
 };
 
+/* Lysosomal digestion — redrawn from the supplied textbook reference */
+const lysosomalDigestion: DiagramDef = {
+  id: "ch1-lysosomal-digestion",
+  title: { en: "Lysosomal Digestion", ar: "الهضم بواسطة الجسيمات الحالة" },
+  aspect: "16/9",
+  parts: [
+    { id: "er",            label: { en: "Endoplasmic reticulum",      ar: "الشبكة الإندوبلازمية" },          ax: 49, ay: 14, lx: 2,  ly: 2,  lw: 25 },
+    { id: "golgi",         label: { en: "Golgi apparatus",            ar: "جهاز جولجي" },                   ax: 47, ay: 28, lx: 2,  ly: 20, lw: 22 },
+    { id: "cytoplasm",     label: { en: "Cytoplasm",                  ar: "السايتوبلازم" },                 ax: 34, ay: 35, lx: 2,  ly: 36, lw: 20 },
+    { id: "foodParticles", label: { en: "Food particles",             ar: "دقائق الغذاء" },                 ax: 22, ay: 43, lx: 2,  ly: 51, lw: 20 },
+    { id: "phagocytosis",  label: { en: "Phagocytosis",               ar: "البلعمة" },                      ax: 29, ay: 49, lx: 2,  ly: 68, lw: 20 },
+    { id: "foodVacuole1",  label: { en: "Food vacuole",               ar: "الفجوة الغذائية" },             ax: 38, ay: 50, lx: 21, ly: 87, lw: 20 },
+    { id: "fusion",        label: { en: "Lysosome-vacuole fusion",    ar: "اندماج الجسيم الحال والفجوة" }, ax: 48, ay: 53, lx: 48, ly: 87, lw: 26 },
+    { id: "digestive",     label: { en: "Digestive vacuole",          ar: "الفجوة الهاضمة" },              ax: 58, ay: 50, lx: 75, ly: 70, lw: 22 },
+    { id: "foodVacuole2",  label: { en: "Food vacuole",               ar: "الفجوة الغذائية" },             ax: 69, ay: 37, lx: 79, ly: 51, lw: 19 },
+    { id: "lysosomes",     label: { en: "Lysosomes",                  ar: "الجسيمات الحالة" },             ax: 57, ay: 35, lx: 79, ly: 29, lw: 19 },
+    { id: "exocytosis",    label: { en: "Exocytosis and elimination", ar: "الإخراج الخلوي والتخلص" },      ax: 77, ay: 20, lx: 75, ly: 3,  lw: 23 },
+  ],
+  art: (() => {
+    const CELL = "hsl(38 55% 97%)";
+    const MEMBRANE = "hsl(25 52% 38%)";
+    const ER = "hsl(16 89% 53%)";
+    const ER_DARK = "hsl(13 68% 34%)";
+    const GOLGI = "hsl(345 78% 58%)";
+    const GOLGI_DARK = "hsl(345 62% 35%)";
+    const LYSO = "hsl(25 86% 74%)";
+    const LYSO_DARK = "hsl(18 62% 35%)";
+    const FOOD = "hsl(25 66% 34%)";
+    const FLOW = "hsl(216 28% 18%)";
+    return h(Fragment, null,
+      h("defs", null,
+        h("marker", { id: "lysosomal-flow-arrow", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 4.5, markerHeight: 4.5, orient: "auto-start-reverse" },
+          h("path", { d: "M0,0 L10,5 L0,10 z", fill: FLOW }))),
+
+      // Cell outline and the parallel plasma-membrane line.
+      h("path", { d: "M35 7 C48 3 67 5 76 14 C82 20 78 29 80 39 C83 52 73 63 58 66 C46 68 34 64 31 57 C29 53 31 50 29 47 C26 43 27 37 27 31 C27 20 29 11 35 7 Z", fill: CELL, stroke: MEMBRANE, strokeWidth: 0.75, strokeLinejoin: "round" }),
+      h("path", { d: "M36 8.5 C49 4.7 66 6.3 74.8 15.3 C80 21 76.8 29.3 78.5 39 C80.8 51 71.8 61 57.5 64.2 C46.3 66.3 35.2 62.5 32.5 56.2 C31 52.8 33.2 49.8 30.8 46.3 C28.2 42.5 29 35.8 28.8 30.8 C28.5 20.5 30.5 12.2 36 8.5 Z", fill: "none", stroke: "hsl(28 48% 66%)", strokeWidth: 0.28 }),
+
+      // Rough endoplasmic reticulum, including the ribosome-studded surface.
+      h("path", { d: "M37 13 C42 8 49 9 54 9 C61 8 67 10 71 14 C68 17 66 19 61 18 C58 21 54 18 51 20 C47 18 43 20 40 17 C37 18 34 16 37 13 Z", fill: ER, stroke: ER_DARK, strokeWidth: 0.5, strokeLinejoin: "round" }),
+      h("path", { d: "M38 14 C45 12 51 13 57 12 C62 11 66 13 69 14 M39 16 C45 15 51 16 57 15 C62 14 65 16 67 17", fill: "none", stroke: ER_DARK, strokeWidth: 0.28 }),
+      ...[[39,12],[42,11],[45,13],[48,11],[51,13],[54,11],[57,13],[60,11],[63,13],[66,12],[40,17],[44,18],[48,17],[53,18],[58,17],[63,18]].map(([x, y], i) => h("circle", { key: `erd${i}`, cx: x, cy: y, r: 0.28, fill: ER_DARK })),
+
+      // Golgi cisternae and budding vesicles.
+      ...[
+        "M38 25 C43 22 51 22 58 24", "M37 27 C43 24 51 24 59 26",
+        "M37 29.5 C44 26.5 52 27 58.5 28.5", "M38 32 C44 29 51 29.5 56.5 31",
+        "M40 34 C45 31.5 50 32 54 33",
+      ].map((d, i) => h("path", { key: `gc${i}`, d, fill: "none", stroke: GOLGI, strokeWidth: 2.15, strokeLinecap: "round" })),
+      ...[[36.5,25.2],[58.8,22.4],[56.2,34.5]].map(([x, y], i) => h("ellipse", { key: `gv${i}`, cx: x, cy: y, rx: 1.7, ry: 1.1, fill: GOLGI, stroke: GOLGI_DARK, strokeWidth: 0.3 })),
+
+      // Enzyme-filled lysosomes released from Golgi.
+      ...[[47,38,1.1],[52,36,1.45],[56,32.5,1.65],[59.5,39,1.1],[62,34.5,1.5]].map(([cx, cy, r], i) => h("g", { key: `lys${i}` },
+        h("circle", { cx, cy, r, fill: LYSO, stroke: LYSO_DARK, strokeWidth: 0.35 }),
+        ...[[-0.35,-0.25],[0.45,-0.45],[0.15,0.45]].map(([dx, dy], k) => h("circle", { key: k, cx: cx + dx, cy: cy + dy, r: 0.18, fill: LYSO_DARK })))),
+
+      // Food particles, phagocytic cup and the first food vacuole.
+      ...[[22,38,1.8],[20.8,47.5,2.6],[24.6,54.5,1.25]].map(([cx, cy, r], i) => h("circle", { key: `fp${i}`, cx, cy, r, fill: FOOD, stroke: "hsl(22 58% 22%)", strokeWidth: 0.35 })),
+      h("circle", { cx: 36.5, cy: 49.2, r: 2.25, fill: FOOD, stroke: "hsl(22 58% 22%)", strokeWidth: 0.35 }),
+      h("path", { d: "M29.5 46 C31.5 44.5 35 44.8 38 46.5 C40.5 48 40.7 51.5 38.6 53.5 C36.2 55.6 32.5 54.5 30.5 52", fill: "none", stroke: MEMBRANE, strokeWidth: 0.55, strokeLinecap: "round" }),
+      h("circle", { cx: 44, cy: 54, r: 4.05, fill: "hsl(20 82% 67%)", stroke: LYSO_DARK, strokeWidth: 0.48 }),
+      h("circle", { cx: 43, cy: 53, r: 2.15, fill: FOOD, stroke: "hsl(22 58% 22%)", strokeWidth: 0.3 }),
+      h("circle", { cx: 48.2, cy: 51.2, r: 1.65, fill: LYSO, stroke: LYSO_DARK, strokeWidth: 0.34 }),
+      ...[[47.6,50.7],[48.5,51],[48,51.7]].map(([x, y], i) => h("circle", { key: `flys${i}`, cx: x, cy: y, r: 0.2, fill: LYSO_DARK })),
+
+      // Digestive vacuole and a late food vacuole moving toward exocytosis.
+      h("path", { d: "M54 47 C55.5 44.5 59 44 61.5 46 C64 48 63 53 60.5 55 C57.8 57 53.6 55.2 53.2 52 C53 50.3 53.4 48.4 54 47 Z", fill: FOOD, stroke: "hsl(22 58% 22%)", strokeWidth: 0.48 }),
+      ...[[56,49],[58,47.5],[60,49.2],[56.5,52],[59.5,53]].map(([x, y], i) => h("path", { key: `frag${i}`, d: `M${x-0.5} ${y} q0.5 -0.8 1 0 q-0.4 0.8 -1 1`, fill: "none", stroke: "hsl(42 65% 86%)", strokeWidth: 0.45, strokeLinecap: "round" })),
+      h("path", { d: "M58 45 C57.5 42.8 59 40.8 60.7 41.8 C62 42.7 61.5 44.5 60.5 46", fill: LYSO, stroke: LYSO_DARK, strokeWidth: 0.35 }),
+      h("ellipse", { cx: 69.5, cy: 37, rx: 4.7, ry: 4.1, fill: "hsl(24 83% 72%)", stroke: LYSO_DARK, strokeWidth: 0.48 }),
+      ...[[67.5,35],[70,34.5],[71.5,37],[68.5,38.5],[71,39]].map(([x, y], i) => h("path", { key: `late${i}`, d: `M${x-0.55} ${y} q0.55 -0.75 1.1 0 q-0.35 0.75 -1.1 0.9`, fill: "none", stroke: "hsl(20 60% 30%)", strokeWidth: 0.42, strokeLinecap: "round" })),
+
+      // Exocytosis opening and released remnants.
+      h("path", { d: "M75 25 C73 23 73.2 19.5 75.8 17.8 C77.5 16.7 79.3 17.5 80.2 19", fill: "none", stroke: MEMBRANE, strokeWidth: 0.62, strokeLinecap: "round" }),
+      h("path", { d: "M75.5 23 C76.5 20 78.2 19.5 79.7 21.5", fill: "none", stroke: LYSO_DARK, strokeWidth: 0.42, strokeLinecap: "round" }),
+      ...[[79.7,16.5],[81.5,14.5],[83.2,17.2],[84.5,13],[85.5,18.5],[82.5,20],[87,16]].map(([x, y], i) => h("circle", { key: `exo${i}`, cx: x, cy: y, r: 0.48, fill: FOOD })),
+
+      // Direction arrows reproduce the complete sequence in the reference.
+      ...[
+        "M24.5 47.5 C27 47.5 29.5 47.5 32.5 48", "M39.2 51 C40 52 40.5 52.5 41 53",
+        "M49.6 53 C51 52.8 51.8 52.2 52.7 51.5", "M62.2 47 C64.5 44.5 65.5 42 67 40.5",
+        "M72.5 33.5 C74.5 30.5 75 28 75.8 25.5",
+      ].map((d, i) => h("path", { key: `flow${i}`, d, fill: "none", stroke: FLOW, strokeWidth: 0.42, strokeLinecap: "round", markerEnd: "url(#lysosomal-flow-arrow)" })),
+    );
+  })(),
+};
+
 /* ============================================================
  * CHAPTER 3 — Fruit layers
  * ============================================================ */
@@ -1077,6 +1164,6 @@ const maleRepro: DiagramDef = {
 
 
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
-  1: [bacteria, animalCell, plantCell, plasmaMembrane, mitochondrion, chloroplast, chromosome],
+  1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
   3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, maleRepro],
 };
