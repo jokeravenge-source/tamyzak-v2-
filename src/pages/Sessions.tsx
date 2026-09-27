@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Settings, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,13 @@ import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
+import {
+  matchingPomodoroPreset,
+  POMODORO_PRESETS,
+  restSecondsRemaining,
+  workSecondsRemaining,
+  type PomodoroPhase,
+} from "@/lib/pomodoro";
 
 type TodoItem = { id: string; text: string; done: boolean; day?: string };
 const TODO_STORAGE_KEY = "app_todos_v1";
@@ -339,31 +346,51 @@ const MAX_SECONDS = 48 * 3600;
 const PERSIST_KEY = "study_session_state_v1";
 const POMODORO_KEY = "pomodoro_settings_v1";
 const DEFAULT_WORK_MIN = 45;
-const DEFAULT_REST_MIN = 15;
+const DEFAULT_REST_MIN = 5;
 
-// Play a multi-beep alarm via WebAudio (no asset needed).
-const playAlarm = () => {
+type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext };
+let timerAudioContext: AudioContext | null = null;
+
+const getTimerAudioContext = () => {
+  if (timerAudioContext && timerAudioContext.state !== "closed") return timerAudioContext;
+  const AudioContextClass = window.AudioContext ?? (window as AudioWindow).webkitAudioContext;
+  if (!AudioContextClass) return null;
+  timerAudioContext = new AudioContextClass();
+  return timerAudioContext;
+};
+
+// Called from a click/tap so browsers permit the later completion sounds.
+const unlockTimerAudio = async () => {
   try {
-    const AC = (window.AudioContext || (window as any).webkitAudioContext);
-    if (!AC) return;
-    const ctx = new AC();
+    const ctx = getTimerAudioContext();
+    if (ctx?.state === "suspended") await ctx.resume();
+  } catch { /* Audio is a progressive enhancement. */ }
+};
+
+// Distinct sounds make it clear whether study or rest just finished.
+const playAlarm = (completedPhase: PomodoroPhase | "hour" = "work") => {
+  try {
+    const ctx = getTimerAudioContext();
+    if (!ctx) return;
+    if (ctx.state === "suspended") void ctx.resume();
     const now = ctx.currentTime;
-    const beeps = 6;
-    for (let i = 0; i < beeps; i++) {
+    const notes = completedPhase === "rest"
+      ? [988, 784, 659, 784]
+      : [659, 784, 988, 1175];
+    notes.forEach((frequency, index) => {
       const o = ctx.createOscillator();
       const g = ctx.createGain();
       o.type = "sine";
-      o.frequency.value = 880;
-      const t0 = now + i * 0.35;
+      o.frequency.value = frequency;
+      const t0 = now + index * 0.24;
       g.gain.setValueAtTime(0, t0);
-      g.gain.linearRampToValueAtTime(0.5, t0 + 0.02);
-      g.gain.linearRampToValueAtTime(0, t0 + 0.25);
+      g.gain.linearRampToValueAtTime(0.32, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
       o.connect(g).connect(ctx.destination);
       o.start(t0);
-      o.stop(t0 + 0.27);
-    }
-    setTimeout(() => ctx.close().catch(() => {}), beeps * 400 + 500);
-  } catch {}
+      o.stop(t0 + 0.22);
+    });
+  } catch { /* The timer still works when audio is unavailable. */ }
 };
 
 const SUBJECTS = [
@@ -409,6 +436,12 @@ const T = {
     restDone: "Break over — back to focus!",
     workMin: "Study minutes",
     restMin: "Rest minutes",
+    chooseCycle: "Choose your focus cycle",
+    focusFor: "Focus",
+    restFor: "Rest",
+    totalStudied: "Total studied",
+    soundReady: "A sound plays when focus and rest finish.",
+    skipBreak: "Skip break",
     discard: "Discard session",
     discarded: "Session discarded",
     discardTitle: "Discard this session?",
@@ -452,6 +485,12 @@ const T = {
     restDone: "انتهت الاستراحة — عُد للتركيز!",
     workMin: "دقائق الدراسة",
     restMin: "دقائق الراحة",
+    chooseCycle: "اختر نظام التركيز والراحة",
+    focusFor: "دراسة",
+    restFor: "راحة",
+    totalStudied: "إجمالي وقت الدراسة",
+    soundReady: "يشتغل صوت عند انتهاء الدراسة وعند انتهاء الراحة.",
+    skipBreak: "تخطي الراحة",
     discard: "إلغاء الجلسة",
     discarded: "تم إلغاء الجلسة",
     discardTitle: "إلغاء هذه الجلسة؟",
@@ -509,8 +548,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const lastHourPromptRef = useRef(0);
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(DEFAULT_WORK_MIN);
   const [pomodoroRestMin, setPomodoroRestMin] = useState(DEFAULT_REST_MIN);
-  const [phase, setPhase] = useState<"work" | "rest">("work");
+  const [pomodoroSettingsLoaded, setPomodoroSettingsLoaded] = useState(false);
+  const [phase, setPhase] = useState<PomodoroPhase>("work");
+  const [restRemaining, setRestRemaining] = useState(0);
+  // Work phases use accumulated study seconds; rest phases use a wall-clock
+  // deadline so both remain accurate in background tabs and after reloads.
   const phaseStartRef = useRef(0);
+  const restEndsAtRef = useRef(0);
   const lastPhaseSwitchRef = useRef(0);
   const intervalRef = useRef<number | null>(null);
   // Wall-clock timer refs: drift-proof across device sleep / background tabs.
@@ -540,57 +584,70 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   useEffect(() => { missionRef.current = mission; }, [mission]);
   useEffect(() => { completedRef.current = completed; }, [completed]);
   useEffect(() => { startedRef.current = started; }, [started]);
+  const pomodoroRef = useRef(false);
+  const pomodoroWorkMinRef = useRef(DEFAULT_WORK_MIN);
+  const pomodoroRestMinRef = useRef(DEFAULT_REST_MIN);
+  const phaseRef = useRef<PomodoroPhase>("work");
+  useEffect(() => { pomodoroRef.current = pomodoro; }, [pomodoro]);
+  useEffect(() => { pomodoroWorkMinRef.current = pomodoroWorkMin; }, [pomodoroWorkMin]);
+  useEffect(() => { pomodoroRestMinRef.current = pomodoroRestMin; }, [pomodoroRestMin]);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
 
-  // Pomodoro phase switching: work min of studying triggers rest min rest, then back to work.
+  // A completed focus block automatically pauses study time and starts rest.
   useEffect(() => {
-    if (!pomodoro || !started) return;
-    if (phase === "work") {
-      const workElapsed = seconds - phaseStartRef.current;
-      if (workElapsed >= pomodoroWorkMin * 60 && lastPhaseSwitchRef.current !== seconds) {
-        lastPhaseSwitchRef.current = seconds;
-        setPhase("rest");
-        phaseStartRef.current = Date.now();
-        setRunning(false);
-        toast.success(L.workDone);
-        playAlarm();
-      }
-    }
-  }, [seconds, pomodoro, started, phase, pomodoroWorkMin, L.workDone]);
+    if (!pomodoro || !started || phase !== "work") return;
+    const remaining = workSecondsRemaining(seconds, phaseStartRef.current, pomodoroWorkMin);
+    if (remaining > 0 || lastPhaseSwitchRef.current === phaseStartRef.current) return;
+    lastPhaseSwitchRef.current = phaseStartRef.current;
+    const restEndsAt = Date.now() + pomodoroRestMin * 60_000;
+    restEndsAtRef.current = restEndsAt;
+    setRestRemaining(restSecondsRemaining(restEndsAt));
+    phaseRef.current = "rest";
+    setPhase("rest");
+    runningRef.current = false;
+    setRunning(false);
+    toast.success(L.workDone);
+    playAlarm("work");
+  }, [seconds, pomodoro, started, phase, pomodoroWorkMin, pomodoroRestMin, L.workDone]);
 
   // Force a check-in pause after every full hour of studying.
   useEffect(() => {
-    if (!started || !running) return;
+    if (!started || !running || pomodoro) return;
     const hourMark = Math.floor(seconds / 3600);
     if (hourMark > 0 && hourMark > lastHourPromptRef.current) {
       lastHourPromptRef.current = hourMark;
       setRunning(false);
       setHourPauseOpen(true);
-      try { playAlarm(); } catch { /* noop */ }
+      try { playAlarm("hour"); } catch { /* noop */ }
     }
-  }, [seconds, started, running]);
+  }, [seconds, started, running, pomodoro]);
 
-  // Rest timer (separate, real-time)
-  const [restRemaining, setRestRemaining] = useState(0);
+  // Rest countdown is deadline-based, so throttled/background tabs do not add delay.
   useEffect(() => {
     if (!pomodoro || phase !== "rest" || !started) return;
-    const restSeconds = pomodoroRestMin * 60;
-    setRestRemaining(restSeconds);
-    const start = Date.now();
-    const id = window.setInterval(() => {
-      const left = restSeconds - Math.floor((Date.now() - start) / 1000);
+    if (!restEndsAtRef.current) restEndsAtRef.current = Date.now() + pomodoroRestMin * 60_000;
+    const tick = () => {
+      if (phaseRef.current !== "rest") return;
+      const left = restSecondsRemaining(restEndsAtRef.current);
       if (left <= 0) {
-        window.clearInterval(id);
         setRestRemaining(0);
+        restEndsAtRef.current = 0;
+        phaseRef.current = "work";
         setPhase("work");
         phaseStartRef.current = secondsRef.current;
         lastPhaseSwitchRef.current = -1;
+        accumulatedRef.current = secondsRef.current;
+        resumeAtRef.current = Date.now();
+        runningRef.current = true;
         setRunning(true);
         toast.success(L.restDone);
-        playAlarm();
+        playAlarm("rest");
       } else {
         setRestRemaining(left);
       }
-    }, 500);
+    };
+    tick();
+    const id = window.setInterval(tick, 500);
     return () => window.clearInterval(id);
   }, [phase, pomodoro, started, pomodoroRestMin, L.restDone]);
 
@@ -694,12 +751,45 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       const extra = s.running && s.startedAt ? Math.floor((Date.now() - s.startedAt) / 1000) : 0;
       let total = base + extra;
       if (total >= MAX_SECONDS) total = MAX_SECONDS;
+      const savedPreset = matchingPomodoroPreset(
+        Number(s.pomodoroWorkMin ?? DEFAULT_WORK_MIN),
+        Number(s.pomodoroRestMin ?? DEFAULT_REST_MIN),
+      );
+      const savedPomodoro = s.pomodoro === true;
+      const savedPhase: PomodoroPhase = savedPomodoro && s.phase === "rest" ? "rest" : "work";
+      let shouldRun = !!s.running && total < MAX_SECONDS;
       setSubject(s.subject);
       setMission(s.mission ?? "");
       setCompleted(!!s.completed);
       setStarted(true);
       setSeconds(total);
-      setRunning(!!s.running && total < MAX_SECONDS);
+      setPomodoro(savedPomodoro);
+      setPomodoroWorkMin(savedPreset.workMinutes);
+      setPomodoroRestMin(savedPreset.restMinutes);
+      phaseStartRef.current = Math.max(0, Number(s.phaseStartSeconds ?? 0));
+      lastPhaseSwitchRef.current = -1;
+      if (savedPhase === "rest") {
+        const restEndsAt = Number(s.restEndsAt ?? 0);
+        const restLeft = restSecondsRemaining(restEndsAt);
+        if (restLeft > 0) {
+          restEndsAtRef.current = restEndsAt;
+          setRestRemaining(restLeft);
+          phaseRef.current = "rest";
+          setPhase("rest");
+          shouldRun = false;
+        } else {
+          restEndsAtRef.current = 0;
+          phaseStartRef.current = total;
+          phaseRef.current = "work";
+          setPhase("work");
+          shouldRun = total < MAX_SECONDS;
+        }
+      } else {
+        phaseRef.current = "work";
+        setPhase("work");
+      }
+      runningRef.current = shouldRun;
+      setRunning(shouldRun);
       accumulatedRef.current = total;
       resumeAtRef.current = Date.now();
     } catch {}
@@ -708,12 +798,20 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // Restore pomodoro settings on mount
   useEffect(() => {
     try {
+      const active = JSON.parse(localStorage.getItem(PERSIST_KEY) || "null");
+      if (active?.subject && typeof active.pomodoro === "boolean") {
+        return;
+      }
       const raw = localStorage.getItem(POMODORO_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      if (typeof s.workMin === "number") setPomodoroWorkMin(Math.max(1, Math.min(180, s.workMin)));
-      if (typeof s.restMin === "number") setPomodoroRestMin(Math.max(1, Math.min(180, s.restMin)));
+      if (raw) {
+        const s = JSON.parse(raw);
+        const preset = matchingPomodoroPreset(Number(s.workMin), Number(s.restMin));
+        setPomodoroWorkMin(preset.workMinutes);
+        setPomodoroRestMin(preset.restMinutes);
+        setPomodoro(s.enabled === true);
+      }
     } catch {}
+    finally { setPomodoroSettingsLoaded(true); }
   }, []);
 
   // Persist on relevant state changes
@@ -727,9 +825,15 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       running,
       startedAt: running ? resumeAtRef.current || Date.now() : null,
       accumulated: running ? accumulatedRef.current : seconds,
+      pomodoro,
+      pomodoroWorkMin,
+      pomodoroRestMin,
+      phase,
+      phaseStartSeconds: phaseStartRef.current,
+      restEndsAt: phase === "rest" ? restEndsAtRef.current : 0,
     };
     localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
-  }, [started, subject, mission, completed, running, seconds]);
+  }, [started, subject, mission, completed, running, seconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
 
   // Flush the latest session snapshot whenever the page is about to be hidden
   // or unloaded (tab close, route change, mobile background). Using refs keeps
@@ -752,6 +856,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         running: isRunning,
         startedAt: isRunning ? (resumeAtRef.current || Date.now()) : null,
         accumulated: isRunning ? accumulatedRef.current : liveSeconds,
+        pomodoro: pomodoroRef.current,
+        pomodoroWorkMin: pomodoroWorkMinRef.current,
+        pomodoroRestMin: pomodoroRestMinRef.current,
+        phase: phaseRef.current,
+        phaseStartSeconds: phaseStartRef.current,
+        restEndsAt: phaseRef.current === "rest" ? restEndsAtRef.current : 0,
       };
       try { localStorage.setItem(PERSIST_KEY, JSON.stringify(payload)); } catch {}
     };
@@ -769,8 +879,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   // Persist pomodoro settings
   useEffect(() => {
-    localStorage.setItem(POMODORO_KEY, JSON.stringify({ workMin: pomodoroWorkMin, restMin: pomodoroRestMin }));
-  }, [pomodoroWorkMin, pomodoroRestMin]);
+    if (!pomodoroSettingsLoaded) return;
+    localStorage.setItem(POMODORO_KEY, JSON.stringify({
+      enabled: pomodoro,
+      workMin: pomodoroWorkMin,
+      restMin: pomodoroRestMin,
+    }));
+  }, [pomodoroSettingsLoaded, pomodoro, pomodoroWorkMin, pomodoroRestMin]);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -860,6 +975,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   };
 
   const startSession = () => {
+    void unlockTimerAudio();
     if (pomodoro) {
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
@@ -867,14 +983,18 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setStarted(true);
     setRunning(true);
     setPhase("work");
+    phaseRef.current = "work";
     phaseStartRef.current = 0;
+    restEndsAtRef.current = 0;
+    setRestRemaining(0);
     lastPhaseSwitchRef.current = -1;
     lastHourPromptRef.current = 0;
     setHourPauseOpen(false);
   };
 
   const resumeSession = () => {
-    if (!startedRef.current || secondsRef.current >= MAX_SECONDS) return;
+    if (!startedRef.current || secondsRef.current >= MAX_SECONDS || phaseRef.current === "rest") return;
+    void unlockTimerAudio();
     // Re-anchor immediately instead of waiting for React effects. This avoids
     // a stale paused snapshot when resuming after backgrounding or an hourly
     // check-in, and makes the room presence update in the same interaction.
@@ -883,6 +1003,37 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     runningRef.current = true;
     setRunning(true);
     void pushPresence();
+  };
+
+  const skipPomodoroRest = () => {
+    if (!pomodoro || phaseRef.current !== "rest") return;
+    void unlockTimerAudio();
+    restEndsAtRef.current = 0;
+    setRestRemaining(0);
+    phaseStartRef.current = secondsRef.current;
+    lastPhaseSwitchRef.current = -1;
+    phaseRef.current = "work";
+    setPhase("work");
+    accumulatedRef.current = secondsRef.current;
+    resumeAtRef.current = Date.now();
+    runningRef.current = true;
+    setRunning(true);
+    toast.success(L.restDone);
+    void pushPresence();
+  };
+
+  const togglePomodoro = () => {
+    if (started) return;
+    const next = !pomodoro;
+    if (next) void unlockTimerAudio();
+    setPomodoro(next);
+  };
+
+  const selectPomodoroPreset = (workMinutes: number, restMinutes: number) => {
+    if (started) return;
+    void unlockTimerAudio();
+    setPomodoroWorkMin(workMinutes);
+    setPomodoroRestMin(restMinutes);
   };
 
   const continueAfterHour = () => {
@@ -946,7 +1097,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setStarted(false); setSeconds(0); setMission(""); setCompleted(false);
     localStorage.removeItem(PERSIST_KEY);
     setPhase("work");
+    phaseRef.current = "work";
     phaseStartRef.current = 0;
+    restEndsAtRef.current = 0;
+    setRestRemaining(0);
     lastPhaseSwitchRef.current = -1;
     loadBoard(subject);
     setTimeout(() => { savingRef.current = false; }, 500);
@@ -1005,7 +1159,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     accumulatedRef.current = 0;
     resumeAtRef.current = 0;
     setPhase("work");
+    phaseRef.current = "work";
     phaseStartRef.current = 0;
+    restEndsAtRef.current = 0;
+    setRestRemaining(0);
     lastPhaseSwitchRef.current = -1;
     localStorage.removeItem(PERSIST_KEY);
     setDiscardOpen(false);
@@ -1105,6 +1262,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const ActiveSubjectIcon = subj.Icon;
   const activeTint = SUBJECT_TINTS[subj.code];
   const nextHourProgress = ((seconds % 3600) / 3600) * 100;
+  const focusRemaining = workSecondsRemaining(seconds, phaseStartRef.current, pomodoroWorkMin);
+  const pomodoroRemaining = phase === "rest" ? restRemaining : focusRemaining;
+  const pomodoroPhaseSeconds = (phase === "rest" ? pomodoroRestMin : pomodoroWorkMin) * 60;
+  const pomodoroProgress = pomodoroPhaseSeconds > 0
+    ? Math.min(100, Math.max(0, ((pomodoroPhaseSeconds - pomodoroRemaining) / pomodoroPhaseSeconds) * 100))
+    : 0;
   const removeMinutesNumber = Number.parseInt(minutesToRemove, 10);
   const maxRemovableMinutes = Math.max(0, Math.ceil(seconds / 60) - 1);
   const validRemoval = Number.isFinite(removeMinutesNumber) && removeMinutesNumber >= 1 && removeMinutesNumber <= maxRemovableMinutes;
@@ -1121,25 +1284,18 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           <div className="flex items-center gap-4">
             <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${activeTint.icon}`}><ActiveSubjectIcon className="h-6 w-6" /></span>
             <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{language === "ar" ? subj.ar : subj.en}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
-            {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
+            {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${phase === "rest" ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${phase === "rest" ? "animate-pulse bg-sky-500" : running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{phase === "rest" ? L.restPhase : running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
           </div>
         </header>
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
         <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
         <div className="rounded-[2rem] border border-border/70 bg-card/80 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] backdrop-blur md:p-8 space-y-5">
-          {started && pomodoro && (
-            <div className={`text-center text-sm font-semibold ${phase === "rest" ? "text-primary" : "text-muted-foreground"}`}>
-              {phase === "rest"
-                ? `${L.restPhase} — ${fmt(restRemaining)}`
-                : L.workPhase}
-            </div>
-          )}
-
           <div className="py-5 text-center">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{started ? (running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
-            <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(seconds)}</div>
-            <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour"}</span><span>{Math.floor(nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 transition-all" style={{ width: `${nextHourProgress}%` }} /></div></div>
+            <p className={`mb-2 text-xs font-bold uppercase tracking-[0.18em] ${phase === "rest" ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`}>{started ? (pomodoro ? (phase === "rest" ? L.restPhase : running ? L.workPhase : L.pause) : running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
+            <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(started && pomodoro ? pomodoroRemaining : seconds)}</div>
+            {started && pomodoro && <p className="mt-3 text-xs font-semibold text-muted-foreground">{L.totalStudied}: <span className="font-mono text-foreground">{fmt(seconds)}</span></p>}
+            <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{started && pomodoro ? (phase === "rest" ? L.restPhase : L.workPhase) : (language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour")}</span><span>{Math.floor(started && pomodoro ? pomodoroProgress : nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className={`h-full rounded-full transition-all ${phase === "rest" && pomodoro ? "bg-gradient-to-r from-sky-500 to-cyan-300" : "bg-gradient-to-r from-primary to-cyan-400"}`} style={{ width: `${started && pomodoro ? pomodoroProgress : nextHourProgress}%` }} /></div></div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-3">
@@ -1147,7 +1303,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               <Button size="lg" onClick={startSession} className="h-12 min-w-40 gap-2 rounded-xl text-base shadow-lg shadow-primary/20"><Play className="w-5 h-5" /> {L.start}</Button>
             ) : (
               <>
-                {running ? (
+                {phase === "rest" && pomodoro ? (
+                  <Button size="lg" variant="secondary" onClick={skipPomodoroRest} className="gap-2"><SkipForward className="w-4 h-4" /> {L.skipBreak}</Button>
+                ) : running ? (
                   <Button size="lg" variant="secondary" onClick={() => setRunning(false)} className="gap-2"><Pause className="w-4 h-4" /> {L.pause}</Button>
                 ) : (
                   <Button size="lg" onClick={resumeSession} className="gap-2"><Play className="w-4 h-4" /> {L.resume}</Button>
@@ -1161,7 +1319,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={() => !started && setPomodoro((value) => !value)}
+              onClick={togglePomodoro}
               disabled={started}
               aria-pressed={pomodoro}
               className={`flex h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold text-white shadow-sm transition ${pomodoro ? "border-red-500 bg-red-600 hover:bg-red-700" : "border-slate-500 bg-slate-600 hover:bg-slate-700"} ${started ? "cursor-not-allowed opacity-80" : ""}`}
@@ -1182,6 +1340,38 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </button>
           </div>
 
+          {!started && pomodoro && (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-foreground">{L.chooseCycle}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{L.soundReady}</p>
+                </div>
+                <Coffee className="h-5 w-5 shrink-0 text-red-500" />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {POMODORO_PRESETS.map((preset) => {
+                  const selected = preset.workMinutes === pomodoroWorkMin && preset.restMinutes === pomodoroRestMin;
+                  const focusLabel = preset.workMinutes === 60
+                    ? (language === "ar" ? "1 ساعة" : "1 hour")
+                    : `${preset.workMinutes} ${L.minutes}`;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => selectPomodoroPreset(preset.workMinutes, preset.restMinutes)}
+                      aria-pressed={selected}
+                      className={`rounded-xl border p-3 text-start transition ${selected ? "border-red-500 bg-red-500 text-white shadow-md" : "border-red-500/20 bg-background hover:border-red-500/60"}`}
+                    >
+                      <span className="block text-sm font-black">{L.focusFor}: {focusLabel}</span>
+                      <span className={`mt-1 block text-xs ${selected ? "text-white/85" : "text-muted-foreground"}`}>{L.restFor}: {preset.restMinutes} {L.minutes}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {sessionMenuOpen && (
             <div className="space-y-4 rounded-2xl border border-border/70 bg-background/45 p-4">
               <label className="block">
@@ -1195,44 +1385,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                 selectedText={mission}
                 pickDisabled={started}
               />
-
-              {!started && pomodoro && (
-                <div className="flex flex-wrap items-center justify-center gap-4 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                  <label className="flex items-center gap-2 text-sm">
-                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">{L.workMin}</span>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={180}
-                      value={pomodoroWorkMin || ""}
-                      onChange={(event) => {
-                        if (event.target.value === "") { setPomodoroWorkMin(0); return; }
-                        const value = parseInt(event.target.value, 10);
-                        if (!Number.isNaN(value)) setPomodoroWorkMin(Math.min(180, value));
-                      }}
-                      onBlur={() => { if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN); }}
-                      className="w-20 text-center"
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">{L.restMin}</span>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={180}
-                      value={pomodoroRestMin || ""}
-                      onChange={(event) => {
-                        if (event.target.value === "") { setPomodoroRestMin(0); return; }
-                        const value = parseInt(event.target.value, 10);
-                        if (!Number.isNaN(value)) setPomodoroRestMin(Math.min(180, value));
-                      }}
-                      onBlur={() => { if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN); }}
-                      className="w-20 text-center"
-                    />
-                  </label>
-                </div>
-              )}
 
               {started && mission.trim() && (
                 <label className="flex items-center justify-center gap-2 text-sm">
