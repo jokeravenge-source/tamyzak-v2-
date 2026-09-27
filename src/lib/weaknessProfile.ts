@@ -37,6 +37,134 @@ const MIN_WEAKNESS_EVIDENCE = 3;
 const WEAKNESS_ACCURACY_THRESHOLD = 0.7;
 export const WEAKNESS_AUTO_OPEN_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
 
+const LOOKUP_STOP_WORDS = new Set([
+  "chapter", "unit", "lesson", "topic", "the", "and", "of", "in",
+  "الفصل", "الوحدة", "الدرس", "موضوع", "في", "من", "الى", "على",
+]);
+
+const normalizeLookupText = (value: string) => value
+  .normalize("NFKC")
+  .toLocaleLowerCase()
+  .replace(/[\u064B-\u065F\u0670ـ]/g, "")
+  .replace(/[أإآ]/g, "ا")
+  .replace(/[^\p{L}\p{N}\s]/gu, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
+function lookupTokens(value: string): string[] {
+  return normalizeLookupText(value)
+    .split(" ")
+    .filter((token) => token.length > 2 && !LOOKUP_STOP_WORDS.has(token) && !/^\d+$/.test(token));
+}
+
+function editDistance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const previous = row[j];
+      row[j] = Math.min(
+        row[j] + 1,
+        row[j - 1] + 1,
+        diagonal + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      diagonal = previous;
+    }
+  }
+  return row[b.length];
+}
+
+function lookupScore(query: string, candidate: string): number {
+  const queryText = normalizeLookupText(query);
+  const candidateTokens = lookupTokens(candidate);
+  const queryTokens = lookupTokens(query);
+  if (!candidateTokens.length || !queryTokens.length) return 0;
+  const candidateText = candidateTokens.join(" ");
+  if (candidateText.length >= 4 && queryText.includes(candidateText)) return 20 + candidateTokens.length;
+
+  return candidateTokens.reduce((score, candidateToken) => {
+    if (queryTokens.includes(candidateToken)) return score + 5;
+    const fuzzy = queryTokens.some((queryToken) => {
+      const longest = Math.max(candidateToken.length, queryToken.length);
+      return longest >= 5 && 1 - editDistance(candidateToken, queryToken) / longest >= 0.78;
+    });
+    return score + (fuzzy ? 3 : 0);
+  }, 0);
+}
+
+function missionChapterNumber(subject: string, chapterKey: string, index: number): number {
+  const keyNumber = Number(chapterKey.match(/(\d+)(?!.*\d)/)?.[1]);
+  return Number.isFinite(keyNumber) && keyNumber > 0 ? keyNumber : index + 1;
+}
+
+function inferredArea(
+  subject: string,
+  chapterIndex: number,
+  weaknessText: string,
+  topicIndex?: number,
+): WeakArea {
+  const chapter = missionsData[subject].chapters[chapterIndex];
+  const chapterNumber = missionChapterNumber(subject, chapter.key, chapterIndex);
+  const topic = topicIndex == null ? null : chapter.topics[topicIndex];
+  return {
+    subject,
+    chapterNumber,
+    chapterKey: chapter.key,
+    categoryKey: topic ? `${subject}:${chapterNumber}:${topic.key}` : `${subject}:${chapterNumber}:general`,
+    topicKey: topic?.key ?? "general",
+    topicAr: topic?.ar ?? chapter.ar,
+    topicEn: topic?.en ?? chapter.en,
+    weaknessText: weaknessText.trim().slice(0, 700),
+    source: "student",
+  };
+}
+
+/**
+ * Locally recognizes an obvious curriculum subject/chapter/topic so the save
+ * action never depends entirely on the AI returning perfectly formatted JSON.
+ * Fuzzy token matching intentionally handles small student spelling mistakes
+ * such as "capictors" while requiring a strong curriculum match.
+ */
+export function inferWeakAreaFromText(text: string): WeakArea | null {
+  const query = normalizeLookupText(text);
+  if (!query) return null;
+
+  const chapterMatch = query.match(/(?:chapter|unit|الفصل|الوحدة)\s*(\d{1,2})/u);
+  if (chapterMatch) {
+    const requestedChapter = Number(chapterMatch[1]);
+    const subjectMatch = Object.entries(missionsData)
+      .map(([subject, details]) => ({ subject, score: Math.max(lookupScore(query, details.en), lookupScore(query, details.ar)) }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (subjectMatch?.score >= 3) {
+      const chapterIndex = missionsData[subjectMatch.subject].chapters.findIndex((chapter, index) =>
+        missionChapterNumber(subjectMatch.subject, chapter.key, index) === requestedChapter);
+      if (chapterIndex >= 0) return inferredArea(subjectMatch.subject, chapterIndex, text);
+    }
+  }
+
+  const chapters = Object.entries(missionsData).flatMap(([subject, details]) =>
+    details.chapters.map((chapter, chapterIndex) => ({
+      subject,
+      chapterIndex,
+      score: Math.max(lookupScore(query, chapter.en), lookupScore(query, chapter.ar)),
+    })));
+  chapters.sort((a, b) => b.score - a.score);
+  if (chapters[0]?.score >= 3) return inferredArea(chapters[0].subject, chapters[0].chapterIndex, text);
+
+  const topics = Object.entries(missionsData).flatMap(([subject, details]) =>
+    details.chapters.flatMap((chapter, chapterIndex) => chapter.topics.map((topic, topicIndex) => ({
+      subject,
+      chapterIndex,
+      topicIndex,
+      score: Math.max(lookupScore(query, topic.en), lookupScore(query, topic.ar)),
+    }))));
+  topics.sort((a, b) => b.score - a.score);
+  return topics[0]?.score >= 3
+    ? inferredArea(topics[0].subject, topics[0].chapterIndex, text, topics[0].topicIndex)
+    : null;
+}
+
 function chapterKeyFor(subject: string, chapterNumber: number): string {
   const chapters = missionsData[subject]?.chapters ?? [];
   const byNumber = chapters.find((chapter, index) => {
