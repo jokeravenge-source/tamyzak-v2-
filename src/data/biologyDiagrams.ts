@@ -375,83 +375,108 @@ const plasmaMembrane: DiagramDef = {
   title: { en: "Plasma Membrane", ar: "الغشاء البلازمي" },
   aspect: "16/9",
   parts: [
-    { id: "transport",  label: { en: "Transporting materials", ar: "مواد منقولة" },        ax: 60, ay: 10, lx: 58, ly: 2,  lw: 28 },
-    { id: "hHead",      label: { en: "Hydrophilic head",       ar: "الرأس المحب للماء" },   ax: 16, ay: 26, lx: 2,  ly: 8,  lw: 22 },
-    { id: "hTail",      label: { en: "Hydrophobic tail",       ar: "الذيل الكاره للماء" },  ax: 16, ay: 34, lx: 2,  ly: 30, lw: 22 },
-    { id: "phos",       label: { en: "Phospholipids",          ar: "الدهون الفسفورية" },    ax: 84, ay: 27, lx: 80, ly: 8,  lw: 20 },
-    { id: "plasma",     label: { en: "Plasma membrane",        ar: "الغشاء البلازمي" },     ax: 92, ay: 37, lx: 80, ly: 38, lw: 20 },
-    { id: "channel",    label: { en: "Protein channel",        ar: "قناة بروتينية" },       ax: 22, ay: 42, lx: 2,  ly: 64, lw: 22 },
-    { id: "hole",       label: { en: "Hole",                   ar: "فتحة" },                ax: 50, ay: 50, lx: 32, ly: 92, lw: 14 },
-    { id: "carrier",    label: { en: "Carrier proteins",       ar: "بروتينات ناقلة" },      ax: 70, ay: 50, lx: 56, ly: 92, lw: 20 },
-    { id: "extra",      label: { en: "Extracellular",          ar: "خارج الخلية" },         ax: 50, ay: 18, lx: 40, ly: 16, lw: 20 },
-    { id: "intra",      label: { en: "Intracellular",          ar: "داخل الخلية" },         ax: 50, ay: 56, lx: 40, ly: 80, lw: 20 },
+    // Label placement mirrors the supplied textbook figure.
+    { id: "transport", label: { en: "Transporting materials", ar: "المواد المنقولة" },     ax: 56, ay: 14, lx: 39, ly: 1,  lw: 25 },
+    { id: "hHead",     label: { en: "Hydrophilic head",       ar: "الرأس المحب للماء" },   ax: 29, ay: 27, lx: 2,  ly: 16, lw: 22 },
+    { id: "hTail",     label: { en: "Hydrophobic tail",       ar: "الذيل الكاره للماء" },  ax: 30, ay: 37, lx: 2,  ly: 39, lw: 22 },
+    { id: "channel",   label: { en: "Protein channel",        ar: "قناة بروتينية" },       ax: 38, ay: 56, lx: 2,  ly: 72, lw: 22 },
+    { id: "hole",      label: { en: "Hole",                   ar: "الفتحة" },              ax: 39, ay: 60, lx: 31, ly: 89, lw: 16 },
+    { id: "carrier",   label: { en: "Carrier proteins",       ar: "البروتينات الناقلة" },  ax: 70, ay: 57, lx: 54, ly: 89, lw: 22 },
+    { id: "extra",     label: { en: "Extracellular",          ar: "خارج الخلية" },         ax: 89, ay: 16, lx: 81, ly: 8,  lw: 17 },
+    { id: "phos",      label: { en: "Phospholipids",          ar: "الدهون الفسفورية" },    ax: 88, ay: 27, lx: 81, ly: 27, lw: 17 },
+    { id: "intra",     label: { en: "Intracellular",          ar: "داخل الخلية" },         ax: 89, ay: 62, lx: 81, ly: 76, lw: 17 },
   ],
   art: (() => {
-    // Bilayer geometry (viewBox 100 x 75)
-    const HEAD_R = 2.4;
+    // Textbook colors and geometry (viewBox 100 x 75).
+    const HEAD_R = 1.75;
     const TOP_HEAD_Y = 27;
-    const BOT_HEAD_Y = 48;
-    const MID_Y = 37.5;
-    const N = 18;
-    const X0 = 8;
-    const STEP = (84) / (N - 1); // span 8..92
-    const HEAD_FILL = "hsl(220 65% 78%)";
-    const HEAD_STROKE = "hsl(220 45% 45%)";
-    const TAIL = "hsl(20 75% 60%)";
-    const PROT = "hsl(20 80% 58%)";
-    const PROT_STROKE = "hsl(20 70% 38%)";
-    return h(Fragment, null,
-      // soft pink membrane background band
-      h("rect", { x: 4, y: 24, width: 92, height: 27, rx: 1, fill: "hsl(320 55% 90% / 0.5)" }),
+    const BOT_HEAD_Y = 57;
+    const HEAD_FILL = "hsl(202 72% 46%)";
+    const HEAD_STROKE = "hsl(214 45% 15%)";
+    const CORE_FILL = "hsl(292 33% 48%)";
+    const TAIL_STROKE = "hsl(305 29% 28%)";
+    const PROTEIN_FILL = "hsl(13 92% 63%)";
+    const PROTEIN_STROKE = "hsl(12 68% 25%)";
+    const MATERIAL_FILL = "hsl(1 75% 50%)";
+    const membraneSegments = [
+      { x1: 27.5, x2: 34 },
+      { x1: 44, x2: 50 },
+      { x1: 61, x2: 74 },
+      { x1: 80, x2: 91 },
+    ];
+    const phospholipidX = [
+      28.5, 31, 33.5,
+      44.5, 47, 49.5,
+      61.5, 64, 66.5, 69, 71.5, 73.5,
+      80.5, 83, 85.5, 88, 90.5,
+    ];
 
-      // ---- phospholipid tails (drawn under heads) ----
-      ...Array.from({ length: N }, (_, i) => {
-        const x = X0 + i * STEP;
-        return h(Fragment, { key: `pl${i}` },
-          // top tail (slight wave)
-          h("path", { d: `M${x} ${TOP_HEAD_Y + HEAD_R} q 0.6 2 0 4 q -0.6 2 0 4`, stroke: TAIL, strokeWidth: 0.9, fill: "none", strokeLinecap: "round" }),
-          // bottom tail
-          h("path", { d: `M${x} ${BOT_HEAD_Y - HEAD_R} q 0.6 -2 0 -4 q -0.6 -2 0 -4`, stroke: TAIL, strokeWidth: 0.9, fill: "none", strokeLinecap: "round" }),
-        );
+    return h(Fragment, null,
+      // Purple hydrophobic core, split by the membrane proteins exactly as in the reference.
+      ...membraneSegments.map(({ x1, x2 }, i) => h("path", {
+        key: `core${i}`,
+        d: `M${x1} 28.2 L${x2} 28.2 L${x2} 55.8 L${x1} 55.8 Z`,
+        fill: CORE_FILL,
+        opacity: 0.95,
+      })),
+
+      // Paired fatty-acid tails face inward; the blue hydrophilic heads face the water.
+      ...phospholipidX.map((x, i) => h(Fragment, { key: `pl${i}` },
+        h("path", {
+          d: `M${x - 0.38} ${TOP_HEAD_Y + 1.55} Q${x - 0.7} 34 ${x - 0.4} 40 M${x + 0.38} ${TOP_HEAD_Y + 1.55} Q${x + 0.75} 34 ${x + 0.4} 40`,
+          fill: "none", stroke: TAIL_STROKE, strokeWidth: 0.3, strokeLinecap: "round",
+        }),
+        h("path", {
+          d: `M${x - 0.38} ${BOT_HEAD_Y - 1.55} Q${x - 0.7} 50 ${x - 0.4} 44 M${x + 0.38} ${BOT_HEAD_Y - 1.55} Q${x + 0.75} 50 ${x + 0.4} 44`,
+          fill: "none", stroke: TAIL_STROKE, strokeWidth: 0.3, strokeLinecap: "round",
+        }),
+      )),
+
+      // Protein channel: two orange walls enclosing a white pore.
+      h("path", {
+        d: "M34 26 C34.8 24.2 36.5 24.2 37.2 26 L38 55.8 C37.5 59.2 35.5 59.5 34.5 56.4 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
+      }),
+      h("path", {
+        d: "M43.8 26 C43.1 24.2 41.4 24.2 40.7 26 L40 55.8 C40.5 59.2 42.5 59.5 43.5 56.4 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
       }),
 
-      // ---- carrier proteins (3 tilted orange capsules) ----
-      ...[{ x: 40, rot: -14 }, { x: 64, rot: 16 }, { x: 82, rot: -12 }].map(({ x, rot }, i) =>
-        h("rect", {
-          key: `cp${i}`, x: x - 3, y: 21, width: 6, height: 33, rx: 3,
-          fill: PROT, stroke: PROT_STROKE, strokeWidth: 0.4, opacity: 0.95,
-          transform: `rotate(${rot} ${x} ${MID_Y})`,
-        })
-      ),
+      // Carrier proteins: the same upright and slanted orange shapes in the supplied figure.
+      h("path", {
+        d: "M49.8 25.5 C50.6 23.8 52.2 24.2 52.7 26.2 L54.2 49.5 L50.7 58.2 C49.8 59.7 48 58.7 48.2 56.8 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
+      }),
+      h("path", {
+        d: "M61 27 C62.3 24.3 64.4 24.7 64.5 27.2 L56 57.7 C55.2 60 52.8 59 53 56.8 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
+      }),
+      h("path", {
+        d: "M74.2 26 C75 24.2 77 24.5 77.7 26.5 L78.3 55.8 C77.7 59 75.5 59.5 74.7 56.4 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
+      }),
+      h("path", {
+        d: "M79 27 C78.8 24.5 81.1 24.2 82.3 26.5 L89.2 56.8 C89.7 59 87.2 60 86 57.8 Z",
+        fill: PROTEIN_FILL, stroke: PROTEIN_STROKE, strokeWidth: 0.45,
+      }),
 
-      // ---- protein channel (vertical capsule on the left) ----
-      h("rect", { x: 19, y: 21, width: 6, height: 33, rx: 3, fill: PROT, stroke: PROT_STROKE, strokeWidth: 0.4 }),
-      // hole through the channel
-      h("rect", { x: 21.2, y: 21, width: 1.6, height: 33, fill: "hsl(0 0% 100% / 0.95)" }),
-
-      // ---- top heads (extracellular row) ----
-      ...Array.from({ length: N }, (_, i) => h("circle", {
-        key: `th${i}`, cx: X0 + i * STEP, cy: TOP_HEAD_Y, r: HEAD_R,
+      // Hydrophilic head rows.
+      ...phospholipidX.map((x, i) => h("circle", {
+        key: `th${i}`, cx: x, cy: TOP_HEAD_Y, r: HEAD_R,
         fill: HEAD_FILL, stroke: HEAD_STROKE, strokeWidth: 0.35,
       })),
-      // ---- bottom heads (intracellular row) ----
-      ...Array.from({ length: N }, (_, i) => h("circle", {
-        key: `bh${i}`, cx: X0 + i * STEP, cy: BOT_HEAD_Y, r: HEAD_R,
+      ...phospholipidX.map((x, i) => h("circle", {
+        key: `bh${i}`, cx: x, cy: BOT_HEAD_Y, r: HEAD_R,
         fill: HEAD_FILL, stroke: HEAD_STROKE, strokeWidth: 0.35,
       })),
 
-      // ---- transporting materials (above membrane) ----
-      ...[[40, 8], [46, 12], [52, 6], [58, 11], [64, 8], [54, 16], [48, 18]].map(([x, y], i) =>
-        h("circle", { key: `tm${i}`, cx: x, cy: y, r: 1.2, fill: HEAD_FILL, stroke: HEAD_STROKE, strokeWidth: 0.25 })
+      // Red materials above, inside and below the transport proteins.
+      ...[[35,15],[38,18],[36.5,21],[41,17],[40,22],[55,16],[58,17],[56,21],[60,20]].map(([x, y], i) =>
+        h("circle", { key: `tm${i}`, cx: x, cy: y, r: 1.15, fill: MATERIAL_FILL, stroke: "hsl(0 65% 20%)", strokeWidth: 0.34 })
       ),
-      // particle entering the hole
-      h("circle", { cx: 22, cy: 22, r: 1.2, fill: HEAD_FILL, stroke: HEAD_STROKE, strokeWidth: 0.25 }),
-      // particle exiting into intracellular space
-      h("circle", { cx: 22, cy: 58, r: 1.2, fill: HEAD_FILL, stroke: HEAD_STROKE, strokeWidth: 0.25 }),
-
-      // ---- environment text ----
-      h("text", { x: 50, y: 20, textAnchor: "middle", fontSize: 3.4, fontStyle: "italic", fill: "hsl(210 80% 55%)" }, "Extracellular"),
-      h("text", { x: 50, y: 58, textAnchor: "middle", fontSize: 3.4, fontStyle: "italic", fill: "hsl(210 80% 55%)" }, "Intracellular"),
+      h("circle", { cx: 39, cy: 62, r: 1.35, fill: MATERIAL_FILL, stroke: "hsl(0 65% 20%)", strokeWidth: 0.34 }),
+      h("ellipse", { cx: 56.7, cy: 40.5, rx: 1.2, ry: 1.7, fill: MATERIAL_FILL, stroke: "hsl(0 65% 20%)", strokeWidth: 0.34 }),
+      h("ellipse", { cx: 78.2, cy: 40.5, rx: 1.2, ry: 1.7, fill: MATERIAL_FILL, stroke: "hsl(0 65% 20%)", strokeWidth: 0.34 }),
     );
   })(),
 };
