@@ -377,9 +377,9 @@ const plasmaMembrane: DiagramDef = {
     { id: "channel",   label: { en: "Protein channel",        ar: "قناة بروتينية" },       ax: 38, ay: 56, lx: 2,  ly: 72, lw: 22 },
     { id: "hole",      label: { en: "Hole",                   ar: "الفتحة" },              ax: 39, ay: 60, lx: 31, ly: 89, lw: 16 },
     { id: "carrier",   label: { en: "Carrier proteins",       ar: "البروتينات الناقلة" },  ax: 70, ay: 57, lx: 54, ly: 89, lw: 22 },
-    { id: "extra",     label: { en: "Extracellular",          ar: "خارج الخلية" },         ax: 89, ay: 16, lx: 81, ly: 8,  lw: 17 },
+    { id: "extra",     label: { en: "Extracellular",          ar: "خارج الخلية" },         ax: 89, ay: 13, lx: 81, ly: 5,  lw: 17, emphasizeArrow: true },
     { id: "phos",      label: { en: "Phospholipids",          ar: "الدهون الفسفورية" },    ax: 88, ay: 27, lx: 81, ly: 27, lw: 17 },
-    { id: "intra",     label: { en: "Intracellular",          ar: "داخل الخلية" },         ax: 89, ay: 62, lx: 81, ly: 76, lw: 17 },
+    { id: "intra",     label: { en: "Intracellular",          ar: "داخل الخلية" },         ax: 89, ay: 66, lx: 81, ly: 83, lw: 17, emphasizeArrow: true },
   ],
   art: (() => {
     // Textbook colors and geometry (viewBox 100 x 75).
@@ -407,6 +407,18 @@ const plasmaMembrane: DiagramDef = {
     ];
 
     return h(Fragment, null,
+      // Subtle zones clarify which empty region is outside and which is inside the cell.
+      h("rect", {
+        x: 25, y: 7, width: 69, height: 15, rx: 2.5,
+        fill: "hsl(202 72% 46% / 0.07)", stroke: "hsl(202 72% 46% / 0.22)",
+        strokeWidth: 0.3, strokeDasharray: "1.2 1.2",
+      }),
+      h("rect", {
+        x: 25, y: 61, width: 69, height: 9, rx: 2.5,
+        fill: "hsl(38 90% 55% / 0.08)", stroke: "hsl(38 80% 50% / 0.25)",
+        strokeWidth: 0.3, strokeDasharray: "1.2 1.2",
+      }),
+
       // Purple hydrophobic core, split by the membrane proteins exactly as in the reference.
       ...membraneSegments.map(({ x1, x2 }, i) => h("path", {
         key: `core${i}`,
