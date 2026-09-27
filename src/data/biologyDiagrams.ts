@@ -66,8 +66,8 @@ const animalCell: DiagramDef = {
     { id: "pino",      label: { en: "Pinocytotic vesicle", ar: "حويصلة الشرب الخلوي" },       ax: 44, ay: 8,  lx: 2,  ly: 2,  lw: 24 },
     { id: "lyso",      label: { en: "Lysosome",            ar: "الجسيم الحال" },                ax: 38, ay: 17, lx: 2,  ly: 14, lw: 21 },
     { id: "ribo",      label: { en: "Ribosomes",           ar: "الرايبوسومات" },                ax: 38, ay: 23, lx: 2,  ly: 26, lw: 21 },
-    { id: "rer",       label: { en: "Rough ER",            ar: "الشبكة الإندوبلازمية الخشنة" }, ax: 39, ay: 31, lx: 2,  ly: 38, lw: 24 },
-    { id: "ser",       label: { en: "Smooth ER",           ar: "الشبكة الإندوبلازمية الملساء" }, ax: 39, ay: 39, lx: 2,  ly: 50, lw: 24 },
+    { id: "rer",       label: { en: "Rough ER",            ar: "الشبكة الإندوبلازمية الخشنة" }, ax: 37, ay: 30, lx: 2,  ly: 38, lw: 24 },
+    { id: "ser",       label: { en: "Smooth ER",           ar: "الشبكة الإندوبلازمية الملساء" }, ax: 37, ay: 43, lx: 2,  ly: 50, lw: 24 },
     { id: "centro",    label: { en: "Centrioles",          ar: "المريكزان" },                   ax: 44, ay: 49, lx: 2,  ly: 62, lw: 21 },
     { id: "membrane",  label: { en: "Cell (plasma) membrane", ar: "الغشاء البلازمي" },          ax: 31, ay: 56, lx: 2,  ly: 74, lw: 24 },
     { id: "cyto",      label: { en: "Cytoplasm",           ar: "السايتوبلازم" },                ax: 40, ay: 63, lx: 2,  ly: 86, lw: 21 },
@@ -112,18 +112,28 @@ const animalCell: DiagramDef = {
     ...[[36.5,22],[38.2,21.4],[39.7,22.7],[36.8,24.1],[39,24.3]].map(([x, y], i) =>
       h("circle", { key: `rb${i}`, cx: x, cy: y, r: 0.43, fill: "hsl(216 28% 18%)" })),
 
-    // Rough ER: looped membranes with ribosomes attached.
+    // Rough ER: several flattened cisternae continuous with the nuclear envelope.
+    // The dark dots on both faces are attached ribosomes—the feature that makes it "rough".
     h("path", {
-      d: "M42 27 C38 24 35 26 36 30 C37 34 34 36 35 39 C36 42 39 42 40 39 C41 36 39 33 40 30 C40.5 28.5 41 27.5 42 27",
-      fill: "none", stroke: "hsl(216 28% 22%)", strokeWidth: 0.55, strokeLinecap: "round",
+      d: "M42.2 26.5 C40 25.2 36.3 25.2 34.6 26.8 C33.8 27.6 34.2 28.6 35.4 28.8 C37.4 29.1 39.8 28.2 42 29.2 M42 30.5 C39.5 29.5 35.5 30 34.2 31.7 C33.5 32.6 34.1 33.5 35.3 33.5 C37.6 33.5 39.8 32.6 41.9 33.6 M42 35 C39.5 34 35.5 34.5 34.2 36.2 C33.5 37.1 34.1 38 35.3 38 C37.6 38 39.8 37.1 42 38.1",
+      fill: "none", stroke: "hsl(211 65% 45%)", strokeWidth: 0.68, strokeLinecap: "round", strokeLinejoin: "round",
     }),
-    ...[[36.4,28],[35.7,31.5],[36.1,35],[35.1,38.5],[39.5,29.5],[39.5,34],[39.5,38]].map(([x, y], i) =>
-      h("circle", { key: `rerd${i}`, cx: x, cy: y, r: 0.28, fill: "hsl(216 28% 18%)" })),
-
-    // Smooth ER: adjacent looped membranes without ribosomes.
     h("path", {
-      d: "M43 28 C40 31 41 36 43 38 C45 40 43 44 41 45 M57 28 C60 30 58 34 57 37 C56 40 58 44 60 45 M62 28 C65 30 63 35 62 38 C61 42 63 45 65 44",
-      fill: "none", stroke: "hsl(216 28% 22%)", strokeWidth: 0.58, strokeLinecap: "round",
+      d: "M42 26.5 C43 27.3 43 28.5 42 29.2 M41.9 30.5 C43 31.3 43 32.7 41.9 33.6 M42 35 C43 35.8 43 37.2 42 38.1",
+      fill: "none", stroke: "hsl(211 65% 45%)", strokeWidth: 0.55, strokeLinecap: "round",
+    }),
+    ...[
+      [35.2,25.8],[37.2,25.4],[39.2,25.5],[41,26],
+      [34.5,30.8],[36.5,30.1],[38.7,30.1],[40.8,30.6],
+      [34.5,35.4],[36.5,34.7],[38.7,34.7],[40.8,35.2],
+      [35.2,38.8],[37.3,38.5],[39.4,38.6],
+    ].map(([x, y], i) =>
+      h("circle", { key: `rerd${i}`, cx: x, cy: y, r: 0.3, fill: "hsl(262 40% 25%)" })),
+
+    // Smooth ER: a rounded, branching tubular network with no ribosomes.
+    h("path", {
+      d: "M41.5 40 C39.4 39 37.1 39.5 37.2 41.2 C37.4 42.8 40.2 42.3 40.5 44 C40.8 45.5 38.4 46.2 36.8 45.3 C35.3 44.4 33.6 45.3 34.1 46.8 C34.7 48.4 37.3 48.4 38.5 47.2 C39.8 46 42 46.5 42.3 48.2 M36.8 41.2 C35.5 40 33.4 40.8 33.8 42.3 C34.1 43.5 35.6 43.8 36.7 43.1 M40.5 44 C42.1 42.9 43.7 43.7 43.3 45.2",
+      fill: "none", stroke: "hsl(192 70% 46%)", strokeWidth: 0.72, strokeLinecap: "round", strokeLinejoin: "round",
     }),
 
     // Paired centrioles below-left of the nucleus.
