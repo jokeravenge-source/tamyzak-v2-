@@ -237,49 +237,50 @@ const mitochondrion: DiagramDef = {
   title: { en: "Mitochondrion", ar: "الميتوكوندريا" },
   aspect: "16/9",
   parts: [
-    { id: "cristae", label: { en: "Cristae",        ar: "الأعراف" },           ax: 22, ay: 32, lx: 2,  ly: 78, lw: 18 },
-    { id: "matrix",  label: { en: "Matrix",         ar: "المطرس" },            ax: 46, ay: 50, lx: 32, ly: 92, lw: 16 },
-    { id: "inner",   label: { en: "Inner membrane", ar: "الغشاء الداخلي" },     ax: 64, ay: 30, lx: 58, ly: 92, lw: 18 },
-    { id: "outer",   label: { en: "Outer membrane", ar: "الغشاء الخارجي" },     ax: 90, ay: 38, lx: 80, ly: 92, lw: 18 },
+    { id: "outer",   label: { en: "Outer membrane", ar: "الغشاء الخارجي" }, ax: 35, ay: 20, lx: 27, ly: 3,  lw: 20 },
+    { id: "inner",   label: { en: "Inner membrane", ar: "الغشاء الداخلي" }, ax: 64, ay: 21, lx: 55, ly: 3,  lw: 20 },
+    { id: "cristae", label: { en: "Cristae",        ar: "الأعراف" },       ax: 23, ay: 43, lx: 3,  ly: 76, lw: 18 },
+    { id: "matrix",  label: { en: "Matrix",         ar: "الحشوة" },        ax: 77, ay: 39, lx: 79, ly: 72, lw: 18 },
   ],
   art: (() => {
-    const TAN = "hsl(38 55% 72%)";
-    const TAN_DARK = "hsl(28 45% 35%)";
-    const RED = "hsl(0 70% 60%)";
-    const GREEN = "hsl(85 45% 55%)";
-    // capsule path for outer membrane (rounded ends)
-    const outer = "M 14 22 Q 8 22 8 38 Q 8 54 14 54 L 86 54 Q 92 54 92 38 Q 92 22 86 22 Z";
-    const inner = "M 16 24 Q 11 24 11 38 Q 11 52 16 52 L 84 52 Q 89 52 89 38 Q 89 24 84 24 Z";
-    // wavy cristae paths inside the matrix
-    const cristae = [
-      "M 18 32 q 3 -4 6 0 q 3 4 6 0 q 3 -4 6 0",
-      "M 20 42 q 4 3 8 0 q 4 -3 8 0 q 4 3 8 0",
-      "M 34 30 q 2 5 5 2 q 3 -3 6 1 q 3 4 6 0",
-      "M 50 28 q 3 4 6 0 q 3 -4 6 0 q 3 4 6 0",
-      "M 56 44 q 3 -4 6 0 q 3 4 6 0 q 3 -4 6 0",
-      "M 70 32 q 3 5 6 1 q 3 -4 6 0 q 2 3 4 0",
-      "M 24 48 q 4 -3 8 0 q 4 3 8 -1",
-      "M 44 46 q 3 -3 6 0 q 3 3 6 0 q 3 -3 6 0",
-      "M 64 26 q 2 4 5 1 q 3 -3 5 0",
-      "M 18 38 q 4 -2 7 0 q 3 3 6 0",
+    const MEMBRANE = "hsl(17 92% 76%)";
+    const MEMBRANE_EDGE = "hsl(18 55% 24%)";
+    const MATRIX = "hsl(91 38% 68%)";
+    const GRANULE = "hsl(355 66% 28%)";
+    const outer = "M10 39 C10 27 20 20 34 19 C45 18 51 21 60 19 C75 16 91 21 94 33 C98 45 87 53 70 56 C57 58 47 55 35 57 C20 59 11 52 10 39 Z";
+    const inner = "M14 39 C14 29 22 23.5 35 22.5 C45 22 52 24 61 22 C74 19 88 23 91 33.5 C94 43.5 83 50.5 69 53 C57 55 47 52.5 35 54 C22 55.5 14.5 49 14 39 Z";
+    const topCristae = [
+      "M33.5 22.7 C34.2 27 35.2 30.5 36.5 34.8 C37 36.7 38.7 36.2 38.6 34.3 C38.2 29.8 37.2 26.2 37 22.4 Z",
+      "M48 22.8 C48.8 27 50 31.5 50.4 38 C50.6 40.2 52.7 40.4 53.2 38.3 C53.5 32.8 52.1 27 52.5 22.5 Z",
+      "M59.8 22.2 C60 25.5 61.8 27.3 63.2 30 C64.2 31.8 65.8 30.5 65.1 28.7 C64.5 26.8 63.6 24.7 64.3 21.5 Z",
+      "M72.2 20.7 C72.7 25.2 76 27 78.2 31.2 C79.4 33.3 81 32.2 80.1 29.9 C78.5 25.6 76.8 22.7 76.2 20.5 Z",
+    ];
+    const bottomCristae = [
+      "M17 47.7 C19.6 46.8 21.5 43.5 23.2 39.5 C24 37.6 25.7 38.2 25.4 40.2 C24.6 45.2 26.2 49.9 28.2 54.2 L22 54 Z",
+      "M31 54.7 C31.4 49.8 30.4 45.2 31.7 41.2 C32.4 39.2 34 39.6 34 41.6 C33.7 46.8 35.8 51.5 38 54 Z",
+      "M43 53.6 C43 48.5 41.5 44 42.4 40 C42.9 37.8 44.8 38.2 45 40.4 C45.1 45.1 47.7 50.4 50 53 Z",
+      "M57 53.7 C57.5 49.1 56.3 45.2 57.2 41.3 C57.7 39.1 59.7 39.5 59.7 41.7 C59.4 46.2 61 50.4 62.8 53.8 Z",
+      "M71 52.6 C72.2 48.7 71.2 45 72.3 41.5 C73 39.5 74.6 40 74.7 42 C74.6 46 77.6 49.5 80.4 49.5 L84 48 Z",
     ];
     return h(Fragment, null,
-      // outer membrane (tan capsule)
-      h("path", { d: outer, fill: TAN, stroke: TAN_DARK, strokeWidth: 0.8, strokeLinejoin: "round" }),
-      // inner membrane (slightly inset)
-      h("path", { d: inner, fill: "none", stroke: TAN_DARK, strokeWidth: 0.6 }),
-      // cristae folds (wavy interior)
-      ...cristae.map((d, i) => h("path", {
-        key: `cr${i}`, d, fill: "none", stroke: TAN_DARK, strokeWidth: 0.7, strokeLinecap: "round", strokeLinejoin: "round",
+      // Orange outer membrane and green matrix follow the supplied reference.
+      h("path", { d: outer, fill: MEMBRANE, stroke: MEMBRANE_EDGE, strokeWidth: 0.85, strokeLinejoin: "round" }),
+      h("path", { d: inner, fill: MATRIX, stroke: MEMBRANE_EDGE, strokeWidth: 0.55, strokeLinejoin: "round" }),
+
+      // Inner-membrane infoldings (cristae) project deeply into the matrix.
+      ...topCristae.map((d, i) => h("path", {
+        key: `tcr${i}`, d, fill: MEMBRANE, stroke: MEMBRANE_EDGE, strokeWidth: 0.45, strokeLinejoin: "round",
       })),
-      // red granules (ribosome-like) in matrix
-      ...[[22, 36], [34, 44], [44, 34], [58, 38], [70, 44], [78, 32], [50, 46]].map(([x, y], i) =>
-        h("circle", { key: `rd${i}`, cx: x, cy: y, r: 1.6, fill: RED, opacity: 0.9 })
+      ...bottomCristae.map((d, i) => h("path", {
+        key: `bcr${i}`, d, fill: MEMBRANE, stroke: MEMBRANE_EDGE, strokeWidth: 0.45, strokeLinejoin: "round",
+      })),
+
+      // Matrix granules and mitochondrial DNA details visible in the reference.
+      ...[[23,35],[29,45],[39,33],[48,28],[53,46],[61,43],[71,31]].map(([x, y], i) =>
+        h("circle", { key: `mg${i}`, cx: x, cy: y, r: 0.75, fill: GRANULE })
       ),
-      // small green dots in matrix
-      ...[[28, 40], [40, 40], [52, 42], [62, 34], [74, 38], [36, 36], [48, 38]].map(([x, y], i) =>
-        h("circle", { key: `gd${i}`, cx: x, cy: y, r: 0.9, fill: GREEN, opacity: 0.9 })
-      ),
+      h("path", { d: "M31 35 C33 31 35 29 36 28 C35 32 33 35 31 37", fill: "none", stroke: MEMBRANE_EDGE, strokeWidth: 0.36, strokeLinecap: "round" }),
+      h("path", { d: "M42 35 C44 38 45 41 46 44 M41 36 C43 33 45 31 46 29 C46 34 45 38 44 42", fill: "none", stroke: MEMBRANE_EDGE, strokeWidth: 0.36, strokeLinecap: "round" }),
     );
   })(),
 };
