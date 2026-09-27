@@ -8,6 +8,7 @@ import { edgeErrorMessage } from "@/lib/edgeError";
 import { loadTopicPractice } from "@/lib/topicMastery";
 import {
   detectWeakAreas,
+  inferWeakAreaFromText,
   mergeWeakAreas,
   weakAreaDisplayLabel,
   weaknessAutoOpenDue,
@@ -40,6 +41,8 @@ const copy = {
     mcq: "اختيارات",
     flashcards: "بطاقات",
     error: "تعذر الرد الآن. حاول مرة ثانية.",
+    saveError: "ما كدرنا نحفظ هسه. تأكد من الاتصال وحاول مرة ثانية.",
+    waitingForArea: "اذكر المادة والفصل أو الموضوع أولاً، وبعدها احفظ.",
   },
   en: {
     title: "Let’s identify your weak areas",
@@ -56,6 +59,8 @@ const copy = {
     mcq: "MCQ",
     flashcards: "Flashcards",
     error: "Could not respond right now. Please try again.",
+    saveError: "We could not save your choices. Check your connection and try again.",
+    waitingForArea: "Tell me the subject and chapter or topic first, then save.",
   },
 } as const;
 
@@ -140,11 +145,11 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
   const userIdRef = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const persist = async (next: WeaknessSession) => {
+  const persist = async (next: WeaknessSession, saveLocal = true): Promise<boolean> => {
     const userId = userIdRef.current;
-    if (!userId) return;
-    localStorage.setItem(localKey(userId), JSON.stringify(next));
-    await supabase.from("student_weakness_sessions").upsert({
+    if (!userId) return false;
+    if (saveLocal) localStorage.setItem(localKey(userId), JSON.stringify(next));
+    const { error } = await supabase.from("student_weakness_sessions").upsert({
       ...(next.id ? { id: next.id } : {}),
       user_id: userId,
       iso_week: next.isoWeek,
@@ -156,6 +161,12 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       updated_at: next.updatedAt,
       finished_at: next.finishedAt ?? null,
     }, { onConflict: "user_id,iso_week" });
+    if (error) {
+      console.error("[weakness-check-in] session save failed", error);
+      return false;
+    }
+    if (!saveLocal) localStorage.setItem(localKey(userId), JSON.stringify(next));
+    return true;
   };
 
   useEffect(() => {
@@ -264,9 +275,11 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
     const text = input.trim();
     if (!text || !session || sending) return;
     const userMessage: WeaknessMessage = { role: "user", content: text };
+    const inferred = inferWeakAreaFromText(text);
     const pending: WeaknessSession = {
       ...session,
       messages: [...session.messages, userMessage].slice(-30),
+      weakAreas: inferred ? mergeWeakAreas(session.weakAreas, [inferred]) : session.weakAreas,
       updatedAt: new Date().toISOString(),
     };
     setSession(pending);
@@ -328,10 +341,10 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       return;
     }
     setFinishing(true);
-    saveWeeklyLearningProfile(profile);
-    const { data: auth } = await supabase.auth.getUser();
-    if (auth.user) {
-      await supabase.from("weekly_learning_profiles").upsert({
+    try {
+      const { data: auth, error: authError } = await supabase.auth.getUser();
+      if (authError || !auth.user) throw authError ?? new Error("Missing authenticated user");
+      const { error: profileError } = await supabase.from("weekly_learning_profiles").upsert({
         user_id: auth.user.id,
         iso_week: profile.isoWeek,
         subject: profile.subject,
@@ -344,15 +357,24 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
         weak_areas: profile.weakAreas ?? [],
         updated_at: profile.updatedAt,
       }, { onConflict: "user_id,iso_week" });
+      if (profileError) throw profileError;
+
+      const now = new Date().toISOString();
+      const completed: WeaknessSession = { ...session, status: "finished", updatedAt: now, finishedAt: now };
+      const sessionSaved = await persist(completed, false);
+      if (!sessionSaved) throw new Error("Weakness session could not be saved");
+
+      saveWeeklyLearningProfile(profile);
+      localStorage.setItem(PLANNED_WEEK_KEY, getISOWeek());
+      setSession(completed);
+      setOpen(false);
+      toast.success(t.saved);
+    } catch (error) {
+      console.error("[weakness-check-in] finish failed", error);
+      toast.error(t.saveError);
+    } finally {
+      setFinishing(false);
     }
-    const now = new Date().toISOString();
-    const completed: WeaknessSession = { ...session, status: "finished", updatedAt: now, finishedAt: now };
-    await persist(completed);
-    localStorage.setItem(PLANNED_WEEK_KEY, getISOWeek());
-    setSession(completed);
-    setFinishing(false);
-    setOpen(false);
-    toast.success(t.saved);
   };
 
   if (initializing || !session) return null;
@@ -455,7 +477,8 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
             />
             <button type="button" onClick={() => void send()} disabled={!input.trim() || sending} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-50" aria-label={language === "ar" ? "إرسال" : "Send"}><Send className="h-4 w-4" /></button>
           </div>
-          <button type="button" onClick={() => void finish()} disabled={finishing || !session.weakAreas.length} className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-black text-white transition-opacity disabled:opacity-50">
+          {!session.weakAreas.length && <p className="mt-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">{t.waitingForArea}</p>}
+          <button type="button" onClick={() => void finish()} disabled={finishing || sending} className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-black text-white transition-opacity disabled:opacity-50">
             {finishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {finishing ? t.finishing : t.finish}
           </button>
