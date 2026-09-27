@@ -165,6 +165,18 @@ export function inferWeakAreaFromText(text: string): WeakArea | null {
     : null;
 }
 
+/** Keeps the check-in conversational but prevents a model from turning this
+ * narrow intake flow into a long tutoring response. */
+export function conciseWeaknessReply(text: string, maxWords = 40): string {
+  return (text.match(/[^.!?؟]+[.!?؟]?/gu) ?? [text])
+    .slice(0, 2)
+    .join(" ")
+    .trim()
+    .split(/\s+/u)
+    .slice(0, maxWords)
+    .join(" ");
+}
+
 function chapterKeyFor(subject: string, chapterNumber: number): string {
   const chapters = missionsData[subject]?.chapters ?? [];
   const byNumber = chapters.find((chapter, index) => {
