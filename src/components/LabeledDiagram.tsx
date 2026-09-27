@@ -14,6 +14,8 @@ export type DiagramPart = {
   ly: number;
   /** label box width in % (default 17) */
   lw?: number;
+  /** Makes region/space arrows thicker and adds a visible origin marker. */
+  emphasizeArrow?: boolean;
 };
 
 export type DiagramDef = {
@@ -186,6 +188,9 @@ const LabeledDiagram = ({ diagram, language }: { diagram: DiagramDef; language: 
             <marker id={`ah-${diagram.id}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--primary))" />
             </marker>
+            <marker id={`ah-emphasis-${diagram.id}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--accent))" />
+            </marker>
           </defs>
           {diagram.art}
           {diagram.parts.map((p, i) => {
@@ -194,15 +199,26 @@ const LabeledDiagram = ({ diagram, language }: { diagram: DiagramDef; language: 
             const w = p.lw ?? 17;
             const labelX = p.lx > 50 ? p.lx - 1.5 : p.lx + w + 1.5;
             const labelY = (p.ly + 3) * 0.75;
+            const emphasized = p.emphasizeArrow === true;
             return (
-              <motion.line
-                key={p.id}
-                x1={p.ax} y1={p.ay} x2={p.ax} y2={p.ay}
-                animate={{ x2: labelX, y2: labelY }}
-                transition={{ delay: 0.15 + i * 0.07, duration: 0.5, ease: "easeOut" }}
-                stroke="hsl(var(--primary))" strokeWidth="0.35"
-                markerEnd={`url(#ah-${diagram.id})`}
-              />
+              <g key={p.id}>
+                <motion.line
+                  x1={p.ax} y1={p.ay} x2={p.ax} y2={p.ay}
+                  animate={{ x2: labelX, y2: labelY }}
+                  transition={{ delay: 0.15 + i * 0.07, duration: 0.5, ease: "easeOut" }}
+                  stroke={emphasized ? "hsl(var(--accent))" : "hsl(var(--primary))"}
+                  strokeWidth={emphasized ? 0.72 : 0.35}
+                  markerEnd={`url(#${emphasized ? "ah-emphasis" : "ah"}-${diagram.id})`}
+                />
+                {emphasized && (
+                  <motion.circle
+                    cx={p.ax} cy={p.ay} r="0.95"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    transition={{ delay: 0.15 + i * 0.07 }}
+                    fill="hsl(var(--accent))" stroke="hsl(var(--background))" strokeWidth="0.45"
+                  />
+                )}
+              </g>
             );
           })}
         </svg>
