@@ -576,6 +576,84 @@ const lysosomalDigestion: DiagramDef = {
   })(),
 };
 
+/* Neuron types — Chapter 2 opening diagram */
+const neuronTypes: DiagramDef = {
+  id: "ch2-neuron-types",
+  title: { en: "Types of Neurons", ar: "أنواع الخلايا العصبية" },
+  aspect: "16/9",
+  parts: [
+    { id: "multiBody", label: { en: "Cell body (multipolar)",        ar: "جسم الخلية (متعدد الأقطاب)" }, ax: 26, ay: 20, lx: 2,  ly: 16, lw: 22 },
+    { id: "multiAxon", label: { en: "Axon (multipolar)",             ar: "المحور (متعدد الأقطاب)" },     ax: 26, ay: 44, lx: 2,  ly: 49, lw: 22 },
+    { id: "multipolar",label: { en: "(c) Multipolar",                ar: "(ج) متعدد الأقطاب" },           ax: 26, ay: 63, lx: 16, ly: 88, lw: 20 },
+    { id: "biDend",   label: { en: "Dendrites (bipolar)",           ar: "التغصنات (ثنائي القطب)" },       ax: 50, ay: 13, lx: 39, ly: 1,  lw: 22 },
+    { id: "biBody",   label: { en: "Cell body (bipolar)",           ar: "جسم الخلية (ثنائي القطب)" },     ax: 50, ay: 36, lx: 37, ly: 40, lw: 22 },
+    { id: "biAxon",   label: { en: "Axon (bipolar)",                ar: "المحور (ثنائي القطب)" },         ax: 50, ay: 52, lx: 37, ly: 69, lw: 22 },
+    { id: "bipolar",  label: { en: "(a) Bipolar",                   ar: "(أ) ثنائي القطب" },              ax: 50, ay: 63, lx: 41, ly: 88, lw: 18 },
+    { id: "pseudoDend",label:{ en: "Dendrites (pseudounipolar)",    ar: "التغصنات (كاذب أحادي القطب)" }, ax: 73, ay: 13, lx: 80, ly: 2,  lw: 18 },
+    { id: "peripheral",label: { en: "Peripheral axon",              ar: "المحور المحيطي" },               ax: 73, ay: 25, lx: 80, ly: 24, lw: 18 },
+    { id: "pseudoBody",label: { en: "Cell body (pseudounipolar)",   ar: "جسم الخلية (كاذب أحادي القطب)" },ax: 78, ay: 35, lx: 80, ly: 43, lw: 18 },
+    { id: "central",  label: { en: "Central axon",                  ar: "المحور المركزي" },               ax: 73, ay: 47, lx: 80, ly: 62, lw: 18 },
+    { id: "pseudo",   label: { en: "(b) Pseudounipolar",            ar: "(ب) كاذب أحادي القطب" },         ax: 73, ay: 62, lx: 65, ly: 88, lw: 24 },
+  ],
+  art: (() => {
+    const CELL = "hsl(24 88% 73%)";
+    const EDGE = "hsl(20 50% 24%)";
+    const NUCLEUS = "hsl(350 62% 30%)";
+    const MYELIN = "hsl(345 48% 24%)";
+    const AXON = "hsl(30 78% 54%)";
+    const branch = (d: string, key: string) => h("path", {
+      key, d, fill: "none", stroke: EDGE, strokeWidth: 0.52,
+      strokeLinecap: "round", strokeLinejoin: "round",
+    });
+    return h(Fragment, null,
+      // (c) Multipolar neuron: many dendrites from the soma and one long myelinated axon.
+      h("path", { d: "M26 15 C29 15.5 30 18 29 21 C28.5 23.5 27 25 26 26 C24.8 24.5 22.8 23.5 22.7 20.5 C22.5 17.5 23.8 15.5 26 15 Z", fill: CELL, stroke: EDGE, strokeWidth: 0.5 }),
+      h("circle", { cx: 26, cy: 20, r: 1.05, fill: NUCLEUS }),
+      ...[
+        "M24 16 C22 14 21 12 20 10 M20.5 13 C18.5 13 17.5 11.5 16.5 10",
+        "M25 15 C24 12.5 24 10.5 24.5 8 M24.3 10.5 C22.8 9.5 22.5 8 22.5 6.8",
+        "M27 15.2 C28 12.5 29 11 31 10 M29.2 11.5 C29.5 9.8 30.8 8.5 32 7.5",
+        "M29 18 C31.5 17 33 15.5 34 14 M31.8 16.5 C33 17 34.2 17 35.5 16.5",
+        "M23 18 C20.5 17.5 18.5 16 17 14.5 M20.5 17 C19 18.2 17.7 18.5 16 18.3",
+        "M23 22 C20.5 22 19 23.2 17.5 24.5 M20.5 22.4 C19.5 21 18.5 20.5 17 20.5",
+        "M28.7 22 C31 22.5 32.5 24 34 25.5 M31.5 23.8 C33 23.3 34.4 23.7 35.5 24.5",
+      ].map((d, i) => branch(d, `md${i}`)),
+      h("line", { x1: 26, y1: 25.5, x2: 26, y2: 61, stroke: EDGE, strokeWidth: 0.65 }),
+      ...[28,33,38,43,48,53,58].map((y, i) => h("rect", { key: `mm${i}`, x: 24.9, y, width: 2.2, height: 3.7, rx: 0.45, fill: MYELIN, stroke: EDGE, strokeWidth: 0.25 })),
+      branch("M26 61 C25.5 63 24.5 64 23.8 65 M26 61 C26.5 63 27.5 64 28.3 65 M23.8 65 C24.6 65.6 25.3 65.5 26 64.8 M28.3 65 C27.5 65.6 26.8 65.5 26 64.8", "multi-terminal"),
+
+      // (a) Bipolar neuron: dendrites and axon emerge from opposite ends of the soma.
+      h("path", { d: "M50 30 C53 32.5 53.5 36 52 39 C51.3 40.5 50.5 41.5 50 43 C49.3 41.5 48.5 40.5 47.8 39 C46.5 36 47 32.5 50 30 Z", fill: CELL, stroke: EDGE, strokeWidth: 0.5 }),
+      h("ellipse", { cx: 50, cy: 36.5, rx: 0.85, ry: 1.25, fill: NUCLEUS }),
+      h("line", { x1: 50, y1: 30, x2: 50, y2: 16, stroke: EDGE, strokeWidth: 0.65 }),
+      ...[
+        "M50 16 C49 13 47.5 12 46 10 M47.8 12.3 C46 12.2 45 11 44 9.5",
+        "M50 16 C51.2 13 52.5 12 54 9.5 M52.3 12.3 C54 12.2 55 10.8 56 9",
+        "M49 14 C47 11 47 8.5 46.5 6.5 M51 14 C52 11 52 8.5 52.5 6.5",
+      ].map((d, i) => branch(d, `bd${i}`)),
+      h("line", { x1: 50, y1: 43, x2: 50, y2: 62, stroke: EDGE, strokeWidth: 0.65 }),
+      h("path", { d: "M50 61 C48.5 62.5 48.5 64 50 65.5 C51.5 64 51.5 62.5 50 61 Z", fill: CELL, stroke: EDGE, strokeWidth: 0.45 }),
+
+      // (b) Pseudounipolar neuron: a lateral soma joins peripheral and central axon branches.
+      h("line", { x1: 73, y1: 17, x2: 73, y2: 57, stroke: EDGE, strokeWidth: 0.72 }),
+      ...[
+        "M73 17 C72 14 70.5 13 69 11 M70.8 13.3 C69 13.2 68 12 67 10.5",
+        "M73 17 C74 14 75.5 13 77 10 M75.3 13 C77 13 78.2 11.5 79 9.5",
+        "M72 14 C71 11.5 71 9.5 71.5 7.5 M74 14 C75 11.5 75 9.5 75.5 7.5",
+      ].map((d, i) => branch(d, `pd${i}`)),
+      ...[20,24.2,28.4,39,43.2,47.4,51.6].map((y, i) => h("rect", { key: `pm${i}`, x: 71.9, y, width: 2.2, height: 3.3, rx: 0.35, fill: AXON, stroke: EDGE, strokeWidth: 0.22 })),
+      h("line", { x1: 73, y1: 35, x2: 77, y2: 35, stroke: EDGE, strokeWidth: 0.58 }),
+      h("ellipse", { cx: 78.5, cy: 35, rx: 2.2, ry: 1.8, fill: CELL, stroke: EDGE, strokeWidth: 0.45 }),
+      h("circle", { cx: 78.7, cy: 35, r: 0.65, fill: NUCLEUS }),
+      ...[
+        "M73 57 C71.5 59 70.5 61 70.5 63 M72 59 C70 59.5 69 60.5 68 62",
+        "M73 57 C74 59 75.5 60 77 62 M74.3 59.3 C76 59 77.3 59.8 78.5 61",
+        "M73 57 C73 60 73 62 73.5 64",
+      ].map((d, i) => branch(d, `pt${i}`)),
+    );
+  })(),
+};
+
 /* ============================================================
  * CHAPTER 3 — Fruit layers
  * ============================================================ */
@@ -1165,5 +1243,6 @@ const maleRepro: DiagramDef = {
 
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
   1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
+  2: [neuronTypes],
   3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, maleRepro],
 };
