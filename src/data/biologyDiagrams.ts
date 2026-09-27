@@ -62,20 +62,20 @@ const animalCell: DiagramDef = {
   title: { en: "Animal Cell", ar: "الخلية الحيوانية" },
   aspect: "1/1",
   parts: [
-    // Labels follow the supplied textbook reference: eight on the left and five on the right.
+    // Labels follow the supplied textbook reference, with rough ER left and smooth ER right.
     { id: "pino",      label: { en: "Pinocytotic vesicle", ar: "حويصلة الشرب الخلوي" },       ax: 44, ay: 8,  lx: 2,  ly: 2,  lw: 24 },
     { id: "lyso",      label: { en: "Lysosome",            ar: "الجسيم الحال" },                ax: 38, ay: 17, lx: 2,  ly: 14, lw: 21 },
     { id: "ribo",      label: { en: "Ribosomes",           ar: "الرايبوسومات" },                ax: 38, ay: 23, lx: 2,  ly: 26, lw: 21 },
-    { id: "rer",       label: { en: "Rough ER",            ar: "الشبكة الإندوبلازمية الخشنة" }, ax: 37, ay: 30, lx: 2,  ly: 38, lw: 24 },
-    { id: "ser",       label: { en: "Smooth ER",           ar: "الشبكة الإندوبلازمية الملساء" }, ax: 37, ay: 43, lx: 2,  ly: 50, lw: 24 },
-    { id: "centro",    label: { en: "Centrioles",          ar: "المريكزان" },                   ax: 44, ay: 49, lx: 2,  ly: 62, lw: 21 },
-    { id: "membrane",  label: { en: "Cell (plasma) membrane", ar: "الغشاء البلازمي" },          ax: 31, ay: 56, lx: 2,  ly: 74, lw: 24 },
+    { id: "rer",       label: { en: "Rough ER",            ar: "الشبكة الإندوبلازمية الخشنة" }, ax: 36, ay: 32, lx: 2,  ly: 39, lw: 24 },
+    { id: "centro",    label: { en: "Centrioles",          ar: "المريكزان" },                   ax: 44, ay: 49, lx: 2,  ly: 56, lw: 21 },
+    { id: "membrane",  label: { en: "Cell (plasma) membrane", ar: "الغشاء البلازمي" },          ax: 31, ay: 56, lx: 2,  ly: 72, lw: 24 },
     { id: "cyto",      label: { en: "Cytoplasm",           ar: "السايتوبلازم" },                ax: 40, ay: 63, lx: 2,  ly: 86, lw: 21 },
     { id: "mito",      label: { en: "Mitochondrion",       ar: "الميتوكوندريا" },               ax: 61, ay: 12, lx: 80, ly: 5,  lw: 18 },
     { id: "golgi",     label: { en: "Golgi apparatus",     ar: "جهاز جولجي" },                  ax: 52, ay: 22, lx: 80, ly: 21, lw: 18 },
     { id: "nucleolus", label: { en: "Nucleolus",           ar: "النوية" },                      ax: 50, ay: 32, lx: 80, ly: 37, lw: 18 },
-    { id: "nucleus",   label: { en: "Nucleus",             ar: "النواة" },                      ax: 54, ay: 36, lx: 80, ly: 53, lw: 18 },
-    { id: "micro",     label: { en: "Microtubules",        ar: "الأنيبيبات الدقيقة" },          ax: 63, ay: 55, lx: 80, ly: 73, lw: 18 },
+    { id: "nucleus",   label: { en: "Nucleus",             ar: "النواة" },                      ax: 54, ay: 36, lx: 80, ly: 48, lw: 18 },
+    { id: "ser",       label: { en: "Smooth ER",           ar: "الشبكة الإندوبلازمية الملساء" }, ax: 64, ay: 36, lx: 80, ly: 61, lw: 18 },
+    { id: "micro",     label: { en: "Microtubules",        ar: "الأنيبيبات الدقيقة" },          ax: 63, ay: 55, lx: 80, ly: 79, lw: 18 },
   ],
   art: h(Fragment, null,
     // Tall oval outline and pale cytoplasm, matching the supplied schoolbook figure.
@@ -112,28 +112,23 @@ const animalCell: DiagramDef = {
     ...[[36.5,22],[38.2,21.4],[39.7,22.7],[36.8,24.1],[39,24.3]].map(([x, y], i) =>
       h("circle", { key: `rb${i}`, cx: x, cy: y, r: 0.43, fill: "hsl(216 28% 18%)" })),
 
-    // Rough ER: several flattened cisternae continuous with the nuclear envelope.
-    // The dark dots on both faces are attached ribosomes—the feature that makes it "rough".
+    // Rough ER forms the left bridge from the plasma membrane to the nuclear envelope.
+    // Ribosomes cover its outer surface, which distinguishes it from the smooth ER.
     h("path", {
-      d: "M42.2 26.5 C40 25.2 36.3 25.2 34.6 26.8 C33.8 27.6 34.2 28.6 35.4 28.8 C37.4 29.1 39.8 28.2 42 29.2 M42 30.5 C39.5 29.5 35.5 30 34.2 31.7 C33.5 32.6 34.1 33.5 35.3 33.5 C37.6 33.5 39.8 32.6 41.9 33.6 M42 35 C39.5 34 35.5 34.5 34.2 36.2 C33.5 37.1 34.1 38 35.3 38 C37.6 38 39.8 37.1 42 38.1",
-      fill: "none", stroke: "hsl(211 65% 45%)", strokeWidth: 0.68, strokeLinecap: "round", strokeLinejoin: "round",
-    }),
-    h("path", {
-      d: "M42 26.5 C43 27.3 43 28.5 42 29.2 M41.9 30.5 C43 31.3 43 32.7 41.9 33.6 M42 35 C43 35.8 43 37.2 42 38.1",
-      fill: "none", stroke: "hsl(211 65% 45%)", strokeWidth: 0.55, strokeLinecap: "round",
+      d: "M30.5 27.5 C33 26.4 34.5 27.8 34 31.5 C33.5 35.6 34.2 39.7 36.2 39.7 C38.3 39.7 39 35.5 38.4 31.7 C37.9 28.3 39.3 26.7 42.1 28 M30.3 31 C32.1 30.2 32.5 32.5 32.2 35.4 C31.9 39.1 33.5 42.1 35.6 42 C38 41.9 39.4 38.7 39.3 35.1 C39.2 31.9 40.3 30.4 42.2 31.5",
+      fill: "none", stroke: "hsl(216 28% 22%)", strokeWidth: 0.66, strokeLinecap: "round", strokeLinejoin: "round",
     }),
     ...[
-      [35.2,25.8],[37.2,25.4],[39.2,25.5],[41,26],
-      [34.5,30.8],[36.5,30.1],[38.7,30.1],[40.8,30.6],
-      [34.5,35.4],[36.5,34.7],[38.7,34.7],[40.8,35.2],
-      [35.2,38.8],[37.3,38.5],[39.4,38.6],
+      [30.8,26.8],[32.6,26.6],[34.3,27.2],[33.7,30],[33.4,33],
+      [33.4,36],[34.1,39.2],[36.3,40.4],[38.2,38.4],[38.7,35.2],
+      [38.1,31.7],[39,28.5],[40.7,27.2],[41.7,29.3],
     ].map(([x, y], i) =>
-      h("circle", { key: `rerd${i}`, cx: x, cy: y, r: 0.3, fill: "hsl(262 40% 25%)" })),
+      h("circle", { key: `rerd${i}`, cx: x, cy: y, r: 0.31, fill: "hsl(216 28% 18%)" })),
 
-    // Smooth ER: a rounded, branching tubular network with no ribosomes.
+    // Smooth ER forms the matching right bridge, from nucleus to plasma membrane, without ribosomes.
     h("path", {
-      d: "M41.5 40 C39.4 39 37.1 39.5 37.2 41.2 C37.4 42.8 40.2 42.3 40.5 44 C40.8 45.5 38.4 46.2 36.8 45.3 C35.3 44.4 33.6 45.3 34.1 46.8 C34.7 48.4 37.3 48.4 38.5 47.2 C39.8 46 42 46.5 42.3 48.2 M36.8 41.2 C35.5 40 33.4 40.8 33.8 42.3 C34.1 43.5 35.6 43.8 36.7 43.1 M40.5 44 C42.1 42.9 43.7 43.7 43.3 45.2",
-      fill: "none", stroke: "hsl(192 70% 46%)", strokeWidth: 0.72, strokeLinecap: "round", strokeLinejoin: "round",
+      d: "M57.9 28 C60.7 26.7 62.1 28.3 61.6 31.7 C61 35.5 61.7 39.7 63.8 39.7 C65.8 39.7 66.6 35.6 66 31.5 C65.5 27.8 67 26.4 69.5 27.5 M57.8 31.5 C59.7 30.4 60.8 31.9 60.7 35.1 C60.6 38.7 62 41.9 64.4 42 C66.5 42.1 68.1 39.1 67.8 35.4 C67.5 32.5 67.9 30.2 69.7 31",
+      fill: "none", stroke: "hsl(216 28% 22%)", strokeWidth: 0.66, strokeLinecap: "round", strokeLinejoin: "round",
     }),
 
     // Paired centrioles below-left of the nucleus.
