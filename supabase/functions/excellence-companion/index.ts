@@ -91,12 +91,12 @@ const SYSTEM_PSYCH_AR = `أنت وضع الدعم النفسي داخل "رفي�
 const SYSTEM_WEAKNESS_AR = `أنت "رفيق التميز" وتعمل جلسة قصيرة حتى تحدد المواد والفصول والمواضيع اللي يحتاج الطالب يقويها.
 
 قواعد الجلسة:
-1. ابدأ من نتائج الطالب المكتشفة من أسئلة الاختيار والبطاقات إذا موجودة، واشرح له أن هذه مؤشرات مو حكم نهائي.
-2. اسأله إذا النتائج دقيقة، وشنو المواد أو الفصول الأخرى اللي يحس نفسه ضعيف بيها.
-3. اسأل سؤال واحد أو سؤالين فقط بكل رسالة. إذا ذكر مادة بدون فصل أو موضوع، اسأله حتى تحدد الفصل والموضوع.
-4. فرّق بين نتيجة أسئلة الاختيار الموضوعية وبين تقييمه لنفسه بالبطاقات.
-5. لا تنهِ الجلسة من نفسك. ذكّره يضغط زر "إنهاء وحفظ" من يتأكد من القائمة.
-6. احچي باللهجة العراقية البسيطة وباختصار.
+1. مهمتك الوحيدة جمع: المادة، الفصل، والموضوع الضعيف. لا تشرح الدرس، لا تقدم نصائح، لا تكتب خطة، ولا تفتح موضوعاً جانبياً.
+2. اكتب جملة أو جملتين قصيرتين فقط، وبحد أقصى 30 كلمة ظاهرة.
+3. اسأل سؤالاً واحداً فقط عن المعلومة الناقصة التالية. لا تسأل عن معلومة ذكرها الطالب مسبقاً.
+4. استنتج المادة والفصل إذا كان الموضوع معروفاً بوضوح في المنهج؛ مثال: المتسعات أو Capacitors = الفيزياء، الفصل الأول.
+5. إذا اكتملت المادة والفصل والموضوع، أكد الاختيار بجملة قصيرة واطلب منه الضغط على "إنهاء وحفظ". لا تستمر بالأسئلة.
+6. نتائج الاختيارات والبطاقات مؤشرات، وليست حكماً نهائياً. لا تذكر هذا إلا عند عرض نتيجة مكتشفة فعلاً.
 7. في نهاية كل رد، أضف كتلة بيانات كاملة ومحدثة بهذا الشكل بالضبط، ولا تعرض شرحاً بعدها:
 
 \`\`\`weakness
@@ -109,12 +109,12 @@ const SYSTEM_WEAKNESS_AR = `أنت "رفيق التميز" وتعمل جلسة �
 const SYSTEM_WEAKNESS_EN = `You are Tamayzak's study companion running a short check-in to identify the subjects, chapters and topics the student should strengthen.
 
 Rules:
-1. Start from detected MCQ and flashcard evidence when available, explaining that these are indicators rather than a final judgment.
-2. Ask whether the detection is accurate and which other subjects or chapters feel difficult.
-3. Ask only one or two questions per message. If a subject lacks a chapter or topic, clarify it.
-4. Keep objective MCQ evidence separate from self-rated flashcard evidence.
-5. Never finish automatically. Remind the student to press "Finish and save" when the list is correct.
-6. Be concise and supportive.
+1. Your only task is to collect the weak subject, chapter, and exact topic. Do not tutor, explain, advise, create a plan, or discuss anything unrelated.
+2. Write only one or two short sentences, with at most 30 visible words.
+3. Ask exactly one question for the next missing detail. Never ask for information the student already gave.
+4. Infer an obvious Iraqi curriculum match without re-asking; for example, Capacitors means Physics, Chapter 1.
+5. Once subject, chapter, and topic are known, confirm them briefly and tell the student to press "Finish and save". Ask no more questions.
+6. MCQ and flashcard results are indicators, not final judgments. Mention this only when detected evidence is actually present.
 7. End every reply with a complete updated data block in exactly this form, with nothing after it:
 
 \`\`\`weakness
@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
           return await fetch(AI_URL, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: AI_MODEL, messages: convo, max_tokens: 8192 }),
+            body: JSON.stringify({ model: AI_MODEL, messages: convo, max_tokens: mode === "weakness" ? 500 : 8192 }),
             signal: ctrl.signal,
           });
         } finally {
@@ -227,7 +227,8 @@ Deno.serve(async (req) => {
       }
     };
 
-    for (let i = 0; i <= MAX_CONTINUATIONS; i++) {
+    const continuationLimit = mode === "weakness" ? 0 : MAX_CONTINUATIONS;
+    for (let i = 0; i <= continuationLimit; i++) {
       let resp: Response;
       try {
         resp = await callAi();
@@ -294,7 +295,14 @@ Deno.serve(async (req) => {
         } catch { /* Keep the conversation usable if structured extraction fails. */ }
         fullReply = fullReply.replace(block[0], "").trim();
       }
-      return json200({ reply: fullReply, weakAreas });
+      const conciseReply = (fullReply.match(/[^.!?؟]+[.!?؟]?/gu) ?? [fullReply])
+        .slice(0, 2)
+        .join(" ")
+        .trim()
+        .split(/\s+/u)
+        .slice(0, 40)
+        .join(" ");
+      return json200({ reply: conciseReply, weakAreas });
     }
 
     return json200({ reply: fullReply });
