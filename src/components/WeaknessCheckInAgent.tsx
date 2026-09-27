@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { edgeErrorMessage } from "@/lib/edgeError";
 import { loadTopicPractice } from "@/lib/topicMastery";
 import {
+  conciseWeaknessReply,
   detectWeakAreas,
   inferWeakAreaFromText,
   mergeWeakAreas,
@@ -314,7 +315,10 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       }
       const finished: WeaknessSession = {
         ...pending,
-        messages: [...pending.messages, { role: "assistant", content: reply || t.error } as WeaknessMessage].slice(-30),
+        messages: [...pending.messages, {
+          role: "assistant",
+          content: conciseWeaknessReply(reply || t.error),
+        } as WeaknessMessage].slice(-30),
         weakAreas,
         updatedAt: new Date().toISOString(),
       };
