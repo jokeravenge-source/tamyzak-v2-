@@ -828,6 +828,142 @@ const binaryFission: DiagramDef = {
   })(),
 };
 
+/* Bacterial conjugation (ch3) */
+const bacterialConjugation: DiagramDef = {
+  id: "ch3-bacterial-conjugation",
+  title: { en: "Conjugation in Bacteria", ar: "الاقتران في البكتريا" },
+  aspect: "16/7",
+  parts: [
+    // The five textbook labels are anchored to the introductory donor/recipient pair.
+    { id: "donor",      label: { en: "Donor cell",             ar: "خلية معطية" },       ax: 6,  ay: 26, lx: 1,  ly: 2,  lw: 17 },
+    { id: "recipient",  label: { en: "Recipient cell",         ar: "خلية مستلمة" },      ax: 14, ay: 26, lx: 20, ly: 2,  lw: 18 },
+    { id: "bridge",     label: { en: "Conjugation bridge",     ar: "جسر اقتران" },        ax: 27, ay: 37, lx: 40, ly: 2,  lw: 20 },
+    { id: "fertility",  label: { en: "Fertility factor",       ar: "عامل الخصوبة" },      ax: 6,  ay: 42, lx: 1,  ly: 84, lw: 18 },
+    { id: "chromosome", label: { en: "Bacterial chromosome",  ar: "كروموسوم البكتيريا" }, ax: 14, ay: 31, lx: 21, ly: 84, lw: 21 },
+  ],
+  art: (() => {
+    const CELL_EDGE = "hsl(215 28% 32%)";
+    const CELL_OUTER = "hsl(207 31% 50%)";
+    const CELL_INNER = "hsl(211 38% 42%)";
+    const CHROMOSOME = "hsl(337 56% 67%)";
+    const FACTOR = "hsl(37 83% 56%)";
+    const FACTOR_DARK = "hsl(28 68% 38%)";
+    const BRIDGE = "hsl(202 25% 33%)";
+    const INK = "hsl(220 18% 22%)";
+
+    const bacterium = (cx: number, factor: boolean, key: string) => h("g", { key },
+      h("rect", {
+        x: cx - 3.1, y: 23, width: 6.2, height: 27, rx: 3.1,
+        fill: CELL_OUTER, stroke: CELL_EDGE, strokeWidth: 0.65,
+      }),
+      h("rect", {
+        x: cx - 2.35, y: 24.2, width: 4.7, height: 24.6, rx: 2.25,
+        fill: CELL_INNER, stroke: "hsl(205 34% 58%)", strokeWidth: 0.25,
+      }),
+      // Irregular pink bacterial chromosome near the upper half of the cell.
+      h("path", {
+        d: "M " + (cx - 1.8) + " 30 C " + (cx - 0.4) + " 27.5 " + (cx + 1.8) + " 29 " + (cx + 1.1) + " 31.2 C " + (cx + 0.5) + " 33 " + (cx - 1.5) + " 31.7 " + (cx - 0.7) + " 34.2 C " + cx + " 36.2 " + (cx + 1.7) + " 34.7 " + (cx + 1.5) + " 33.6",
+        fill: "none", stroke: CHROMOSOME, strokeWidth: 0.55,
+        strokeLinecap: "round", strokeLinejoin: "round",
+      }),
+      factor && h("circle", {
+        cx, cy: 42, r: 1.45, fill: "none", stroke: FACTOR,
+        strokeWidth: 0.85,
+      }),
+    );
+
+    const factorRing = (cx: number, key: string, dashed = false) => h("circle", {
+      key, cx, cy: 42, r: 1.45, fill: "none", stroke: FACTOR,
+      strokeWidth: 0.85, strokeDasharray: dashed ? "0.7 0.45" : undefined,
+    });
+
+    const bridge = (left: number, right: number, key: string) => h("g", { key },
+      h("line", {
+        x1: left + 3, y1: 37, x2: right - 3, y2: 37,
+        stroke: BRIDGE, strokeWidth: 1.35, strokeLinecap: "round",
+      }),
+      h("line", {
+        x1: left + 3, y1: 36.75, x2: right - 3, y2: 36.75,
+        stroke: "hsl(196 26% 57%)", strokeWidth: 0.38, strokeLinecap: "round",
+      }),
+    );
+
+    const processArrow = (x1: number, x2: number, key: string) => h("g", { key },
+      h("line", { x1, y1: 36.5, x2, y2: 36.5, stroke: INK, strokeWidth: 0.5 }),
+      h("path", {
+        d: "M " + x2 + " 36.5 L " + (x2 - 1.1) + " 35.65 L " + (x2 - 1.1) + " 37.35 Z",
+        fill: INK,
+      }),
+    );
+
+    const stepNumber = (cx: number, value: string, key: string) => h("g", { key },
+      h("circle", { cx, cy: 57, r: 2.1, fill: "hsl(26 71% 56%)" }),
+      h("text", {
+        x: cx, y: 57.9, textAnchor: "middle", fontSize: 2.7,
+        fontWeight: 700, fill: "white",
+      }, value),
+    );
+
+    return h(Fragment, null,
+      /* Introductory donor and recipient cells from the left of the reference. */
+      bacterium(6, true, "intro-donor"),
+      bacterium(14, false, "intro-recipient"),
+      h("line", {
+        x1: 9, y1: 37, x2: 10.9, y2: 37,
+        stroke: BRIDGE, strokeWidth: 1.25, strokeLinecap: "round",
+      }),
+      processArrow(18, 20.5, "intro-arrow"),
+
+      /* 1 — a conjugation bridge joins donor and recipient. */
+      bacterium(24, false, "stage1-donor"),
+      bacterium(31, false, "stage1-recipient"),
+      factorRing(24, "stage1-factor"),
+      bridge(24, 31, "stage1-bridge"),
+      stepNumber(27.5, "1", "step-1"),
+      processArrow(34.5, 37, "arrow-1-2"),
+
+      /* 2 — one strand of the fertility factor opens and starts copying. */
+      bacterium(40.5, false, "stage2-donor"),
+      bacterium(47.5, false, "stage2-recipient"),
+      factorRing(40.5, "stage2-factor", true),
+      bridge(40.5, 47.5, "stage2-bridge"),
+      h("path", {
+        d: "M40.2 42 C42 42 42.4 38.2 44 37",
+        fill: "none", stroke: FACTOR, strokeWidth: 0.8, strokeLinecap: "round",
+      }),
+      stepNumber(44, "2", "step-2"),
+      processArrow(51, 53.5, "arrow-2-3"),
+
+      /* 3 — the copied strand travels through the bridge to the recipient. */
+      bacterium(57, false, "stage3-donor"),
+      bacterium(64, false, "stage3-recipient"),
+      factorRing(57, "stage3-factor", true),
+      bridge(57, 64, "stage3-bridge"),
+      h("path", {
+        d: "M57 42 C58.5 41.5 59 38 60.2 37 C61.7 36 62.1 40.5 64.7 40.2",
+        fill: "none", stroke: FACTOR, strokeWidth: 0.85, strokeLinecap: "round",
+      }),
+      stepNumber(60.5, "3", "step-3"),
+      processArrow(67.5, 70, "arrow-3-4"),
+
+      /* 4 — both bacteria end with a complete fertility factor. */
+      bacterium(74, false, "stage4-donor"),
+      bacterium(81, false, "stage4-recipient"),
+      factorRing(74, "stage4-donor-factor"),
+      factorRing(81, "stage4-recipient-factor"),
+      bridge(74, 81, "stage4-bridge"),
+      stepNumber(77.5, "4", "step-4"),
+
+      // Small caption inside the artwork keeps the sequence identifiable.
+      h("text", {
+        x: 88, y: 18, textAnchor: "middle", fontSize: 3,
+        fontWeight: 700, fill: "hsl(var(--foreground))",
+      }, "الاقتران في البكتريا"),
+    );
+  })(),
+};
+
+
 /* Monocotyledon and dicotyledon seed structure (ch3) */
 const seedTypes: DiagramDef = {
   id: "ch3-seed-types",
@@ -1521,5 +1657,5 @@ const maleRepro: DiagramDef = {
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
   1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
   2: [neuronTypes],
-  3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, insectFemaleRepro, maleRepro],
+  3: [fruit, binaryFission, bacterialConjugation, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, insectFemaleRepro, maleRepro],
 };
