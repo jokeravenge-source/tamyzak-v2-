@@ -18,12 +18,29 @@ export type TheoremGeometry = {
   segments?: readonly TheoremSegment[];
   pointLabels?: Partial<Record<TheoremPoint, string>>;
   planeLabels?: { X?: string; Y?: string };
+  segmentLabels?: Record<string, string>;
+};
+
+export type TheoremContent = {
+  heading?: string;
+  theorem?: string;
+  sceneAriaLabel?: string;
+  instruction?: string;
+  dihedralControlLabel?: string;
+  testRotationControlLabel?: string;
+  dihedralReadoutLabel?: string;
+  testAngleReadoutLabel?: string;
+  passMessage?: string;
+  failMessage?: string;
+  /** First proof-step index that depends on the planes being perpendicular. */
+  snapToRightAngleFromStep?: number;
 };
 
 export type TheoremVisualizerProps = {
   geometry?: TheoremGeometry;
-  /** Five ordered proof statements. Steps 4 and 5 require a right dihedral angle. */
+  /** Ordered proof statements for the current theorem. */
   proofSteps?: readonly string[];
+  content?: TheoremContent;
   className?: string;
 };
 
@@ -104,7 +121,7 @@ type SceneVisibility = {
 type VisibilityUpdate = (visibility: SceneVisibility) => void;
 type InteractionUpdate = (enabled: boolean) => void;
 
-export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS, className = "" }: TheoremVisualizerProps) {
+export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS, content, className = "" }: TheoremVisualizerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const updateRef = useRef<SceneUpdate | null>(null);
   const visibilityRef = useRef<VisibilityUpdate | null>(null);
@@ -122,8 +139,9 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
   );
   const pointLabels = geometry?.pointLabels;
   const planeLabels = geometry?.planeLabels;
+  const segmentLabels = geometry?.segmentLabels;
   // Keep one WebGL scene while only the movable geometry is updated by sliders.
-  const drawing = useMemo(() => ({ segments, pointLabels, planeLabels }), [segments, pointLabels, planeLabels]);
+  const drawing = useMemo(() => ({ segments, pointLabels, planeLabels, segmentLabels }), [segments, pointLabels, planeLabels, segmentLabels]);
   const sceneVisibility = useMemo<SceneVisibility>(() => ({ planes: planeVisibility, segments: segmentVisibility }), [planeVisibility, segmentVisibility]);
 
   useEffect(() => {
@@ -329,9 +347,10 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
 
   const measured = testSegmentAngle(dihedral, testRotation);
   const perpendicular = dihedral === 90;
+  const snapToRightAngleFromStep = content?.snapToRightAngleFromStep ?? 3;
   const chooseStep = (index: number) => {
     setActiveStep(index);
-    if (index >= 3) setDihedral(90);
+    if (index >= snapToRightAngleFromStep) setDihedral(90);
   };
   const setAllVisible = (visible: boolean) => {
     setPlaneVisibility({ X: visible, Y: visible });
@@ -340,13 +359,13 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
 
   return (
     <section dir="rtl" className={`rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm sm:p-6 ${className}`} style={{ fontFamily: "Cairo, Tajawal, sans-serif" }}>
-      <h2 className="text-xl font-extrabold text-[#183A72] sm:text-2xl">برهان تفاعلي: تعامد المستويين</h2>
-      <p className="mt-2 text-sm leading-8 sm:text-base">{THEOREM}</p>
+      <h2 className="text-xl font-extrabold text-[#183A72] sm:text-2xl">{content?.heading ?? "برهان تفاعلي: تعامد المستويين"}</h2>
+      <p className="mt-2 text-sm leading-8 sm:text-base">{content?.theorem ?? THEOREM}</p>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(270px,1fr)]">
         <div>
           <div className="relative">
-            <div ref={mountRef} role="img" aria-label="مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران"
+            <div ref={mountRef} role="img" aria-label={content?.sceneAriaLabel ?? "مستويان يلتقيان على AB، والمستقيمان CD وDE ومستقيم اختبار قابل للدوران"}
               className={`h-[340px] w-full overflow-hidden rounded-2xl border border-blue-100 bg-[#fcfbf5] sm:h-[440px] ${interactionEnabled ? "touch-none" : "touch-pan-y"}`} />
 
             <div className="absolute left-3 top-3 z-20 flex gap-2" dir="rtl">
@@ -390,7 +409,7 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
                     return (
                       <button key={segment.id} type="button" onClick={() => setSegmentVisibility((current) => ({ ...current, [segment.id]: !visible }))}
                         aria-pressed={visible} className="flex min-h-10 w-full items-center justify-between rounded-xl px-2.5 text-sm hover:bg-slate-100">
-                        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color ?? "#64748b" }} />{SEGMENT_LABELS[segment.id] ?? segment.id}</span>
+                        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: segment.color ?? "#64748b" }} />{drawing.segmentLabels?.[segment.id] ?? SEGMENT_LABELS[segment.id] ?? segment.id}</span>
                         {visible ? <Eye className="h-4 w-4 text-blue-600" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
                       </button>
                     );
@@ -404,31 +423,35 @@ export default function TheoremVisualizer({ geometry, proofSteps = DEFAULT_STEPS
             </div>
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
-            <span className="text-blue-600">▰ المستوي Y</span><span className="text-red-600">▰ المستوي X</span>
-            <span className="text-green-700">━ CD</span><span className="text-amber-700">━ DE</span>
-            <span className="text-violet-700">┄ مستقيم الاختبار</span>
+            <span className="text-blue-600">▰ المستوي {drawing.planeLabels?.Y ?? "Y"}</span>
+            <span className="text-red-600">▰ المستوي {drawing.planeLabels?.X ?? "X"}</span>
+            {segments.map((segment) => (
+              <span key={segment.id} style={{ color: segment.color ?? "#64748b" }}>
+                {segment.dashed ? "┄" : "━"} {drawing.segmentLabels?.[segment.id] ?? SEGMENT_LABELS[segment.id] ?? segment.id}
+              </span>
+            ))}
           </div>
-          <p className="mt-2 text-xs text-slate-500">اسحب الشكل لتدويره، وحرّك المؤشرين لتختبر صحة المبرهنة.</p>
+          <p className="mt-2 text-xs text-slate-500">{content?.instruction ?? "اسحب الشكل لتدويره، وحرّك المؤشرين لتختبر صحة المبرهنة."}</p>
           <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
             <label className="block text-sm font-semibold">
-              <span className="flex justify-between gap-2"><span>الزاوية الثنائية ∠CDE</span><b dir="ltr">{dihedral}°</b></span>
+              <span className="flex justify-between gap-2"><span>{content?.dihedralControlLabel ?? "الزاوية الثنائية ∠CDE"}</span><b dir="ltr">{dihedral}°</b></span>
               <input type="range" min={20} max={160} step={1} value={dihedral} onChange={(event) => {
                 const next = Number(event.target.value);
                 setDihedral(next);
-                if (next !== 90) setActiveStep((step) => Math.min(step, 2));
+                if (next !== 90) setActiveStep((step) => Math.min(step, snapToRightAngleFromStep - 1));
               }} className="mt-3 w-full accent-[#183A72]" aria-label="الزاوية الثنائية بين المستويين" />
             </label>
             <label className="block text-sm font-semibold">
-              <span className="flex justify-between gap-2"><span>دوران مستقيم الاختبار في Y</span><b dir="ltr">{testRotation}°</b></span>
+              <span className="flex justify-between gap-2"><span>{content?.testRotationControlLabel ?? "دوران مستقيم الاختبار في Y"}</span><b dir="ltr">{testRotation}°</b></span>
               <input type="range" min={0} max={360} step={1} value={testRotation} onChange={(event) => setTestRotation(Number(event.target.value))} className="mt-3 w-full accent-violet-600" aria-label="دوران مستقيم الاختبار حول D" />
             </label>
           </div>
           <div aria-live="polite" className={`mt-4 rounded-2xl border p-4 ${perpendicular ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-            <p className="text-sm">∠CDE = <strong dir="ltr">{dihedral}°</strong> · زاوية CD مع مستقيم الاختبار = <strong dir="ltr">{measured.toFixed(1)}°</strong></p>
+            <p className="text-sm">{content?.dihedralReadoutLabel ?? "∠CDE"} = <strong dir="ltr">{dihedral}°</strong> · {content?.testAngleReadoutLabel ?? "زاوية CD مع مستقيم الاختبار"} = <strong dir="ltr">{measured.toFixed(1)}°</strong></p>
             <p className="mt-2 text-sm font-bold">
               {perpendicular
-                ? "✓ المستويان متعامدان: تبقى زاوية CD مع كل اتجاه في Y مساوية 90°."
-                : "✕ المستويان غير متعامدين: حرّك مستقيم الاختبار لتلاحظ تغيّر الزاوية. ظهور 90° لاتجاه واحد لا يكفي لإثبات التعامد مع المستوي."}
+                ? content?.passMessage ?? "✓ المستويان متعامدان: تبقى زاوية CD مع كل اتجاه في Y مساوية 90°."
+                : content?.failMessage ?? "✕ المستويان غير متعامدين: حرّك مستقيم الاختبار لتلاحظ تغيّر الزاوية. ظهور 90° لاتجاه واحد لا يكفي لإثبات التعامد مع المستوي."}
             </p>
           </div>
         </div>

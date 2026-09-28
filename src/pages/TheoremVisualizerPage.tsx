@@ -19,6 +19,9 @@ const TheoremVisualizerPage = () => {
             <a href="/math/theorem-visualizer/result-7" className="inline-flex min-h-11 items-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-[#183A72] transition hover:bg-blue-100">
               النتيجة 7
             </a>
+            <a href="/math/theorem-visualizer/theorem-8" className="inline-flex min-h-11 items-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-[#183A72] transition hover:bg-blue-100">
+              المبرهنة 8
+            </a>
             <a href="/" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
               <Home className="h-4 w-4" />
               العودة إلى تميزك
