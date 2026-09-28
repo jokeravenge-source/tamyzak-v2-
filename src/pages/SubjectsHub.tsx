@@ -78,8 +78,8 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
     tools: [
       { key: "flashcards", en: "Math Flashcards", ar: "بطاقات الرياضيات", Icon: Layers,
         descEn: "Review the available mathematics chapters with flashcards.", descAr: "راجع فصول الرياضيات المتاحة بالبطاقات." },
-      { key: "theoremVisualizer", en: "3D Geometry Theorem", ar: "مبرهنة الهندسة المجسمة", Icon: Ruler, free: true,
-        descEn: "Explore perpendicular planes in 3D.", descAr: "اكتشف تعامد المستويين بمجسم تفاعلي." },
+      { key: "theoremVisualizer", en: "3D Geometry Theorems", ar: "مبرهنات الهندسة المجسمة", Icon: Ruler, free: true,
+        descEn: "Explore perpendicular-plane results in 3D.", descAr: "اكتشف نتائج تعامد المستويين بمجسمات تفاعلية." },
     ],
   },
   {

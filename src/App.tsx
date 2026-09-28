@@ -81,6 +81,7 @@ const ChemicalEquations = lazy(() => import("./pages/ChemicalEquations"));
 const LiveBattle = lazy(() => import("./pages/LiveBattle"));
 const SubjectsHub = lazy(() => import("./pages/SubjectsHub"));
 const TheoremVisualizerPage = lazy(() => import("./pages/TheoremVisualizerPage"));
+const PerpendicularLineContainmentPage = lazy(() => import("./pages/PerpendicularLineContainmentPage"));
 const TextToVideo = lazy(() => import("./pages/TextToVideo"));
 const SubjectTutor = lazy(() => import("./pages/SubjectTutor"));
 const PhysicsLaws = lazy(() => import("./pages/PhysicsLaws"));
@@ -211,7 +212,19 @@ const App = () => {
     );
   }
 
-  // Public standalone mathematics visualizer with a shareable direct URL.
+  // Public standalone mathematics visualizers with shareable direct URLs.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/math/theorem-visualizer/result-7") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <PerpendicularLineContainmentPage />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/math/theorem-visualizer") {
     return (
       <QueryClientProvider client={queryClient}>
