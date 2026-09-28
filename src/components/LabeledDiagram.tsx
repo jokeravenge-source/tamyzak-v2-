@@ -194,11 +194,18 @@ const LabeledDiagram = ({ diagram, language }: { diagram: DiagramDef; language: 
           </defs>
           {diagram.art}
           {diagram.parts.map((p, i) => {
-            // label box is positioned at lx%, ly% of the container.
-            // SVG viewBox is 100 x 75, so container-y% -> viewBox y = ly * 0.75
+            // Route each arrow to the nearest edge of its label box. This keeps
+            // arrows short and prevents the long crossed lines that appeared
+            // when every label was forced to use only its left or right edge.
+            // SVG viewBox is 100 x 75, so container-y% -> viewBox y = % * 0.75.
             const w = p.lw ?? 17;
-            const labelX = p.lx > 50 ? p.lx - 1.5 : p.lx + w + 1.5;
-            const labelY = (p.ly + 3) * 0.75;
+            const labelHeight = 6;
+            const labelLeft = p.lx;
+            const labelRight = p.lx + w;
+            const labelTop = p.ly * 0.75;
+            const labelBottom = (p.ly + labelHeight) * 0.75;
+            const labelX = Math.min(Math.max(p.ax, labelLeft), labelRight);
+            const labelY = Math.min(Math.max(p.ay, labelTop), labelBottom);
             const emphasized = p.emphasizeArrow === true;
             return (
               <g key={p.id}>
