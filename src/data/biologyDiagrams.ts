@@ -1239,6 +1239,96 @@ const insectMaleRepro: DiagramDef = {
 };
 
 
+/* Female reproductive system in insects (ch3) */
+const insectFemaleRepro: DiagramDef = {
+  id: "ch3-insect-female-repro",
+  title: { en: "Female Reproductive System in Insects", ar: "الجهاز التناسلي الأنثوي في الحشرات" },
+  aspect: "4/3",
+  parts: [
+    // Labels reproduce the six structures called out in the supplied reference.
+    { id: "ovary",       label: { en: "Ovary",                    ar: "مبيض" },                 ax: 66, ay: 20, lx: 76, ly: 7,  lw: 22 },
+    { id: "lateral",     label: { en: "Lateral oviduct",          ar: "قناة بيض جانبية" },      ax: 58, ay: 41, lx: 76, ly: 32, lw: 22 },
+    { id: "accessory",   label: { en: "Accessory gland",         ar: "غدة مساعدة" },           ax: 23, ay: 53, lx: 1,  ly: 47, lw: 24 },
+    { id: "mainOviduct", label: { en: "Main oviduct",            ar: "قناة البيض الرئيسة" },   ax: 50, ay: 55, lx: 1,  ly: 65, lw: 24 },
+    { id: "spermatheca", label: { en: "Spermatheca and its gland", ar: "مستودع منوي وغدته" }, ax: 70, ay: 54, lx: 76, ly: 57, lw: 22 },
+    { id: "vagina",      label: { en: "Vagina",                   ar: "مهبل" },                 ax: 50, ay: 67, lx: 1,  ly: 84, lw: 24 },
+  ],
+  art: (() => {
+    const OUT = "hsl(15 30% 18%)";
+    const ORGAN = "hsl(22 70% 76%)";
+    const ORGAN_LIGHT = "hsl(28 85% 88%)";
+    const ORGAN_DARK = "hsl(8 43% 39%)";
+    const TUBE = "hsl(17 35% 28%)";
+
+    const ovary = (cx: number, key: string) => h("g", { key },
+      // Pear-shaped ovary with a narrow apical end and a broad basal end.
+      h("path", {
+        d: `M ${cx} 4 C ${cx-1} 8 ${cx-8} 11 ${cx-10} 18 C ${cx-13} 27 ${cx-8} 35 ${cx} 38 C ${cx+8} 35 ${cx+13} 27 ${cx+10} 18 C ${cx+8} 11 ${cx+1} 8 ${cx} 4 Z`,
+        fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.75, strokeLinejoin: "round",
+      }),
+      // Ovarioles: several dark, slightly wavy tubes running through each ovary.
+      ...[-7.2,-4.8,-2.4,0,2.4,4.8,7.2].map((offset, index) => h("path", {
+        key: `${key}-ovariole-${index}`,
+        d: `M ${cx + offset * 0.12} 6 C ${cx + offset * 0.55} 13 ${cx + offset * 0.95} 20 ${cx + offset * 0.78} 27 C ${cx + offset * 0.65} 33 ${cx + offset * 0.35} 35 ${cx + offset * 0.18} 36.5`,
+        fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.62, strokeLinecap: "round",
+      })),
+      h("path", {
+        d: `M ${cx-8.5} 25 Q ${cx} 35.5 ${cx+8.5} 25`,
+        fill: "none", stroke: "hsl(22 55% 65%)", strokeWidth: 0.35, opacity: 0.75,
+      }),
+    );
+
+    return h(Fragment, null,
+      // Paired ovaries.
+      ovary(34, "ovary-left"),
+      ovary(66, "ovary-right"),
+
+      // Paired lateral oviducts converge into the main median duct.
+      h("path", {
+        d: "M34 37 C36 41 41 43 49 48",
+        fill: "none", stroke: TUBE, strokeWidth: 1, strokeLinecap: "round",
+      }),
+      h("path", {
+        d: "M66 37 C64 41 59 43 51 48",
+        fill: "none", stroke: TUBE, strokeWidth: 1, strokeLinecap: "round",
+      }),
+      h("path", {
+        d: "M49 47 Q50 48 51 47 L52 57 Q50 59 48 57 Z",
+        fill: ORGAN, stroke: OUT, strokeWidth: 0.65, strokeLinejoin: "round",
+      }),
+
+      // Left accessory gland: a long curved sac opening beside the median duct.
+      h("path", {
+        d: "M48.5 52 C41 51 35 51 29 49 C24 47 18 48 16 51 C18 55 23 57 29 57 C37 57 42 55 49 54 Z",
+        fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M18 51 Q24 53 30 52", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.35, opacity: 0.65 }),
+
+      // Right spermatheca (storage sac) and its associated elongated gland.
+      h("path", {
+        d: "M52 52 C57 50 60 47 64 47 C68 47 70 49 69 52 C68 55 63 55 60 53 C58 52 56 53 54 55",
+        fill: "none", stroke: TUBE, strokeWidth: 0.9, strokeLinecap: "round",
+      }),
+      h("ellipse", { cx: 65, cy: 50.5, rx: 4.3, ry: 2.5, fill: ORGAN, stroke: OUT, strokeWidth: 0.65, transform: "rotate(-12 65 50.5)" }),
+      h("path", {
+        d: "M68 53 C73 51 80 50 84 53 C85 56 81 59 76 61 C70 63 66 62 62 59 C64 57 66 55 68 53 Z",
+        fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M72 55 Q78 56 82 54", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.35, opacity: 0.65 }),
+
+      // Main oviduct continues into the terminal vagina.
+      h("path", { d: "M50 55 L50 61", fill: "none", stroke: TUBE, strokeWidth: 1.25, strokeLinecap: "round" }),
+      h("path", {
+        d: "M45.5 59 Q50 57.5 54.5 59 L54.5 70 Q50 72 45.5 70 Z",
+        fill: ORGAN, stroke: OUT, strokeWidth: 0.75, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M50 60 L50 70.5", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.45, strokeLinecap: "round" }),
+      h("ellipse", { cx: 50, cy: 70, rx: 4.4, ry: 1.2, fill: "hsl(18 55% 68%)", stroke: OUT, strokeWidth: 0.35 }),
+    );
+  })(),
+};
+
+
 /* Human male reproductive system (ch3) */
 const maleRepro: DiagramDef = {
   id: "ch3-male-repro",
@@ -1346,5 +1436,5 @@ const maleRepro: DiagramDef = {
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
   1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
   2: [neuronTypes],
-  3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, maleRepro],
+  3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, insectFemaleRepro, maleRepro],
 };
