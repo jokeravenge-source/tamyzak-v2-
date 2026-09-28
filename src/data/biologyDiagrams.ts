@@ -828,128 +828,188 @@ const binaryFission: DiagramDef = {
   })(),
 };
 
-/* Monocot vs Dicot seed structure */
+/* Monocotyledon and dicotyledon seed structure (ch3) */
 const seedTypes: DiagramDef = {
   id: "ch3-seed-types",
-  title: { en: "Monocot vs Dicot Seed", ar: "البذرة ذات الفلقة الواحدة + ذوات الفلقتين" },
+  title: {
+    en: "Monocotyledon and Dicotyledon Seeds",
+    ar: "تركيب بذور ذوات الفلقة الواحدة وذوات الفلقتين",
+  },
   aspect: "4/3",
   parts: [
-    // ===== LEFT (A) — Monocot wedge, body ~ x:8-42, y:8-58 =====
-    { id: "a-coat",    label: { en: "Seed coat",         ar: "غطاء البذرة" },    ax: 36,   ay: 11,  lx: 30, ly: 2,  lw: 24 },
-    { id: "a-endo",    label: { en: "Endosperm",         ar: "سويداء" },         ax: 20,   ay: 22,  lx: 30, ly: 14, lw: 24 },
-    { id: "a-cot",     label: { en: "Cotyledon",         ar: "ورقة جنينية" },    ax: 32,   ay: 34,  lx: 56, ly: 36, lw: 22 },
-    { id: "a-plum",    label: { en: "Plumule",           ar: "ريشة" },           ax: 33,   ay: 44,  lx: 56, ly: 50, lw: 22 },
-    { id: "a-rad",     label: { en: "Radicle",           ar: "جذير" },           ax: 28,   ay: 56,  lx: 56, ly: 64, lw: 22 },
-    { id: "a-peri",    label: { en: "Surrounding layer", ar: "طبقة محيطة" },     ax: 10,   ay: 52,  lx: 2,  ly: 78, lw: 28 },
-    // ===== RIGHT (B) — Dicot oval, body ~ x:55-95, y:12-60 =====
-    { id: "b-coat",    label: { en: "Seed coat",         ar: "غطاء البذرة" },    ax: 60,   ay: 14,  lx: 56, ly: 2,  lw: 24 },
-    { id: "b-plum",    label: { en: "Plumule",           ar: "رويشة" },          ax: 80,   ay: 30,  lx: 80, ly: 14, lw: 18 },
-    { id: "b-rad",     label: { en: "Radicle",           ar: "جذير" },           ax: 76,   ay: 38,  lx: 80, ly: 32, lw: 18 },
-    { id: "b-cots",    label: { en: "Two cotyledons",    ar: "ورقتين جنينيتين" }, ax: 88,   ay: 44,  lx: 80, ly: 50, lw: 18 },
+    // (A) Monocotyledon — labels follow the left half of the supplied reference.
+    { id: "a-peri",   label: { en: "Surrounding layer", ar: "طبقة محيطة" },       ax: 8,  ay: 25, lx: 1,  ly: 2,  lw: 20 },
+    { id: "a-endo",   label: { en: "Endosperm",         ar: "سويداء" },            ax: 14, ay: 31, lx: 23, ly: 2,  lw: 20 },
+    { id: "a-cot",    label: { en: "Embryonic leaf",    ar: "ورقة جنينية" },       ax: 20, ay: 37, lx: 1,  ly: 16, lw: 20 },
+    { id: "a-rad",    label: { en: "Radicle",           ar: "جذير" },              ax: 20, ay: 49, lx: 1,  ly: 79, lw: 20 },
+    { id: "a-embryo", label: { en: "Monocot embryo",    ar: "جنين أحادي الفلقة" }, ax: 45, ay: 38, lx: 23, ly: 79, lw: 22 },
+
+    // (B) Dicotyledon — labels follow the right half of the supplied reference.
+    { id: "b-coat",   label: { en: "Seed coat",         ar: "غطاء البذرة" },       ax: 58, ay: 21, lx: 55, ly: 2,  lw: 20 },
+    { id: "b-plum",   label: { en: "Plumule",           ar: "رويشة" },             ax: 67, ay: 29, lx: 78, ly: 2,  lw: 20 },
+    { id: "b-rad",    label: { en: "Radicle",           ar: "جذير" },              ax: 65, ay: 39, lx: 52, ly: 79, lw: 20 },
+    { id: "b-cot",    label: { en: "Embryonic leaf",    ar: "ورقة جنينية" },       ax: 71, ay: 45, lx: 74, ly: 79, lw: 22 },
+    { id: "b-embryo", label: { en: "Dicot embryo",      ar: "جنين ثنائي الفلقة" }, ax: 96, ay: 38, lx: 78, ly: 16, lw: 20 },
   ],
   art: (() => {
-    const COAT       = "hsl(22 78% 58%)";
-    const COAT_DK    = "hsl(18 65% 32%)";
-    const PERI       = "hsl(35 70% 82%)";
-    const ENDO_FILL  = "hsl(45 75% 90%)";
-    const ENDO_TINT  = "hsl(280 50% 75%)";
-    const HALO       = "hsl(22 80% 65%)";
-    const LEAF       = "hsl(115 48% 38%)";
-    const LEAF_DK    = "hsl(120 60% 20%)";
-    const LEAF_VEIN  = "hsl(120 65% 16%)";
+    const OUT = "hsl(24 31% 24%)";
+    const GOLD = "hsl(41 69% 55%)";
+    const CREAM = "hsl(43 53% 78%)";
+    const CREAM_LIGHT = "hsl(46 58% 87%)";
+    const GREEN = "hsl(92 39% 47%)";
+    const GREEN_DARK = "hsl(111 39% 29%)";
+    const BLUE = "hsl(199 34% 31%)";
+    const BLUE_LIGHT = "hsl(181 38% 38%)";
+    const BROWN = "hsl(7 51% 31%)";
 
-    // Soft orange halo around each seed (mimics the textbook glow)
-    const halo = (cx: number, cy: number, rx: number, ry: number, key: string) =>
-      h("ellipse", { key, cx, cy, rx, ry, fill: HALO, opacity: 0.18,
-        filter: "blur(0.6px)" as unknown as string });
-
-    /* =========================================================
-     * A — MONOCOT (single cotyledon) WEDGE CROSS-SECTION
-     * Centred near (25, 32). Roughly triangular with rounded base.
-     * ========================================================= */
-    // Outer seed coat outline (rounded wedge: narrow top → wide rounded bottom)
-    const aOuter = "M 20 8 Q 36 8 38 12 Q 41 30 42 50 Q 36 58 24 58 Q 12 58 8 50 Q 9 30 12 12 Q 14 8 20 8 Z";
-    // Inner surrounding layer (thin cream band)
-    const aPeri  = "M 21 11 Q 35 11 36.4 14 Q 39 30 39.6 49 Q 35 55.4 24 55.4 Q 13 55.4 10.4 49 Q 11 30 13.6 14 Q 15 11 21 11 Z";
-    // Endosperm fill (sits inside the surrounding layer)
-    const aEndo  = "M 22 13 Q 34 13 35.2 15.4 Q 37.6 30 38.2 48 Q 34 53.6 24 53.6 Q 14 53.6 11.8 48 Q 12.4 30 14.8 15.4 Q 16 13 22 13 Z";
-    // Purple endosperm tint (food storage cloud, centre-left)
-    const aTint = h("ellipse", { cx: 22, cy: 33, rx: 11, ry: 13,
-      fill: ENDO_TINT, opacity: 0.55, filter: "blur(0.4px)" as unknown as string });
-    // Embryo (single cotyledon) — curved green leaf along the right inner wall
-    const aEmbryo = "M 33 13 Q 38 26 36 42 Q 34 54 30 53 Q 26 42 28 28 Q 30 16 33 13 Z";
-    // Leaf midrib (central vein)
-    const aMidrib = "M 32.5 15 Q 31 30 30.5 51";
-    // Pinnate side veins (alternating left/right of midrib)
-    const aVeins = [
-      "M 32 19 Q 34 20 35.2 20.6",
-      "M 31.6 24 Q 34 25 35.5 25.6",
-      "M 31.2 29 Q 33.7 30 35.4 30.6",
-      "M 30.9 34 Q 33.4 35 34.9 35.6",
-      "M 30.7 39 Q 33 40 34.2 40.6",
-      "M 30.6 44 Q 32.5 45 33.4 45.6",
-      "M 32 19 Q 30 20 28.6 20.6",
-      "M 31.6 24 Q 29.4 25 27.6 25.6",
-      "M 31.2 29 Q 28.7 30 27 30.6",
-      "M 30.9 34 Q 28.4 35 26.9 35.6",
-      "M 30.7 39 Q 28.5 40 27.2 40.6",
-    ];
-    // Radicle tip — small dark green tail at the bottom of the embryo
-    const aRadicle = "M 29 52 Q 27 56 26 57 Q 25.5 54 26.5 51 Z";
-
-    /* =========================================================
-     * B — DICOT (two cotyledons) OVAL CROSS-SECTION
-     * Centred at (75, 36). Outer coat + two halves + embryo in the middle.
-     * ========================================================= */
-    const bCx = 75, bCy = 36, bRx = 18, bRy = 20;
-    const bCoat  = h("ellipse", { cx: bCx, cy: bCy, rx: bRx, ry: bRy,
-      fill: COAT, stroke: COAT_DK, strokeWidth: 0.55 });
-    const bRing  = h("ellipse", { cx: bCx, cy: bCy, rx: bRx - 1.4, ry: bRy - 1.4,
-      fill: "none", stroke: "hsl(20 60% 78%)", strokeWidth: 0.45 });
-    const bInner = h("ellipse", { cx: bCx, cy: bCy, rx: bRx - 2.6, ry: bRy - 2.6,
-      fill: ENDO_FILL, stroke: COAT_DK, strokeWidth: 0.25 });
-    const bTint  = h("ellipse", { cx: bCx, cy: bCy + 1, rx: 9, ry: 8,
-      fill: ENDO_TINT, opacity: 0.55, filter: "blur(0.4px)" as unknown as string });
-    // Subtle median split between the two cotyledons (vertical line)
-    const bSplit = h("line", { x1: bCx, y1: bCy - (bRy - 2.6), x2: bCx, y2: bCy + (bRy - 2.6),
-      stroke: COAT_DK, strokeWidth: 0.35, opacity: 0.55 });
-    // Embryo at centre: two tiny leaflets (plumule) + downward radicle tip
-    const bLeafL = h("path", {
-      d: `M ${bCx} ${bCy - 1} Q ${bCx - 5.4} ${bCy - 5} ${bCx - 2.4} ${bCy - 8} Q ${bCx - 0.6} ${bCy - 4.5} ${bCx} ${bCy - 1} Z`,
-      fill: LEAF, stroke: LEAF_DK, strokeWidth: 0.35 });
-    const bLeafR = h("path", {
-      d: `M ${bCx} ${bCy - 1} Q ${bCx + 5.4} ${bCy - 5} ${bCx + 2.4} ${bCy - 8} Q ${bCx + 0.6} ${bCy - 4.5} ${bCx} ${bCy - 1} Z`,
-      fill: LEAF, stroke: LEAF_DK, strokeWidth: 0.35 });
-    const bRadicle = h("path", {
-      d: `M ${bCx - 1.6} ${bCy + 0.5} Q ${bCx} ${bCy + 7} ${bCx + 1.6} ${bCy + 0.5} Z`,
-      fill: LEAF, stroke: LEAF_DK, strokeWidth: 0.35 });
-    const bMid = h("line", { x1: bCx, y1: bCy - 7.5, x2: bCx, y2: bCy + 6,
-      stroke: LEAF_VEIN, strokeWidth: 0.3 });
+    const bracket = (x: number, y1: number, y2: number, key: string) =>
+      h("path", {
+        key,
+        d: "M " + (x-1.5) + " " + y1 + " L " + x + " " + y1 + " L " + x + " " + y2 + " L " + (x-1.5) + " " + y2,
+        fill: "none",
+        stroke: OUT,
+        strokeWidth: 0.45,
+        strokeLinecap: "round",
+      });
 
     return h(Fragment, null,
-      /* ===== A — Monocot ===== */
-      halo(25, 33, 24, 30, "haloA"),
-      h("path", { d: aOuter, fill: COAT,      stroke: COAT_DK, strokeWidth: 0.7 }),
-      h("path", { d: aPeri,  fill: PERI,      stroke: COAT_DK, strokeWidth: 0.3 }),
-      h("path", { d: aEndo,  fill: ENDO_FILL, stroke: COAT_DK, strokeWidth: 0.25 }),
-      aTint,
-      h("path", { d: aEmbryo, fill: LEAF, stroke: LEAF_DK, strokeWidth: 0.45 }),
-      h("path", { d: aRadicle, fill: LEAF_DK, stroke: LEAF_DK, strokeWidth: 0.3 }),
-      h("path", { d: aMidrib, fill: "none", stroke: LEAF_VEIN, strokeWidth: 0.35 }),
-      ...aVeins.map((d, i) => h("path", { key: `av${i}`, d, fill: "none",
-        stroke: LEAF_VEIN, strokeWidth: 0.25, opacity: 0.85 })),
-      h("text", { x: 25, y: 68, textAnchor: "middle", fontSize: 3.6,
-        fill: "hsl(var(--foreground))", fontStyle: "italic" }, "(أ)"),
+      /* =========================================================
+       * (A) MONOCOTYLEDON
+       * Open grain at left + the isolated embryo at its right.
+       * ========================================================= */
+      // Outer rounded wedge and its surrounding layer.
+      h("path", {
+        d: "M8 20 C12 17 19 17 23 20 C26 29 26 42 22 52 C19 57 12 57 8 52 C5 43 5 29 8 20 Z",
+        fill: GOLD, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M9.5 22 C13 19.5 18.7 19.3 21.8 21.8 C24 30.5 24.2 41 20.7 50.5 C18 54.5 12.7 54.5 9.6 50.5 C7.1 42 7.2 30 9.5 22 Z",
+        fill: CREAM, stroke: "hsl(35 45% 43%)", strokeWidth: 0.35,
+      }),
+      // Pale endosperm occupying most of the grain.
+      h("path", {
+        d: "M10.7 23.2 C14 21 18 21 20.7 23 C22.6 31.3 22.8 40.8 19.8 49 C17.8 52.2 13.4 52.4 10.8 49 C8.8 41 8.9 31 10.7 23.2 Z",
+        fill: CREAM_LIGHT, stroke: "hsl(36 39% 55%)", strokeWidth: 0.28,
+      }),
+      h("path", {
+        d: "M10.8 25 C12.2 23.4 14 22.8 15.7 22.8 C12.9 30.8 12.8 43.3 15.4 51.7 C12.5 51.8 10.6 49.6 9.8 46.8 C8.9 39.4 9.2 31.3 10.8 25 Z",
+        fill: "hsl(46 56% 71%)", opacity: 0.55,
+      }),
 
-      /* ===== B — Dicot ===== */
-      halo(75, 36, 22, 24, "haloB"),
-      bCoat, bRing, bInner, bTint, bSplit,
-      bLeafL, bLeafR, bRadicle, bMid,
-      h("text", { x: 75, y: 68, textAnchor: "middle", fontSize: 3.6,
-        fill: "hsl(var(--foreground))", fontStyle: "italic" }, "(ب)"),
+      // Single green embryonic leaf pressed against the inner side.
+      h("path", {
+        d: "M18.2 28 C21.1 31.5 22.4 38.6 20.8 47.7 C19.8 50.7 17.7 51.5 16.2 48.3 C16.3 41.2 16.5 34 18.2 28 Z",
+        fill: GREEN, stroke: GREEN_DARK, strokeWidth: 0.45, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M19 29.7 C18.4 35.7 18.5 42.1 18.1 48.7",
+        fill: "none", stroke: GREEN_DARK, strokeWidth: 0.38, strokeLinecap: "round",
+      }),
+      ...[
+        "M18.8 33 L16.9 35.5", "M18.7 35.5 L20.8 37.4",
+        "M18.5 38 L16.6 40.2", "M18.4 40.6 L20.5 42.4",
+        "M18.3 43.2 L16.7 45", "M18.2 45.5 L19.8 46.8",
+      ].map((d, i) => h("path", {
+        key: "mono-vein-" + i, d, fill: "none", stroke: GREEN_DARK,
+        strokeWidth: 0.25, strokeLinecap: "round",
+      })),
+      // Radicle at the lower end of the monocot embryo.
+      h("path", {
+        d: "M17 48 C17.2 52 19.2 53.2 20.8 50.2 C20.8 53.4 19.1 55.2 17.6 54.3 C16.4 53.1 16.1 50.4 17 48 Z",
+        fill: "hsl(78 49% 40%)", stroke: GREEN_DARK, strokeWidth: 0.35,
+      }),
+
+      // Isolated monocot embryo shown as the dark second structure.
+      h("path", {
+        d: "M31 19 C34 16.8 39.9 16.5 42.4 20.1 C44.1 29.6 44.3 43 42.3 52.2 C39.5 55.2 34.1 54.1 31.7 50.3 C29.3 41.3 29.1 28 31 19 Z",
+        fill: BLUE, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M31.8 21 C34.4 19.1 37.6 18.8 39.8 20 C36.3 28 36.4 42.4 39.2 51.8 C36.7 53.4 33.6 51.8 32.4 48.9 C30.5 40.1 30.5 29.2 31.8 21 Z",
+        fill: "hsl(205 31% 41%)", opacity: 0.85,
+      }),
+      h("path", {
+        d: "M38.4 28 C42.4 31.9 42.8 41.3 40.3 49.6 C37.7 46.2 36.4 39.7 38.4 28 Z",
+        fill: BLUE_LIGHT, stroke: "hsl(180 34% 27%)", strokeWidth: 0.35,
+      }),
+      h("path", {
+        d: "M36.2 43 C38 39.2 40.4 38 42.5 38.6 C42.4 44 41.7 49.1 40.5 51.6 C38.5 50.1 37.1 47.1 36.2 43 Z",
+        fill: "hsl(170 43% 35%)", opacity: 0.8,
+      }),
+      bracket(45.5, 20, 53.5, "mono-embryo-bracket"),
+      h("text", {
+        x: 25, y: 64.5, textAnchor: "middle", fontSize: 3.4,
+        fill: "hsl(var(--foreground))", fontWeight: 700,
+      }, "(أ) ذوات الفلقة الواحدة"),
+
+      /* =========================================================
+       * (B) DICOTYLEDON
+       * Open seed at left + the separated two-cotyledon embryo.
+       * ========================================================= */
+      // Thick brown seed coat around the opened seed.
+      h("path", {
+        d: "M61.7 14.5 C68.7 13.5 74 21.6 74.9 34.5 C76 48.5 72.5 59 67 61 C60.8 62 55.8 53.4 55 40 C54.2 27.8 56.6 17.1 61.7 14.5 Z",
+        fill: BROWN, stroke: OUT, strokeWidth: 0.75,
+      }),
+      h("path", {
+        d: "M62 17 C67.7 16.2 71.9 23 72.7 34.8 C73.5 46.5 70.9 56 66.8 58.3 C61.8 58.5 58.2 51.1 57.5 39.4 C56.9 29 58.6 19.5 62 17 Z",
+        fill: CREAM_LIGHT, stroke: "hsl(29 36% 48%)", strokeWidth: 0.35,
+      }),
+      h("path", {
+        d: "M59.2 22 C61.3 18.8 64 17.2 66.5 17.7 C62.7 26.6 62.1 45.7 66.5 58.1 C62.6 58.2 59.3 51 58.7 40 C58.2 32.9 58.4 26.3 59.2 22 Z",
+        fill: "hsl(45 57% 75%)", opacity: 0.6,
+      }),
+
+      // Plumule, embryonic axis, and radicle within the opened dicot seed.
+      h("path", {
+        d: "M65.4 28.7 C62.3 27.4 61.6 24.8 62.4 23 C65.2 23.7 66.7 25.6 66.2 28.5 Z",
+        fill: GREEN, stroke: GREEN_DARK, strokeWidth: 0.32,
+      }),
+      h("path", {
+        d: "M66 29 C69.2 26.3 71 26.8 71.8 28.2 C70.3 31.5 68.2 32.1 66.1 31.2 Z",
+        fill: "hsl(94 46% 53%)", stroke: GREEN_DARK, strokeWidth: 0.32,
+      }),
+      h("path", {
+        d: "M66 29.8 C65 33.2 64.5 38.3 65 43.3",
+        fill: "none", stroke: GREEN_DARK, strokeWidth: 0.65, strokeLinecap: "round",
+      }),
+      h("path", {
+        d: "M64.3 42.2 C65.3 46.6 67 48.2 68.3 46 C68 49.8 66.6 51.9 65 50.2 C63.9 48.3 63.6 45 64.3 42.2 Z",
+        fill: GREEN, stroke: GREEN_DARK, strokeWidth: 0.35,
+      }),
+
+      // Separated dicot embryo: the two large embryonic leaves from the reference.
+      h("path", {
+        d: "M84 17.5 C87.4 14.8 91.9 15.3 94 19.1 C93.5 28 93 42.5 92.2 53.8 C89.9 59.6 85.4 59.3 82.2 54 C79.8 43.7 80.2 27.7 84 17.5 Z",
+        fill: CREAM, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      // Left cotyledon and the narrow reddish seam between the pair.
+      h("path", {
+        d: "M84 18 C86.4 16.3 88.2 16.2 89.5 17.2 C86.6 27.6 86.4 44.8 89.1 57.1 C86.3 58.2 83.5 55.2 82.2 51.5 C80.4 41.1 80.8 27.1 84 18 Z",
+        fill: "hsl(28 38% 72%)", stroke: BROWN, strokeWidth: 0.4,
+      }),
+      h("path", {
+        d: "M88.7 17.1 C87.2 28 87.1 46.5 89.3 57",
+        fill: "none", stroke: BROWN, strokeWidth: 1.05, strokeLinecap: "round",
+      }),
+      // Green lower shading and pale upper fold visible on the right cotyledon.
+      h("path", {
+        d: "M89 37.2 C91 34.8 92.6 34.2 93.1 34.5 C93 42.1 92.7 49.4 92.1 53.6 C90.8 56.4 89.6 57.3 88.8 57 C87.7 50.1 87.8 43.4 89 37.2 Z",
+        fill: "hsl(125 23% 48%)", opacity: 0.75,
+      }),
+      h("path", {
+        d: "M88.8 18 C91.1 16.4 92.8 17.1 93.6 19.7 C93.3 24.8 93.1 30.2 93 34.7 C91.1 35.1 89.8 33.7 89.2 31.5 C90.2 25.3 90 21.2 88.8 18 Z",
+        fill: "hsl(45 31% 83%)", opacity: 0.95,
+      }),
+      bracket(96, 18, 58, "dicot-embryo-bracket"),
+      h("text", {
+        x: 75, y: 64.5, textAnchor: "middle", fontSize: 3.4,
+        fill: "hsl(var(--foreground))", fontWeight: 700,
+      }, "(ب) ذوات الفلقتين"),
     );
   })(),
 };
+
 
 /* Spermatogenesis (ch3) */
 const spermatogenesis: DiagramDef = {
