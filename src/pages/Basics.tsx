@@ -1581,6 +1581,25 @@ const Basics = ({
 
             <motion.button
               type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("app:open-weakness-check-in"))}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-rose-400/35 bg-gradient-to-br from-rose-500/20 via-card to-violet-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 sm:p-6"
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-300">
+                <Target className="h-6 w-6" />
+              </span>
+              <span className="mt-5 block text-xl font-black">{isRTL ? "نقاط ضعفي" : "My weak areas"}</span>
+              <span className="mt-1 block pe-12 text-sm text-muted-foreground">
+                {isRTL ? "حدد المواد والفصول اللي تحتاج تقويها" : "Identify the subjects and chapters you need to strengthen"}
+              </span>
+              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-rose-600 text-white transition-transform group-hover:scale-110">
+                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              </span>
+            </motion.button>
+
+            <motion.button
+              type="button"
               onClick={() => setShowAllTools(true)}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
