@@ -1137,10 +1137,112 @@ const spermAnatomy: DiagramDef = {
 };
 
 
-/* Male reproductive system (ch3) */
+/* Male reproductive system in insects (ch3) */
+const insectMaleRepro: DiagramDef = {
+  id: "ch3-insect-male-repro",
+  title: { en: "Male Reproductive System in Insects", ar: "الجهاز التناسلي الذكري في الحشرات" },
+  aspect: "4/3",
+  parts: [
+    // The six labels and their anchors follow the supplied ministerial reference.
+    { id: "testis",    label: { en: "Testis",            ar: "خصية" },          ax: 32, ay: 12, lx: 1,  ly: 5,  lw: 23 },
+    { id: "vas",       label: { en: "Vas deferens",      ar: "وعاء ناقل" },     ax: 28, ay: 28, lx: 1,  ly: 27, lw: 23 },
+    { id: "seminal",   label: { en: "Seminal vesicle",   ar: "حويصلة منوية" }, ax: 31, ay: 42, lx: 1,  ly: 50, lw: 23 },
+    { id: "accessory", label: { en: "Accessory gland",   ar: "غدة مساعدة" },    ax: 57, ay: 31, lx: 76, ly: 20, lw: 22 },
+    { id: "ejac",      label: { en: "Ejaculatory duct", ar: "القناة القاذفة" }, ax: 50, ay: 55, lx: 76, ly: 51, lw: 22 },
+    { id: "penis",     label: { en: "Penis",            ar: "قضيب" },          ax: 50, ay: 68, lx: 1,  ly: 80, lw: 23 },
+  ],
+  art: (() => {
+    const OUT = "hsl(15 30% 18%)";
+    const ORGAN = "hsl(22 76% 75%)";
+    const ORGAN_LIGHT = "hsl(28 86% 86%)";
+    const ORGAN_DARK = "hsl(13 45% 38%)";
+    const TUBE = "hsl(17 34% 27%)";
+
+    const testis = (cx: number, mirror: boolean, key: string) => {
+      const sign = mirror ? -1 : 1;
+      return h("g", { key },
+        // Fan-shaped testis, matching the shell-like outline in the reference.
+        h("path", {
+          d: `M ${cx-8} 13 Q ${cx-7} 5 ${cx} 4 Q ${cx+7} 5 ${cx+8} 13 Q ${cx+5} 18 ${cx} 19 Q ${cx-5} 18 ${cx-8} 13 Z`,
+          fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+        }),
+        // The visible lobes of the testis radiate from its upper centre.
+        ...[-6,-4,-2,0,2,4,6].map((offset, index) => h("path", {
+          key: `${key}-rib-${index}`,
+          d: `M ${cx + offset * 0.35} 5.2 Q ${cx + offset * 0.75} 11 ${cx + offset} 16.2`,
+          fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.48, strokeLinecap: "round",
+        })),
+        h("path", {
+          d: `M ${cx-6.5} 13.2 Q ${cx} 17.7 ${cx+6.5} 13.2`,
+          fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.35, opacity: 0.7,
+        }),
+        // Short outlet leaving the lower edge of the testis.
+        h("path", {
+          d: `M ${cx + 6 * sign} 15 C ${cx + 8 * sign} 18 ${cx + 6 * sign} 20 ${cx + 5 * sign} 21`,
+          fill: "none", stroke: TUBE, strokeWidth: 0.9, strokeLinecap: "round",
+        }),
+      );
+    };
+
+    return h(Fragment, null,
+      // Paired testes.
+      testis(32, false, "testis-left"),
+      testis(68, true, "testis-right"),
+
+      // Paired coiled vasa deferentia descending from the testes.
+      h("path", {
+        d: "M38 18 C36 21 39 23 35 25 C31 27 36 29 32 31 C29 32 29 33 29 35",
+        fill: "none", stroke: TUBE, strokeWidth: 0.9, strokeLinecap: "round",
+      }),
+      h("path", {
+        d: "M62 18 C64 21 61 23 65 25 C69 27 64 29 68 31 C71 32 71 33 71 35",
+        fill: "none", stroke: TUBE, strokeWidth: 0.9, strokeLinecap: "round",
+      }),
+
+      // Paired seminal vesicles: broad lateral sacs tapering into the common junction.
+      h("path", {
+        d: "M29 33 C23 35 23 42 27 47 C30 51 36 52 43 51 C39 47 37 41 35 36 C34 33 32 32 29 33 Z",
+        fill: ORGAN, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M71 33 C77 35 77 42 73 47 C70 51 64 52 57 51 C61 47 63 41 65 36 C66 33 68 32 71 33 Z",
+        fill: ORGAN, stroke: OUT, strokeWidth: 0.7, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M27 38 Q30 43 34 47", fill: "none", stroke: ORGAN_LIGHT, strokeWidth: 0.55, opacity: 0.8 }),
+      h("path", { d: "M73 38 Q70 43 66 47", fill: "none", stroke: ORGAN_LIGHT, strokeWidth: 0.55, opacity: 0.8 }),
+
+      // Two long accessory glands lie medially, as in the supplied drawing.
+      h("path", {
+        d: "M43 20 C40 22 40 28 41 34 C42 40 43 46 47 50 C49 51 50 49 49 47 C46 41 46 34 47 27 C48 22 46 19 43 20 Z",
+        fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.65, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M57 20 C60 22 60 28 59 34 C58 40 57 46 53 50 C51 51 50 49 51 47 C54 41 54 34 53 27 C52 22 54 19 57 20 Z",
+        fill: ORGAN_LIGHT, stroke: OUT, strokeWidth: 0.65, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M44 23 Q43 34 47 45", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.3, opacity: 0.55 }),
+      h("path", { d: "M56 23 Q57 34 53 45", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.3, opacity: 0.55 }),
+
+      // All paired ducts meet at one central junction.
+      h("path", { d: "M39 49 Q45 49 50 52 Q55 49 61 49", fill: "none", stroke: TUBE, strokeWidth: 1, strokeLinecap: "round" }),
+      h("path", { d: "M47 49 Q49 50 50 52 Q51 50 53 49", fill: "none", stroke: TUBE, strokeWidth: 0.8, strokeLinecap: "round" }),
+
+      // Single ejaculatory duct, followed by the thicker terminal penis.
+      h("path", {
+        d: "M48.7 51 L48.7 64 Q48.7 66 47.8 67 L47.8 71 Q50 73 52.2 71 L52.2 67 Q51.3 66 51.3 64 L51.3 51 Z",
+        fill: ORGAN, stroke: OUT, strokeWidth: 0.75, strokeLinejoin: "round",
+      }),
+      h("path", { d: "M50 52 L50 71", fill: "none", stroke: ORGAN_DARK, strokeWidth: 0.45, strokeLinecap: "round" }),
+      h("path", { d: "M48.3 65 L51.7 65", fill: "none", stroke: OUT, strokeWidth: 0.35, opacity: 0.7 }),
+    );
+  })(),
+};
+
+
+/* Human male reproductive system (ch3) */
 const maleRepro: DiagramDef = {
   id: "ch3-male-repro",
-  title: { en: "Male Reproductive System", ar: "الجهاز التناسلي الذكري" },
+  title: { en: "Human Male Reproductive System", ar: "الجهاز التناسلي الذكري في الإنسان" },
   aspect: "4/3",
   parts: [
     // Left-side labels — anchor on the actual structure
@@ -1244,5 +1346,5 @@ const maleRepro: DiagramDef = {
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
   1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
   2: [neuronTypes],
-  3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, maleRepro],
+  3: [fruit, binaryFission, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, maleRepro],
 };
