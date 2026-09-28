@@ -983,20 +983,23 @@ const parameciumConjugation: DiagramDef = {
     const EXCHANGE = "hsl(5 60% 43%)";
     const ARROW = "hsl(15 58% 52%)";
 
-    /** Pear-shaped Paramecium body, kept deliberately close to the textbook silhouette. */
+    /**
+     * Pear-shaped Paramecium body, kept deliberately close to the textbook
+     * silhouette. The narrow profile leaves a clear gap between process stages.
+     */
     const body = (cx: number, cy: number, key: string, mirror = false) => h("g", {
       key,
       transform: mirror ? `translate(${2 * cx} 0) scale(-1 1)` : undefined,
     },
       h("path", {
-        d: `M${cx - 3.2} ${cy - 12.5} C${cx - 6.2} ${cy - 10.7} ${cx - 6.8} ${cy - 4.8} ${cx - 6.2} ${cy + 1.5} C${cx - 5.6} ${cy + 7.5} ${cx - 2.2} ${cy + 12.1} ${cx} ${cy + 13.4} C${cx + 2.3} ${cy + 12.1} ${cx + 5.8} ${cy + 7.4} ${cx + 6.3} ${cy + 1.4} C${cx + 6.9} ${cy - 5.1} ${cx + 6.1} ${cy - 10.8} ${cx + 3.1} ${cy - 12.5} C${cx + 1.5} ${cy - 13.5} ${cx - 1.6} ${cy - 13.5} ${cx - 3.2} ${cy - 12.5} Z`,
+        d: `M${cx - 2.3} ${cy - 12.5} C${cx - 4.2} ${cy - 10.7} ${cx - 4.7} ${cy - 4.8} ${cx - 4.3} ${cy + 1.5} C${cx - 3.9} ${cy + 7.5} ${cx - 1.6} ${cy + 12.1} ${cx} ${cy + 13.4} C${cx + 1.6} ${cy + 12.1} ${cx + 4} ${cy + 7.4} ${cx + 4.4} ${cy + 1.4} C${cx + 4.8} ${cy - 5.1} ${cx + 4.2} ${cy - 10.8} ${cx + 2.2} ${cy - 12.5} C${cx + 1.1} ${cy - 13.5} ${cx - 1.1} ${cy - 13.5} ${cx - 2.3} ${cy - 12.5} Z`,
         fill: BODY,
         stroke: EDGE,
         strokeWidth: 0.55,
         strokeLinejoin: "round",
       }),
       h("path", {
-        d: `M${cx - 2.3} ${cy - 10.8} C${cx - 4.3} ${cy - 7.2} ${cx - 4.8} ${cy - 1} ${cx - 3.7} ${cy + 4.5}`,
+        d: `M${cx - 1.7} ${cy - 10.8} C${cx - 3.1} ${cy - 7.2} ${cx - 3.4} ${cy - 1} ${cx - 2.7} ${cy + 4.5}`,
         fill: "none", stroke: BODY_LIGHT, strokeWidth: 0.55, strokeLinecap: "round", opacity: 0.72,
       }),
     );
@@ -1012,8 +1015,8 @@ const parameciumConjugation: DiagramDef = {
     });
 
     const pairedBodies = (cx: number, cy: number, key: string) => h("g", { key },
-      body(cx - 3.5, cy, `${key}-left`),
-      body(cx + 3.5, cy, `${key}-right`, true),
+      body(cx - 2.6, cy, `${key}-left`),
+      body(cx + 2.6, cy, `${key}-right`, true),
       // The narrow contact area shared by the conjugants.
       h("line", { x1: cx, y1: cy - 8.6, x2: cx, y2: cy + 7.6, stroke: EDGE, strokeWidth: 0.46, opacity: 0.85 }),
     );
