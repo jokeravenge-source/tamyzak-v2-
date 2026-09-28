@@ -963,6 +963,154 @@ const bacterialConjugation: DiagramDef = {
   })(),
 };
 
+/* Conjugation in Paramecium (ch3) */
+const parameciumConjugation: DiagramDef = {
+  id: "ch3-paramecium-conjugation",
+  title: { en: "Conjugation in Paramecium", ar: "الاقتران في البرامسيوم" },
+  aspect: "16/7",
+  parts: [
+    { id: "macro",    label: { en: "Macronucleus",          ar: "النواة الكبيرة" },            ax: 5.7,  ay: 25.5, lx: 1,  ly: 1,  lw: 17 },
+    { id: "micro",    label: { en: "Micronucleus",          ar: "النواة الصغيرة" },            ax: 12.3, ay: 24.3, lx: 20, ly: 1,  lw: 17 },
+    { id: "contact",  label: { en: "Cytoplasmic bridge",    ar: "الجسر السايتوبلازمي" },        ax: 44,   ay: 29,   lx: 35, ly: 84, lw: 20 },
+    { id: "exchange", label: { en: "Micronuclear exchange", ar: "تبادل الأنوية الصغيرة" },      ax: 78,   ay: 29,   lx: 76, ly: 1,  lw: 22 },
+  ],
+  art: (() => {
+    const BODY = "hsl(29 31% 58%)";
+    const BODY_LIGHT = "hsl(34 37% 67%)";
+    const EDGE = "hsl(26 24% 24%)";
+    const MACRO = "hsl(31 29% 28%)";
+    const MICRO = "hsl(215 18% 17%)";
+    const EXCHANGE = "hsl(5 60% 43%)";
+    const ARROW = "hsl(15 58% 52%)";
+
+    /** Pear-shaped Paramecium body, kept deliberately close to the textbook silhouette. */
+    const body = (cx: number, cy: number, key: string, mirror = false) => h("g", {
+      key,
+      transform: mirror ? `translate(${2 * cx} 0) scale(-1 1)` : undefined,
+    },
+      h("path", {
+        d: `M${cx - 3.2} ${cy - 12.5} C${cx - 6.2} ${cy - 10.7} ${cx - 6.8} ${cy - 4.8} ${cx - 6.2} ${cy + 1.5} C${cx - 5.6} ${cy + 7.5} ${cx - 2.2} ${cy + 12.1} ${cx} ${cy + 13.4} C${cx + 2.3} ${cy + 12.1} ${cx + 5.8} ${cy + 7.4} ${cx + 6.3} ${cy + 1.4} C${cx + 6.9} ${cy - 5.1} ${cx + 6.1} ${cy - 10.8} ${cx + 3.1} ${cy - 12.5} C${cx + 1.5} ${cy - 13.5} ${cx - 1.6} ${cy - 13.5} ${cx - 3.2} ${cy - 12.5} Z`,
+        fill: BODY,
+        stroke: EDGE,
+        strokeWidth: 0.55,
+        strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: `M${cx - 2.3} ${cy - 10.8} C${cx - 4.3} ${cy - 7.2} ${cx - 4.8} ${cy - 1} ${cx - 3.7} ${cy + 4.5}`,
+        fill: "none", stroke: BODY_LIGHT, strokeWidth: 0.55, strokeLinecap: "round", opacity: 0.72,
+      }),
+    );
+
+    const macro = (cx: number, cy: number, key: string) => h("path", {
+      key,
+      d: `M${cx - 2.7} ${cy} C${cx - 2.4} ${cy - 2.2} ${cx + 0.4} ${cy - 2.7} ${cx + 2.3} ${cy - 1.2} C${cx + 3} ${cy + 0.4} ${cx + 1.1} ${cy + 2.3} ${cx - 1.2} ${cy + 2} C${cx - 2.5} ${cy + 1.7} ${cx - 3} ${cy + 0.8} ${cx - 2.7} ${cy} Z`,
+      fill: MACRO, stroke: EDGE, strokeWidth: 0.32,
+    });
+
+    const micro = (cx: number, cy: number, key: string, r = 0.72) => h("circle", {
+      key, cx, cy, r, fill: MICRO,
+    });
+
+    const pairedBodies = (cx: number, cy: number, key: string) => h("g", { key },
+      body(cx - 3.5, cy, `${key}-left`),
+      body(cx + 3.5, cy, `${key}-right`, true),
+      // The narrow contact area shared by the conjugants.
+      h("line", { x1: cx, y1: cy - 8.6, x2: cx, y2: cy + 7.6, stroke: EDGE, strokeWidth: 0.46, opacity: 0.85 }),
+    );
+
+    const flowArrow = (x1: number, y1: number, x2: number, y2: number, key: string) => {
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const size = 1.25;
+      const hx1 = x2 - size * Math.cos(angle - Math.PI / 5);
+      const hy1 = y2 - size * Math.sin(angle - Math.PI / 5);
+      const hx2 = x2 - size * Math.cos(angle + Math.PI / 5);
+      const hy2 = y2 - size * Math.sin(angle + Math.PI / 5);
+      return h("g", { key },
+        h("line", { x1, y1, x2, y2, stroke: ARROW, strokeWidth: 0.55, strokeLinecap: "round" }),
+        h("path", { d: `M${x2} ${y2} L${hx1} ${hy1} L${hx2} ${hy2} Z`, fill: ARROW }),
+      );
+    };
+
+    const stageNumber = (x: number, y: number, value: string, key: string) => h("text", {
+      key, x, y, textAnchor: "middle", fontSize: 3.1, fontWeight: 700, fill: EDGE,
+    }, `(${value})`);
+
+    return h(Fragment, null,
+      /* (1) Two compatible individuals make close lateral contact. */
+      pairedBodies(9, 27, "p1"),
+      macro(5.7, 25.5, "p1-macro-left"),
+      macro(12.3, 25.5, "p1-macro-right"),
+      micro(8.1, 24.3, "p1-micro-left"),
+      micro(9.9, 24.3, "p1-micro-right"),
+      stageNumber(9, 44.5, "1", "n1"),
+      flowArrow(16, 27, 20, 27, "a1"),
+
+      /* (2) The micronuclei divide while both cells remain paired. */
+      pairedBodies(27, 27, "p2"),
+      macro(23.7, 25.5, "p2-macro-left"),
+      macro(30.3, 25.5, "p2-macro-right"),
+      micro(25.5, 23.6, "p2-micro-left-a", 0.58),
+      micro(26.8, 24.7, "p2-micro-left-b", 0.58),
+      micro(28.9, 24.7, "p2-micro-right-a", 0.58),
+      micro(30.2, 23.6, "p2-micro-right-b", 0.58),
+      stageNumber(27, 44.5, "2", "n2"),
+      flowArrow(34, 27, 37.5, 27, "a2"),
+
+      /* Preparatory division shown between stages 2 and 3 in the supplied figure. */
+      pairedBodies(44, 27, "prep"),
+      macro(40.7, 25.5, "prep-macro-left"),
+      macro(47.3, 25.5, "prep-macro-right"),
+      ...[-2.1, -0.7, 0.7, 2.1].map((dy, i) =>
+        h("path", {
+          key: `prep-left-${i}`,
+          d: `M41.9 ${24.8 + dy} q1.1 -0.8 2.1 0`,
+          fill: "none", stroke: MICRO, strokeWidth: 0.52, strokeLinecap: "round",
+        })),
+      ...[-2.1, -0.7, 0.7, 2.1].map((dy, i) =>
+        h("path", {
+          key: `prep-right-${i}`,
+          d: `M44 ${24.8 + dy} q1.1 0.8 2.1 0`,
+          fill: "none", stroke: MICRO, strokeWidth: 0.52, strokeLinecap: "round",
+        })),
+      flowArrow(51, 27, 54.5, 27, "a-prep"),
+
+      /* (3) Each conjugant forms stationary and migratory pronuclei. */
+      pairedBodies(61, 27, "p3"),
+      macro(57.7, 25.5, "p3-macro-left"),
+      macro(64.3, 25.5, "p3-macro-right"),
+      micro(59.3, 23.7, "p3-left-a", 0.62),
+      micro(60.4, 25.1, "p3-left-b", 0.62),
+      micro(61.6, 25.1, "p3-right-a", 0.62),
+      micro(62.7, 23.7, "p3-right-b", 0.62),
+      stageNumber(61, 44.5, "3", "n3"),
+      flowArrow(68, 27, 71.5, 27, "a3"),
+
+      /* (4) Migratory pronuclei pass through the cytoplasmic bridge. */
+      pairedBodies(78, 27, "p4"),
+      macro(74.7, 24.6, "p4-macro-left"),
+      macro(81.3, 24.6, "p4-macro-right"),
+      h("line", { x1: 75.8, y1: 27.2, x2: 80.2, y2: 27.2, stroke: EXCHANGE, strokeWidth: 0.7, strokeLinecap: "round" }),
+      h("path", { d: "M79.8 26.45 L81 27.2 L79.8 27.95 Z", fill: EXCHANGE }),
+      h("line", { x1: 80.2, y1: 29.4, x2: 75.8, y2: 29.4, stroke: EXCHANGE, strokeWidth: 0.7, strokeLinecap: "round" }),
+      h("path", { d: "M76.2 28.65 L75 29.4 L76.2 30.15 Z", fill: EXCHANGE }),
+      micro(75.7, 32.1, "p4-new-left", 0.68),
+      micro(80.3, 32.1, "p4-new-right", 0.68),
+      stageNumber(78, 44.5, "4", "n4"),
+
+      /* (5) The conjugants separate; each retains a reorganized nuclear set. */
+      flowArrow(75.5, 41, 69.5, 51, "a4-left"),
+      flowArrow(80.5, 41, 86.5, 51, "a4-right"),
+      body(69, 59, "p5-left"),
+      macro(68.2, 57.6, "p5-macro-left"),
+      micro(71.2, 58.8, "p5-micro-left"),
+      body(87, 59, "p5-right", true),
+      macro(87.8, 57.6, "p5-macro-right"),
+      micro(84.8, 58.8, "p5-micro-right"),
+      stageNumber(78, 72.5, "5", "n5"),
+    );
+  })(),
+};
+
 
 /* Monocotyledon and dicotyledon seed structure (ch3) */
 const seedTypes: DiagramDef = {
@@ -1657,5 +1805,5 @@ const maleRepro: DiagramDef = {
 export const CHAPTER_DIAGRAMS: Record<number, DiagramDef[]> = {
   1: [bacteria, animalCell, plantCell, plasmaMembrane, lysosomalDigestion, mitochondrion, chloroplast, chromosome],
   2: [neuronTypes],
-  3: [fruit, binaryFission, bacterialConjugation, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, insectFemaleRepro, maleRepro],
+  3: [fruit, binaryFission, bacterialConjugation, parameciumConjugation, seedTypes, spermatogenesis, spermAnatomy, insectMaleRepro, insectFemaleRepro, maleRepro],
 };
