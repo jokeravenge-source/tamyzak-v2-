@@ -1072,65 +1072,90 @@ const spermatogenesis: DiagramDef = {
 /* Human sperm anatomy (ch3) */
 const spermAnatomy: DiagramDef = {
   id: "ch3-sperm-anatomy",
-  title: { en: "Human Sperm", ar: "نطفة الإنسان" },
-  aspect: "3/4",
+  title: { en: "Mature Human Sperm", ar: "نطفة الإنسان الناضجة" },
+  aspect: "16/7",
   parts: [
-    { id: "head", label: { en: "Head",       ar: "الرأس" },        ax: 52, ay: 11, lx: 62, ly: 8,  lw: 28 },
-    { id: "neck", label: { en: "Neck",       ar: "العنق" },        ax: 47, ay: 18, lx: 62, ly: 22, lw: 28 },
-    { id: "mid",  label: { en: "Midpiece",   ar: "قطعة وسطية" },   ax: 48, ay: 22, lx: 62, ly: 36, lw: 28 },
-    { id: "tail", label: { en: "Tail",       ar: "ذيل" },          ax: 48, ay: 52, lx: 62, ly: 62, lw: 28 },
+    // Positions mirror the supplied textbook figure: head and tail labels above,
+    // with the neck and midpiece labels below their structures.
+    { id: "head", label: { en: "Head",     ar: "الرأس" },      ax: 16, ay: 29, lx: 2,  ly: 4,  lw: 18 },
+    { id: "neck", label: { en: "Neck",     ar: "عنق" },        ax: 28, ay: 34, lx: 5,  ly: 72, lw: 18 },
+    { id: "mid",  label: { en: "Midpiece", ar: "قطعة وسطية" }, ax: 38, ay: 34, lx: 29, ly: 74, lw: 20 },
+    { id: "tail", label: { en: "Tail",     ar: "ذيل" },        ax: 67, ay: 35, lx: 59, ly: 3,  lw: 18 },
   ],
   art: (() => {
-    const OUT = "hsl(220 45% 25%)";
-    const HEAD_FILL = "hsl(255 42% 60%)";
-    const HEAD_SHADE = "hsl(255 45% 45%)";
-    const CAP = "hsl(25 80% 58%)";
-    const CAP_DARK = "hsl(18 70% 40%)";
-    const TAIL = "hsl(215 40% 45%)";
-    // Sperm centered around x=45 (labels live on right).
+    const OUT = "hsl(209 32% 25%)";
+    const GOLD = "hsl(35 83% 57%)";
+    const GOLD_DARK = "hsl(24 64% 36%)";
+    const NUCLEUS = "hsl(196 62% 58%)";
+    const NUCLEUS_DARK = "hsl(211 56% 39%)";
+    const POSTERIOR = "hsl(151 55% 42%)";
+    const MIDPIECE = "hsl(8 61% 52%)";
+
     return h(Fragment, null,
-      // HEAD — spade/heart shape: wide rounded shoulders at top, narrows to point at neck
+      // Golden outer rim around the asymmetric oval head.
       h("path", {
-        d: "M38 9 Q38 5 42 5 Q45 5.5 45 7 Q45 5.5 48 5 Q52 5 52 9 Q52 14 45 17 Q38 14 38 9 Z",
-        fill: HEAD_FILL, stroke: OUT, strokeWidth: 0.5, strokeLinejoin: "round",
+        d: "M7.5 30.5 C7.8 23.7 12.6 19.5 19.2 20 C24.2 20.4 27.5 23.3 29 28.2 L29 33.6 C27.1 38.6 22.5 41.3 17.3 41.1 C11.1 40.8 7.2 36.7 7.5 30.5 Z",
+        fill: GOLD, stroke: OUT, strokeWidth: 0.75, strokeLinejoin: "round",
       }),
-      // Head inner shading (subtle depth on lower half)
+
+      // Blue nuclear region occupies most of the head, as in the reference.
       h("path", {
-        d: "M40 12 Q45 14 50 12 Q49 15 45 17 Q41 15 40 12 Z",
-        fill: HEAD_SHADE, opacity: 0.35,
+        d: "M9.4 30.6 C9.6 25.3 13.3 22 18.4 22 C21.2 22.1 23.6 23.1 25.3 25.2 L25.1 36.2 C22.9 38.2 20.1 39.2 17.2 39 C12.3 38.7 9.2 35.5 9.4 30.6 Z",
+        fill: NUCLEUS, stroke: NUCLEUS_DARK, strokeWidth: 0.4,
       }),
-      // ACROSOME CAP — orange cap hugging top of head (inverted U)
+
+      // Darker anterior crescent gives the same depth visible in the textbook art.
       h("path", {
-        d: "M38 9 Q38 5 42 5 Q45 5.5 45 7 Q45 5.5 48 5 Q52 5 52 9 Q52 10.5 51 11 Q48 9.5 45 10 Q42 9.5 39 11 Q38 10.5 38 9 Z",
-        fill: CAP, stroke: CAP_DARK, strokeWidth: 0.4, strokeLinejoin: "round",
+        d: "M9.5 30.5 C9.7 25.5 12.8 22.4 17.4 22 C14.5 25.4 13.4 31.8 16.7 38.8 C12.3 38.3 9.3 35.1 9.5 30.5 Z",
+        fill: NUCLEUS_DARK, opacity: 0.45,
       }),
-      // Tiny highlight on cap
-      h("path", { d: "M40 7 Q42 6 44 7", fill: "none", stroke: "hsl(45 90% 85%)", strokeWidth: 0.35, opacity: 0.7 }),
-      // NECK — narrow pinch between head point and midpiece
+
+      // Green posterior portion at the base of the head.
       h("path", {
-        d: "M43.5 17 L46.5 17 L46.2 19 L43.8 19 Z",
-        fill: HEAD_SHADE, stroke: OUT, strokeWidth: 0.35,
+        d: "M24.4 23.7 C27.1 25.2 28.2 27.4 28.2 30.7 C28.2 34 27 36.3 24.7 37.8 C25.4 33.3 25.2 28.3 24.4 23.7 Z",
+        fill: POSTERIOR, stroke: "hsl(151 48% 29%)", strokeWidth: 0.38,
       }),
-      // MIDPIECE — short orange striped cylinder just below neck
+
+      // Neck: the short constricted connector immediately behind the head.
       h("path", {
-        d: "M43 19 L47 19 Q47.6 19 47.6 19.5 L47.6 25.5 Q47.6 26 47 26 L43 26 Q42.4 26 42.4 25.5 L42.4 19.5 Q42.4 19 43 19 Z",
-        fill: CAP, stroke: CAP_DARK, strokeWidth: 0.4,
+        d: "M28.2 29.2 L31.1 29.6 L31.3 34.9 L28.1 34.7 Z",
+        fill: "hsl(31 45% 34%)", stroke: OUT, strokeWidth: 0.45,
       }),
-      // Mitochondrial spiral bands on midpiece
-      ...Array.from({ length: 8 }, (_, i) => h("path", {
+
+      // Midpiece: a slightly tapering red cylinder surrounded by a golden rim.
+      h("path", {
+        d: "M30.8 28.9 C35.4 28.5 40.5 29.1 46.5 31.5 L46.4 36.5 C40.2 35.2 35.1 35.1 30.9 35.4 Z",
+        fill: MIDPIECE, stroke: GOLD_DARK, strokeWidth: 0.75, strokeLinejoin: "round",
+      }),
+      h("path", {
+        d: "M31.5 30.1 C36.1 29.8 40.6 30.4 45.8 32.2 L45.8 35.3 C40.6 34.3 36 34.1 31.5 34.4 Z",
+        fill: "hsl(6 70% 58%)", stroke: "none",
+      }),
+
+      // Repeated mitochondrial coils create the ribbed appearance in the reference.
+      ...Array.from({ length: 12 }, (_, i) => h("line", {
         key: `mb${i}`,
-        d: `M42.6 ${19.6 + i * 0.8} Q45 ${19.2 + i * 0.8} 47.4 ${19.6 + i * 0.8}`,
-        fill: "none", stroke: CAP_DARK, strokeWidth: 0.28,
+        x1: 32 + i * 1.15,
+        y1: 29.8 + i * 0.09,
+        x2: 32 + i * 1.15,
+        y2: 34.6 + i * 0.12,
+        stroke: "hsl(34 85% 69%)", strokeWidth: 0.55, strokeLinecap: "round",
       })),
-      // TAIL — long slender wavy flagellum, tapers to a fine tip
+
+      // Tail: dark outline under a golden flagellum, narrowing toward the end.
       h("path", {
-        d: "M45 26 C 40 34, 50 42, 45 50 C 40 58, 50 66, 45 74",
-        fill: "none", stroke: TAIL, strokeWidth: 0.9, strokeLinecap: "round",
+        d: "M46 34 C54 35.2 56.7 41.5 65 42.1 C73.5 42.7 76.8 33.3 84.7 32.4 C90.3 31.8 92.7 36.8 96.1 35.1",
+        fill: "none", stroke: OUT, strokeWidth: 2.15, strokeLinecap: "round",
       }),
-      // Tail highlight (thinner lighter parallel to suggest volume)
       h("path", {
-        d: "M45 26 C 40 34, 50 42, 45 50 C 40 58, 50 66, 45 74",
-        fill: "none", stroke: "hsl(215 55% 70%)", strokeWidth: 0.35, strokeLinecap: "round", opacity: 0.7,
+        d: "M46 34 C54 35.2 56.7 41.5 65 42.1 C73.5 42.7 76.8 33.3 84.7 32.4 C90.3 31.8 92.7 36.8 96.1 35.1",
+        fill: "none", stroke: GOLD, strokeWidth: 1.35, strokeLinecap: "round",
+      }),
+
+      // The final tapered blue segment is distinct in the supplied figure.
+      h("path", {
+        d: "M94.2 35.8 C96.8 35.6 98.1 33.5 99.4 34",
+        fill: "none", stroke: "hsl(197 55% 38%)", strokeWidth: 1.05, strokeLinecap: "round",
       }),
     );
   })(),
