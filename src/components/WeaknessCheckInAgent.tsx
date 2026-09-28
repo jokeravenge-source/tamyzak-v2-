@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bot, CheckCircle2, Loader2, Send, Sparkles, Target, X } from "lucide-react";
+import { Bot, CheckCircle2, Loader2, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,7 +38,6 @@ const copy = {
     saved: "تم حفظ نقاط ضعفك وتخصيص البطاقات والأسئلة إلك",
     needArea: "حدد مادة وفصلاً واحداً على الأقل قبل الإنهاء",
     close: "إغلاق مؤقت",
-    reopen: "أكمل تحديد نقاط ضعفك",
     mcq: "اختيارات",
     flashcards: "بطاقات",
     error: "تعذر الرد الآن. حاول مرة ثانية.",
@@ -56,7 +55,6 @@ const copy = {
     saved: "Your weak areas now personalize both flashcards and MCQs",
     needArea: "Confirm at least one subject and chapter before finishing",
     close: "Close for now",
-    reopen: "Continue weakness check-in",
     mcq: "MCQ",
     flashcards: "Flashcards",
     error: "Could not respond right now. Please try again.",
@@ -258,6 +256,23 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [session?.messages, sending]);
 
+  // The check-in is opened from its normal home-menu card. Keeping this
+  // listener in the agent lets the modal remain mounted once at app level
+  // without adding a fixed floating trigger over every page.
+  useEffect(() => {
+    const openFromMainMenu = () => {
+      setSession((current) => current ? {
+        ...current,
+        status: "active",
+        finishedAt: null,
+        updatedAt: new Date().toISOString(),
+      } : current);
+      setOpen(true);
+    };
+    window.addEventListener("app:open-weakness-check-in", openFromMainMenu);
+    return () => window.removeEventListener("app:open-weakness-check-in", openFromMainMenu);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -382,22 +397,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
   };
 
   if (initializing || !session) return null;
-  if (!open) {
-    return session.status === "active" ? (
-      <button
-        type="button"
-        onClick={() => {
-          const next = { ...session, updatedAt: new Date().toISOString() };
-          setSession(next);
-          setOpen(true);
-          void persist(next);
-        }}
-        className="fixed bottom-32 end-5 z-[56] inline-flex min-h-12 items-center gap-2 rounded-full border border-primary/40 bg-primary px-4 text-sm font-black text-primary-foreground shadow-xl"
-      >
-        <Target className="h-4 w-4" /> {t.reopen}
-      </button>
-    ) : null;
-  }
+  if (!open) return null;
 
   const modal = (
     <div
