@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap } from "lucide-react";
+import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SUMMARY_SUBJECTS } from "./Summaries";
@@ -14,6 +14,7 @@ import AdminPointsTab from "@/components/AdminPointsTab";
 import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
+import WhoIsBest from "./WhoIsBest";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
 import { flashcardsCh8 } from "@/data/flashcardsCh8";
@@ -33,7 +34,7 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers";
+  type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
   const [tab, setTab] = useState<Tab>("pending");
   // Owner gate: only this email sees every tab. Other admins are moderators
   // and only see acceptance/review-related tabs (summaries pending, flashcards
@@ -54,7 +55,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
       setAccessReady(true);
     })();
   }, []);
-  const MOD_TABS: Tab[] = ["pending", "flashcards", "usernames", "aifiles"];
+  const MOD_TABS: Tab[] = ["pending", "flashcards", "usernames", "aifiles", "whoIsBest"];
   const canSee = (t: Tab) => isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
   useEffect(() => {
     if (accessReady && !canSee(tab)) setTab(isFlashcardOnlyAdmin ? "flashcards" : "pending");
@@ -814,6 +815,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <GraduationCap className="w-4 h-4 inline mr-1.5" />Our Teachers
             </button>
           )}
+          {canSee("whoIsBest") && (
+            <button onClick={() => setTab("whoIsBest")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "whoIsBest" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Trophy className="w-4 h-4 inline mr-1.5" />Who Is Best
+            </button>
+          )}
           {isOwner && (
             <button onClick={() => setTab("analytics")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "analytics" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               Analytics
@@ -846,7 +852,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           )}
         </div>
 
-        {tab === "teachers" ? (
+        {tab === "whoIsBest" ? (
+          <WhoIsBest language="en" isAdmin onBack={() => setTab("pending")} />
+        ) : tab === "teachers" ? (
           <AdminTeachersTab />
         ) : tab === "mistakes" ? (
           <AdminMistakesTab />
