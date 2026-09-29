@@ -1,6 +1,6 @@
-import { Box, CheckCircle2, Layers3 } from "lucide-react";
+import { Box, CheckCircle2, Layers3, PanelsTopLeft } from "lucide-react";
 
-export type TheoremDiagramId = "perpendicular-planes" | "result-7" | "theorem-8";
+export type TheoremDiagramId = "perpendicular-planes" | "result-7" | "theorem-8" | "theorem-9";
 
 type TheoremDiagramTab = {
   id: TheoremDiagramId;
@@ -32,6 +32,13 @@ const THEOREM_DIAGRAMS: readonly TheoremDiagramTab[] = [
     href: "/math/theorem-visualizer/theorem-8",
     Icon: Box,
   },
+  {
+    id: "theorem-9",
+    label: "المستوى العمودي الوحيد",
+    shortLabel: "المبرهنة 9",
+    href: "/math/theorem-visualizer/theorem-9",
+    Icon: PanelsTopLeft,
+  },
 ] as const;
 
 type TheoremDiagramTabsProps = {
@@ -48,7 +55,7 @@ const TheoremDiagramTabs = ({ activeDiagram }: TheoremDiagramTabsProps) => (
       </span>
     </div>
 
-    <nav className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="tablist" aria-label="اختر رسماً تفاعلياً">
+    <nav className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="اختر رسماً تفاعلياً">
       {THEOREM_DIAGRAMS.map(({ id, label, shortLabel, href, Icon }) => {
         const active = id === activeDiagram;
         return (
