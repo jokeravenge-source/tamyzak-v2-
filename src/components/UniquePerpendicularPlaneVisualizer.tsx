@@ -36,21 +36,6 @@ const PROOF_STEPS = [
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
 
-function rectanglePoints(
-  center: THREE.Vector3,
-  firstAxis: THREE.Vector3,
-  secondAxis: THREE.Vector3,
-  firstHalf: number,
-  secondHalf: number,
-) {
-  return [
-    center.clone().addScaledVector(firstAxis, -firstHalf).addScaledVector(secondAxis, -secondHalf),
-    center.clone().addScaledVector(firstAxis, firstHalf).addScaledVector(secondAxis, -secondHalf),
-    center.clone().addScaledVector(firstAxis, firstHalf).addScaledVector(secondAxis, secondHalf),
-    center.clone().addScaledVector(firstAxis, -firstHalf).addScaledVector(secondAxis, secondHalf),
-  ];
-}
-
 function planeGeometry(points: THREE.Vector3[]) {
   const geometry = new THREE.BufferGeometry();
   const vertices = [points[0], points[1], points[2], points[0], points[2], points[3]]
@@ -87,10 +72,17 @@ function calculateGeometry(lineDirection: number, candidateRotation: number): Ge
     .applyAxisAngle(axisAB, radians(candidateRotation))
     .normalize();
 
-  const constructedCenter = A.clone().addScaledVector(horizontal, 0.2).addScaledVector(vertical, -0.85);
-  const candidateCenter = A.clone().add(B).multiplyScalar(0.5);
-  const constructedPlane = rectanglePoints(constructedCenter, horizontal, vertical, 2.4, 1.35);
-  const candidatePlane = rectanglePoints(candidateCenter, axisAB, candidateAxis, 2.35, 2.0);
+  // Match the textbook construction: the solid Y plane descends from AB to X.
+  const footOfB = B.clone().setY(0);
+  const constructedPlane = [B.clone(), A.clone(), C.clone(), footOfB];
+
+  // The alternative Z plane shares AB and is extended until both lower corners
+  // meet X, producing the dashed quadrilateral shown in the reference diagram.
+  const intersectX = (point: THREE.Vector3) => {
+    const scale = Math.abs(candidateAxis.y) > 0.08 ? -point.y / candidateAxis.y : 2.2;
+    return point.clone().addScaledVector(candidateAxis, scale);
+  };
+  const candidatePlane = [B.clone(), A.clone(), intersectX(A), intersectX(B)];
 
   const candidateNormal = axisAB.clone().cross(candidateAxis).normalize();
   const dot = THREE.MathUtils.clamp(Math.abs(candidateNormal.dot(vertical)), 0, 1);
@@ -216,9 +208,10 @@ export default function UniquePerpendicularPlaneVisualizer() {
       new THREE.LineBasicMaterial({ color: "#dc2626", depthTest: false }),
     );
     const planeZMaterial = new THREE.MeshBasicMaterial({ color: "#f59e0b", side: THREE.DoubleSide, transparent: true, opacity: 0.16, depthWrite: false });
-    const zBorderMaterial = new THREE.LineBasicMaterial({ color: "#d97706", depthTest: false });
+    const zBorderMaterial = new THREE.LineDashedMaterial({ color: "#a16207", dashSize: 0.14, gapSize: 0.09, depthTest: false });
     const planeZ = new THREE.Mesh(planeGeometry(latestGeometry.candidatePlane), planeZMaterial);
     const zBorder = new THREE.Line(borderGeometry(latestGeometry.candidatePlane), zBorderMaterial);
+    zBorder.computeLineDistances();
     planeY.renderOrder = 2;
     planeZ.renderOrder = 3;
     yBorder.renderOrder = 6;
@@ -231,7 +224,7 @@ export default function UniquePerpendicularPlaneVisualizer() {
     );
     const acLine = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([latestGeometry.points.A, latestGeometry.points.C]),
-      new THREE.LineBasicMaterial({ color: "#16a34a", depthTest: false }),
+      new THREE.LineBasicMaterial({ color: "#dc2626", depthTest: false }),
     );
     abLine.renderOrder = 10;
     acLine.renderOrder = 10;
@@ -247,7 +240,7 @@ export default function UniquePerpendicularPlaneVisualizer() {
     const dots = new Map<PointKey, THREE.Mesh>();
     const labels = new Map<PointKey, THREE.Sprite>();
     for (const point of ["A", "B", "C"] as const) {
-      const color = point === "C" ? "#166534" : "#172554";
+      const color = "#172554";
       const dot = new THREE.Mesh(
         new THREE.SphereGeometry(0.055, 14, 10),
         new THREE.MeshBasicMaterial({ color, depthTest: false }),
@@ -296,6 +289,7 @@ export default function UniquePerpendicularPlaneVisualizer() {
       mesh.geometry = planeGeometry(points);
       border.geometry.dispose();
       border.geometry = borderGeometry(points);
+      if (border.material instanceof THREE.LineDashedMaterial) border.computeLineDistances();
     };
 
     const update: SceneUpdate = (direction, rotation) => {
@@ -326,19 +320,18 @@ export default function UniquePerpendicularPlaneVisualizer() {
       labels.get("C")!.position.copy(latestGeometry.points.C).add(new THREE.Vector3(0.2, 0.16, 0));
 
       xLabel.position.set(2.05, 0.12, -1.55);
-      yLabel.position.copy(latestGeometry.points.A)
-        .addScaledVector(latestGeometry.horizontal, -1.8)
-        .add(new THREE.Vector3(0, -0.65, 0));
-      const midpointAB = latestGeometry.points.A.clone().add(latestGeometry.points.B).multiplyScalar(0.5);
-      zLabel.position.copy(midpointAB)
-        .addScaledVector(latestGeometry.axisAB, 1.65)
-        .addScaledVector(latestGeometry.candidateAxis, 1.35);
-      sameLabel.position.copy(latestGeometry.points.A)
-        .addScaledVector(latestGeometry.horizontal, -1.6)
-        .add(new THREE.Vector3(0, -0.55, 0));
+      yLabel.position.copy(latestGeometry.constructedPlane[3]).add(new THREE.Vector3(0, 0.18, 0));
+      zLabel.position.copy(latestGeometry.candidatePlane[2])
+        .add(latestGeometry.candidatePlane[3])
+        .multiplyScalar(0.5)
+        .add(new THREE.Vector3(0, 0.18, 0));
+      sameLabel.position.copy(latestGeometry.constructedPlane[2])
+        .add(latestGeometry.constructedPlane[3])
+        .multiplyScalar(0.5)
+        .add(new THREE.Vector3(0, 0.22, 0));
 
       planeZMaterial.color.set(planesCoincide ? "#22c55e" : "#f59e0b");
-      zBorderMaterial.color.set(planesCoincide ? "#16a34a" : "#d97706");
+      zBorderMaterial.color.set(planesCoincide ? "#16a34a" : "#a16207");
       applyVisibility(latestVisibility);
     };
     updateRef.current = update;
@@ -519,9 +512,9 @@ export default function UniquePerpendicularPlaneVisualizer() {
             <span className="text-red-600">▰ المستوى المنشأ Y</span>
             <span className="text-amber-700">▰ المستوى المفترض Z</span>
             <span className="text-red-700">━ AB</span>
-            <span className="text-green-700">━ AC ⟂ X</span>
+            <span className="text-red-700">━ AC ⟂ X</span>
           </div>
-          <p className="mt-2 text-xs text-slate-500">دوّر المستوى المفترض Z حول AB. لن يكون عمودياً على X إلا عندما يحتوي AC ويتطابق مع Y.</p>
+          <p className="mt-2 text-xs text-slate-500">المستوى Y مرسوم بحدود حمراء متصلة، والمستوى المفترض Z بحدود بنية متقطعة كما في الرسم المرجعي. دوّر Z حول AB لاختبار الوحدانية.</p>
 
           <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
             <label className="block text-sm font-semibold">
@@ -541,8 +534,8 @@ export default function UniquePerpendicularPlaneVisualizer() {
               <span className="flex justify-between gap-2"><span>دوران المستوى المفترض Z حول AB</span><b dir="ltr">{candidateRotation}°</b></span>
               <input
                 type="range"
-                min={-75}
-                max={75}
+                min={-55}
+                max={55}
                 step={1}
                 value={candidateRotation}
                 onChange={(event) => {
