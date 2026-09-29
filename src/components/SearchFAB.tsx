@@ -7,7 +7,7 @@ export type SearchNavChoice =
   | "sessions" | "account" | "essay" | "videoNotes" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes"
   | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank"
   | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker"
-  | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations" | "adminNotes";
+  | "englishEssays" | "englishIsqat" | "report" | "chemicalEquations" | "adminNotes" | "whoIsBest";
 
 type Entry = {
   key: SearchNavChoice;
@@ -31,6 +31,8 @@ const ENTRIES: Entry[] = [
     keywords: ["summary", "notes", "share", "upload", "community", "ملخص", "ملاحظات", "رفع"] },
   { key: "adminNotes", en: { title: "Enrichments", desc: "Instructor-made enrichment cards" }, ar: { title: "الإثرائيات", desc: "بطاقات إثرائية من المدرّسين" },
     keywords: ["enrichment", "enrichments", "instructor", "teacher", "cards", "إثراء", "إثرائيات", "مدرس", "بطاقات"] },
+  { key: "whoIsBest", en: { title: "Who Is Best?", desc: "Vote for teachers and view the ranking" }, ar: { title: "من الأفضل؟", desc: "صوّت للمدرسين وشوف الترتيب" },
+    keywords: ["teacher", "vote", "poll", "best", "ranking", "competition", "مدرس", "تصويت", "الأفضل", "ترتيب", "منافسة"] },
   { key: "missions", en: { title: "My Missions", desc: "Chapter checklists" }, ar: { title: "مهماتي", desc: "مواضيع كل فصل" },
     keywords: ["tasks", "goals", "checklist", "chapters", "topics", "progress", "checkoff", "مهام", "أهداف", "فصول", "مواضيع", "تقدم"] },
   { key: "mcq", en: { title: "MCQ Generator", desc: "Generate MCQs from a file" }, ar: { title: "مولّد الأسئلة", desc: "أسئلة من ملف" },
