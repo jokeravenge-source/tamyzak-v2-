@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CalendarDays, Plus, Radio, Trash2, Upload, Trophy, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Plus, Radio, Trash2, Undo2, Upload, Trophy, ImagePlus, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 type Poll = { id: string; question: string; is_active: boolean; created_at: string };
@@ -208,6 +208,7 @@ const PollDetail = ({ language, isAdmin, poll, onBack }: { language: AppLanguage
   const [uploading, setUploading] = useState(false);
   const [requests, setRequests] = useState<OptionRequest[]>([]);
   const [myRequests, setMyRequests] = useState<OptionRequest[]>([]);
+  const [voteBusy, setVoteBusy] = useState(false);
   const rtl = language === "ar";
 
   const load = async () => {
@@ -346,21 +347,45 @@ const PollDetail = ({ language, isAdmin, poll, onBack }: { language: AppLanguage
   };
 
   const vote = async (optionId: string) => {
+    if (voteBusy) return;
+    setVoteBusy(true);
     let error;
-    if (userId) {
-      ({ error } = await supabase.from("poll_votes").upsert(
-        { poll_id: poll.id, option_id: optionId, user_id: userId },
-        { onConflict: "poll_id,user_id" },
-      ));
-    } else {
-      ({ error } = await supabase.from("poll_votes").upsert(
-        { poll_id: poll.id, option_id: optionId, user_id: null, guest_key: guestKey } as any,
-        { onConflict: "poll_id,guest_key" },
-      ));
+    try {
+      if (userId) {
+        ({ error } = await supabase.from("poll_votes").upsert(
+          { poll_id: poll.id, option_id: optionId, user_id: userId },
+          { onConflict: "poll_id,user_id" },
+        ));
+      } else {
+        ({ error } = await supabase.from("poll_votes").upsert(
+          { poll_id: poll.id, option_id: optionId, user_id: null, guest_key: guestKey } as any,
+          { onConflict: "poll_id,guest_key" },
+        ));
+      }
+      if (error) return toast.error(error.message);
+      setMyVote(optionId);
+      await load();
+    } finally {
+      setVoteBusy(false);
     }
-    if (error) return toast.error(error.message);
-    setMyVote(optionId);
-    load();
+  };
+
+  const removeVote = async () => {
+    if (!myVote || voteBusy) return;
+    setVoteBusy(true);
+    try {
+      let query = supabase.from("poll_votes").delete().eq("poll_id", poll.id);
+      query = userId
+        ? query.eq("user_id", userId)
+        : query.eq("guest_key", guestKey);
+      const { error } = await query;
+      if (error) return toast.error(error.message);
+      setMyVote(null);
+      toast.success(T(language, "تم إلغاء صوتك", "Your vote was removed"));
+      await load();
+    } finally {
+      setVoteBusy(false);
+    }
   };
 
   return (
@@ -477,8 +502,14 @@ const PollDetail = ({ language, isAdmin, poll, onBack }: { language: AppLanguage
                         <span>{pct}%</span>
                       </div>
                     </div>
-                    <button onClick={() => vote(o.id)} className={`w-full h-10 rounded-lg text-sm font-medium transition ${selected ? "bg-primary text-primary-foreground" : "border border-border hover:bg-secondary"}`}>
-                      {selected ? T(language, "صوتك ✓", "Your vote ✓") : T(language, "صوّت", "Vote")}
+                    <button
+                      type="button"
+                      disabled={voteBusy}
+                      onClick={() => selected ? removeVote() : vote(o.id)}
+                      className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${selected ? "border border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300" : "border border-border hover:bg-secondary"}`}
+                    >
+                      {selected && <Undo2 className="h-4 w-4" />}
+                      {selected ? T(language, "إلغاء صوتي", "Remove my vote") : T(language, "صوّت", "Vote")}
                     </button>
                   </div>
                 </div>
