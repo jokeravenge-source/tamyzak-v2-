@@ -232,6 +232,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
     titleEn: "Community",
     titleAr: "المجتمع",
     items: [
+      { key: "whoIsBest", labelEn: "Who Is Best?", labelAr: "من الأفضل؟", Icon: Trophy },
       { key: "news", labelEn: "News", labelAr: "الأخبار", Icon: Newspaper },
       { key: "advices", labelEn: "Advices", labelAr: "النصائح", Icon: Lightbulb },
     ],
@@ -327,6 +328,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   report: { card: "border-lime-400/40 bg-gradient-to-br from-lime-500/25 via-emerald-500/10 to-green-400/20", icon: "bg-lime-600 text-white shadow-lg shadow-lime-500/25" },
   todo: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/25 via-indigo-500/10 to-violet-400/20", icon: "bg-blue-600 text-white shadow-lg shadow-blue-500/25" },
   leaderboard: { card: "border-yellow-400/40 bg-gradient-to-br from-yellow-500/25 via-amber-500/10 to-orange-400/20", icon: "bg-yellow-500 text-white shadow-lg shadow-yellow-500/25" },
+  whoIsBest: { card: "border-yellow-400/40 bg-gradient-to-br from-yellow-500/25 via-orange-500/10 to-amber-300/20", icon: "bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg shadow-amber-500/25" },
   news: { card: "border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 via-blue-500/10 to-sky-400/20", icon: "bg-cyan-600 text-white shadow-lg shadow-cyan-500/25" },
   advices: { card: "border-amber-400/40 bg-gradient-to-br from-yellow-500/25 via-amber-500/10 to-orange-300/20", icon: "bg-amber-500 text-white shadow-lg shadow-amber-500/25" },
   dailyGame: { card: "border-purple-400/40 bg-gradient-to-br from-purple-500/25 via-indigo-500/10 to-blue-400/20", icon: "bg-purple-600 text-white shadow-lg shadow-purple-500/25" },
@@ -450,6 +452,7 @@ const FEATURED_COPY = {
     liveBattle: { title: "Live Battle", subtitle: "Challenge a friend in a 10-question MCQ duel." },
     subjectsHub: { title: "Subjects", subtitle: "All your subjects, chapter by chapter." },
     sessions: { title: "Study Sessions", subtitle: "Time your study and join study rooms." },
+    whoIsBest: { title: "Who Is Best?", subtitle: "Vote for your favourite teacher and see the live ranking." },
     ourTeachers: { title: "Our Teachers", subtitle: "Choose a teacher and open their selected learning tools." },
   },
   ar: {
@@ -471,6 +474,7 @@ const FEATURED_COPY = {
     liveBattle: { title: "المعركة المباشرة", subtitle: "تحد صديقك" },
     subjectsHub: { title: "المواد", subtitle: "كل موادك، فصلاً بفصل." },
     sessions: { title: "جلسات الدراسة", subtitle: "احسب وقت دراستك وادخل غرف الدراسة." },
+    whoIsBest: { title: "من الأفضل؟", subtitle: "صوّت لمدرسك المفضل وشوف الترتيب المباشر." },
     ourTeachers: { title: "مدرسونا", subtitle: "اختَر المدرّس وافتح الأدوات والمحتوى الخاص بيه." },
   },
 } as const;
