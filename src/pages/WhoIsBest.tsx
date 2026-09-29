@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Upload, Trophy, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Plus, Radio, Trash2, Upload, Trophy, ImagePlus, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 type Poll = { id: string; question: string; is_active: boolean; created_at: string };
@@ -117,25 +117,77 @@ const WhoIsBest = ({ language, onBack, isAdmin }: { language: AppLanguage; onBac
         ) : polls.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">{T(language, "لا توجد أسئلة بعد", "No questions yet")}</div>
         ) : (
-          <div className="grid gap-3">
-            {polls.map((p) => (
-              <div key={p.id} className="group relative rounded-2xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition cursor-pointer" onClick={() => setSelectedPoll(p)}>
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-                    <Trophy className="h-4 w-4 text-white" />
+          <div className="grid gap-4">
+            {polls.map((p) => {
+              const DirectionIcon = rtl ? ArrowLeft : ArrowRight;
+              return (
+                <article
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedPoll(p)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedPoll(p);
+                    }
+                  }}
+                  className="group relative isolate cursor-pointer overflow-hidden rounded-3xl border border-amber-300/45 bg-gradient-to-br from-card via-card to-amber-500/[0.09] p-5 shadow-[0_12px_38px_-28px_rgba(245,158,11,0.9)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-[0_20px_45px_-26px_rgba(245,158,11,0.85)] focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 sm:p-6"
+                >
+                  <div aria-hidden="true" className="pointer-events-none absolute -end-12 -top-16 z-0 h-40 w-40 rounded-full bg-amber-300/15 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+                  <div aria-hidden="true" className="pointer-events-none absolute bottom-0 start-0 z-0 h-1 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 opacity-80" />
+
+                  <div className="relative z-10 flex items-start gap-4">
+                    <div className="relative flex-shrink-0">
+                      <div className="absolute inset-0 rounded-2xl bg-amber-400/35 blur-md" />
+                      <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20">
+                        <Trophy className="h-6 w-6" strokeWidth={2.2} />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${p.is_active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground"}`}>
+                          <Radio className={`h-3 w-3 ${p.is_active ? "animate-pulse" : ""}`} />
+                          {p.is_active ? T(language, "تصويت مفتوح", "Open voting") : T(language, "انتهى التصويت", "Voting closed")}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-extrabold leading-relaxed text-foreground sm:text-xl">
+                        {p.question}
+                      </h3>
+                    </div>
+
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        aria-label={T(language, "حذف التصويت", "Delete poll")}
+                        onClick={(event) => { event.stopPropagation(); deletePoll(p.id); }}
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-destructive/20 bg-background/80 text-destructive opacity-100 shadow-sm transition hover:bg-destructive hover:text-destructive-foreground sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base leading-snug">{p.question}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(p.created_at).toLocaleDateString(language === "ar" ? "ar" : "en")}</p>
+
+                  <div className="relative z-10 mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+                    <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <CalendarDays className="h-4 w-4 text-amber-500" />
+                      {new Date(p.created_at).toLocaleDateString(language === "ar" ? "ar-IQ" : "en", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="inline-flex items-center gap-2 text-sm font-bold text-amber-700 transition-colors group-hover:text-orange-600 dark:text-amber-300">
+                      {T(language, "صوّت وشوف النتائج", "Vote & view results")}
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/15 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:bg-amber-500/25 rtl:group-hover:-translate-x-0.5">
+                        <DirectionIcon className="h-4 w-4" />
+                      </span>
+                    </span>
                   </div>
-                  {isAdmin && (
-                    <button onClick={(e) => { e.stopPropagation(); deletePoll(p.id); }} className="h-8 w-8 rounded-lg border border-border hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
