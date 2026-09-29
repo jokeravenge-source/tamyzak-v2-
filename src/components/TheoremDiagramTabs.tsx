@@ -14,7 +14,7 @@ const THEOREM_DIAGRAMS: readonly TheoremDiagramTab[] = [
   {
     id: "perpendicular-planes",
     label: "تعامد المستويين",
-    shortLabel: "7theorm",
+    shortLabel: "Theorem 7",
     href: "/math/theorem-visualizer",
     Icon: Layers3,
   },
