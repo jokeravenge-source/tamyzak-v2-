@@ -71,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
     showInBar: false,
     items: [
       { key: "teachers", labelEn: "Our Teachers", labelAr: "مدرسينا", Icon: Users2 },
+      { key: "whoIsBest", labelEn: "Who Is Best?", labelAr: "من الأفضل؟", Icon: Trophy },
       { key: "news", labelEn: "News", labelAr: "الأخبار", Icon: Newspaper },
       { key: "advices", labelEn: "Advices", labelAr: "النصائح", Icon: Lightbulb },
       { key: "liveBattle", labelEn: "Live Battle", labelAr: "المعركة المباشرة", Icon: Swords },
@@ -116,6 +117,7 @@ const MENU_ITEM_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   youtube: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
   companion: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
   teachers: { card: "border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15", icon: "bg-blue-500/15 text-blue-600 dark:text-blue-300" },
+  whoIsBest: { card: "border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15", icon: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
   news: { card: "border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15", icon: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
   advices: { card: "border-yellow-500/25 bg-yellow-500/10 hover:bg-yellow-500/15", icon: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
   liveBattle: { card: "border-red-500/25 bg-red-500/10 hover:bg-red-500/15", icon: "bg-red-500/15 text-red-600 dark:text-red-300" },
