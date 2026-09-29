@@ -5,7 +5,7 @@ import TheoremDiagramTabs from "@/components/TheoremDiagramTabs";
 
 const TheoremVisualizerPage = () => {
   useEffect(() => {
-    document.title = "مبرهنة تعامد المستويين ثلاثية الأبعاد | تميزك";
+    document.title = "المبرهنة 7: تعامد المستويين ثلاثية الأبعاد | تميزك";
   }, []);
 
   return (
@@ -14,7 +14,7 @@ const TheoremVisualizerPage = () => {
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-[#183A72]">تميزك • الرياضيات</p>
-            <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">المجسم التفاعلي للمبرهنة</h1>
+            <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">المجسم التفاعلي للمبرهنة 7</h1>
           </div>
           <nav className="flex flex-wrap items-center gap-2" aria-label="التنقل الرئيسي">
             <a href="/" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
