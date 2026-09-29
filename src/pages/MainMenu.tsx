@@ -1,4 +1,4 @@
-import { Layers, GraduationCap, BookMarked, FileText, HelpCircle, Headphones, ArrowRight, Sparkles, Lock, Compass, LineChart, Search, Youtube, StickyNote } from "lucide-react";
+import { Layers, GraduationCap, BookMarked, FileText, HelpCircle, Headphones, ArrowRight, Sparkles, Lock, Compass, LineChart, Search, Youtube, StickyNote, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { type AppLanguage } from "@/components/LanguageGate";
 import { useEffect, useState } from "react";
@@ -30,6 +30,7 @@ const copy = {
       report: { title: "Daily Report", subtitle: "AI insights on today's study + share progress with a parent." },
       youtube: { title: "YouTube Player", subtitle: "Watch any YouTube video inside the app without distractions." },
       adminNotes: { title: "Enrichments", subtitle: "Colorful enrichment cards crafted by your instructors." },
+      whoIsBest: { title: "Who Is Best?", subtitle: "Vote for your favourite teacher and view the live ranking." },
     },
   },
   ar: {
@@ -54,6 +55,7 @@ const copy = {
       report: { title: "تقريري اليومي", subtitle: "تحليل ذكي ليومك الدراسي ومشاركة تقدمك مع ولي الأمر." },
       youtube: { title: "مشغّل يوتيوب", subtitle: "شاهد أي فيديو يوتيوب داخل التطبيق بدون تشتيت." },
       adminNotes: { title: "الإثرائيات", subtitle: "بطاقات إثرائية ملوّنة أعدّها المدرّسون خصيصاً لك." },
+      whoIsBest: { title: "من الأفضل؟", subtitle: "صوّت لمدرسك المفضل وشوف الترتيب المباشر." },
     },
   },
 } as const;
@@ -99,6 +101,7 @@ const MainMenu = ({
     { key: "videoNotes", Icon: Headphones, locked: false, ...text.items.videoNotes },
     { key: "youtube" as const, Icon: Youtube, locked: false, ...text.items.youtube },
     { key: "adminNotes" as const, Icon: StickyNote, locked: false, ...text.items.adminNotes },
+    { key: "whoIsBest" as const, Icon: Trophy, locked: false, ...text.items.whoIsBest },
   ];
 
   const openSearch = () => window.dispatchEvent(new Event("app:open-search"));
