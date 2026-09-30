@@ -7,7 +7,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Chapters = lazy(() => import("./pages/Chapters.tsx"));
 import NotFound from "./pages/NotFound.tsx";
-import { useRef, useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
 import Subjects, {
@@ -656,7 +656,6 @@ const StudentApp = () => {
     return localStorage.getItem(MENU_STORAGE_KEY) as MenuChoice | null;
   });
   const [practiceReturnTarget, setPracticeReturnTarget] = useState<"physicsSchemes" | "biologySchemes" | "basics" | null>(null);
-  const surahsReturnTargetRef = useRef<"sessions" | null>(null);
   // Points-unlock state (lifetime points gate the 4 advanced tools)
   const [unlockedKeys, setUnlockedKeys] = useState<FeatureKey[]>([]);
   const [unlockHighlight, setUnlockHighlight] = useState<FeatureKey | null>(null);
@@ -707,7 +706,6 @@ const StudentApp = () => {
   };
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const chooseMenu = (choice: MenuChoice) => {
-    if (choice !== "islamicSurahs") surahsReturnTargetRef.current = null;
     if (choice !== "mcqBank") setPracticeReturnTarget(null);
     logFirstFeatureTouch(choice);
     recordToolUse(choice);
@@ -904,14 +902,7 @@ const StudentApp = () => {
       ) : menuChoice === "advices" ? (
         <Advices language={language} onBack={resetMenu} />
       ) : menuChoice === "sessions" ? (
-        <Sessions
-          language={language}
-          onBack={resetMenu}
-          onOpenSurahs={() => {
-            surahsReturnTargetRef.current = "sessions";
-            chooseMenu("islamicSurahs");
-          }}
-        />
+        <Sessions language={language} onBack={resetMenu} />
       ) : menuChoice === "account" ? (
         <AccountCenter language={language} onBack={resetMenu} onNav={chooseMenu} onChangeLanguage={resetLanguage} />
       ) : menuChoice === "essay" ? (
@@ -944,14 +935,7 @@ const StudentApp = () => {
       ) : menuChoice === "mindmap" ? (
         <MindMap language={language} onBack={backToBasics} />
       ) : menuChoice === "islamicSurahs" ? (
-        <IslamicSurahs
-          language={language}
-          onBack={() => {
-            const returnTarget = surahsReturnTargetRef.current;
-            surahsReturnTargetRef.current = null;
-            chooseMenu(returnTarget ?? "basics");
-          }}
-        />
+        <IslamicSurahs language={language} onBack={backToBasics} />
       ) : menuChoice === "hadithChecker" ? (
         <HadithChecker language={language} onBack={backToBasics} />
       ) : menuChoice === "poemsChecker" ? (
