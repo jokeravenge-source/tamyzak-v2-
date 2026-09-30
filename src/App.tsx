@@ -28,7 +28,6 @@ const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 import AdminLogin from "./pages/AdminLogin";
 import AdminMcqReview from "./pages/AdminMcqReview";
-import RoleGate, { ROLE_GATE_STORAGE_KEY, type AuthRole } from "./components/RoleGate";
 
 // Secret admin panel URL — not linked anywhere in the UI.
 const ADMIN_PANEL_PATH = "/tmz-ctrl-8462";
@@ -387,23 +386,21 @@ const StudentApp = () => {
       else localStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
     }
   };
-  const [authRole, setAuthRole] = useState<AuthRole | null>(
+  const [authRole, setAuthRole] = useState<"student" | "admin" | "guest">(
     () => {
-      if (typeof window === "undefined") return null;
+      if (typeof window === "undefined") return "student";
       // Hidden admin entry point: only reachable by typing the secret URL.
       if (window.location.pathname.replace(/\/+$/, "") === ADMIN_PANEL_PATH) return "admin";
-      const stored = localStorage.getItem(ROLE_GATE_STORAGE_KEY) as AuthRole | null;
-      if (!stored && window.location.pathname.startsWith("/who-is-best")) return "guest";
-      // Lecture deep links are always public: fall back to guest unless the
-      // visitor already has a real session (or is an admin).
+      if (window.location.pathname.startsWith("/who-is-best")) return "guest";
+      // Lecture deep links remain public without making every visitor choose
+      // a role before entering the app.
       if (
         window.location.pathname.startsWith("/teachers") &&
-        stored !== "admin" &&
         !hasPersistedAuthSession()
       ) {
         return "guest";
       }
-      return stored;
+      return "student";
     }
   );
   useEffect(() => {
@@ -783,19 +780,15 @@ const StudentApp = () => {
   }, []);
   const backToBasics = () => chooseMenu("basics");
   const [guideOpen, setGuideOpen] = useState(false);
-  const resetRole = () => {
-    localStorage.removeItem(ROLE_GATE_STORAGE_KEY);
-    setAuthRole(null);
-  };
-  const chooseRole = (r: AuthRole) => {
-    localStorage.setItem(ROLE_GATE_STORAGE_KEY, r);
-    setAuthRole(r);
+  const exitSpecialRoute = () => {
+    window.history.replaceState({}, "", "/");
+    setAuthRole("student");
   };
   const adminLogout = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
     setAuthed(false);
-    resetRole();
+    exitSpecialRoute();
   };
 
   return (
@@ -840,21 +833,18 @@ const StudentApp = () => {
           language={language}
           active={(menuChoice as any) ?? "basics"}
           onSelect={(k) => chooseMenu(k as MenuChoice)}
-          onGuide={() => setGuideOpen(true)}
         />
       )}
       </Suspense>
       <PageTransition
         routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${channelVerified ? "ch" : "noch"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
-      {!authRole ? (
-        <RoleGate onSelect={chooseRole} />
-      ) : authLoading ? (
+      {authLoading ? (
         <main className="min-h-screen flex items-center justify-center">
           <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
         </main>
       ) : authRole === "admin" && !authed ? (
-        <AdminLogin onAuthed={() => setAuthed(true)} onBack={resetRole} />
+        <AdminLogin onAuthed={() => setAuthed(true)} onBack={exitSpecialRoute} />
       ) : authRole === "admin" && authed && isAdmin ? (
         adminPreviewDay != null ? (
           <DailyGame
@@ -867,20 +857,16 @@ const StudentApp = () => {
         )
       ) : authRole === "guest" ? (
         menuChoice === "whoIsBest" ? (
-          <WhoIsBest language={language ?? "ar"} onBack={resetRole} isAdmin={false} />
+          <WhoIsBest language={language ?? "ar"} onBack={exitSpecialRoute} isAdmin={false} />
         ) : (
           <Teachers
             language={language ?? "ar"}
-            onBack={resetRole}
+            onBack={exitSpecialRoute}
             isAdmin={false}
           />
         )
       ) : !authed ? (
-        <Auth
-          onAuthed={() => setAuthed(true)}
-          onGoAdmin={() => chooseRole("admin")}
-          onGuest={() => chooseRole("guest")}
-        />
+        <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
         <LanguageGate onSelect={setLanguage} />
       ) : authRole !== "admin" && !channelVerified ? (
