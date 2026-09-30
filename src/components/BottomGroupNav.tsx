@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Home, LayoutGrid, UserRound } from "lucide-react";
+import { BookOpen, Home, LayoutGrid, UserRound, UsersRound } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
@@ -14,10 +14,11 @@ type PrimaryNavItem = {
 };
 
 // Keep the persistent navigation intentionally small. Everything beyond these
-// four destinations lives in "All tools", so students always know where to go.
+// five destinations lives in "All tools", so students always know where to go.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
   { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
+  { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
   { key: "more", labelAr: "كل الأدوات", labelEn: "All tools", Icon: LayoutGrid },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
 ];
@@ -42,7 +43,7 @@ const BottomGroupNav = ({
   const isItemActive = (key: MainMenuChoice) => {
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
-      return Boolean(active && !["basics", "subjectsHub", "account"].includes(active));
+      return Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
     }
     return active === key;
   };
@@ -79,7 +80,7 @@ const BottomGroupNav = ({
         aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
       >
         <LayoutGroup id="primary-bottom-navigation">
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon }) => {
               const selected = isItemActive(key);
               return (
