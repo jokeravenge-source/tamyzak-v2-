@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, Wrench, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Megaphone, Sparkles, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FeatureAnnouncement = {
@@ -10,118 +10,101 @@ export type FeatureAnnouncement = {
   title_en: string;
   desc_ar: string;
   desc_en: string;
+  created_at: string;
 };
 
 /**
- * Announcements are managed by admins in the admin dashboard.
- * Each announcement is shown ONCE per device (tracked forever by its id),
- * so users never see the same change repeated day after day.
+ * Non-blocking home-screen announcement rail.
+ *
+ * Active announcements remain available as horizontally scrollable cards;
+ * they never interrupt the student with a modal or full-screen overlay.
  */
-const KEY = "seen_feature_announcement_ids";
-
-function readSeen(): string[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeSeen(seen: string[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(seen.slice(-300)));
-  } catch {
-    /* ignore */
-  }
-}
-
 const NewFeatureAnnouncement = ({ language }: { language: "en" | "ar" }) => {
   const isAr = language === "ar";
-  const [queue, setQueue] = useState<FeatureAnnouncement[]>([]);
+  const [announcements, setAnnouncements] = useState<FeatureAnnouncement[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("feature_announcements")
-        .select("id, kind, title_ar, title_en, desc_ar, desc_en")
+        .select("id, kind, title_ar, title_en, desc_ar, desc_en, created_at")
         .eq("active", true)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false })
         .limit(20);
-      if (cancelled || !data) return;
-      const seen = readSeen();
-      setQueue((data as FeatureAnnouncement[]).filter((f) => !seen.includes(f.id)));
+      if (!cancelled && data) setAnnouncements(data as FeatureAnnouncement[]);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  const current = queue[0];
-  const dismiss = () => {
-    if (!current) return;
-    writeSeen([...readSeen(), current.id]);
-    setQueue((q) => q.slice(1));
-  };
+  if (announcements.length === 0) return null;
 
   return (
-    <AnimatePresence>
-      {current && (
-        <motion.div
-          className="fixed inset-0 z-[90] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={dismiss} />
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.96 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-md rounded-3xl border border-primary/40 bg-card/95 p-7 text-center shadow-[var(--shadow-glow)]"
-          >
-            <button
-              onClick={dismiss}
-              aria-label={isAr ? "إغلاق" : "Close"}
-              className="absolute top-3 end-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-              {current.kind === "fix" ? (
-                <Wrench className="h-7 w-7 text-primary" />
-              ) : (
-                <Sparkles className="h-7 w-7 text-primary" />
-              )}
-            </div>
-            <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-              {current.kind === "fix"
-                ? (isAr ? "تم الإصلاح" : "Fixed")
-                : (isAr ? "ميزة جديدة" : "New feature")}
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold gradient-text">
-              {isAr ? current.title_ar : current.title_en}
+    <section className="mb-6" aria-labelledby="home-announcements-title">
+      <div className="mb-3 flex items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-2">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Megaphone className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 id="home-announcements-title" className="text-sm font-black text-foreground sm:text-base">
+              {isAr ? "آخر تحديثات تميّزك" : "What’s new in Tamayzak"}
             </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {isAr ? current.desc_ar : current.desc_en}
+            <p className="text-[11px] text-muted-foreground">
+              {isAr ? "اسحب حتى تشوف كل الأخبار" : "Swipe to see every update"}
             </p>
-            <button
-              onClick={dismiss}
-              className="mt-6 h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          </div>
+        </div>
+        <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-black text-muted-foreground">
+          {announcements.length}
+        </span>
+      </div>
+
+      <div
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 [scrollbar-color:hsl(var(--primary)/0.35)_transparent] [scrollbar-width:thin]"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        {announcements.map((announcement, index) => {
+          const isFix = announcement.kind === "fix";
+          const Icon = isFix ? Wrench : Sparkles;
+          return (
+            <motion.article
+              key={announcement.id}
+              initial={{ opacity: 0, x: isAr ? 14 : -14 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: Math.min(index * 0.05, 0.25), duration: 0.28 }}
+              className={`relative min-h-44 w-[82%] min-w-[270px] max-w-[360px] shrink-0 snap-start overflow-hidden rounded-[1.6rem] border p-5 shadow-sm sm:w-[340px] ${
+                isFix
+                  ? "border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 via-card to-teal-500/10"
+                  : "border-violet-400/30 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10"
+              }`}
             >
-              {isAr ? "تمام" : "Got it"}
-            </button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              <span
+                aria-hidden="true"
+                className={`absolute -end-10 -top-12 h-32 w-32 rounded-full blur-2xl ${isFix ? "bg-emerald-400/20" : "bg-violet-400/20"}`}
+              />
+              <div className="relative flex items-start gap-3">
+                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${isFix ? "bg-emerald-500 text-white" : "bg-violet-600 text-white"}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${isFix ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-violet-500/15 text-violet-700 dark:text-violet-300"}`}>
+                    {isFix ? (isAr ? "تم الإصلاح" : "Fixed") : (isAr ? "ميزة جديدة" : "New feature")}
+                  </span>
+                  <h3 className="mt-2 line-clamp-2 text-base font-black leading-6 text-foreground">
+                    {isAr ? announcement.title_ar : announcement.title_en}
+                  </h3>
+                </div>
+              </div>
+              <p className="relative mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                {isAr ? announcement.desc_ar : announcement.desc_en}
+              </p>
+            </motion.article>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 
