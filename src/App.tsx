@@ -833,6 +833,7 @@ const StudentApp = () => {
           language={language}
           active={(menuChoice as any) ?? "basics"}
           onSelect={(k) => chooseMenu(k as MenuChoice)}
+          onGuide={() => setGuideOpen(true)}
         />
       )}
       </Suspense>
