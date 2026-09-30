@@ -34,6 +34,7 @@ import {
   type FlashcardListDefinition,
 } from "@/lib/flashcardLists";
 import {
+  BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
   PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
   SUBJECT_STORAGE_KEY,
 } from "@/pages/Subjects";
@@ -187,6 +188,9 @@ const TeacherDirectory = ({
     localStorage.setItem(SUBJECT_STORAGE_KEY, list.subject);
     if (list.subject === "physics") {
       sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, list.selectorValue);
+    }
+    if (list.subject === "biology") {
+      sessionStorage.setItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, list.selectorValue);
     }
     window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: list.subject } }));
     onSelect("flashcards");
