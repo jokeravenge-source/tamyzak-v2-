@@ -1,6 +1,6 @@
 /**
  * Chapter 3 Biology cards supplied for Nadia Al-Nuaimi.
- * The source deck is English, so it is intentionally used in both UI languages.
+ * This source deck is used when the interface language is English.
  */
 export const flashcardsBioCh3NadiaEn = [
   { q: "What is the chromosome group of germ cells in spermatogenesis?", a: "Diploid (2n)." },
