@@ -25,6 +25,7 @@ import { flashcardsBioCh2Ar } from "@/data/flashcardsBioCh2Ar";
 import { flashcardsBioCh5Ar } from "@/data/flashcardsBioCh5Ar";
 import { flashcardsBioCh1En } from "@/data/flashcardsBioCh1En";
 import { flashcardsBioCh2En } from "@/data/flashcardsBioCh2En";
+import { flashcardsBioCh1NadiaEn, nadiaBioCh1TopicRanges } from "@/data/flashcardsBioCh1NadiaEn";
 import { flashcardsBioCh3En } from "@/data/flashcardsBioCh3En";
 import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh3NadiaEn, nadiaBioCh3TopicRanges } from "@/data/flashcardsBioCh3NadiaEn";
@@ -119,7 +120,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
   const isNadiaBiologyDeck = subject === "biology"
-    && chapter === "3"
+    && (chapter === "1" || chapter === "3")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
@@ -171,6 +172,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const deck = useMemo(
     () => {
       if (subject === "biology" && chapter === "1") {
+        if (isNadiaBiologyDeck) {
+          return {
+            title: "بطاقات تعليمية",
+            eyebrow: language === "ar"
+              ? "الأحياء · الفصل الأول · الخلية والانقسام · نادية النعيمي"
+              : "Biology · Chapter 1 · The Cell & Cell Division · Nadia Al-Nuaimi",
+            cards: flashcardsBioCh1NadiaEn,
+          };
+        }
         return {
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "الأحياء · الخلية · الأستاذ محمد العنزي" : "Biology · The Cell · Teacher: Mohammed Al-Anzi",
@@ -403,14 +413,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
     if (isNadiaBiologyDeck) {
-      return nadiaBioCh3TopicRanges.map((topic) => ({
+      const topicRanges = chapter === "1" ? nadiaBioCh1TopicRanges : nadiaBioCh3TopicRanges;
+      const topicCards = chapter === "1" ? flashcardsBioCh1NadiaEn : flashcardsBioCh3NadiaEn;
+      return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
-        cards: flashcardsBioCh3NadiaEn.slice(topic.start - 1, topic.end),
+        cards: topicCards.slice(topic.start - 1, topic.end),
       }));
     }
     return null;
-  }, [isNadiaBiologyDeck, language]);
+  }, [chapter, isNadiaBiologyDeck, language]);
 
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
