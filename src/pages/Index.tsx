@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star, ExternalLink } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star, ExternalLink, Ellipsis } from "lucide-react";
 import { Brain } from "lucide-react";
 import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -69,6 +69,12 @@ import { flashcardsCh8 } from "@/data/flashcardsCh8";
 import { DAILY_FLASHCARD_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 import { Flashcard } from "@/components/Flashcard";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import { groupFlashcardsByTopic } from "@/lib/flashcardTopics";
@@ -1031,55 +1037,94 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         </div>
       </section>
 
-      <footer className="relative z-10 mx-auto grid w-full max-w-3xl grid-cols-2 gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur-xl sm:flex sm:flex-wrap sm:justify-center">
+      <footer
+        className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
+        dir={language === "ar" ? "rtl" : "ltr"}
+      >
         <Button
           variant={reviewMode ? "default" : "ghost"}
           size="sm"
           onClick={reviewMode ? exitReview : startReview}
-          className="col-span-2 gap-2 sm:col-span-1"
+          className="w-full justify-center gap-2 sm:w-auto"
         >
           <Brain className="w-4 h-4" />
           {reviewMode
             ? (language === "ar" ? `إنهاء المراجعة (${cards.length})` : `Exit review (${cards.length})`)
             : (language === "ar" ? `مراجعة اليوم (${queueSize})` : `Review today (${queueSize})`)}
         </Button>
-        <Button variant="ghost" size="sm" onClick={shuffle} className="gap-2" disabled={!card}>
-          <Shuffle className="w-4 h-4" /> {text.shuffle}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={reset} className="gap-2" disabled={!card}>
-          <RotateCcw className="w-4 h-4" /> {text.reset}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={toggleSave} className="gap-2" disabled={!card}>
-          {isSaved ? <BookmarkCheck className="w-4 h-4 text-primary" /> : <Bookmark className="w-4 h-4" />}
-          {language === "ar" ? (isSaved ? "محفوظة" : "حفظ") : (isSaved ? "Saved" : "Save")}
-        </Button>
-        <Button
-          variant={savedView ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setSavedView((v) => !v)}
-          className="gap-2"
-        >
-          <Star className="w-4 h-4" />
-          {language === "ar"
-            ? (savedView ? "كل البطاقات" : `المحفوظة (${saved.length})`)
-            : (savedView ? "All cards" : `Saved (${saved.length})`)}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setShowSubmit(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          {language === "ar" ? "أضف بطاقة" : "Submit card"}
-        </Button>
-        {isAdmin && (
+
+        <div className="flex min-w-0 items-center justify-center gap-1 overflow-x-auto sm:justify-end">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={deleteCard}
-            disabled={!deletableRow || deleting}
-            className="gap-2 text-destructive hover:text-destructive"
+            size="icon"
+            onClick={shuffle}
+            disabled={!card}
+            className="h-9 w-9 shrink-0"
+            aria-label={text.shuffle}
+            title={text.shuffle}
           >
-            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            {language === "ar" ? "حذف البطاقة" : "Delete card"}
+            <Shuffle className="h-4 w-4" />
           </Button>
-        )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={reset}
+            disabled={!card}
+            className="h-9 w-9 shrink-0"
+            aria-label={text.reset}
+            title={text.reset}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+
+          <span className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+
+          <Button variant="ghost" size="sm" onClick={toggleSave} className="shrink-0 gap-2" disabled={!card}>
+            {isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
+            {language === "ar" ? (isSaved ? "محفوظة" : "حفظ") : (isSaved ? "Saved" : "Save")}
+          </Button>
+          <Button
+            variant={savedView ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setSavedView((v) => !v)}
+            className="shrink-0 gap-2"
+          >
+            <Star className="h-4 w-4" />
+            {language === "ar"
+              ? (savedView ? "كل البطاقات" : `المحفوظة (${saved.length})`)
+              : (savedView ? "All cards" : `Saved (${saved.length})`)}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                aria-label={language === "ar" ? "إجراءات إضافية" : "More actions"}
+                title={language === "ar" ? "إجراءات إضافية" : "More actions"}
+              >
+                <Ellipsis className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48" dir={language === "ar" ? "rtl" : "ltr"}>
+              <DropdownMenuItem onSelect={() => setShowSubmit(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {language === "ar" ? "أضف بطاقة" : "Submit card"}
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem
+                  onSelect={() => void deleteCard()}
+                  disabled={!deletableRow || deleting}
+                  className="gap-2 text-destructive focus:text-destructive"
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {language === "ar" ? "حذف البطاقة" : "Delete card"}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
       </footer>
 
