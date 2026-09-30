@@ -10,7 +10,12 @@ import NotFound from "./pages/NotFound.tsx";
 import { useState, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
-import Subjects, { SUBJECT_STORAGE_KEY, PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, type AppSubject } from "./pages/Subjects";
+import Subjects, {
+  BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
+  SUBJECT_STORAGE_KEY,
+  PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
+  type AppSubject,
+} from "./pages/Subjects";
 import { applyTheme, getInitialTheme } from "./components/ThemePicker";
 import { useEffect } from "react";
 import Auth from "./pages/Auth";
@@ -599,11 +604,18 @@ const StudentApp = () => {
   const [subject, setSubject] = useState<AppSubject | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.startsWith("/flashcards")) {
-      const s = new URLSearchParams(window.location.search).get("subject") as AppSubject | null;
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get("subject") as AppSubject | null;
       if (s) {
         try {
           localStorage.setItem(SUBJECT_STORAGE_KEY, s);
           if (s === "physics") sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, "haydar-diwan");
+          if (s === "biology") {
+            const list = params.get("list");
+            if (list === "nadia-al-nuaimi" || list === "mohammed-al-anzi") {
+              sessionStorage.setItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, list);
+            }
+          }
         } catch { /* ignore */ }
         return s;
       }
