@@ -22,7 +22,11 @@ import track3Asset from "@/assets/music/track3.mp3.asset.json";
 import track4Asset from "@/assets/music/track4.mp3.asset.json";
 import track5Asset from "@/assets/music/track5.mp3.asset.json";
 import track6Asset from "@/assets/music/track6.mp3.asset.json";
-import quranTrackAsset from "@/assets/music/quran.mp3.asset.json";
+import surahAlImranAsset from "@/assets/surah-al-imran-90-94.mp3.asset.json";
+import surahAlBaqarahAsset from "@/assets/surah-al-baqarah-153-157.mp3.asset.json";
+import surahAlAnbiyaAsset from "@/assets/surah-al-anbiya-1-7.mp3.asset.json";
+import surahAnNisaAsset from "@/assets/surah-an-nisa-unit3.mp3.asset.json";
+import surahAlIsraAsset from "@/assets/surah-al-isra-30-39.mp3.asset.json";
 import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
@@ -341,7 +345,17 @@ const SessionTodos = ({
 };
 
 const MUSIC_TRACKS = [track1Asset.url, track2Asset.url, track3Asset.url, track4Asset.url, track5Asset.url, track6Asset.url];
-const QURAN_TRACKS = [quranTrackAsset.url];
+const QURAN_TRACKS = [
+  surahAlImranAsset.url,
+  surahAlBaqarahAsset.url,
+  surahAlAnbiyaAsset.url,
+  surahAnNisaAsset.url,
+  surahAlIsraAsset.url,
+];
+const QURAN_TRACK_LABELS = {
+  ar: ["آل عمران 90-94", "البقرة 153-157", "الأنبياء 1-7", "النساء 1-5", "الإسراء 30-39"],
+  en: ["Al-Imran 90-94", "Al-Baqarah 153-157", "Al-Anbiya 1-7", "An-Nisa 1-5", "Al-Isra 30-39"],
+} as const;
 const MAX_SECONDS = 48 * 3600;
 const PERSIST_KEY = "study_session_state_v1";
 const POMODORO_KEY = "pomodoro_settings_v1";
@@ -523,15 +537,7 @@ const fmt = (s: number) => {
   return `${h}:${m}:${sec}`;
 };
 
-const Sessions = ({
-  language,
-  onBack,
-  onOpenSurahs,
-}: {
-  language: AppLanguage;
-  onBack: () => void;
-  onOpenSurahs: () => void;
-}) => {
+const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
   const [subject, setSubject] = useState<string | null>(null);
@@ -1215,25 +1221,6 @@ const Sessions = ({
             </div>
           </header>
 
-          <button
-            type="button"
-            onClick={onOpenSurahs}
-            className="group mb-8 flex w-full items-center gap-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15 hover:shadow-md md:p-5"
-          >
-            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
-              <Moon className="h-6 w-6" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-base font-black text-foreground md:text-lg">
-                {language === "ar" ? "سور القرآن الكريم" : "Quran Surahs"}
-              </span>
-              <span className="mt-1 block text-xs text-muted-foreground md:text-sm">
-                {language === "ar" ? "استمع واقرأ وتدرّب على الآيات" : "Listen, read, and practise the verses"}
-              </span>
-            </span>
-            <ChevronRight className={`h-5 w-5 shrink-0 text-emerald-600 transition-transform group-hover:translate-x-0.5 dark:text-emerald-300 ${dir === "rtl" ? "rotate-180" : ""}`} />
-          </button>
-
           <section className="mb-8">
             <div className="mb-4 flex items-end justify-between gap-3">
               <div><h2 className="text-xl font-extrabold">{language === "ar" ? "اختار المادة وابدأ" : "Choose a subject to begin"}</h2><p className="mt-1 text-sm text-muted-foreground">{language === "ar" ? "تگدر تغيّر الغرفة بعدين بدون ما تخسر وقتك." : "You can switch rooms later without losing your time."}</p></div>
@@ -1424,9 +1411,13 @@ const Sessions = ({
                 <Music className="h-5 w-5 text-primary" />
                 <div className="flex overflow-hidden rounded-full border border-white/10 text-xs">
                   <button onClick={() => switchPlaylist("music")} className={`px-3 py-1 ${playlist === "music" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "موسيقى" : "Music"}</button>
-                  <button onClick={() => switchPlaylist("quran")} className={`px-3 py-1 ${playlist === "quran" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "قرآن" : "Quran"}</button>
+                  <button onClick={() => switchPlaylist("quran")} className={`px-3 py-1 ${playlist === "quran" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "سور القرآن الكريم" : "Quran Surahs"}</button>
                 </div>
-                <span className="text-sm font-medium">{language === "ar" ? `المقطع ${trackIdx + 1}/${TRACKS.length}` : `Track ${trackIdx + 1}/${TRACKS.length}`}</span>
+                <span className="text-sm font-medium">
+                  {playlist === "quran"
+                    ? QURAN_TRACK_LABELS[language][trackIdx]
+                    : language === "ar" ? `المقطع ${trackIdx + 1}/${TRACKS.length}` : `Track ${trackIdx + 1}/${TRACKS.length}`}
+                </span>
                 <Button size="sm" variant="secondary" onClick={toggleMusic} className="gap-2">{musicPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</Button>
                 <Button size="sm" variant="ghost" onClick={nextTrack} className="gap-2"><SkipForward className="h-4 w-4" /></Button>
                 <div className="ms-auto flex items-center gap-2">
