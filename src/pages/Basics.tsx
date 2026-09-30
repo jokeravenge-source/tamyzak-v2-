@@ -27,6 +27,7 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
+import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import {
@@ -768,10 +769,7 @@ const Basics = ({
         }));
         return;
       }
-      if (dueCards > 0) {
-        sessionStorage.removeItem(DAILY_FLASHCARD_TARGET_KEY);
-        sessionStorage.setItem("flashcards:review", "1");
-      }
+      if (dueCards > 0) sessionStorage.removeItem(DAILY_FLASHCARD_TARGET_KEY);
     } catch { /* ignore */ }
     navigate("flashcards");
   };
@@ -1089,7 +1087,6 @@ const Basics = ({
                 <button
                   onClick={() => {
                     try {
-                      if (dueCards > 0) sessionStorage.setItem("flashcards:review", "1");
                       if (onboarding?.completed) localStorage.setItem("app_subject_v1", onboarding.subject);
                     } catch { /* ignore */ }
                     if (onboarding?.completed) {
@@ -1478,6 +1475,8 @@ const Basics = ({
               </p>
             </div>
           </header>
+
+          <NewFeatureAnnouncement language={language} />
 
           <button
             id="progress-details-trigger"
