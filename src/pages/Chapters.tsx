@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { Lock, ArrowLeft, ArrowRight, Sparkles, Dna, Layers3 } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import {
   SUBJECT_STORAGE_KEY,
   PREVIOUS_SUBJECT_STORAGE_KEY,
   PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
+  BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
 } from "@/pages/Subjects";
 import SubjectAgent from "@/components/SubjectAgent";
 import { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "@/pages/EnglishCategory";
@@ -44,22 +45,41 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   const [physicsTeacherSelected, setPhysicsTeacherSelected] = useState(() =>
     subject !== "physics" || sessionStorage.getItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY) === "haydar-diwan"
   );
+  const [biologyTeacher, setBiologyTeacher] = useState<"mohammed-al-anzi" | "nadia-al-nuaimi" | null>(() => {
+    if (subject !== "biology") return "mohammed-al-anzi";
+    const stored = sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY);
+    return stored === "mohammed-al-anzi" || stored === "nadia-al-nuaimi" ? stored : null;
+  });
   const showPhysicsTeacherPicker = subject === "physics" && !physicsTeacherSelected;
-  const badge = (teacherBadge[subject] ?? { ar: "", en: "" })[language];
+  const showBiologyTeacherPicker = subject === "biology" && biologyTeacher === null;
+  const showTeacherPicker = showPhysicsTeacherPicker || showBiologyTeacherPicker;
+  const defaultBadge = (teacherBadge[subject] ?? { ar: "", en: "" })[language];
+  const badge = subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
+    ? (language === "ar" ? "نادية النعيمي" : "NADIA AL-NUAIMI")
+    : defaultBadge;
   const englishCategory = (typeof window !== "undefined"
     ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null)
     : null);
   const chapters = getFlashcardChapters(subject, (englishCategory ?? "grammar") as FlashcardSection);
+  const visibleChapters = subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
+    ? chapters.filter((chapter) => chapter.n === 3)
+    : chapters;
 
   const handleChangeLanguage = () => {
     localStorage.removeItem(SUBJECT_STORAGE_KEY);
     sessionStorage.removeItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY);
+    sessionStorage.removeItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY);
     onChangeLanguage();
   };
 
   const chooseHaydarDiwan = () => {
     sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, "haydar-diwan");
     setPhysicsTeacherSelected(true);
+  };
+
+  const chooseBiologyTeacher = (teacher: "mohammed-al-anzi" | "nadia-al-nuaimi") => {
+    sessionStorage.setItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, teacher);
+    setBiologyTeacher(teacher);
   };
 
   const handleClick = (chapter: typeof chapters[number]) => {
@@ -102,27 +122,32 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            {showPhysicsTeacherPicker ? (language === "ar" ? "الفيزياء" : "Physics") : badge}
+            {showTeacherPicker
+              ? (subject === "biology" ? (language === "ar" ? "الأحياء" : "Biology") : (language === "ar" ? "الفيزياء" : "Physics"))
+              : badge}
           </span>
         </div>
         <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">
-          {showPhysicsTeacherPicker
+          {showTeacherPicker
             ? (language === "ar" ? "اختر المدرّس" : "Choose your teacher")
             : text.title}
         </h1>
         <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
-          {showPhysicsTeacherPicker
+          {showTeacherPicker
             ? (language === "ar"
-                ? "اختر المدرّس لعرض فصول الفيزياء وبطاقاتها التعليمية."
-                : "Choose a teacher to view all eight physics chapters and their flashcards.")
+                ? `اختر المدرّس لعرض ${subject === "biology" ? "بطاقات الأحياء" : "فصول الفيزياء وبطاقاتها التعليمية"}.`
+                : `Choose a teacher to view ${subject === "biology" ? "their Biology flashcards" : "all eight Physics chapters and their flashcards"}.`)
             : subject === "math"
               ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
-              : text.description}
+              : subject === "biology"
+                ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
+                : text.description}
         </p>
       </header>
 
-      {showPhysicsTeacherPicker ? (
+      {showTeacherPicker ? (
         <section className="relative z-10 mx-auto mt-12 flex max-w-5xl justify-center md:mt-16">
+          {showPhysicsTeacherPicker ? (
           <button
             type="button"
             onClick={chooseHaydarDiwan}
@@ -148,10 +173,55 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
               </span>
             </div>
           </button>
+          ) : (
+            <div className="grid w-full max-w-4xl grid-cols-1 gap-5 sm:grid-cols-2" dir="rtl">
+              <button
+                type="button"
+                onClick={() => chooseBiologyTeacher("mohammed-al-anzi")}
+                className="group relative min-h-72 overflow-hidden rounded-[2rem] border border-emerald-400/30 bg-gradient-to-br from-emerald-500/20 via-secondary to-secondary p-7 text-right shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                aria-label={language === "ar" ? "فتح بطاقات محمد العنزي" : "Open Mohammed Al-Anzi flashcards"}
+              >
+                <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-emerald-400/20 blur-3xl" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-300/30">
+                    <Dna className="h-8 w-8" />
+                  </span>
+                  <div>
+                    <span className="mb-3 inline-flex rounded-full border border-emerald-300/25 bg-emerald-950/20 px-3 py-1 text-xs font-bold text-emerald-200">
+                      {language === "ar" ? "الفصول 1، 2، 3، 5" : "Chapters 1, 2, 3, 5"}
+                    </span>
+                    <h2 className="text-3xl font-black text-foreground">محمد العنزي</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Mohammed Al-Anzi · Biology</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => chooseBiologyTeacher("nadia-al-nuaimi")}
+                className="group relative min-h-72 overflow-hidden rounded-[2rem] border border-fuchsia-400/35 bg-gradient-to-br from-fuchsia-500/20 via-violet-500/10 to-secondary p-7 text-right shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-fuchsia-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
+                aria-label={language === "ar" ? "فتح بطاقات نادية النعيمي" : "Open Nadia Al-Nuaimi flashcards"}
+              >
+                <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-fuchsia-400/20 blur-3xl" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-fuchsia-400/15 text-fuchsia-300 ring-1 ring-fuchsia-300/30">
+                    <Layers3 className="h-8 w-8" />
+                  </span>
+                  <div>
+                    <span className="mb-3 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-950/20 px-3 py-1 text-xs font-bold text-fuchsia-200">
+                      {language === "ar" ? "الفصل الثالث · 264 بطاقة" : "Chapter 3 · 264 cards"}
+                    </span>
+                    <h2 className="text-3xl font-black text-foreground">نادية النعيمي</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Nadia Al-Nuaimi · Biology</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
         </section>
       ) : (
       <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
-        {chapters.map((c, i) => {
+        {visibleChapters.map((c, i) => {
           const isAvailable = !c.locked;
           return (
             <button
@@ -212,7 +282,7 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
       <footer className="text-center mt-16 text-xs text-muted-foreground tracking-widest z-10 relative">
         {"\n"}
       </footer>
-      {!showPhysicsTeacherPicker && <SubjectAgent subject={subject} language={language} />}
+      {!showTeacherPicker && <SubjectAgent subject={subject} language={language} />}
     </main>
     </>
   );
