@@ -3,7 +3,6 @@ import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star, ExternalLink, Ellipsis } from "lucide-react";
-import { Brain } from "lucide-react";
 import { Plus, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { setRedoRequired, clearRedoAndZombie } from "@/components/ZombieGuard";
@@ -88,7 +87,6 @@ import { useTodos } from "@/lib/todoTopicProgress";
 import {
   cardKey as srsCardKey,
   defaultState,
-  isDue,
   loadDeckStates,
   previewInterval,
   rateCard,
@@ -512,7 +510,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
   /* ---------------- spaced repetition ---------------- */
   const [srs, setSrs] = useState<Map<string, SrsState>>(new Map());
-  const [reviewMode, setReviewMode] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const seenCards = useRef(new Map<string, { q: string; a: string }>());
   const ratedDifficult = useRef(new Set<string>());
@@ -534,40 +531,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     seenCards.current.clear();
     ratedDifficult.current.clear();
   }, [subject, chapter, language]);
-
-  const { dueCards, newCards } = useMemo(() => {
-    const now = Date.now();
-    const due: typeof activeTopicCards = [];
-    const fresh: typeof activeTopicCards = [];
-    activeTopicCards.forEach((c) => {
-      const st = srs.get(keyOf(c));
-      if (!st) fresh.push(c);
-      else if (isDue(st, now)) due.push(c);
-    });
-    return { dueCards: due, newCards: fresh };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTopicCards, srs, subject, chapter]);
-
-  const queueSize = dueCards.length + Math.min(newCards.length, 10);
-
-  const startReview = () => {
-    const queue = [...dueCards, ...newCards.slice(0, 10)];
-    if (queue.length === 0) {
-      toast.success(language === "ar" ? "لا توجد بطاقات مستحقة الآن — عد لاحقاً!" : "Nothing due right now — come back later!");
-      return;
-    }
-    setReviewMode(true);
-    setSavedView(false);
-    setCards(queue);
-    setIndex(0);
-    setDirection("right");
-  };
-
-  const exitReview = () => {
-    setReviewMode(false);
-    setCards(activeTopicCards);
-    setIndex(0);
-  };
 
   const handleRate = async (rating: SrsRating) => {
     const current = cards[index];
@@ -612,25 +575,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       toast.success(language === "ar" ? `المراجعة القادمة بعد ${when}` : `Next review in ${when}`);
     }
 
-    if (!reviewMode) {
-      next();
-      return;
-    }
-
-    // In review mode the card leaves the queue; forgotten cards come back last.
-    setCards((prevCards) => {
-      const rest = prevCards.filter((_, i) => i !== index);
-      const queue = rating === "forgot" ? [...rest, current] : rest;
-      if (queue.length === 0) {
-        toast.success(language === "ar" ? "أنهيت مراجعة اليوم — أحسنت!" : "Review finished for now — nice work!");
-        setReviewMode(false);
-        setIndex(0);
-        return activeTopicCards;
-      }
-      setIndex((i) => Math.min(i, queue.length - 1));
-      return queue;
-    });
-    setDirection("right");
+    next();
   };
 
   const intervalHints = useMemo(() => {
@@ -645,19 +590,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, index, srs, language, subject, chapter]);
-
-  // Deep-link from the home screen's "due cards" banner.
-  const autoReviewDone = useRef(false);
-  useEffect(() => {
-    if (autoReviewDone.current || srs.size === 0) return;
-    let flag: string | null = null;
-    try { flag = sessionStorage.getItem("flashcards:review"); } catch { /* ignore */ }
-    if (flag !== "1") return;
-    autoReviewDone.current = true;
-    try { sessionStorage.removeItem("flashcards:review"); } catch { /* ignore */ }
-    startReview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [srs]);
 
   const next = () => {
     setDirection("right");
@@ -901,15 +833,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         <div className="mt-3 flex justify-center">
           <PointsHint action="flashcard_session" language={language === "ar" ? "ar" : "en"} />
         </div>
-        <div className="mt-4 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-background/60 rtl:divide-x-reverse">
-          <div className="px-2 py-3">
-            <strong className="block text-lg font-black tabular-nums text-foreground">{cards.length}</strong>
-            <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "بطاقة" : "Cards"}</span>
-          </div>
-          <div className="px-2 py-3">
-            <strong className="block text-lg font-black tabular-nums text-primary">{queueSize}</strong>
-            <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "مراجعة اليوم" : "Due today"}</span>
-          </div>
+        <div className="mt-4 inline-flex min-w-28 flex-col rounded-2xl border border-border bg-background/60 px-5 py-3">
+          <strong className="block text-lg font-black tabular-nums text-foreground">{cards.length}</strong>
+          <span className="text-[10px] font-semibold text-muted-foreground">{language === "ar" ? "بطاقة" : "Cards"}</span>
         </div>
       </header>
 
@@ -1045,19 +971,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-card/80 p-2 shadow-sm backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
-        <Button
-          variant={reviewMode ? "default" : "ghost"}
-          size="sm"
-          onClick={reviewMode ? exitReview : startReview}
-          className="w-full justify-center gap-2 sm:w-auto"
-        >
-          <Brain className="w-4 h-4" />
-          {reviewMode
-            ? (language === "ar" ? `إنهاء المراجعة (${cards.length})` : `Exit review (${cards.length})`)
-            : (language === "ar" ? `مراجعة اليوم (${queueSize})` : `Review today (${queueSize})`)}
-        </Button>
-
-        <div className="flex min-w-0 items-center justify-center gap-1 overflow-x-auto sm:justify-end">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto sm:justify-end">
           <Button
             variant="ghost"
             size="icon"
