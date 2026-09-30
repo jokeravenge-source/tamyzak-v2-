@@ -38,13 +38,10 @@ const Essay = lazy(() => import("./pages/Essay"));
 const VideoNotes = lazy(() => import("./pages/VideoNotes"));
 const PodcastTutor = lazy(() => import("./pages/PodcastTutor"));
 import ZombieGuard from "./components/ZombieGuard";
-import MistakesPunishment from "./components/MistakesPunishment";
 import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import type { BasicsChoice } from "./pages/Basics";
 const Basics = lazy(() => import("./pages/Basics"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-import { isOnboardingDone, markOnboardedRemote, syncOnboardingWithServer, type OnboardingSubject } from "@/lib/onboarding";
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
 import { recordToolUse } from "@/lib/recentTools";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -56,7 +53,6 @@ const PhysicsSchemes = lazy(() => import("./pages/PhysicsSchemes"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
 const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
-const NewFeatureAnnouncement = lazy(() => import("./components/NewFeatureAnnouncement"));
 const UsageIntroGate = lazy(() => import("./components/UsageIntroGate"));
 
 const GuideChat = lazy(() => import("./pages/GuideChat"));
@@ -118,13 +114,10 @@ import { readWeeklyLearningProfile } from "@/lib/weeklyLearning";
 import { RETURN_TO_PROGRESS_KEY, TOPIC_PRACTICE_TARGET_KEY } from "@/lib/topicPracticeQuiz";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
-// Onboarding page removed
 const ParentFollow = lazy(() => import("./pages/ParentFollow"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
-const InstallAppPrompt = lazy(() => import("./components/InstallAppPrompt"));
-const PremiumWelcomeOverlay = lazy(() => import("./components/PremiumWelcomeOverlay").then((m) => ({ default: m.PremiumWelcomeOverlay })));
 const SearchFAB = lazy(() => import("./components/SearchFAB"));
 const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"));
 const WeaknessCheckInAgent = lazy(() => import("./components/WeaknessCheckInAgent"));
@@ -789,37 +782,7 @@ const StudentApp = () => {
     return () => window.removeEventListener("app:open-personalized-practice", openPersonalized);
   }, []);
   const backToBasics = () => chooseMenu("basics");
-  // First-run onboarding (subject picker → diagnostic → results → streak → dashboard)
-  const [onboarded, setOnboarded] = useState<boolean>(() => isOnboardingDone());
-  // Only ever show onboarding once per account (checked against the server flag).
-  const [onboardChecked, setOnboardChecked] = useState<boolean>(false);
   const [guideOpen, setGuideOpen] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    if (!authed) { setOnboardChecked(false); return; }
-    syncOnboardingWithServer().then((done) => {
-      if (!alive) return;
-      if (done) setOnboarded(true);
-      setOnboardChecked(true);
-    });
-    return () => { alive = false; };
-  }, [authed]);
-  const finishOnboarding = ({ subject: s, chapter, startStudying }: { subject: OnboardingSubject; chapter: number; startStudying: boolean }) => {
-    setOnboarded(true);
-    void markOnboardedRemote();
-    if (startStudying) {
-      try {
-        sessionStorage.setItem("flashcards:review", "1");
-        localStorage.setItem(SUBJECT_STORAGE_KEY, s);
-      } catch { /* ignore */ }
-      setSubject(s as AppSubject);
-      chooseMenu("flashcards");
-      window.history.replaceState({}, "", `/flashcards/${chapter}`);
-    } else {
-      chooseMenu("basics");
-    }
-  };
   const resetRole = () => {
     localStorage.removeItem(ROLE_GATE_STORAGE_KEY);
     setAuthRole(null);
@@ -849,9 +812,7 @@ const StudentApp = () => {
           language={language ?? "en"}
           onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
         />
-        <InstallAppPrompt />
-        {language && isPremium && <PremiumWelcomeOverlay language={language} />}
-        {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+        {authed && language && authRole !== "admin" && channelVerified && (
           <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
         )}
       {guideOpen && language && (
@@ -865,24 +826,16 @@ const StudentApp = () => {
           </Suspense>
         </div>
       )}
-      {authed && language && channelVerified && onboarded && !guideOpen && (
-        <NewFeatureAnnouncement language={language} />
-      )}
-
-
-      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
-        <MistakesPunishment language={language} onOpenMistakes={() => chooseMenu("mistakes")} />
-      )}
-      {authed && language && channelVerified && onboarded && (
+      {authed && language && channelVerified && (
         <ChallengeInviteWatcher language={language} onAccept={() => chooseMenu("liveBattle" as MenuChoice)} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+      {authed && language && authRole !== "admin" && channelVerified && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+      {authed && language && authRole !== "admin" && channelVerified && (
         <WeaknessCheckInAgent language={language} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && onboarded && (
+      {authed && language && authRole !== "admin" && channelVerified && (
         <BottomGroupNav
           language={language}
           active={(menuChoice as any) ?? "basics"}
@@ -932,8 +885,6 @@ const StudentApp = () => {
         <LanguageGate onSelect={setLanguage} />
       ) : authRole !== "admin" && !channelVerified ? (
         <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
-      ) : authRole !== "admin" && onboardChecked && !onboarded ? (
-        <Onboarding language={language} onFinish={finishOnboarding} />
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
         <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
       ) : !menuChoice || menuChoice === "basics" ? (
