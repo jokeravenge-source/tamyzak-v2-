@@ -27,6 +27,7 @@ import { flashcardsBioCh1En } from "@/data/flashcardsBioCh1En";
 import { flashcardsBioCh2En } from "@/data/flashcardsBioCh2En";
 import { flashcardsBioCh3En } from "@/data/flashcardsBioCh3En";
 import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
+import { flashcardsBioCh3NadiaEn, nadiaBioCh3TopicRanges } from "@/data/flashcardsBioCh3NadiaEn";
 import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
@@ -85,7 +86,7 @@ import {
   type SrsRating,
   type SrsState,
 } from "@/lib/srs";
-import { PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
+import { BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
 
 
@@ -114,6 +115,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   useFeatureUsed("flashcards");
   const { chapter = "3" } = useParams();
   const baseDeck = decks[chapter] ?? decks["3"];
+  const biologyFlashcardTeacher = typeof window !== "undefined"
+    ? sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY)
+    : null;
+  const isNadiaBiologyDeck = subject === "biology"
+    && chapter === "3"
+    && biologyFlashcardTeacher === "nadia-al-nuaimi";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -178,6 +185,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         };
       }
       if (subject === "biology" && chapter === "3") {
+        if (isNadiaBiologyDeck) {
+          return {
+            title: "بطاقات تعليمية",
+            eyebrow: language === "ar"
+              ? "الأحياء · الفصل الثالث · التكاثر · نادية النعيمي"
+              : "Biology · Chapter 3 · Reproduction · Nadia Al-Nuaimi",
+            cards: flashcardsBioCh3NadiaEn,
+          };
+        }
         return {
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "الأحياء · التكاثر · الأستاذ محمد العنزي" : "Biology · Reproduction · Teacher: Mohammed Al-Anzi",
@@ -379,28 +395,36 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       return baseDeck;
     },
-    [baseDeck, chapter, language, subject]
+    [baseDeck, chapter, isNadiaBiologyDeck, language, subject]
   );
   const text = copy[language];
   // Explicit, source-derived topic groups for decks that are built from
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
+    if (isNadiaBiologyDeck) {
+      return nadiaBioCh3TopicRanges.map((topic) => ({
+        key: topic.key,
+        label: language === "ar" ? topic.ar : topic.en,
+        cards: flashcardsBioCh3NadiaEn.slice(topic.start - 1, topic.end),
+      }));
+    }
     return null;
-  }, [subject, chapter, language]);
+  }, [isNadiaBiologyDeck, language]);
 
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
     () => {
+      const listExtraCards = isNadiaBiologyDeck ? [] : extraCards;
       if (explicitGroups) {
         const withExtras: TopicGroup[] =
-          extraCards.length > 0
+          listExtraCards.length > 0
             ? [
                 ...explicitGroups,
                 {
                   key: "user-added",
                   label: language === "ar" ? "إضافات الطلبة" : "User-added",
-                  cards: extraCards,
+                  cards: listExtraCards,
                 },
               ]
             : explicitGroups;
@@ -408,15 +432,17 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         if (preset) return preset;
       }
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
-      const baseCards = [...deck.cards, ...extraCards];
+      // Custom cards belong to the original subject collection. Keep Nadia's
+      // supplied list isolated so its 264 cards remain a separate deck.
+      const baseCards = [...deck.cards, ...listExtraCards];
       const presetGroups = buildPresetGroups(subject, String(chapter), language, baseCards);
       if (presetGroups) {
         const preset = explicitTopics(presetGroups, language);
         if (preset) return preset;
       }
-      return groupFlashcardsByTopic([...deck.cards, ...extraCards], language);
+      return groupFlashcardsByTopic([...deck.cards, ...listExtraCards], language);
     },
-    [deck, extraCards, language, explicitGroups, subject, chapter]
+    [deck, extraCards, isNadiaBiologyDeck, language, explicitGroups, subject, chapter]
   );
   const hasTopics = topicResult.topics.length > 1;
   const [topicKey, setTopicKey] = useState<string>(topicResult.allKey);
@@ -449,7 +475,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   }, [topicResult, topicKey, dailyTarget, subject, chapter]);
 
   const [cards, setCards] = useState(activeTopicCards);
-  const progressKey = `flashcard-progress:${subject}:${chapter}:${savedView ? "saved" : topicKey}`;
+  const deckProgressScope = isNadiaBiologyDeck ? "nadia-al-nuaimi" : "default";
+  const progressKey = `flashcard-progress:${subject}:${chapter}:${deckProgressScope}:${savedView ? "saved" : topicKey}`;
   const readSavedIndex = (max: number) => {
     try {
       const raw = localStorage.getItem(progressKey);
