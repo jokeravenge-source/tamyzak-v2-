@@ -523,7 +523,15 @@ const fmt = (s: number) => {
   return `${h}:${m}:${sec}`;
 };
 
-const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+const Sessions = ({
+  language,
+  onBack,
+  onOpenSurahs,
+}: {
+  language: AppLanguage;
+  onBack: () => void;
+  onOpenSurahs: () => void;
+}) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
   const [subject, setSubject] = useState<string | null>(null);
@@ -1206,6 +1214,25 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">{L.desc}</p>
             </div>
           </header>
+
+          <button
+            type="button"
+            onClick={onOpenSurahs}
+            className="group mb-8 flex w-full items-center gap-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15 hover:shadow-md md:p-5"
+          >
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
+              <Moon className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-black text-foreground md:text-lg">
+                {language === "ar" ? "سور القرآن الكريم" : "Quran Surahs"}
+              </span>
+              <span className="mt-1 block text-xs text-muted-foreground md:text-sm">
+                {language === "ar" ? "استمع واقرأ وتدرّب على الآيات" : "Listen, read, and practise the verses"}
+              </span>
+            </span>
+            <ChevronRight className={`h-5 w-5 shrink-0 text-emerald-600 transition-transform group-hover:translate-x-0.5 dark:text-emerald-300 ${dir === "rtl" ? "rotate-180" : ""}`} />
+          </button>
 
           <section className="mb-8">
             <div className="mb-4 flex items-end justify-between gap-3">
