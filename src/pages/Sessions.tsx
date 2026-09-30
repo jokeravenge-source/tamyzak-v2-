@@ -22,11 +22,7 @@ import track3Asset from "@/assets/music/track3.mp3.asset.json";
 import track4Asset from "@/assets/music/track4.mp3.asset.json";
 import track5Asset from "@/assets/music/track5.mp3.asset.json";
 import track6Asset from "@/assets/music/track6.mp3.asset.json";
-import surahAlImranAsset from "@/assets/surah-al-imran-90-94.mp3.asset.json";
-import surahAlBaqarahAsset from "@/assets/surah-al-baqarah-153-157.mp3.asset.json";
-import surahAlAnbiyaAsset from "@/assets/surah-al-anbiya-1-7.mp3.asset.json";
-import surahAnNisaAsset from "@/assets/surah-an-nisa-unit3.mp3.asset.json";
-import surahAlIsraAsset from "@/assets/surah-al-isra-30-39.mp3.asset.json";
+import quranTrackAsset from "@/assets/music/quran.mp3.asset.json";
 import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
@@ -345,16 +341,10 @@ const SessionTodos = ({
 };
 
 const MUSIC_TRACKS = [track1Asset.url, track2Asset.url, track3Asset.url, track4Asset.url, track5Asset.url, track6Asset.url];
-const QURAN_TRACKS = [
-  surahAlImranAsset.url,
-  surahAlBaqarahAsset.url,
-  surahAlAnbiyaAsset.url,
-  surahAnNisaAsset.url,
-  surahAlIsraAsset.url,
-];
+const QURAN_TRACKS = [quranTrackAsset.url];
 const QURAN_TRACK_LABELS = {
-  ar: ["آل عمران 90-94", "البقرة 153-157", "الأنبياء 1-7", "النساء 1-5", "الإسراء 30-39"],
-  en: ["Al-Imran 90-94", "Al-Baqarah 153-157", "Al-Anbiya 1-7", "An-Nisa 1-5", "Al-Isra 30-39"],
+  ar: ["سورة يس"],
+  en: ["Surah Yasin"],
 } as const;
 const MAX_SECONDS = 48 * 3600;
 const PERSIST_KEY = "study_session_state_v1";
