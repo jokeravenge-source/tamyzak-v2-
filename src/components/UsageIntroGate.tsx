@@ -1,21 +1,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Compass } from "lucide-react";
+import { markUsageIntroAnswered, usageIntroAnswered } from "@/lib/usageIntro";
 
-/** Per-day key: the card is shown again once every calendar day the site is opened. */
-const KEY = "usage_intro_answered_day";
-
-function todayStamp(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
-
-export function usageIntroAnswered(): boolean {
-  try {
-    return localStorage.getItem(KEY) === todayStamp();
-  } catch {
-    return true;
-  }
-}
 
 const UsageIntroGate = ({
   language,
@@ -32,11 +19,7 @@ const UsageIntroGate = ({
   }, []);
 
   const answer = (knows: boolean) => {
-    try {
-      localStorage.setItem(KEY, todayStamp());
-    } catch {
-      /* ignore */
-    }
+    markUsageIntroAnswered();
     setOpen(false);
     if (!knows) onNeedHelp();
   };
