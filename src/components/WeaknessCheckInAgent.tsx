@@ -12,7 +12,6 @@ import {
   inferWeakAreaFromText,
   mergeWeakAreas,
   weakAreaDisplayLabel,
-  weaknessAutoOpenDue,
   type WeakArea,
   type WeaknessMessage,
   type WeaknessSession,
@@ -205,14 +204,13 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
           detectedAreas: refreshed.detectedAreas,
           weakAreas: refreshed.weakAreas,
         });
-        const shouldOpen = weaknessAutoOpenDue(unfinished.updatedAt);
-        const next = shouldOpen || evidenceChanged
+        const next = evidenceChanged
           ? { ...refreshed, updatedAt: new Date().toISOString() }
           : refreshed;
         setSession(next);
-        setOpen(shouldOpen);
+        setOpen(false);
         setInitializing(false);
-        if (shouldOpen || evidenceChanged) void persist(next);
+        if (evidenceChanged) void persist(next);
         return;
       }
 
@@ -232,7 +230,6 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
 
       const detectedAreas = detectWeakAreas(await loadTopicPractice());
       const now = new Date().toISOString();
-      const shouldOpen = weaknessAutoOpenDue(local?.updatedAt);
       const created: WeaknessSession = {
         isoWeek: week,
         status: "active",
@@ -245,7 +242,7 @@ export default function WeaknessCheckInAgent({ language }: { language: AppLangua
       };
       if (!active) return;
       setSession(created);
-      setOpen(shouldOpen);
+      setOpen(false);
       setInitializing(false);
       void persist(created);
     })().catch(() => { if (active) setInitializing(false); });
