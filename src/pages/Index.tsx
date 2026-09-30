@@ -26,9 +26,11 @@ import { flashcardsBioCh5Ar } from "@/data/flashcardsBioCh5Ar";
 import { flashcardsBioCh1En } from "@/data/flashcardsBioCh1En";
 import { flashcardsBioCh2En } from "@/data/flashcardsBioCh2En";
 import { flashcardsBioCh1NadiaEn, nadiaBioCh1TopicRanges } from "@/data/flashcardsBioCh1NadiaEn";
+import { flashcardsBioCh1NadiaAr } from "@/data/flashcardsBioCh1NadiaAr";
 import { flashcardsBioCh3En } from "@/data/flashcardsBioCh3En";
 import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh3NadiaEn, nadiaBioCh3TopicRanges } from "@/data/flashcardsBioCh3NadiaEn";
+import { flashcardsBioCh3NadiaAr } from "@/data/flashcardsBioCh3NadiaAr";
 import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
@@ -184,7 +186,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             eyebrow: language === "ar"
               ? "الأحياء · الفصل الأول · الخلية والانقسام · نادية النعيمي"
               : "Biology · Chapter 1 · The Cell & Cell Division · Nadia Al-Nuaimi",
-            cards: flashcardsBioCh1NadiaEn,
+            cards: language === "ar" ? flashcardsBioCh1NadiaAr : flashcardsBioCh1NadiaEn,
           };
         }
         return {
@@ -207,7 +209,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             eyebrow: language === "ar"
               ? "الأحياء · الفصل الثالث · التكاثر · نادية النعيمي"
               : "Biology · Chapter 3 · Reproduction · Nadia Al-Nuaimi",
-            cards: flashcardsBioCh3NadiaEn,
+            cards: language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn,
           };
         }
         return {
@@ -420,7 +422,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
     if (isNadiaBiologyDeck) {
       const topicRanges = chapter === "1" ? nadiaBioCh1TopicRanges : nadiaBioCh3TopicRanges;
-      const topicCards = chapter === "1" ? flashcardsBioCh1NadiaEn : flashcardsBioCh3NadiaEn;
+      const topicCards = chapter === "1"
+        ? (language === "ar" ? flashcardsBioCh1NadiaAr : flashcardsBioCh1NadiaEn)
+        : (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn);
       return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
