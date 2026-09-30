@@ -1,6 +1,6 @@
 /**
  * Chapter 1 Biology cards supplied for Nadia Al-Nuaimi.
- * The source deck is English, so it is intentionally used in both UI languages.
+ * This source deck is used when the interface language is English.
  */
 export const flashcardsBioCh1NadiaEn = [
   { q: "What are the functions of rough E.R.?", a: "Builds proteins, transports materials inside the cell especially toward Golgi bodies, and forms an intracellular structural reticulum." },
