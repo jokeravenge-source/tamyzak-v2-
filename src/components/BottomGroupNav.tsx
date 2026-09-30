@@ -1,13 +1,13 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Home, LayoutGrid, UserRound, UsersRound } from "lucide-react";
+import { Bot, Home, LayoutGrid, UserRound, UsersRound } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type PrimaryNavItem = {
-  key: MainMenuChoice;
+  key: MainMenuChoice | "guide";
   labelAr: string;
   labelEn: string;
   Icon: ComponentType<{ className?: string }>;
@@ -17,7 +17,7 @@ type PrimaryNavItem = {
 // five destinations lives in "All tools", so students always know where to go.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
-  { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
+  { key: "guide", labelAr: "المرشد", labelEn: "Guide", Icon: Bot },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
   { key: "more", labelAr: "كل الأدوات", labelEn: "All tools", Icon: LayoutGrid },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
@@ -27,10 +27,12 @@ const BottomGroupNav = ({
   language,
   active,
   onSelect,
+  onGuide,
 }: {
   language: AppLanguage;
   active: MainMenuChoice | null;
   onSelect: (key: MainMenuChoice) => void;
+  onGuide: () => void;
 }) => {
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const navVisible = useNavVisibility();
@@ -40,7 +42,8 @@ const BottomGroupNav = ({
     setPortalRoot(document.body);
   }, []);
 
-  const isItemActive = (key: MainMenuChoice) => {
+  const isItemActive = (key: PrimaryNavItem["key"]) => {
+    if (key === "guide") return false;
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
       return Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
@@ -48,14 +51,10 @@ const BottomGroupNav = ({
     return active === key;
   };
 
-  const selectItem = (key: MainMenuChoice) => {
-    if (key === "subjectsHub") {
-      try {
-        localStorage.removeItem("app_subject_focus_v1");
-      } catch {
-        // Storage can be blocked in some embedded browsers; navigation still works.
-      }
-      window.dispatchEvent(new CustomEvent("app:open-subject", { detail: { code: null } }));
+  const selectItem = (key: PrimaryNavItem["key"]) => {
+    if (key === "guide") {
+      onGuide();
+      return;
     }
     onSelect(key);
   };
