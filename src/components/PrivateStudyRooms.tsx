@@ -12,7 +12,14 @@ import StudentProfileDialog from "./StudentProfileDialog";
 type Room = { id: string; code: string; name: string; owner_id: string; is_public: boolean; subject: string | null };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
 type Message = { id: string; user_id: string; display_name: string; body: string; created_at: string };
-type Presence = { elapsed_seconds: number; is_running: boolean; last_seen_at: string; subject: string; mission: string };
+type Presence = {
+  elapsed_seconds: number;
+  is_running: boolean;
+  last_seen_at: string;
+  subject: string;
+  mission: string;
+  observed_at_ms: number;
+};
 
 const LS_KEY = "study_room_active_v1";
 const MEMBER_PREVIEW_LIMIT = 30;
@@ -25,6 +32,27 @@ const fmtClock = (s: number) => {
   const p = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${p(h)}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
 };
+
+function mergePresenceRows(rows: any[], previous: Record<string, Presence>): Record<string, Presence> {
+  const observedAtMs = Date.now();
+  return Object.fromEntries(rows.map((s: any) => {
+    const prior = previous[s.user_id];
+    const unchangedSnapshot = prior &&
+      prior.elapsed_seconds === (s.elapsed_seconds ?? 0) &&
+      prior.is_running === !!s.is_running &&
+      prior.last_seen_at === s.last_seen_at;
+    return [s.user_id, {
+      elapsed_seconds: s.elapsed_seconds ?? 0,
+      is_running: !!s.is_running,
+      last_seen_at: s.last_seen_at,
+      subject: s.subject ?? "",
+      mission: s.mission ?? "",
+      // Preserve the anchor while polling returns the same row. Reset it only
+      // when the owner's heartbeat supplies a genuinely newer timer snapshot.
+      observed_at_ms: unchangedSnapshot ? prior.observed_at_ms : observedAtMs,
+    } satisfies Presence];
+  }));
+}
 
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -187,14 +215,7 @@ export default function PrivateStudyRooms({
         .from("active_sessions")
         .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
         .in("user_id", ids);
-      setPresence(
-        Object.fromEntries(
-          (sess ?? []).map((s: any) => [
-            s.user_id,
-            { elapsed_seconds: s.elapsed_seconds ?? 0, is_running: !!s.is_running, last_seen_at: s.last_seen_at, subject: s.subject ?? "", mission: s.mission ?? "" },
-          ]),
-        ),
-      );
+      setPresence((previous) => mergePresenceRows(sess ?? [], previous));
       const byId = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
       setMembers(
         base.map((m) => {
@@ -314,13 +335,7 @@ export default function PrivateStudyRooms({
         .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
         .in("user_id", ids);
       if (active && !error) {
-        setPresence(Object.fromEntries((data ?? []).map((s) => [s.user_id, {
-          elapsed_seconds: s.elapsed_seconds ?? 0,
-          is_running: !!s.is_running,
-          last_seen_at: s.last_seen_at,
-          subject: s.subject ?? "",
-          mission: s.mission ?? "",
-        }])));
+        setPresence((previous) => mergePresenceRows(data ?? [], previous));
       }
     };
     void refresh();
