@@ -26,6 +26,7 @@ const Summaries = lazy(() => import("./pages/Summaries"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
 import AdminLogin from "./pages/AdminLogin";
 import AdminMcqReview from "./pages/AdminMcqReview";
 
@@ -165,6 +166,19 @@ const SpotifyAuthCallback = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Standalone password-protected review dashboard for Nadia's Biology decks.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-flashcards") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <NadiaFlashcardsDashboard />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Public parent follow-up route — intercept before any auth gating
   const followMatch = typeof window !== "undefined" ? window.location.pathname.match(/^\/follow\/([A-Za-z0-9_-]+)/) : null;
   if (followMatch) {
