@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
-const REQUIRED_CHANNELS = ["@Tamayuzak", "@a6th_dhs", "@sad6ths"] as const;
+const REQUIRED_CHANNELS = ["@Tamayuzak"] as const;
 const MEMBER_STATUSES = new Set(["creator", "administrator", "member", "restricted"]);
 
 type ChannelCheck = {

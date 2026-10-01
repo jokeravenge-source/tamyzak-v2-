@@ -3,32 +3,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Send, RefreshCw, CheckCircle2 } from "lucide-react";
 import type { AppLanguage } from "./LanguageGate";
 
-const REQUIRED_CHANNELS = ["Tamayuzak", "a6th_dhs", "sad6ths"] as const;
+const REQUIRED_CHANNELS = ["Tamayuzak"] as const;
 
 const T = {
   en: {
-    title: "Join the required Telegram channels",
-    desc: "Please join all three channels to continue.",
+    title: "Join the Tamayzak Telegram channel",
+    desc: "Joining is optional, but you'll get the latest updates.",
     open: "Join",
     check: "I've joined",
     checking: "Checking…",
     notJoined: "We can't see you in the channel yet. Please join, then try again.",
     signOut: "Sign out",
-    step1: "1. Open each channel below.",
-    step2: "2. Press JOIN in all three Telegram channels.",
-    step3: "3. Come back here and tap “I've joined”.",
+    step1: "1. Open the channel below.",
+    step2: "2. Press JOIN in Telegram.",
+    step3: "3. Come back and tap “I've joined”, or skip.",
+    skip: "Skip",
   },
   ar: {
-    title: "انضم إلى قنوات تلغرام المطلوبة",
-    desc: "يرجى الانضمام إلى القنوات الثلاث للمتابعة.",
+    title: "انضم إلى قناة تميزك على تلغرام",
+    desc: "الانضمام اختياري، لكنه يوصلك آخر التحديثات.",
     open: "انضم إلى",
     check: "لقد انضممت",
     checking: "جاري التحقق…",
     notJoined: "لم نرك في القناة بعد. يرجى الانضمام ثم المحاولة مرة أخرى.",
     signOut: "تسجيل الخروج",
-    step1: "١. افتح كل قناة من الأزرار بالأسفل.",
-    step2: "٢. اضغط JOIN في القنوات الثلاث داخل تلغرام.",
-    step3: "٣. ارجع هنا واضغط «لقد انضممت».",
+    step1: "١. افتح القناة من الزر بالأسفل.",
+    step2: "٢. اضغط JOIN داخل تلغرام.",
+    step3: "٣. ارجع واضغط «لقد انضممت» أو تخطَّ.",
+    skip: "تخطي",
   },
 } as const;
 
@@ -114,6 +116,12 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
                   {t.check}
                 </>
               )}
+            </button>
+            <button
+              onClick={() => onVerified()}
+              className="w-full h-10 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition"
+            >
+              {t.skip}
             </button>
             <button
               onClick={async () => {
