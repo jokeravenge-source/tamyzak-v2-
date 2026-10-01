@@ -65,7 +65,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
     tools: [
       { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
-      { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
+      { key: "ministerialBank", en: "Ministerial Questions", ar: "الأسئلة الوزارية", Icon: ScrollText },
       { key: "biologySchemes", en: "Schemes", ar: "مخططات", Icon: Images, free: true,
         descEn: "Visual, step-by-step explanations of complete Biology texts.", descAr: "شرح بصري متسلسل للنصوص الكاملة خطوة بخطوة." },
       { key: "biologyDrawings", en: "Biology Drawings", ar: "رسومات الأحياء", Icon: Microscope },
@@ -194,6 +194,9 @@ const SubjectsHub = ({
     if (open) {
       try {
         localStorage.setItem("app_subject_v1", open);
+        if (t.key === "ministerialBank") {
+          sessionStorage.setItem("ministerial_subject_focus_v1", open);
+        }
       } catch { /* ignore */ }
       window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: open } }));
     }

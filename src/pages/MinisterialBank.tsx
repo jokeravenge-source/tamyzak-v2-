@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, Eye, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/subjectChapters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { awardAction } from "@/lib/unlocks";
+import { recordMistake } from "@/lib/mistakes";
 import PointsHint from "@/components/PointsHint";
 import { ministerialChemCh1 } from "@/data/ministerialChemCh1";
 import { ministerialChemCh2 } from "@/data/ministerialChemCh2";
@@ -35,6 +36,7 @@ import { ministerialArabicIstifham } from "@/data/ministerialArabicIstifham";
 import { ministerialArabicMadhDham } from "@/data/ministerialArabicMadhDham";
 import { ministerialArabicTaajjub } from "@/data/ministerialArabicTaajjub";
 import { ministerialArabicNida } from "@/data/ministerialArabicNida";
+import { ministerialBioCh1 } from "@/data/ministerialBioCh1";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
@@ -84,6 +86,20 @@ const copy = {
     yourAnswer: "Your answer",
     typeAnswer: "Type your answer here...",
     review: "Review answer",
+    checkAnswer: "Check answer with AI",
+    checkingAnswer: "AI is checking your answer...",
+    answerRequired: "Write your answer before checking it.",
+    answerCheckError: "Could not check the answer. Please try again.",
+    correctResult: "Correct answer",
+    wrongResult: "Wrong answer",
+    similarity: "Answer match",
+    passRule: "90% or higher counts as correct.",
+    feedback: "AI feedback",
+    mistakesLabel: "What was wrong",
+    missingLabel: "Missing points",
+    tryAgain: "Try again",
+    nextQuestion: "Next question",
+    finish: "Finish",
     prev: "Previous",
     next: "Next",
     correct: "Correct answer",
@@ -138,6 +154,20 @@ const copy = {
     yourAnswer: "إجابتك",
     typeAnswer: "اكتب إجابتك هنا...",
     review: "مراجعة الإجابة",
+    checkAnswer: "تحقق من الإجابة بالذكاء الاصطناعي",
+    checkingAnswer: "الذكاء الاصطناعي يدقق إجابتك...",
+    answerRequired: "اكتب إجابتك أولاً قبل التحقق منها.",
+    answerCheckError: "تعذّر التحقق من الإجابة، حاول مرة أخرى.",
+    correctResult: "إجابة صحيحة",
+    wrongResult: "إجابة خاطئة",
+    similarity: "نسبة التطابق",
+    passRule: "تُعد الإجابة صحيحة عند بلوغ 90% أو أكثر.",
+    feedback: "ملاحظات الذكاء الاصطناعي",
+    mistakesLabel: "مواضع الخطأ",
+    missingLabel: "النقاط الناقصة",
+    tryAgain: "حاول مرة أخرى",
+    nextQuestion: "السؤال التالي",
+    finish: "إنهاء",
     prev: "السابق",
     next: "التالي",
     correct: "الإجابة الصحيحة",
@@ -177,15 +207,36 @@ const copy = {
   },
 } as const;
 
+type AnswerCheckResult = {
+  similarity: number;
+  isCorrect: boolean;
+  threshold: number;
+  feedback: string;
+  matchedPoints: string[];
+  missingPoints: string[];
+  mistakes: { studentClaim: string; correction: string }[];
+};
+
 const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   useFeatureUsed("ministerial_questions");
   const t = copy[language];
-  const [subject, setSubject] = useState<BankSubject | null>(null);
+  const [subject, setSubject] = useState<BankSubject | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const focused = sessionStorage.getItem("ministerial_subject_focus_v1") as BankSubject | null;
+      sessionStorage.removeItem("ministerial_subject_focus_v1");
+      return focused && SUBJECTS_ORDER.some((item) => item.code === focused) ? focused : null;
+    } catch {
+      return null;
+    }
+  });
   const [chapterN, setChapterN] = useState<number | null>(null);
   const [qIndex, setQIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [reviewing, setReviewing] = useState(false);
+  const [checkingAnswer, setCheckingAnswer] = useState(false);
+  const [answerChecks, setAnswerChecks] = useState<Record<number, AnswerCheckResult>>({});
   const [examOpen, setExamOpen] = useState(false);
   const [examLoading, setExamLoading] = useState(false);
   const [examText, setExamText] = useState<string>("");
@@ -207,6 +258,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       setSelectedCategory(null);
       setQIndex(0);
       setAnswers({});
+      setAnswerChecks({});
+      setCheckingAnswer(false);
     } else if (subject) {
       setSubject(null);
     } else {
@@ -335,8 +388,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 ? ministerialArabicTaajjub
                 : subject === "arabic" && chapterN === 5
                 ? ministerialArabicNida
-                : subject === "biology" && chapterN === 1 && language === "ar"
-                ? ministerialBioCh1Ar
+                : subject === "biology" && chapterN === 1
+                ? (language === "ar" ? ministerialBioCh1Ar : ministerialBioCh1)
                 : subject === "islamic" && chapterN === 1
                 ? ministerialIslamicUnit1
                 : subject === "islamic" && chapterN === 2
@@ -358,9 +411,83 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
     : allQuestions, [allQuestions, selectedCategory, subject, chapterN]);
   const hasQuestionBank = questions.length > 0;
   const current = questions[qIndex];
+  const answerCheck = answerChecks[qIndex];
+
   const markQuestion = (correct: boolean) => {
     if (!subject || chapterN === null || !current) return;
     void recordTopicPractice({ subject, chapter: chapterN, question: current.q, context: current.a, source: "ministerial_bank", correct });
+  };
+
+  const checkCurrentAnswer = async () => {
+    const studentAnswer = (answers[qIndex] ?? "").trim();
+    if (!current || !studentAnswer) {
+      toast({ title: t.answerRequired, variant: "destructive" });
+      return;
+    }
+
+    setCheckingAnswer(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-ministerial-answer", {
+        body: {
+          question: current.q,
+          modelAnswer: current.a,
+          studentAnswer,
+          language,
+        },
+      });
+
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+
+      const similarity = Math.max(0, Math.min(100, Math.round(Number(data?.similarity) || 0)));
+      const result: AnswerCheckResult = {
+        similarity,
+        isCorrect: similarity >= 90,
+        threshold: 90,
+        feedback: String(data?.feedback ?? ""),
+        matchedPoints: Array.isArray(data?.matched_points) ? data.matched_points.map(String) : [],
+        missingPoints: Array.isArray(data?.missing_points) ? data.missing_points.map(String) : [],
+        mistakes: Array.isArray(data?.mistakes)
+          ? data.mistakes.map((item: Record<string, unknown>) => ({
+              studentClaim: String(item?.student_claim ?? ""),
+              correction: String(item?.correction ?? ""),
+            }))
+          : [],
+      };
+
+      setAnswerChecks((checks) => ({ ...checks, [qIndex]: result }));
+      setReviewing(true);
+      markQuestion(result.isCorrect);
+
+      if (!result.isCorrect) {
+        const explanation = [
+          result.feedback,
+          ...result.missingPoints,
+          ...result.mistakes.map((mistake) => `${mistake.studentClaim}: ${mistake.correction}`),
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        void recordMistake({
+          source: "ministerial_questions",
+          refId: `${subject ?? "unknown"}:${chapterN ?? 0}:${qIndex}`,
+          question: current.q,
+          subject,
+          chapter: chapterN === null ? null : String(chapterN),
+          language,
+          correctAnswer: current.a,
+          userAnswer: studentAnswer,
+          explanation,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: t.answerCheckError,
+        description: error?.message ?? "",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingAnswer(false);
+    }
   };
 
   return (
@@ -660,13 +787,58 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
         </section>
       ) : (
         hasQuestionBank && current ? (
-          reviewing ? (
+          reviewing && answerCheck ? (
             <section className="max-w-3xl mx-auto mt-12 z-10 relative animate-fade-up space-y-5">
               <div className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 {t.question} {qIndex + 1} {t.of} {questions.length}
               </div>
               <div className="rounded-3xl p-6 md:p-8 border border-primary/40 bg-secondary/40 backdrop-blur">
                 <p className="text-lg md:text-xl text-foreground leading-relaxed">{current.q}</p>
+              </div>
+              <div className={`rounded-3xl p-6 md:p-8 border backdrop-blur ${answerCheck.isCorrect ? "border-emerald-400/40 bg-emerald-500/10" : "border-red-400/40 bg-red-500/10"}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${answerCheck.isCorrect ? "bg-emerald-500/20 text-emerald-300" : "bg-red-500/20 text-red-300"}`}>
+                      {answerCheck.isCorrect ? <Check className="w-6 h-6" /> : <X className="w-6 h-6" />}
+                    </div>
+                    <div>
+                      <h3 className={`text-lg font-bold ${answerCheck.isCorrect ? "text-emerald-300" : "text-red-300"}`}>
+                        {answerCheck.isCorrect ? t.correctResult : t.wrongResult}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">{t.passRule}</p>
+                    </div>
+                  </div>
+                  <div className={`text-end ${answerCheck.isCorrect ? "text-emerald-300" : "text-red-300"}`}>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{t.similarity}</div>
+                    <div className="text-2xl font-black tabular-nums">{answerCheck.similarity}%</div>
+                  </div>
+                </div>
+                <div className="mt-5 pt-5 border-t border-white/10">
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">{t.feedback}</div>
+                  <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">{answerCheck.feedback}</p>
+                </div>
+                {answerCheck.mistakes.length > 0 && (
+                  <div className="mt-5">
+                    <div className="text-xs uppercase tracking-[0.2em] text-red-300 mb-2">{t.mistakesLabel}</div>
+                    <ul className="space-y-2">
+                      {answerCheck.mistakes.map((mistake, index) => (
+                        <li key={index} className="rounded-xl border border-red-400/20 bg-background/30 p-3 text-sm leading-relaxed">
+                          {mistake.studentClaim && <span className="text-red-200">{mistake.studentClaim}</span>}
+                          {mistake.studentClaim && mistake.correction && <span className="text-muted-foreground"> — </span>}
+                          {mistake.correction && <span className="text-foreground/90">{mistake.correction}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {answerCheck.missingPoints.length > 0 && (
+                  <div className="mt-5">
+                    <div className="text-xs uppercase tracking-[0.2em] text-amber-300 mb-2">{t.missingLabel}</div>
+                    <ul className="list-disc ms-5 space-y-1 text-sm text-foreground/90">
+                      {answerCheck.missingPoints.map((point, index) => <li key={index}>{point}</li>)}
+                    </ul>
+                  </div>
+                )}
               </div>
               <div className="rounded-3xl p-6 md:p-8 border border-emerald-400/30 bg-emerald-500/10 backdrop-blur">
                 <div className="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-2">{t.correct}</div>
@@ -678,31 +850,28 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                   {answers[qIndex]?.trim() ? answers[qIndex] : <span className="text-muted-foreground italic">{t.noAnswer}</span>}
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-6 pt-2">
-                <button
-                  onClick={() => { markQuestion(false); setReviewing(false); }}
-                  aria-label={t.gotItWrong}
-                  title={t.gotItWrong}
-                  className="w-16 h-16 rounded-full border border-red-400/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-all flex items-center justify-center"
-                >
-                  <X className="w-7 h-7" />
-                </button>
-                <button
-                  onClick={() => {
-                    markQuestion(true);
-                    if (qIndex < questions.length - 1) {
-                      setQIndex((i) => i + 1);
-                    }
+              <button
+                onClick={() => {
+                  if (!answerCheck.isCorrect) {
                     setReviewing(false);
-                  }}
-                  aria-label={t.gotIt}
-                  title={t.gotIt}
-                  disabled={!answers[qIndex]?.trim()}
-                  className="w-16 h-16 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all flex items-center justify-center"
-                >
-                  <Check className="w-7 h-7" />
-                </button>
-              </div>
+                    return;
+                  }
+                  if (qIndex < questions.length - 1) {
+                    setQIndex((index) => index + 1);
+                    setReviewing(false);
+                    return;
+                  }
+                  setChapterN(null);
+                  setQIndex(0);
+                  setAnswers({});
+                  setAnswerChecks({});
+                  setReviewing(false);
+                }}
+                className={`w-full h-12 rounded-2xl font-semibold transition-all inline-flex items-center justify-center gap-2 ${answerCheck.isCorrect ? "bg-emerald-500 text-white hover:bg-emerald-400" : "border border-red-400/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"}`}
+              >
+                {answerCheck.isCorrect ? <ChevronRight className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} /> : <RefreshCw className="w-4 h-4" />}
+                {answerCheck.isCorrect ? (qIndex < questions.length - 1 ? t.nextQuestion : t.finish) : t.tryAgain}
+              </button>
             </section>
           ) : (
             <section className="max-w-3xl mx-auto mt-12 z-10 relative animate-fade-up space-y-5">
@@ -752,11 +921,14 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 />
               </div>
               <button
-                onClick={() => setReviewing(true)}
-                className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-2"
+                onClick={checkCurrentAnswer}
+                disabled={checkingAnswer || !(answers[qIndex] ?? "").trim()}
+                className="w-full min-h-12 rounded-2xl bg-primary px-4 py-3 text-primary-foreground font-medium hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Eye className="w-4 h-4" /> {t.review}
+                {checkingAnswer ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {checkingAnswer ? t.checkingAnswer : t.checkAnswer}
               </button>
+              <p className="text-center text-xs text-muted-foreground">{t.passRule}</p>
               <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                   onClick={() => setQIndex((i) => Math.max(0, i - 1))}

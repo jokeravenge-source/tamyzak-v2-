@@ -52,6 +52,7 @@ import { ministerialChemCh3Ar } from "@/data/ministerialChemCh3Ar";
 import { ministerialChemCh4Ar } from "@/data/ministerialChemCh4Ar";
 import { ministerialChemCh5Ar } from "@/data/ministerialChemCh5Ar";
 import { ministerialChemCh6Ar } from "@/data/ministerialChemCh6Ar";
+import { ministerialBioCh1 } from "@/data/ministerialBioCh1";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { flashcardsArabicIstifhamAr } from "@/data/flashcardsArabicIstifhamAr";
 import { flashcardsArabicNidaAr } from "@/data/flashcardsArabicNidaAr";
@@ -112,7 +113,7 @@ const chemistryPool: QA[] = [
 const biologyPool: QA[] = [
   ...flashcardsBioCh1En, ...flashcardsBioCh2En, ...flashcardsBioCh3En, ...flashcardsBioCh5En,
   ...flashcardsBioCh1Ar, ...flashcardsBioCh2Ar, ...flashcardsBioCh3Ar, ...flashcardsBioCh5Ar,
-  ...ministerialBioCh1Ar,
+  ...ministerialBioCh1, ...ministerialBioCh1Ar,
 ];
 
 const arabicPool: QA[] = [

@@ -7,6 +7,7 @@ export type MistakeSource =
   | "daily_game"
   | "challenge"
   | "flashcard"
+  | "ministerial_questions"
   | "other";
 
 export type Mistake = {
