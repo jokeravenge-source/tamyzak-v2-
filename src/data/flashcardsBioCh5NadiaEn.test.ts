@@ -7,6 +7,13 @@ describe("Nadia Al-Nuaimi Biology Chapter 5 deck", () => {
     expect(flashcardsBioCh5NadiaEn.every((card) => card.q.trim() && card.a.trim())).toBe(true);
   });
 
+  it("does not include the source document's closing commentary", () => {
+    expect(flashcardsBioCh5NadiaEn.at(-1)).toEqual({
+      q: "What is the fundamental unit of nucleic acids?",
+      a: "Nucleotide.",
+    });
+  });
+
   it("groups the complete deck into continuous readable topics", () => {
     expect(nadiaBioCh5TopicRanges).toHaveLength(14);
     expect(nadiaBioCh5TopicRanges[0].start).toBe(1);
