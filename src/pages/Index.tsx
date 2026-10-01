@@ -36,6 +36,7 @@ import { flashcardsBioCh4NadiaEn, nadiaBioCh4TopicRanges } from "@/data/flashcar
 import { flashcardsBioCh4NadiaAr } from "@/data/flashcardsBioCh4NadiaAr";
 import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
 import { flashcardsBioCh5NadiaEn, nadiaBioCh5TopicRanges } from "@/data/flashcardsBioCh5NadiaEn";
+import { flashcardsBioCh5NadiaAr } from "@/data/flashcardsBioCh5NadiaAr";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
@@ -246,7 +247,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             eyebrow: language === "ar"
               ? "الأحياء · الفصل الخامس · الوراثة · نادية النعيمي"
               : "Biology · Chapter 5 · Genetics · Nadia Al-Nuaimi",
-            cards: flashcardsBioCh5NadiaEn,
+            cards: language === "ar" ? flashcardsBioCh5NadiaAr : flashcardsBioCh5NadiaEn,
           };
         }
         return {
@@ -468,7 +469,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             ? (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn)
             : chapter === "4"
               ? (language === "ar" ? flashcardsBioCh4NadiaAr : flashcardsBioCh4NadiaEn)
-              : flashcardsBioCh5NadiaEn;
+              : (language === "ar" ? flashcardsBioCh5NadiaAr : flashcardsBioCh5NadiaEn);
       return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
