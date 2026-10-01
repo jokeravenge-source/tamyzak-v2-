@@ -30,8 +30,8 @@ export const FLASHCARD_LISTS = [
     selectorValue: "nadia-al-nuaimi",
     nameAr: "نادية النعيمي",
     nameEn: "Nadia Al-Nuaimi",
-    subjectAr: "الأحياء · الفصول الأول والثاني والثالث والرابع",
-    subjectEn: "Biology · Chapters 1, 2, 3 & 4",
+    subjectAr: "الأحياء · الفصول من الأول إلى الخامس",
+    subjectEn: "Biology · Chapters 1–5",
   },
   {
     id: "chemistry-ahmed-al-nadawi",
