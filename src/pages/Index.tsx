@@ -35,6 +35,7 @@ import { flashcardsBioCh3NadiaAr } from "@/data/flashcardsBioCh3NadiaAr";
 import { flashcardsBioCh4NadiaEn, nadiaBioCh4TopicRanges } from "@/data/flashcardsBioCh4NadiaEn";
 import { flashcardsBioCh4NadiaAr } from "@/data/flashcardsBioCh4NadiaAr";
 import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
+import { flashcardsBioCh5NadiaEn, nadiaBioCh5TopicRanges } from "@/data/flashcardsBioCh5NadiaEn";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
@@ -130,7 +131,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
   const isNadiaBiologyDeck = subject === "biology"
-    && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4")
+    && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4" || chapter === "5")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
@@ -239,6 +240,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         };
       }
       if (subject === "biology" && chapter === "5") {
+        if (isNadiaBiologyDeck) {
+          return {
+            title: "بطاقات تعليمية",
+            eyebrow: language === "ar"
+              ? "الأحياء · الفصل الخامس · الوراثة · نادية النعيمي"
+              : "Biology · Chapter 5 · Genetics · Nadia Al-Nuaimi",
+            cards: flashcardsBioCh5NadiaEn,
+          };
+        }
         return {
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "الأحياء · الوراثة · الأستاذ محمد العنزي" : "Biology · Genetics · Teacher: Mohammed Al-Anzi",
@@ -447,14 +457,18 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           ? nadiaBioCh2TopicRanges
           : chapter === "3"
             ? nadiaBioCh3TopicRanges
-            : nadiaBioCh4TopicRanges;
+            : chapter === "4"
+              ? nadiaBioCh4TopicRanges
+              : nadiaBioCh5TopicRanges;
       const topicCards = chapter === "1"
         ? (language === "ar" ? flashcardsBioCh1NadiaAr : flashcardsBioCh1NadiaEn)
         : chapter === "2"
           ? (language === "ar" ? flashcardsBioCh2NadiaAr : flashcardsBioCh2NadiaEn)
           : chapter === "3"
             ? (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn)
-            : (language === "ar" ? flashcardsBioCh4NadiaAr : flashcardsBioCh4NadiaEn);
+            : chapter === "4"
+              ? (language === "ar" ? flashcardsBioCh4NadiaAr : flashcardsBioCh4NadiaEn)
+              : flashcardsBioCh5NadiaEn;
       return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
