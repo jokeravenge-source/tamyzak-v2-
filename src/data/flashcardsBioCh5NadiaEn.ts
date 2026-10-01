@@ -329,7 +329,7 @@ export const flashcardsBioCh5NadiaEn = [
   { q: "Chemical composition of ribosomes?", a: "rRNA + protein." },
   { q: "Where else besides the nucleus is DNA found?", a: "Mitochondria and plastids." },
   { q: "What protein is associated with DNA in chromosomes?", a: "Histone." },
-  { q: "What is the fundamental unit of nucleic acids?", a: "Nucleotide.\n\nThis gives you a 330-card Chapter 5 deck, with the ministerial/high-yield material integrated rather than making a tiny summary deck. The especially important sections to retain exactly are the Mendelian ratios/crosses, incomplete and co-dominance, lethal alleles, ABO/Rh problems, rabbit multiple alleles, and the DNA/RNA questions—the file repeatedly presents these as direct question-and-answer material." },
+  { q: "What is the fundamental unit of nucleic acids?", a: "Nucleotide." },
 ] as const;
 
 /** Related source sections are combined to keep the topic selector readable. Positions are 1-based. */
