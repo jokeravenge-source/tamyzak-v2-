@@ -26,6 +26,8 @@ import { flashcardsBioCh1En } from "@/data/flashcardsBioCh1En";
 import { flashcardsBioCh2En } from "@/data/flashcardsBioCh2En";
 import { flashcardsBioCh1NadiaEn, nadiaBioCh1TopicRanges } from "@/data/flashcardsBioCh1NadiaEn";
 import { flashcardsBioCh1NadiaAr } from "@/data/flashcardsBioCh1NadiaAr";
+import { flashcardsBioCh2NadiaEn, nadiaBioCh2TopicRanges } from "@/data/flashcardsBioCh2NadiaEn";
+import { flashcardsBioCh2NadiaAr } from "@/data/flashcardsBioCh2NadiaAr";
 import { flashcardsBioCh3En } from "@/data/flashcardsBioCh3En";
 import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh3NadiaEn, nadiaBioCh3TopicRanges } from "@/data/flashcardsBioCh3NadiaEn";
@@ -126,7 +128,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
   const isNadiaBiologyDeck = subject === "biology"
-    && (chapter === "1" || chapter === "3")
+    && (chapter === "1" || chapter === "2" || chapter === "3")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
@@ -194,6 +196,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         };
       }
       if (subject === "biology" && chapter === "2") {
+        if (isNadiaBiologyDeck) {
+          return {
+            title: "بطاقات تعليمية",
+            eyebrow: language === "ar"
+              ? "الأحياء · الفصل الثاني · الأنسجة · نادية النعيمي"
+              : "Biology · Chapter 2 · Tissues · Nadia Al-Nuaimi",
+            cards: language === "ar" ? flashcardsBioCh2NadiaAr : flashcardsBioCh2NadiaEn,
+          };
+        }
         return {
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "الأحياء · الأنسجة · الأستاذ محمد العنزي" : "Biology · Tissues · Teacher: Mohammed Al-Anzi",
@@ -419,10 +430,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
     if (isNadiaBiologyDeck) {
-      const topicRanges = chapter === "1" ? nadiaBioCh1TopicRanges : nadiaBioCh3TopicRanges;
+      const topicRanges = chapter === "1"
+        ? nadiaBioCh1TopicRanges
+        : chapter === "2"
+          ? nadiaBioCh2TopicRanges
+          : nadiaBioCh3TopicRanges;
       const topicCards = chapter === "1"
         ? (language === "ar" ? flashcardsBioCh1NadiaAr : flashcardsBioCh1NadiaEn)
-        : (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn);
+        : chapter === "2"
+          ? (language === "ar" ? flashcardsBioCh2NadiaAr : flashcardsBioCh2NadiaEn)
+          : (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn);
       return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
@@ -1025,7 +1042,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
                 <Ellipsis className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-48" dir={language === "ar" ? "rtl" : "ltr"}>
               <DropdownMenuItem onSelect={() => setShowSubmit(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
                 {language === "ar" ? "أضف بطاقة" : "Submit card"}
