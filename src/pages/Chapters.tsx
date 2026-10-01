@@ -63,7 +63,7 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   const chapters = getFlashcardChapters(subject, (englishCategory ?? "grammar") as FlashcardSection);
   const visibleChapters = subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
     ? chapters
-        .filter((chapter) => chapter.n >= 1 && chapter.n <= 4)
+        .filter((chapter) => chapter.n >= 1 && chapter.n <= 5)
         .map((chapter) => chapter.n === 4
           ? { ...chapter, title: "Embryonic Development", arTitle: "التطور الجنيني", locked: false }
           : chapter)
@@ -213,7 +213,7 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
                   </span>
                   <div>
                     <span className="mb-3 inline-flex rounded-full border border-fuchsia-300/25 bg-fuchsia-950/20 px-3 py-1 text-xs font-bold text-fuchsia-200">
-                      {language === "ar" ? "الفصول 1 و2 و3 و4 · 708 بطاقات" : "Chapters 1, 2, 3 & 4 · 708 cards"}
+                      {language === "ar" ? "الفصول 1–5 · 1038 بطاقة" : "Chapters 1–5 · 1,038 cards"}
                     </span>
                     <h2 className="text-3xl font-black text-foreground">نادية النعيمي</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Nadia Al-Nuaimi · Biology</p>
