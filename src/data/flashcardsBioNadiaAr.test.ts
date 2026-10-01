@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { flashcardsBioCh1NadiaAr } from "./flashcardsBioCh1NadiaAr";
 import { flashcardsBioCh2NadiaAr } from "./flashcardsBioCh2NadiaAr";
 import { flashcardsBioCh3NadiaAr } from "./flashcardsBioCh3NadiaAr";
+import { flashcardsBioCh4NadiaAr } from "./flashcardsBioCh4NadiaAr";
 
 const arabicText = /[\u0600-\u06ff]/;
 
@@ -22,5 +23,11 @@ describe("Arabic Nadia Al-Nuaimi Biology decks", () => {
     expect(flashcardsBioCh3NadiaAr).toHaveLength(264);
     expect(flashcardsBioCh3NadiaAr.every((card) => arabicText.test(card.q))).toBe(true);
     expect(flashcardsBioCh3NadiaAr.every((card) => card.a.trim())).toBe(true);
+  });
+
+  it("contains all 120 translated Chapter 4 cards", () => {
+    expect(flashcardsBioCh4NadiaAr).toHaveLength(120);
+    expect(flashcardsBioCh4NadiaAr.every((card) => arabicText.test(card.q))).toBe(true);
+    expect(flashcardsBioCh4NadiaAr.every((card) => card.a.trim())).toBe(true);
   });
 });
