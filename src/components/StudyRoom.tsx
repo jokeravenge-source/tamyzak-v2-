@@ -17,6 +17,7 @@ type Occupant = {
   last_seen_at: string;
   elapsed_seconds: number;
   is_running: boolean;
+  observed_at_ms: number;
 };
 
 const SUBJECT_LABEL: Record<string, { en: string; ar: string }> = {
@@ -93,41 +94,49 @@ export default function StudyRoom({
       if (profErr) return;
       const pmap = new Map<string, any>();
       (profs ?? []).forEach((p: any) => pmap.set(p.user_id, p));
-      // Preserve previously-rendered character traits for users whose profile row
-      // momentarily comes back empty (e.g., partial read), so avatars don't blank out.
-      const prevById = new Map(people.map((p) => [p.user_id, p] as const));
-      const mapped: Occupant[] = rows.map((r: any) => {
-        const p = pmap.get(r.user_id) ?? {};
-        const prev = prevById.get(r.user_id);
-        return {
-          user_id: r.user_id,
-          subject: r.subject,
-          mission: r.mission,
-          display_name: p.display_name ?? prev?.display_name ?? "Student",
-          gender: (p.gender ?? prev?.gender ?? "male") as Gender,
-          character: p.character ?? prev?.character ?? null,
-          started_at: r.started_at,
-          last_seen_at: r.last_seen_at,
-          elapsed_seconds: r.elapsed_seconds ?? 0,
-          is_running: !!r.is_running,
-        };
+      const observedAtMs = Date.now();
+      setPeople((previousPeople) => {
+        // Preserve the local tick anchor while realtime refreshes return the
+        // same snapshot; reset it when that student's heartbeat advances.
+        const prevById = new Map(previousPeople.map((p) => [p.user_id, p] as const));
+        const mapped: Occupant[] = rows.map((r: any) => {
+          const p = pmap.get(r.user_id) ?? {};
+          const prev = prevById.get(r.user_id);
+          const elapsedSeconds = r.elapsed_seconds ?? 0;
+          const isRunning = !!r.is_running;
+          const unchangedSnapshot = prev &&
+            prev.elapsed_seconds === elapsedSeconds &&
+            prev.is_running === isRunning &&
+            prev.last_seen_at === r.last_seen_at;
+          return {
+            user_id: r.user_id,
+            subject: r.subject,
+            mission: r.mission,
+            display_name: p.display_name ?? prev?.display_name ?? "Student",
+            gender: (p.gender ?? prev?.gender ?? "male") as Gender,
+            character: p.character ?? prev?.character ?? null,
+            started_at: r.started_at,
+            last_seen_at: r.last_seen_at,
+            elapsed_seconds: elapsedSeconds,
+            is_running: isRunning,
+            observed_at_ms: unchangedSnapshot ? prev.observed_at_ms : observedAtMs,
+          };
+        });
+        // Put current user first
+        mapped.sort((a, b) => {
+          if (currentUserId) {
+            if (a.user_id === currentUserId) return -1;
+            if (b.user_id === currentUserId) return 1;
+          }
+          return new Date(a.started_at).getTime() - new Date(b.started_at).getTime();
+        });
+        return mapped.slice(0, ROOM_CAPACITY);
       });
-      // Put current user first
-      mapped.sort((a, b) => {
-        if (currentUserId) {
-          if (a.user_id === currentUserId) return -1;
-          if (b.user_id === currentUserId) return 1;
-        }
-        return new Date(a.started_at).getTime() - new Date(b.started_at).getTime();
-      });
-      setPeople(mapped.slice(0, ROOM_CAPACITY));
     };
 
     load();
     loadRef.current = load;
     return () => { mounted = false; };
-    // `people` intentionally excluded — load() reads it via closure for fallback only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject, currentUserId]);
 
   // Realtime updates only while the tab is visible; one fresh fetch on regain.
