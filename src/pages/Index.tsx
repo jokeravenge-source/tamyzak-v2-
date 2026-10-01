@@ -501,7 +501,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
       // Custom cards belong to the original subject collection. Keep Nadia's
       // supplied list isolated so its 264 cards remain a separate deck.
-      const baseCards = [...deck.cards, ...listExtraCards];
+      const baseCards = ([] as any[]).concat(deck.cards as any[], listExtraCards as any[]);
       const presetGroups = buildPresetGroups(subject, String(chapter), language, baseCards);
       if (presetGroups) {
         const preset = explicitTopics(presetGroups, language);
