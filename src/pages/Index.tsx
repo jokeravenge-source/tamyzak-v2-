@@ -32,6 +32,8 @@ import { flashcardsBioCh3En } from "@/data/flashcardsBioCh3En";
 import { flashcardsBioCh3Ar } from "@/data/flashcardsBioCh3Ar";
 import { flashcardsBioCh3NadiaEn, nadiaBioCh3TopicRanges } from "@/data/flashcardsBioCh3NadiaEn";
 import { flashcardsBioCh3NadiaAr } from "@/data/flashcardsBioCh3NadiaAr";
+import { flashcardsBioCh4NadiaEn, nadiaBioCh4TopicRanges } from "@/data/flashcardsBioCh4NadiaEn";
+import { flashcardsBioCh4NadiaAr } from "@/data/flashcardsBioCh4NadiaAr";
 import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
@@ -128,7 +130,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
   const isNadiaBiologyDeck = subject === "biology"
-    && (chapter === "1" || chapter === "2" || chapter === "3")
+    && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
@@ -225,6 +227,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           title: "بطاقات تعليمية",
           eyebrow: language === "ar" ? "الأحياء · التكاثر · الأستاذ محمد العنزي" : "Biology · Reproduction · Teacher: Mohammed Al-Anzi",
           cards: language === "ar" ? flashcardsBioCh3Ar : flashcardsBioCh3En,
+        };
+      }
+      if (subject === "biology" && chapter === "4" && isNadiaBiologyDeck) {
+        return {
+          title: "بطاقات تعليمية",
+          eyebrow: language === "ar"
+            ? "الأحياء · الفصل الرابع · التطور الجنيني · نادية النعيمي"
+            : "Biology · Chapter 4 · Embryonic Development · Nadia Al-Nuaimi",
+          cards: language === "ar" ? flashcardsBioCh4NadiaAr : flashcardsBioCh4NadiaEn,
         };
       }
       if (subject === "biology" && chapter === "5") {
@@ -434,12 +445,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         ? nadiaBioCh1TopicRanges
         : chapter === "2"
           ? nadiaBioCh2TopicRanges
-          : nadiaBioCh3TopicRanges;
+          : chapter === "3"
+            ? nadiaBioCh3TopicRanges
+            : nadiaBioCh4TopicRanges;
       const topicCards = chapter === "1"
         ? (language === "ar" ? flashcardsBioCh1NadiaAr : flashcardsBioCh1NadiaEn)
         : chapter === "2"
           ? (language === "ar" ? flashcardsBioCh2NadiaAr : flashcardsBioCh2NadiaEn)
-          : (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn);
+          : chapter === "3"
+            ? (language === "ar" ? flashcardsBioCh3NadiaAr : flashcardsBioCh3NadiaEn)
+            : (language === "ar" ? flashcardsBioCh4NadiaAr : flashcardsBioCh4NadiaEn);
       return topicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
