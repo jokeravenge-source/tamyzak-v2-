@@ -502,6 +502,22 @@ export default function PrivateStudyRooms({
     loadPublicRooms();
   };
 
+  // Auto-leave (not a ban) after a full hour in the room without the timer running.
+  // The student can rejoin any time with the room code.
+  const leaveRef = useRef(leaveRoom);
+  leaveRef.current = leaveRoom;
+  const timerActive = !!(timerStarted && timerRunning);
+  useEffect(() => {
+    if (!room?.id || !userId || timerActive) return;
+    const id = window.setTimeout(() => {
+      toast.info(language === "ar"
+        ? "خرجت من الغرفة لأنك ما شغّلت المؤقت لمدة ساعة. تكدر ترجع بأي وقت."
+        : "You left the room because your timer wasn't started for an hour. You can rejoin anytime.");
+      leaveRef.current();
+    }, 60 * 60 * 1000);
+    return () => window.clearTimeout(id);
+  }, [room?.id, userId, timerActive, language]);
+
   const send = async () => {
     if (!room || !userId) return;
     const body = draft.trim();
