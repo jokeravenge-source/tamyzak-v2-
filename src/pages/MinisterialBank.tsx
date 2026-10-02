@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2, Eye } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/subjectChapters";
 import { supabase } from "@/integrations/supabase/client";
