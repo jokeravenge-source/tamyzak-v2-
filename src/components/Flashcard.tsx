@@ -80,12 +80,17 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
     };
   }, [comfortableScrolling, index, question, answer]);
 
+  const scrollFrameRef = useRef<number | null>(null);
   const updateScrollEnd = (face: "question" | "answer") => {
-    const node = face === "question" ? questionScrollRef.current : answerScrollRef.current;
-    if (!node) return;
-    const atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 6;
-    if (face === "question") setQuestionAtEnd(atEnd);
-    else setAnswerAtEnd(atEnd);
+    if (scrollFrameRef.current !== null) return;
+    scrollFrameRef.current = window.requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const node = face === "question" ? questionScrollRef.current : answerScrollRef.current;
+      if (!node) return;
+      const atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 6;
+      if (face === "question") setQuestionAtEnd((prev) => (prev === atEnd ? prev : atEnd));
+      else setAnswerAtEnd((prev) => (prev === atEnd ? prev : atEnd));
+    });
   };
 
   useEffect(() => () => {
@@ -218,8 +223,8 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             </div>
             {comfortableScrolling && questionOverflow && !questionAtEnd && (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-card/95 via-card/75 to-transparent pb-1 pt-8 text-[10px] font-semibold tracking-normal opacity-80">
-                <span className="inline-flex items-center gap-1 rounded-full bg-background/65 px-2.5 py-1 backdrop-blur">
-                  {labels.scroll}<ChevronDown className="size-3.5 animate-bounce" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1">
+                  {labels.scroll}<ChevronDown className="size-3.5" />
                 </span>
               </div>
             )}
@@ -252,8 +257,8 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             </div>
             {comfortableScrolling && answerOverflow && !answerAtEnd && (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-black/25 via-black/10 to-transparent pb-1 pt-8 text-[10px] font-semibold tracking-normal text-white/90">
-                <span className="inline-flex items-center gap-1 rounded-full bg-black/20 px-2.5 py-1 backdrop-blur">
-                  {labels.scroll}<ChevronDown className="size-3.5 animate-bounce" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1">
+                  {labels.scroll}<ChevronDown className="size-3.5" />
                 </span>
               </div>
             )}
