@@ -24,6 +24,7 @@ import { ministerialChemCh6 } from "@/data/ministerialChemCh6";
 import { ministerialChemCh6Ar } from "@/data/ministerialChemCh6Ar";
 import { ministerialBioCh1 } from "@/data/ministerialBioCh1";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
+import { ministerialBioCh2 } from "@/data/ministerialBioCh2";
 import { ministerialArabicIstifham } from "@/data/ministerialArabicIstifham";
 import { ministerialArabicMadhDham } from "@/data/ministerialArabicMadhDham";
 import { ministerialArabicTaajjub } from "@/data/ministerialArabicTaajjub";
@@ -45,7 +46,9 @@ function poolFor(subject: BattleSubject, lang: "ar" | "en"): WrittenQuestion[] {
         ? [...ministerialChemCh1Ar, ...ministerialChemCh2Ar, ...ministerialChemCh3Ar, ...ministerialChemCh4Ar, ...ministerialChemCh5Ar, ...ministerialChemCh6Ar]
         : [...ministerialChemCh1, ...ministerialChemCh2, ...ministerialChemCh3, ...ministerialChemCh4, ...ministerialChemCh5, ...ministerialChemCh6];
     case "biology":
-      return lang === "ar" ? [...ministerialBioCh1Ar] : [...ministerialBioCh1];
+      return lang === "ar"
+        ? [...ministerialBioCh1Ar, ...ministerialBioCh2]
+        : [...ministerialBioCh1, ...ministerialBioCh2];
     case "arabic":
       return [...ministerialArabicIstifham, ...ministerialArabicMadhDham, ...ministerialArabicTaajjub, ...ministerialArabicNida];
     case "islamic":

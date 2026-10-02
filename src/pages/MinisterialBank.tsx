@@ -38,6 +38,7 @@ import { ministerialArabicTaajjub } from "@/data/ministerialArabicTaajjub";
 import { ministerialArabicNida } from "@/data/ministerialArabicNida";
 import { ministerialBioCh1 } from "@/data/ministerialBioCh1";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
+import { ministerialBioCh2 } from "@/data/ministerialBioCh2";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
 import { Textarea } from "@/components/ui/textarea";
@@ -390,6 +391,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 ? ministerialArabicNida
                 : subject === "biology" && chapterN === 1
                 ? (language === "ar" ? ministerialBioCh1Ar : ministerialBioCh1)
+                : subject === "biology" && chapterN === 2
+                ? ministerialBioCh2
                 : subject === "islamic" && chapterN === 1
                 ? ministerialIslamicUnit1
                 : subject === "islamic" && chapterN === 2
