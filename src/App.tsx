@@ -893,7 +893,7 @@ const StudentApp = () => {
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
         <LanguageGate onSelect={setLanguage} />
-      ) : authRole !== "admin" && !channelVerified ? (
+      ) : authRole !== "admin" && !channelVerified && !(typeof window !== "undefined" && window.location.pathname.startsWith("/flashcards")) ? (
         <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
         <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
