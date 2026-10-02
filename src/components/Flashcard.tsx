@@ -80,12 +80,17 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
     };
   }, [comfortableScrolling, index, question, answer]);
 
+  const scrollFrameRef = useRef<number | null>(null);
   const updateScrollEnd = (face: "question" | "answer") => {
-    const node = face === "question" ? questionScrollRef.current : answerScrollRef.current;
-    if (!node) return;
-    const atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 6;
-    if (face === "question") setQuestionAtEnd(atEnd);
-    else setAnswerAtEnd(atEnd);
+    if (scrollFrameRef.current !== null) return;
+    scrollFrameRef.current = window.requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const node = face === "question" ? questionScrollRef.current : answerScrollRef.current;
+      if (!node) return;
+      const atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 6;
+      if (face === "question") setQuestionAtEnd((prev) => (prev === atEnd ? prev : atEnd));
+      else setAnswerAtEnd((prev) => (prev === atEnd ? prev : atEnd));
+    });
   };
 
   useEffect(() => () => {

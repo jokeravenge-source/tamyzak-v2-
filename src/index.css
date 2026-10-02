@@ -654,6 +654,10 @@ html.zombie-mode .gradient-text {
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--primary) / 0.45) transparent;
+    /* Own compositing layer so scrolling doesn't repaint the 3D card */
+    transform: translateZ(0);
+    will-change: scroll-position;
+    contain: layout paint;
   }
   .flashcard-reading-scroll::-webkit-scrollbar { width: 5px; }
   .flashcard-reading-scroll::-webkit-scrollbar-track { background: transparent; }
