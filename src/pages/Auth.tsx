@@ -117,6 +117,21 @@ export const Auth = ({ onAuthed, onGuest }: AuthProps) => {
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
+    // iPhone home-screen app and in-app browsers (Instagram, Facebook, TikTok, Snapchat)
+    // lose the sign-in session mid-way, causing "Missing state parameter".
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Telegram/i.test(ua);
+    if ((isIOS && isStandalone) || isInAppBrowser) {
+      toast.error(
+        "افتح tamyazak.site في متصفح Safari أو Chrome لتسجيل الدخول بـ Apple/Google، أو استخدم البريد وكلمة المرور.",
+        { duration: 9000 },
+      );
+      return;
+    }
     setLoading(true);
     const startedAt = new Date().toISOString();
     const context = {
