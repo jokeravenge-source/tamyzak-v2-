@@ -14,6 +14,6 @@ auth.getUser = async (jwt?: string) => {
   if (jwt) return original(jwt);
   const { data, error } = await supabase.auth.getSession();
   if (error) return { data: { user: null }, error };
-  if (!data.session) return original();
+  if (!data.session) return { data: { user: null }, error: null };
   return { data: { user: data.session.user }, error: null };
 };
