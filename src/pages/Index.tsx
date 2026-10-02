@@ -899,7 +899,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               {topicResult.topics.length} {language === "ar" ? "مواضيع" : "topics"}
             </span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+          <div className="flex touch-pan-x snap-x snap-proximity scroll-px-1 gap-2 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [scrollbar-color:hsl(var(--primary)/0.35)_transparent] [scrollbar-width:thin]">
             {topicResult.topics.map((t) => {
               const active = t.key === topicKey;
               return (
@@ -907,7 +907,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
                   key={t.key}
                   onClick={() => setTopicKey(t.key)}
                   className={
-                    "shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200 " +
+                    "shrink-0 snap-start rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200 " +
                     (active
                       ? "border-primary bg-primary text-primary-foreground shadow-sm"
                       : "border-border bg-background/70 text-muted-foreground hover:border-primary/40 hover:text-foreground")
@@ -952,6 +952,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               language={language}
               onRate={savedView ? undefined : handleRate}
               intervalHints={intervalHints}
+              comfortableScrolling={isNadiaBiologyDeck}
             />
             {subject === "math" && chapter === "1" && (
               <a
