@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRef } from "react";
-import { Mic, Square, Play, Volume2, VolumeX } from "lucide-react";
+import { ChevronDown, Mic, Square, Play, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { SrsRating } from "@/lib/srs";
 
@@ -15,13 +15,15 @@ interface FlashcardProps {
   onRate?: (rating: SrsRating) => void;
   /** Short "next review in …" hints keyed by rating. */
   intervalHints?: Partial<Record<SrsRating, string>>;
+  /** Enables an inner reading pane for long, structured cards. */
+  comfortableScrolling?: boolean;
 }
 
-export const Flashcard = ({ question, answer, index, total, direction, language = "en", onRate, intervalHints }: FlashcardProps) => {
+export const Flashcard = ({ question, answer, index, total, direction, language = "en", onRate, intervalHints, comfortableScrolling = false }: FlashcardProps) => {
   const [flipped, setFlipped] = useState(false);
   const labels = language === "ar"
-    ? { question: "السؤال", answer: "الإجابة", reveal: "اضغط لإظهار الإجابة", back: "اضغط لرؤية السؤال", record: "سجل صوتك", stop: "إيقاف التسجيل", play: "تشغيل تسجيلك", listen: "استمع للإجابة", stopAudio: "إيقاف الصوت", micError: "تعذّر الوصول إلى المايكروفون" }
-    : { question: "Question", answer: "Answer", reveal: "Tap to reveal answer", back: "Tap to see question", record: "Record your voice", stop: "Stop recording", play: "Play your recording", listen: "Hear the answer", stopAudio: "Stop audio", micError: "Microphone unavailable" };
+    ? { question: "السؤال", answer: "الإجابة", reveal: "اضغط لإظهار الإجابة", back: "اضغط لرؤية السؤال", scroll: "مرّر داخل البطاقة لقراءة المزيد", record: "سجل صوتك", stop: "إيقاف التسجيل", play: "تشغيل تسجيلك", listen: "استمع للإجابة", stopAudio: "إيقاف الصوت", micError: "تعذّر الوصول إلى المايكروفون" }
+    : { question: "Question", answer: "Answer", reveal: "Tap to reveal answer", back: "Tap to see question", scroll: "Scroll inside the card to read more", record: "Record your voice", stop: "Stop recording", play: "Play your recording", listen: "Hear the answer", stopAudio: "Stop audio", micError: "Microphone unavailable" };
 
   const [recording, setRecording] = useState(false);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
@@ -29,6 +31,12 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const playbackRef = useRef<HTMLAudioElement | null>(null);
+  const questionScrollRef = useRef<HTMLDivElement | null>(null);
+  const answerScrollRef = useRef<HTMLDivElement | null>(null);
+  const [questionOverflow, setQuestionOverflow] = useState(false);
+  const [answerOverflow, setAnswerOverflow] = useState(false);
+  const [questionAtEnd, setQuestionAtEnd] = useState(false);
+  const [answerAtEnd, setAnswerAtEnd] = useState(false);
 
   useEffect(() => {
     setFlipped(false);
@@ -41,6 +49,44 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
     stopSpeaking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, question, answer]);
+
+  // Nadia's source-derived cards often contain multi-line ministerial answers.
+  // Measure both faces and expose a real inner reading pane only when needed.
+  useEffect(() => {
+    if (!comfortableScrolling) return;
+    const questionNode = questionScrollRef.current;
+    const answerNode = answerScrollRef.current;
+    if (!questionNode || !answerNode) return;
+
+    questionNode.scrollTop = 0;
+    answerNode.scrollTop = 0;
+    setQuestionAtEnd(false);
+    setAnswerAtEnd(false);
+
+    const measure = () => {
+      setQuestionOverflow(questionNode.scrollHeight > questionNode.clientHeight + 2);
+      setAnswerOverflow(answerNode.scrollHeight > answerNode.clientHeight + 2);
+    };
+    const frame = window.requestAnimationFrame(measure);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(questionNode);
+    observer?.observe(answerNode);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [comfortableScrolling, index, question, answer]);
+
+  const updateScrollEnd = (face: "question" | "answer") => {
+    const node = face === "question" ? questionScrollRef.current : answerScrollRef.current;
+    if (!node) return;
+    const atEnd = node.scrollTop + node.clientHeight >= node.scrollHeight - 6;
+    if (face === "question") setQuestionAtEnd(atEnd);
+    else setAnswerAtEnd(atEnd);
+  };
 
   useEffect(() => () => {
     if (recordedUrl) URL.revokeObjectURL(recordedUrl);
@@ -158,10 +204,25 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             <span>{labels.question}</span>
             <span className="font-mono">{String(index + 1).padStart(2, "0")} / {total}</span>
           </div>
-          <div className="flex-1 flex items-center justify-center px-2">
-            <p className="text-center text-xl font-semibold leading-relaxed sm:text-2xl md:text-3xl">
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={questionScrollRef}
+              onScroll={() => updateScrollEnd("question")}
+              className={comfortableScrolling
+                ? "flashcard-reading-scroll flex h-full touch-pan-y items-start justify-center overflow-y-auto overscroll-contain px-2 py-5 pb-11"
+                : "flex h-full items-center justify-center px-2"}
+            >
+            <p className={`whitespace-pre-line text-center font-semibold ${comfortableScrolling ? "text-lg leading-8 sm:text-xl sm:leading-9 md:text-2xl" : "text-xl leading-relaxed sm:text-2xl md:text-3xl"}`}>
               {question}
             </p>
+            </div>
+            {comfortableScrolling && questionOverflow && !questionAtEnd && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-card/95 via-card/75 to-transparent pb-1 pt-8 text-[10px] font-semibold tracking-normal opacity-80">
+                <span className="inline-flex items-center gap-1 rounded-full bg-background/65 px-2.5 py-1 backdrop-blur">
+                  {labels.scroll}<ChevronDown className="size-3.5 animate-bounce" />
+                </span>
+              </div>
+            )}
           </div>
           <div className="text-center text-xs opacity-50 tracking-widest uppercase group-hover:opacity-80 transition-opacity">
             {labels.reveal}
@@ -177,10 +238,25 @@ export const Flashcard = ({ question, answer, index, total, direction, language 
             <span>{labels.answer}</span>
             <span className="font-mono">{String(index + 1).padStart(2, "0")} / {total}</span>
           </div>
-          <div className="flex-1 flex items-center justify-center px-2">
-            <p className="text-center text-xl font-semibold leading-relaxed sm:text-2xl md:text-3xl">
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={answerScrollRef}
+              onScroll={() => updateScrollEnd("answer")}
+              className={comfortableScrolling
+                ? "flashcard-reading-scroll flex h-full touch-pan-y items-start justify-center overflow-y-auto overscroll-contain px-2 py-5 pb-11"
+                : "flex h-full items-center justify-center px-2"}
+            >
+            <p className={`whitespace-pre-line text-center font-semibold ${comfortableScrolling ? "text-lg leading-8 sm:text-xl sm:leading-9 md:text-2xl" : "text-xl leading-relaxed sm:text-2xl md:text-3xl"}`}>
               {answer}
             </p>
+            </div>
+            {comfortableScrolling && answerOverflow && !answerAtEnd && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-black/25 via-black/10 to-transparent pb-1 pt-8 text-[10px] font-semibold tracking-normal text-white/90">
+                <span className="inline-flex items-center gap-1 rounded-full bg-black/20 px-2.5 py-1 backdrop-blur">
+                  {labels.scroll}<ChevronDown className="size-3.5 animate-bounce" />
+                </span>
+              </div>
+            )}
           </div>
           <div className="text-center text-xs opacity-60 tracking-widest uppercase group-hover:opacity-90 transition-opacity">
             {labels.back}
