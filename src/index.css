@@ -648,6 +648,20 @@ html.zombie-mode .gradient-text {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+  /* Long-form flashcards: momentum scrolling with a compact, themed rail. */
+  .flashcard-reading-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.45) transparent;
+  }
+  .flashcard-reading-scroll::-webkit-scrollbar { width: 5px; }
+  .flashcard-reading-scroll::-webkit-scrollbar-track { background: transparent; }
+  .flashcard-reading-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: hsl(var(--primary) / 0.45);
+  }
+
   /* ===== Facet System ===== */
   /* Single beveled top inline-start corner — mirrors with RTL automatically.
      Uses logical-property–friendly clip-path generated per direction. */
