@@ -9,11 +9,14 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
-const REQUIRED_CHANNELS = ["@Tamayuzak"] as const;
-const MEMBER_STATUSES = new Set(["creator", "administrator", "member", "restricted"]);
+const CHANNEL_GROUPS = {
+  default: ["@Tamayuzak"],
+  nadia: ["@nadiakhaleelalnuaimy"],
+} as const;
+const MEMBER_STATUSES = new Set(["creator", "administrator", "member"]);
 
 type ChannelCheck = {
-  channel: (typeof REQUIRED_CHANNELS)[number];
+  channel: string;
   ok: boolean;
   joined: boolean;
   status?: string;
@@ -28,6 +31,11 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
+    let requestBody: { scope?: string } = {};
+    try { requestBody = await req.json(); } catch { /* body is optional */ }
+    const scope = requestBody.scope === "nadia" ? "nadia" : "default";
+    const requiredChannels = CHANNEL_GROUPS[scope];
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -38,8 +46,8 @@ Deno.serve(async (req) => {
 
     const auth = await requireUser(req);
     if (!auth.ok) {
-      // Not signed in / stale token: never block the app, just report unknown.
-      return json({ ok: false, joined: true, error: "unauthenticated" });
+      // Nadia's force-join gate must never unlock without a verified user.
+      return json({ ok: false, joined: scope === "default", error: "unauthenticated", scope });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -54,7 +62,7 @@ Deno.serve(async (req) => {
 
 
     const channels: ChannelCheck[] = await Promise.all(
-      REQUIRED_CHANNELS.map(async (channel): Promise<ChannelCheck> => {
+      requiredChannels.map(async (channel): Promise<ChannelCheck> => {
         const res = await fetch(`${GATEWAY_URL}/getChatMember`, {
           method: "POST",
           headers: {
@@ -74,8 +82,9 @@ Deno.serve(async (req) => {
           };
         }
 
-        const status = (data as { result?: { status?: string } }).result?.status;
-        const joined = !!status && MEMBER_STATUSES.has(status);
+        const member = (data as { result?: { status?: string; is_member?: boolean } }).result;
+        const status = member?.status;
+        const joined = !!status && (MEMBER_STATUSES.has(status) || (status === "restricted" && member?.is_member === true));
         return { channel, ok: true, joined, status };
       }),
     );
@@ -95,6 +104,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       joined: missingChannels.length === 0,
+      scope,
       missingChannels,
       channels,
     });
