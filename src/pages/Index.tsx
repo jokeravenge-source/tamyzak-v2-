@@ -101,7 +101,7 @@ import {
 } from "@/lib/srs";
 import { BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
-import NadiaTelegramGate, { NADIA_CHANNEL_GATE_STORAGE_KEY } from "@/components/NadiaTelegramGate";
+import NadiaTelegramGate from "@/components/NadiaTelegramGate";
 
 
 const decks: Record<string, { title: string; eyebrow: string; cards: typeof flashcards }> = {
@@ -135,22 +135,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const isNadiaBiologyDeck = subject === "biology"
     && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4" || chapter === "5")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
-  const [nadiaChannelGateCompleted, setNadiaChannelGateCompleted] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(NADIA_CHANNEL_GATE_STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const completeNadiaChannelGate = () => {
-    try {
-      localStorage.setItem(NADIA_CHANNEL_GATE_STORAGE_KEY, "1");
-    } catch {
-      // The flashcards should still open if storage is unavailable.
-    }
-    setNadiaChannelGateCompleted(true);
-  };
+  const [nadiaChannelVerified, setNadiaChannelVerified] = useState(false);
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -823,8 +808,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     } finally { setSubmitting(false); }
   };
 
-  if (isNadiaBiologyDeck && !nadiaChannelGateCompleted) {
-    return <NadiaTelegramGate language={language} onContinue={completeNadiaChannelGate} />;
+  if (isNadiaBiologyDeck && !nadiaChannelVerified) {
+    return <NadiaTelegramGate language={language} onVerified={() => setNadiaChannelVerified(true)} />;
   }
 
   if (useRemote && (loading || cards.length === 0)) {
