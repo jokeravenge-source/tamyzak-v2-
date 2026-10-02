@@ -98,8 +98,9 @@ export default function NadiaTelegramGate({ language, onVerified }: NadiaTelegra
   }, [onVerified, prepareTelegramLink, t.notJoined, t.notLinked, t.unavailable]);
 
   useEffect(() => {
+    void prepareTelegramLink();
     void verifyMembership();
-  }, [verifyMembership]);
+  }, [prepareTelegramLink, verifyMembership]);
 
   return (
     <main
@@ -137,17 +138,22 @@ export default function NadiaTelegramGate({ language, onVerified }: NadiaTelegra
             {t.channel}
           </a>
 
-          {connectLink && (
-            <a
-              href={connectLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#229ED9]/35 bg-[#229ED9]/10 px-4 font-black text-[#229ED9] transition hover:bg-[#229ED9]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#229ED9] focus-visible:ring-offset-2"
-            >
-              <Link2 className="size-5" />
-              {t.connect}
-            </a>
-          )}
+          <a
+            href={connectLink ?? undefined}
+            onClick={(e) => {
+              if (!connectLink) {
+                e.preventDefault();
+                void prepareTelegramLink();
+              }
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-disabled={!connectLink}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#229ED9]/35 bg-[#229ED9]/10 px-4 font-black text-[#229ED9] transition hover:bg-[#229ED9]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#229ED9] focus-visible:ring-offset-2"
+          >
+            {connectLink ? <Link2 className="size-5" /> : <Loader2 className="size-5 animate-spin" />}
+            {t.connect}
+          </a>
 
           <button
             type="button"
