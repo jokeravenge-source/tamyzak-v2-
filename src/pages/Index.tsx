@@ -101,7 +101,6 @@ import {
 } from "@/lib/srs";
 import { BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
-import NadiaTelegramGate from "@/components/NadiaTelegramGate";
 
 
 const decks: Record<string, { title: string; eyebrow: string; cards: typeof flashcards }> = {
@@ -135,7 +134,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const isNadiaBiologyDeck = subject === "biology"
     && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4" || chapter === "5")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
-  const [nadiaChannelVerified, setNadiaChannelVerified] = useState(false);
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -808,9 +806,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     } finally { setSubmitting(false); }
   };
 
-  if (isNadiaBiologyDeck && !nadiaChannelVerified) {
-    return <NadiaTelegramGate language={language} onVerified={() => setNadiaChannelVerified(true)} />;
-  }
 
   if (useRemote && (loading || cards.length === 0)) {
     return (

@@ -880,6 +880,15 @@ const StudentApp = () => {
             isAdmin={false}
           />
         )
+      ) : !authed && subject && typeof window !== "undefined" && window.location.pathname.startsWith("/flashcards") ? (
+        // Guests can study flashcards without an account.
+        <BrowserRouter>
+          <Routes>
+            <Route path="/flashcards" element={<Index language={language ?? "ar"} subject={subject} />} />
+            <Route path="/flashcards/:chapter" element={<Index language={language ?? "ar"} subject={subject} />} />
+            <Route path="*" element={<Auth onAuthed={() => setAuthed(true)} />} />
+          </Routes>
+        </BrowserRouter>
       ) : !authed ? (
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
