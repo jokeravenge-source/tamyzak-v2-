@@ -17,7 +17,7 @@ type Occupant = {
   last_seen_at: string;
   elapsed_seconds: number;
   is_running: boolean;
-  observed_at_ms: number;
+  observed_at_ms?: number;
 };
 
 const SUBJECT_LABEL: Record<string, { en: string; ar: string }> = {
@@ -119,7 +119,11 @@ export default function StudyRoom({
             last_seen_at: r.last_seen_at,
             elapsed_seconds: elapsedSeconds,
             is_running: isRunning,
-            observed_at_ms: unchangedSnapshot ? prev.observed_at_ms : observedAtMs,
+            // A first fetch is not proof that the owner is still active. Start
+            // the clock-skew-safe local anchor only after a snapshot advances.
+            observed_at_ms: unchangedSnapshot
+              ? prev.observed_at_ms
+              : prev ? observedAtMs : undefined,
           };
         });
         // Put current user first
