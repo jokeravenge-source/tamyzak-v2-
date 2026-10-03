@@ -577,6 +577,15 @@ const MinisterialBank = ({
         </p>
       </header>
 
+      {(isNadiaBank || subject === "biology") && (
+        <div className="fixed bottom-3 inset-x-0 z-30 flex justify-center pointer-events-none">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 backdrop-blur px-4 py-1.5 text-xs font-bold text-primary shadow-lg">
+            <GraduationCap className="h-4 w-4" />
+            <span>{language === "ar" ? "الأسئلة بإعداد الست نادية النعيمي" : "Questions by Ms. Nadia Al-Nuaimy"}</span>
+          </div>
+        </div>
+      )}
+
       {!subject ? (
         <section className="max-w-6xl mx-auto mt-10 md:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 z-10 relative">
           {SUBJECTS_ORDER.map((s, i) => {
