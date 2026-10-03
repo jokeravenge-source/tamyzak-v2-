@@ -170,11 +170,15 @@ const App = () => {
   // Student-facing Nadia Biology ministerial bank. Unlike the review dashboard,
   // this route has no password and opens the normal answer-and-review experience.
   const nadiaMinisterialStudentMatch = typeof window !== "undefined"
-    ? window.location.pathname.replace(/\/+$/, "").match(/^\/ministerial-questions\/nadia-biology(?:\/chapter\/([1-5]))?$/)
+    ? window.location.pathname.replace(/\/+$/, "").match(/^(?:\/ministerial-questions-for-nadia-al-nuamey|\/ministerial-questions\/nadia-biology)(?:\/chapter\/([1-5]))?$/)
     : null;
   if (nadiaMinisterialStudentMatch) {
     const params = new URLSearchParams(window.location.search);
-    const language: AppLanguage = params.get("lang") === "en" ? "en" : "ar";
+    const requestedLanguage = params.get("lang");
+    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    const language: AppLanguage = requestedLanguage === "en" || requestedLanguage === "ar"
+      ? requestedLanguage
+      : storedLanguage === "en" ? "en" : "ar";
     const initialChapter = nadiaMinisterialStudentMatch[1]
       ? Number(nadiaMinisterialStudentMatch[1])
       : null;
