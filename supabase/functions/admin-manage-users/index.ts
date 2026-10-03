@@ -91,12 +91,30 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Search profiles by display_name (case-insensitive)
-      const url = `${SUPABASE_URL}/rest/v1/profiles?display_name=ilike.%25${encodeURIComponent(q)}%25&select=user_id,display_name&limit=25`;
-      const r = await fetch(url, {
-        headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
-      });
-      const profiles: { user_id: string; display_name: string }[] = await r.json().catch(() => []);
+      const H = { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` };
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q);
+      const found = new Map<string, string>();
+      if (isUuid) {
+        const r0 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${q}&select=user_id,display_name`, { headers: H });
+        const rows: any[] = await r0.json().catch(() => []);
+        if (rows.length) rows.forEach((p) => found.set(p.user_id, p.display_name));
+        else { const u = await getAuthUser(q); if (u?.id) found.set(u.id, ""); }
+      } else {
+        const ex = await fetch(`${SUPABASE_URL}/rest/v1/profiles?display_name=ilike.${encodeURIComponent(q)}&select=user_id,display_name&limit=50`, { headers: H });
+        ((await ex.json().catch(() => [])) as any[]).forEach((p) => found.set(p.user_id, p.display_name));
+        const em = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_analytics_search_users`, {
+          method: "POST",
+          headers: { apikey: ANON, Authorization: req.headers.get("Authorization")!, "Content-Type": "application/json" },
+          body: JSON.stringify({ _q: q }),
+        });
+        const emRows: any = await em.json().catch(() => []);
+        if (Array.isArray(emRows)) emRows
+          .filter((u: any) => (u.email ?? "").toLowerCase().includes(q.toLowerCase()))
+          .forEach((u: any) => { if (!found.has(u.user_id)) found.set(u.user_id, u.display_name ?? ""); });
+        const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?display_name=ilike.%25${encodeURIComponent(q)}%25&select=user_id,display_name&limit=50`, { headers: H });
+        ((await pr.json().catch(() => [])) as any[]).forEach((p) => { if (!found.has(p.user_id)) found.set(p.user_id, p.display_name); });
+      }
+      const profiles = [...found.entries()].slice(0, 50).map(([user_id, display_name]) => ({ user_id, display_name }));
 
       // Enrich with email + banned status
       const users = await Promise.all(
