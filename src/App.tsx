@@ -194,7 +194,11 @@ const App = () => {
               initialSubject="biology"
               initialChapter={initialChapter}
               questionSource="nadia"
-              onBack={() => window.location.assign("/")}
+              onBack={() => {
+                window.localStorage.setItem("app_subject_focus_v1", "biology");
+                window.localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
+                window.location.assign("/?menu=subjectsHub");
+              }}
             />
           </Suspense>
         </TooltipProvider>
