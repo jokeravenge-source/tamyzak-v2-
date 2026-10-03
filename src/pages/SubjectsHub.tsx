@@ -200,6 +200,13 @@ const SubjectsHub = ({
       } catch { /* ignore */ }
       window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: open } }));
     }
+    // Biology's ministerial entry is Nadia Al-Nuaimy's dedicated bank. Updating
+    // the URL before changing the menu lets StudentApp reuse the same Nadia
+    // source, credits, chapter list, and Biology-aware back navigation as the
+    // public deep link without leaving the original Tamayzak interface.
+    if (open === "biology" && t.key === "ministerialBank") {
+      window.history.replaceState({}, "", "/ministerial-questions-for-nadia-al-nuamey");
+    }
     // For placeholder tools, stash display metadata so the shared page can render it.
     if (t.placeholder) {
       try {
