@@ -39,6 +39,9 @@ import { ministerialArabicNida } from "@/data/ministerialArabicNida";
 import { ministerialBioCh1 } from "@/data/ministerialBioCh1";
 import { ministerialBioCh1Ar } from "@/data/ministerialBioCh1Ar";
 import { ministerialBioCh2 } from "@/data/ministerialBioCh2";
+import { ministerialBioCh3 } from "@/data/ministerialBioCh3";
+import { ministerialBioCh4 } from "@/data/ministerialBioCh4NadiaEn";
+import { ministerialBioCh5 } from "@/data/ministerialBioCh5";
 import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
 import { Textarea } from "@/components/ui/textarea";
@@ -393,6 +396,12 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                 ? (language === "ar" ? ministerialBioCh1Ar : ministerialBioCh1)
                 : subject === "biology" && chapterN === 2
                 ? ministerialBioCh2
+                : subject === "biology" && chapterN === 3
+                ? ministerialBioCh3
+                : subject === "biology" && chapterN === 4
+                ? ministerialBioCh4
+                : subject === "biology" && chapterN === 5
+                ? ministerialBioCh5
                 : subject === "islamic" && chapterN === 1
                 ? ministerialIslamicUnit1
                 : subject === "islamic" && chapterN === 2
@@ -608,6 +617,9 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
                   <h3 className={`text-lg font-semibold ${language === "ar" ? "text-center" : ""} ${isAvailable ? "text-foreground" : "text-muted-foreground"}`}>
                     {language === "ar" ? c.arTitle : c.title}
                   </h3>
+                  {c.subtitle && (
+                    <p className={`mt-1 text-xs text-muted-foreground ${language === "ar" ? "text-center" : ""}`}>{c.subtitle}</p>
+                  )}
                 </div>
               </button>
             );

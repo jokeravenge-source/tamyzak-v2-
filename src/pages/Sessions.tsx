@@ -268,7 +268,7 @@ const SessionTodos = ({
   const completed = todos.filter((t) => t.done).length;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-secondary/30 backdrop-blur overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-secondary/90">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -1195,7 +1195,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   if (!subject) {
     return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
+    <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
         <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute top-[36rem] -start-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-5xl">
@@ -1278,7 +1278,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const adjustedPreviewSeconds = validRemoval ? seconds - removeMinutesNumber * 60 : seconds;
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
+    <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
       <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative max-w-4xl mx-auto">
         <button onClick={onBack} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
@@ -1294,7 +1294,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
         <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
-        <div className="rounded-[2rem] border border-border/70 bg-card/80 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] backdrop-blur md:p-8 space-y-5">
+        <div className="space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
           <div className="py-5 text-center">
             <p className={`mb-2 text-xs font-bold uppercase tracking-[0.18em] ${phase === "rest" ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`}>{started ? (pomodoro ? (phase === "rest" ? L.restPhase : running ? L.workPhase : L.pause) : running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
             <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(started && pomodoro ? pomodoroRemaining : seconds)}</div>
@@ -1397,7 +1397,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                 </label>
               )}
 
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 backdrop-blur">
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card/95 p-4">
                 <Music className="h-5 w-5 text-primary" />
                 <div className="flex overflow-hidden rounded-full border border-white/10 text-xs">
                   <button onClick={() => switchPlaylist("music")} className={`px-3 py-1 ${playlist === "music" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"}`}>{language === "ar" ? "موسيقى" : "Music"}</button>
@@ -1443,12 +1443,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         </PrivateStudyRooms>
 
-        {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur md:p-5">
+        {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/95 p-4 shadow-sm md:p-5">
           <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
           <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={seconds} timerRunning={running} timerStarted={started} />
         </section>}
 
-        <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/60 backdrop-blur">
+        <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/95">
           <button type="button" onClick={() => setLeaderboardOpen((value) => !value)} aria-expanded={leaderboardOpen} className="flex w-full items-center gap-3 p-3.5 text-start hover:bg-amber-500/10">
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-300"><Trophy className="h-5 w-5" /></span>
             <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{L.leaderboard}</span><span className="block truncate text-xs text-muted-foreground">{board.length > 0 ? `${board.length} ${language === "ar" ? "طالب" : "students"}${board[0] ? ` · #1 ${board[0].name}` : ""}` : L.noOne}</span></span>

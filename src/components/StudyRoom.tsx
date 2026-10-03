@@ -177,6 +177,7 @@ export default function StudyRoom({
           background:
             "linear-gradient(180deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)) 55%, hsl(var(--muted)) 55%, hsl(var(--muted)) 100%)",
           minHeight: 240,
+          contain: "paint",
         }}
       >
         {/* Wall details */}

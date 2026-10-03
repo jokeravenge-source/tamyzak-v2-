@@ -93,7 +93,7 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
   };
 }
 
-export function CharacterAvatar({
+function CharacterAvatarComponent({
   gender,
   size = 96,
   className = "",
@@ -113,7 +113,7 @@ export function CharacterAvatar({
   const hasCrown = traits?.accessory === "crown";
   const hat = traits?.hat ?? null;
   const skin = traits?.skin ?? SKIN_COLORS[0];
-  const tinted = useSkinTinted(src, skin);
+  const tinted = useSkinTinted(src, skin, size);
   return (
     <div
       className={className}
@@ -137,6 +137,7 @@ export function CharacterAvatar({
           objectFit: "contain",
           imageRendering: "auto",
         }}
+        decoding="async"
         draggable={false}
       />
       {traits?.accessory === "glasses" && (
@@ -260,6 +261,11 @@ export function CharacterAvatar({
   );
 }
 
+// Session timers update once per second. Keep those timer ticks from rebuilding
+// every character image when the avatar inputs themselves have not changed.
+export const CharacterAvatar = React.memo(CharacterAvatarComponent);
+CharacterAvatar.displayName = "CharacterAvatar";
+
 export default CharacterAvatar;
 
 /* ------------------------------------------------------------------ */
@@ -274,10 +280,11 @@ function hexToRgb(hex: string): [number, number, number] {
 // Reference skin tone present in the source PNGs (pale peach).
 const REF_SKIN: [number, number, number] = [254, 235, 228];
 
-function tintSkin(img: HTMLImageElement, targetHex: string): string {
+function tintSkin(img: HTMLImageElement, targetHex: string, maxDimension: number): string {
   const c = document.createElement("canvas");
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
+  const scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+  c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+  c.height = Math.max(1, Math.round(img.naturalHeight * scale));
   const ctx = c.getContext("2d");
   if (!ctx) return img.src;
   ctx.imageSmoothingEnabled = false;
@@ -354,30 +361,72 @@ function clamp(v: number) {
   return Math.max(0, Math.min(255, Math.round(v)));
 }
 
-function useSkinTinted(src: string, skinHex: string): string | null {
+function tintRenderSize(displaySize: number): number {
+  const ratio = typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  const needed = displaySize * ratio;
+  if (needed <= 128) return 128;
+  if (needed <= 192) return 192;
+  if (needed <= 256) return 256;
+  if (needed <= 384) return 384;
+  return 640;
+}
+
+function loadCharacterImage(src: string): Promise<HTMLImageElement> {
+  const existing = imageLoadCache.get(src);
+  if (existing) return existing;
+
+  const pending = new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Unable to load character image: ${src}`));
+    img.src = src;
+  });
+  imageLoadCache.set(src, pending);
+  pending.catch(() => imageLoadCache.delete(src));
+  return pending;
+}
+
+function renderTintedSkin(src: string, skinHex: string, maxDimension: number): Promise<string> {
+  const cacheKey = `${src}|${skinHex}|${maxDimension}`;
+  const cached = tintCache.get(cacheKey);
+  if (cached) return Promise.resolve(cached);
+
+  const existing = tintPromiseCache.get(cacheKey);
+  if (existing) return existing;
+
+  const pending = loadCharacterImage(src).then((img) => {
+    const url = tintSkin(img, skinHex, maxDimension);
+    tintCache.set(cacheKey, url);
+    tintPromiseCache.delete(cacheKey);
+    return url;
+  }).catch((error) => {
+    tintPromiseCache.delete(cacheKey);
+    throw error;
+  });
+  tintPromiseCache.set(cacheKey, pending);
+  return pending;
+}
+
+function useSkinTinted(src: string, skinHex: string, displaySize: number): string | null {
   const [out, setOut] = React.useState<string | null>(null);
   React.useEffect(() => {
     let cancelled = false;
-    const cacheKey = `${src}|${skinHex}`;
+    const maxDimension = tintRenderSize(displaySize);
+    const cacheKey = `${src}|${skinHex}|${maxDimension}`;
     if (tintCache.has(cacheKey)) {
       setOut(tintCache.get(cacheKey)!);
       return;
     }
-    const img = new Image();
-    img.onload = () => {
-      if (cancelled) return;
-      try {
-        const url = tintSkin(img, skinHex);
-        tintCache.set(cacheKey, url);
-        setOut(url);
-      } catch {
-        setOut(null);
-      }
-    };
-    img.src = src;
+
+    setOut(null);
+    void renderTintedSkin(src, skinHex, maxDimension)
+      .then((url) => { if (!cancelled) setOut(url); })
+      .catch(() => { if (!cancelled) setOut(null); });
     return () => { cancelled = true; };
-  }, [src, skinHex]);
+  }, [src, skinHex, displaySize]);
   return out;
 }
 
 const tintCache = new Map<string, string>();
+const tintPromiseCache = new Map<string, Promise<string>>();
+const imageLoadCache = new Map<string, Promise<HTMLImageElement>>();

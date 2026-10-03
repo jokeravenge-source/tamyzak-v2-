@@ -556,7 +556,7 @@ export default function PrivateStudyRooms({
 
   if (!room) {
     return (
-      <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/40 backdrop-blur p-5" dir={ar ? "rtl" : "ltr"}>
+      <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
         <div className="flex items-center gap-2 mb-1 text-primary font-semibold">
           <DoorOpen className="w-4 h-4" /> <span>{L.title}</span>
         </div>
@@ -616,7 +616,7 @@ export default function PrivateStudyRooms({
   }
 
   return (
-    <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/40 backdrop-blur p-5" dir={ar ? "rtl" : "ltr"}>
+    <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <DoorOpen className="w-4 h-4 text-primary" />
         <span className="font-semibold">{room.name}</span>
@@ -654,6 +654,7 @@ export default function PrivateStudyRooms({
           background:
             "linear-gradient(180deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)) 52%, hsl(var(--muted)) 52%, hsl(var(--muted)) 100%)",
           minHeight: 220,
+          contain: "paint",
         }}
       >
         {/* Wall: chalkboard, clock, pennants */}
