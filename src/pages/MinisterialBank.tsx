@@ -566,6 +566,12 @@ const MinisterialBank = ({
             ? (language === "ar" ? "اختر الفصل وابدأ بحل الأسئلة مباشرة." : "Choose a chapter and start answering questions.")
             : subject ? t.chooseChapter : t.description}
         </p>
+        {isNadiaBank && (
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+            <BookOpen className="h-4 w-4" />
+            <span>{language === "ar" ? "إعداد ومصدر الأسئلة: نادية النعيمي" : "Questions prepared by Nadia Al-Nuaimy"}</span>
+          </div>
+        )}
         <p className="mt-4 flex justify-center">
           <PointsHint action="ministerial_set" language={language === "ar" ? "ar" : "en"} bonus />
         </p>
