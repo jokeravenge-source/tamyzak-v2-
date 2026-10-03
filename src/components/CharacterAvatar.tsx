@@ -303,7 +303,7 @@ function tintSkin(img: HTMLImageElement, targetHex: string, maxDimension: number
   const ctx = c.getContext("2d");
   if (!ctx) return img.src;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(img, 0, 0, c.width, c.height);
   const data = ctx.getImageData(0, 0, c.width, c.height);
   const px = data.data;
   const [tr, tg, tb] = hexToRgb(targetHex);
