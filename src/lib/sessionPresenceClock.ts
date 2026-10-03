@@ -1,10 +1,10 @@
 // Sessions sends a heartbeat every 10 seconds while its timer is open.
-// Advance a running timer from the moment this browser observed its latest
-// database snapshot. This avoids comparing two students' device clocks, which
-// can differ enough to make an otherwise valid timer look stale or frozen.
+// A room may contain old active_sessions rows left behind by closed tabs. Only
+// show a timer while either the server heartbeat or a locally observed snapshot
+// change is fresh. This prevents abandoned rows from appearing as 8h/48h timers.
 export const PRESENCE_FRESH_MS = 60_000;
 export const MAX_SESSION_SECONDS = 48 * 60 * 60;
-export const MAX_UNCONFIRMED_TICK_MS = 15 * 60 * 1000;
+export const MAX_UNCONFIRMED_TICK_MS = PRESENCE_FRESH_MS;
 
 type SessionPresence = {
   elapsed_seconds: number;
@@ -19,20 +19,19 @@ export function elapsedFromFreshPresence(presence: SessionPresence, nowMs: numbe
   if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed > MAX_SESSION_SECONDS) return null;
 
   const snapshotSeconds = Math.floor(elapsed);
-  if (!presence.is_running) return snapshotSeconds;
-
   const observedAtMs = presence.observed_at_ms;
   const observedLagMs = typeof observedAtMs === "number" ? nowMs - observedAtMs : Number.NaN;
-  if (Number.isFinite(observedLagMs) && observedLagMs >= 0 && observedLagMs <= MAX_UNCONFIRMED_TICK_MS) {
-    return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.floor(observedLagMs / 1000));
-  }
-
-  // Older callers without an observation anchor can still use a genuinely
-  // fresh server heartbeat. Never extrapolate a stale row into invented hours.
+  const observationIsFresh = Number.isFinite(observedLagMs) &&
+    observedLagMs >= 0 && observedLagMs <= MAX_UNCONFIRMED_TICK_MS;
   const lagMs = nowMs - heartbeatMs;
   const heartbeatIsFresh = Number.isFinite(heartbeatMs) &&
     lagMs >= -PRESENCE_FRESH_MS && lagMs <= PRESENCE_FRESH_MS;
-  if (!heartbeatIsFresh) return snapshotSeconds;
+  if (!observationIsFresh && !heartbeatIsFresh) return null;
 
-  return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.max(0, Math.floor(lagMs / 1000)));
+  if (!presence.is_running) return snapshotSeconds;
+
+  // Prefer the local observation anchor once one exists. It is immune to clock
+  // differences between the student and the viewer's devices.
+  const tickLagMs = observationIsFresh ? observedLagMs : Math.max(0, lagMs);
+  return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.floor(tickLagMs / 1000));
 }
