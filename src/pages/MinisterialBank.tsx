@@ -556,7 +556,7 @@ const MinisterialBank = ({
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tight text-foreground leading-[1.15] mb-4">
           {isNadiaBank
-            ? (language === "ar" ? "وزاريات نادية النعيمي · الأحياء" : "Nadia Al-Nuaimi · Biology Ministerial Questions")
+            ? (language === "ar" ? "الأسئلة الوزارية لنادية النعيمي" : "Ministerial Questions for Nadia Al-Nuaimy")
             : subject
               ? (language === "ar" ? subjectMeta?.ar : subjectMeta?.en)
               : t.title}
