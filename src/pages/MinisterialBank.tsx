@@ -428,13 +428,13 @@ const MinisterialBank = ({
                 : subject === "biology" && chapterN === 1
                 ? (language === "ar" ? ministerialBioCh1Ar : ministerialBioCh1)
                 : subject === "biology" && chapterN === 2
-                ? ministerialBioCh2
+                ? (language === "ar" ? (nadiaMinisterialChapters.find((c) => c.number === 2)?.arabic ?? ministerialBioCh2) : ministerialBioCh2)
                 : subject === "biology" && chapterN === 3
-                ? ministerialBioCh3
+                ? (language === "ar" ? (nadiaMinisterialChapters.find((c) => c.number === 3)?.arabic ?? ministerialBioCh3) : ministerialBioCh3)
                 : subject === "biology" && chapterN === 4
-                ? ministerialBioCh4
+                ? (language === "ar" ? (nadiaMinisterialChapters.find((c) => c.number === 4)?.arabic ?? ministerialBioCh4) : ministerialBioCh4)
                 : subject === "biology" && chapterN === 5
-                ? ministerialBioCh5
+                ? (language === "ar" ? (nadiaMinisterialChapters.find((c) => c.number === 5)?.arabic ?? ministerialBioCh5) : ministerialBioCh5)
                 : subject === "islamic" && chapterN === 1
                 ? ministerialIslamicUnit1
                 : subject === "islamic" && chapterN === 2
