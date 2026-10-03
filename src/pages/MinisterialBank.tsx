@@ -662,6 +662,12 @@ const MinisterialBank = ({
                   <h3 className={`text-lg font-semibold ${language === "ar" ? "text-center" : ""} ${isAvailable ? "text-foreground" : "text-muted-foreground"}`}>
                     {language === "ar" ? c.arTitle : c.title}
                   </h3>
+                  {isNadiaBank && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
+                      <GraduationCap className="h-4 w-4" />
+                      <span>{language === "ar" ? "نادية النعيمي" : "Nadia Al-Nuaimy"}</span>
+                    </div>
+                  )}
                   {c.subtitle && (
                     <p className={`mt-1 text-xs text-muted-foreground ${language === "ar" ? "text-center" : ""}`}>{c.subtitle}</p>
                   )}
