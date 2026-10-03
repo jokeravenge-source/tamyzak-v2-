@@ -18,7 +18,7 @@ type Presence = {
   last_seen_at: string;
   subject: string;
   mission: string;
-  observed_at_ms: number;
+  observed_at_ms?: number;
 };
 
 const LS_KEY = "study_room_active_v1";
@@ -47,9 +47,12 @@ function mergePresenceRows(rows: any[], previous: Record<string, Presence>): Rec
       last_seen_at: s.last_seen_at,
       subject: s.subject ?? "",
       mission: s.mission ?? "",
-      // Preserve the anchor while polling returns the same row. Reset it only
-      // when the owner's heartbeat supplies a genuinely newer timer snapshot.
-      observed_at_ms: unchangedSnapshot ? prior.observed_at_ms : observedAtMs,
+      // Do not trust an old row merely because this viewer fetched it for the
+      // first time. A local anchor begins only after we observe the student's
+      // heartbeat change; until then last_seen_at must itself be fresh.
+      observed_at_ms: unchangedSnapshot
+        ? prior.observed_at_ms
+        : prior ? observedAtMs : undefined,
     } satisfies Presence];
   }));
 }
