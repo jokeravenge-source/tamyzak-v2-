@@ -939,15 +939,6 @@ const StudentApp = () => {
             <Route path="*" element={<Auth onAuthed={() => setAuthed(true)} />} />
           </Routes>
         </BrowserRouter>
-      ) : !authed && isNadiaMinisterialRoute ? (
-        // Guests can use Nadia's ministerial questions without an account.
-        <MinisterialBank
-          language={language ?? "ar"}
-          onBack={() => window.location.assign("/")}
-          initialSubject="biology"
-          initialChapter={nadiaMinisterialInitialChapter}
-          questionSource="nadia"
-        />
       ) : !authed ? (
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
