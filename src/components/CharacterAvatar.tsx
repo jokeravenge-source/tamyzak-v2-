@@ -106,10 +106,12 @@ function CharacterAvatarComponent({
   traits?: Partial<CharacterTraits> | null;
 }) {
   const g: Gender = gender ?? "male";
-  const variant = (traits?.variant ?? 1) as CharacterVariant;
   const variants = g === "female" ? FEMALE_VARIANTS : MALE_VARIANTS;
-  const idx = Math.max(0, Math.min(variants.length - 1, variant - 1));
-  const src = variants[idx];
+  const requestedVariant = Number(traits?.variant ?? 1);
+  const safeVariant = Number.isFinite(requestedVariant) ? Math.trunc(requestedVariant) : 1;
+  const idx = Math.max(0, Math.min(variants.length - 1, safeVariant - 1));
+  const fallbackSrc = variants[0];
+  const src = variants[idx] ?? fallbackSrc;
   const hasCrown = traits?.accessory === "crown";
   const hat = traits?.hat ?? null;
   const skin = traits?.skin ?? SKIN_COLORS[0];
@@ -138,6 +140,19 @@ function CharacterAvatarComponent({
           imageRendering: "auto",
         }}
         decoding="async"
+        onError={(event) => {
+          const image = event.currentTarget;
+          const fallbackStage = image.dataset.avatarFallback;
+          if (!fallbackStage) {
+            // A generated skin-tint data URL can fail in a crowded room. Keep
+            // the complete selected character visible instead of its accessory.
+            image.dataset.avatarFallback = "selected";
+            image.src = src;
+          } else if (fallbackStage === "selected" && src !== fallbackSrc) {
+            image.dataset.avatarFallback = "default";
+            image.src = fallbackSrc;
+          }
+        }}
         draggable={false}
       />
       {traits?.accessory === "glasses" && (
@@ -342,7 +357,8 @@ function tintSkin(img: HTMLImageElement, targetHex: string, maxDimension: number
     px[i + 2] = clamp(nb);
   }
   ctx.putImageData(data, 0, 0);
-  return c.toDataURL("image/png");
+  const result = c.toDataURL("image/png");
+  return result === "data:," ? img.src : result;
 }
 
 function isCoreSkinPixel(r: number, g: number, b: number, a: number): boolean {
