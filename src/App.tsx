@@ -133,6 +133,12 @@ captureSignupSource();
 captureReferralCode();
 
 const MENU_STORAGE_KEY = "app_menu_choice_v1";
+const NADIA_MINISTERIAL_ROUTE = /^(?:\/ministerial-questions-for-nadia-al-nuamey|\/ministerial-questions\/nadia-biology)(?:\/chapter\/([1-5]))?\/?$/;
+
+function getNadiaMinisterialRouteMatch(): RegExpMatchArray | null {
+  if (typeof window === "undefined") return null;
+  return window.location.pathname.match(NADIA_MINISTERIAL_ROUTE);
+}
 
 // Reading the persisted auth snapshot is synchronous. This lets returning
 // users render immediately instead of waiting on a refresh request that can
@@ -167,45 +173,6 @@ const SpotifyAuthCallback = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Student-facing Nadia Biology ministerial bank. Unlike the review dashboard,
-  // this route has no password and opens the normal answer-and-review experience.
-  const nadiaMinisterialStudentMatch = typeof window !== "undefined"
-    ? window.location.pathname.replace(/\/+$/, "").match(/^(?:\/ministerial-questions-for-nadia-al-nuamey|\/ministerial-questions\/nadia-biology)(?:\/chapter\/([1-5]))?$/)
-    : null;
-  if (nadiaMinisterialStudentMatch) {
-    const params = new URLSearchParams(window.location.search);
-    const requestedLanguage = params.get("lang");
-    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    const language: AppLanguage = requestedLanguage === "en" || requestedLanguage === "ar"
-      ? requestedLanguage
-      : storedLanguage === "en" ? "en" : "ar";
-    const initialChapter = nadiaMinisterialStudentMatch[1]
-      ? Number(nadiaMinisterialStudentMatch[1])
-      : null;
-
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Suspense fallback={null}>
-            <MinisterialBank
-              language={language}
-              initialSubject="biology"
-              initialChapter={initialChapter}
-              questionSource="nadia"
-              onBack={() => {
-                window.localStorage.setItem("app_subject_focus_v1", "biology");
-                window.localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
-                window.location.assign("/?menu=subjectsHub");
-              }}
-            />
-          </Suspense>
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
   // Standalone password-protected review dashboard for Nadia's Biology decks.
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-flashcards") {
     return (
@@ -433,6 +400,12 @@ const App = () => {
 };
 
 const StudentApp = () => {
+  const nadiaMinisterialRouteMatch = getNadiaMinisterialRouteMatch();
+  const isNadiaMinisterialRoute = nadiaMinisterialRouteMatch !== null;
+  const nadiaMinisterialInitialChapter = nadiaMinisterialRouteMatch?.[1]
+    ? Number(nadiaMinisterialRouteMatch[1])
+    : null;
+
   useEffect(() => {
     applyTheme(getInitialTheme());
   }, []);
@@ -649,7 +622,12 @@ const StudentApp = () => {
   const [language, setLanguage] = useState<AppLanguage | null>(() => {
     if (typeof window === "undefined") return null;
     // Deep links such as /teachers?lang=en or /enrichments?lang=ar.
-    if (window.location.pathname.startsWith("/teachers") || window.location.pathname.startsWith("/flashcards") || window.location.pathname.startsWith("/enrichments")) {
+    if (
+      window.location.pathname.startsWith("/teachers") ||
+      window.location.pathname.startsWith("/flashcards") ||
+      window.location.pathname.startsWith("/enrichments") ||
+      getNadiaMinisterialRouteMatch()
+    ) {
       const l = new URLSearchParams(window.location.search).get("lang");
       if (l === "ar" || l === "en") {
         localStorage.setItem(LANGUAGE_STORAGE_KEY, l);
@@ -660,6 +638,10 @@ const StudentApp = () => {
   });
   const [subject, setSubject] = useState<AppSubject | null>(() => {
     if (typeof window === "undefined") return null;
+    if (getNadiaMinisterialRouteMatch()) {
+      localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
+      return "biology";
+    }
     if (window.location.pathname.startsWith("/flashcards")) {
       const params = new URLSearchParams(window.location.search);
       const s = params.get("subject") as AppSubject | null;
@@ -694,6 +676,10 @@ const StudentApp = () => {
   type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
+    if (getNadiaMinisterialRouteMatch()) {
+      localStorage.setItem(MENU_STORAGE_KEY, "ministerialBank");
+      return "ministerialBank";
+    }
     if (window.location.pathname.startsWith("/flashcards")) {
       localStorage.setItem(MENU_STORAGE_KEY, "flashcards");
       return "flashcards";
@@ -846,6 +832,17 @@ const StudentApp = () => {
     return () => window.removeEventListener("app:open-personalized-practice", openPersonalized);
   }, []);
   const backToBasics = () => chooseMenu("basics");
+  const leaveMinisterialBank = () => {
+    if (!isNadiaMinisterialRoute) {
+      backToBasics();
+      return;
+    }
+
+    localStorage.setItem("app_subject_focus_v1", "biology");
+    localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
+    window.history.replaceState({}, "", "/");
+    chooseMenu("subjectsHub");
+  };
   const [guideOpen, setGuideOpen] = useState(false);
   const exitSpecialRoute = () => {
     window.history.replaceState({}, "", "/");
@@ -1007,7 +1004,13 @@ const StudentApp = () => {
       ) : menuChoice === "mistakes" ? (
         <MyMistakes language={language} onBack={backToBasics} />
       ) : menuChoice === "ministerialBank" ? (
-        <MinisterialBank language={language} onBack={backToBasics} />
+        <MinisterialBank
+          language={language}
+          onBack={leaveMinisterialBank}
+          initialSubject={isNadiaMinisterialRoute ? "biology" : undefined}
+          initialChapter={isNadiaMinisterialRoute ? nadiaMinisterialInitialChapter : null}
+          questionSource={isNadiaMinisterialRoute ? "nadia" : "default"}
+        />
       ) : menuChoice === "mindmap" ? (
         <MindMap language={language} onBack={backToBasics} />
       ) : menuChoice === "islamicSurahs" ? (
