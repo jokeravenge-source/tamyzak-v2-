@@ -27,6 +27,7 @@ const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
+const NadiaMinisterialQuestions = lazy(() => import("./pages/NadiaMinisterialQuestions"));
 import AdminLogin from "./pages/AdminLogin";
 import AdminMcqReview from "./pages/AdminMcqReview";
 
@@ -173,6 +174,19 @@ const App = () => {
         <TooltipProvider>
           <Suspense fallback={null}>
             <NadiaFlashcardsDashboard />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Standalone password-protected ministerial question bank for Nadia's Biology material.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-ministerial-questions") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={null}>
+            <NadiaMinisterialQuestions />
           </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
