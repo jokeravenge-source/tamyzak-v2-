@@ -46,6 +46,7 @@ import { ministerialIslamicUnit1 } from "@/data/ministerialIslamicUnit1";
 import { ministerialIslamicUnit2 } from "@/data/ministerialIslamicUnit2";
 import { Textarea } from "@/components/ui/textarea";
 import { recordTopicPractice, topicForQuestion } from "@/lib/topicMastery";
+import { nadiaMinisterialChapters } from "@/lib/nadiaMinisterialQuestions";
 
 const subjectIcons: Record<BankSubject, React.ComponentType<{ className?: string }>> = {
   physics: Atom,
@@ -221,10 +222,27 @@ type AnswerCheckResult = {
   mistakes: { studentClaim: string; correction: string }[];
 };
 
-const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+type MinisterialBankProps = {
+  language: AppLanguage;
+  onBack: () => void;
+  initialSubject?: BankSubject;
+  initialChapter?: number | null;
+  questionSource?: "default" | "nadia";
+};
+
+const MinisterialBank = ({
+  language,
+  onBack,
+  initialSubject,
+  initialChapter = null,
+  questionSource = "default",
+}: MinisterialBankProps) => {
   useFeatureUsed("ministerial_questions");
   const t = copy[language];
+  const isNadiaBank = questionSource === "nadia";
   const [subject, setSubject] = useState<BankSubject | null>(() => {
+    if (initialSubject) return initialSubject;
+    if (isNadiaBank) return "biology";
     if (typeof window === "undefined") return null;
     try {
       const focused = sessionStorage.getItem("ministerial_subject_focus_v1") as BankSubject | null;
@@ -234,7 +252,7 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       return null;
     }
   });
-  const [chapterN, setChapterN] = useState<number | null>(null);
+  const [chapterN, setChapterN] = useState<number | null>(initialChapter);
   const [qIndex, setQIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -265,7 +283,8 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
       setAnswerChecks({});
       setCheckingAnswer(false);
     } else if (subject) {
-      setSubject(null);
+      if (isNadiaBank) onBack();
+      else setSubject(null);
     } else {
       onBack();
     }
@@ -357,10 +376,24 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
     }
   };
 
-  const chapters = subject ? getChaptersForSubject(subject) : [];
+  const chapters = isNadiaBank
+    ? nadiaMinisterialChapters.map((chapter) => ({
+        n: chapter.number,
+        title: chapter.titleEn,
+        arTitle: chapter.titleAr,
+        subtitle: "",
+        locked: false,
+      }))
+    : subject
+      ? getChaptersForSubject(subject)
+      : [];
   const subjectMeta = SUBJECTS_ORDER.find((s) => s.code === subject);
-  const allQuestions =
-    subject === "physics" && chapterN === 1
+  const nadiaChapter = isNadiaBank
+    ? nadiaMinisterialChapters.find((chapter) => chapter.number === chapterN)
+    : undefined;
+  const allQuestions = nadiaChapter
+    ? [...(language === "ar" ? nadiaChapter.arabic : nadiaChapter.english)]
+    : subject === "physics" && chapterN === 1
       ? (language === "ar" ? ministerialPhysicsCh1Ar : ministerialPhysicsCh1)
       : subject === "physics" && chapterN === 2
       ? (language === "ar" ? ministerialPhysicsCh2Ar : ministerialPhysicsCh2)
@@ -522,10 +555,16 @@ const MinisterialBank = ({ language, onBack }: { language: AppLanguage; onBack: 
           <span className="text-xs font-semibold tracking-wide text-primary">{subject ? t.chooseChapter : t.libraryLabel}</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tight text-foreground leading-[1.15] mb-4">
-          {subject ? (language === "ar" ? subjectMeta?.ar : subjectMeta?.en) : t.title}
+          {isNadiaBank
+            ? (language === "ar" ? "وزاريات نادية النعيمي · الأحياء" : "Nadia Al-Nuaimi · Biology Ministerial Questions")
+            : subject
+              ? (language === "ar" ? subjectMeta?.ar : subjectMeta?.en)
+              : t.title}
         </h1>
         <p className="text-muted-foreground text-sm md:text-lg max-w-xl mx-auto leading-relaxed">
-          {subject ? t.chooseChapter : t.description}
+          {isNadiaBank
+            ? (language === "ar" ? "اختر الفصل وابدأ بحل الأسئلة مباشرة." : "Choose a chapter and start answering questions.")
+            : subject ? t.chooseChapter : t.description}
         </p>
         <p className="mt-4 flex justify-center">
           <PointsHint action="ministerial_set" language={language === "ar" ? "ar" : "en"} bonus />
