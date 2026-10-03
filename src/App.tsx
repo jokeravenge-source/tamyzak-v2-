@@ -167,6 +167,37 @@ const SpotifyAuthCallback = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Student-facing Nadia Biology ministerial bank. Unlike the review dashboard,
+  // this route has no password and opens the normal answer-and-review experience.
+  const nadiaMinisterialStudentMatch = typeof window !== "undefined"
+    ? window.location.pathname.replace(/\/+$/, "").match(/^\/ministerial-questions\/nadia-biology(?:\/chapter\/([1-5]))?$/)
+    : null;
+  if (nadiaMinisterialStudentMatch) {
+    const params = new URLSearchParams(window.location.search);
+    const language: AppLanguage = params.get("lang") === "en" ? "en" : "ar";
+    const initialChapter = nadiaMinisterialStudentMatch[1]
+      ? Number(nadiaMinisterialStudentMatch[1])
+      : null;
+
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Suspense fallback={null}>
+            <MinisterialBank
+              language={language}
+              initialSubject="biology"
+              initialChapter={initialChapter}
+              questionSource="nadia"
+              onBack={() => window.location.assign("/")}
+            />
+          </Suspense>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Standalone password-protected review dashboard for Nadia's Biology decks.
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-flashcards") {
     return (
