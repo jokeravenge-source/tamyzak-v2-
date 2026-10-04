@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
         model: "openai/gpt-5.6-sol",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          ...((history ?? []).slice(-12).map((m) => ({ role: m.role, content: m.content }))),
+          ...((Array.isArray(history) ? history : []).slice(-12).map((m) => ({ role: m?.role === "assistant" ? "assistant" : "user", content: String(m?.content ?? "").slice(0, 4000) }))),
           { role: "user", content: message },
         ],
       }),

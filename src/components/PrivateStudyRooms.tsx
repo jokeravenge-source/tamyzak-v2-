@@ -59,7 +59,7 @@ function mergePresenceRows(rows: any[], previous: Record<string, Presence>): Rec
 
 function makeCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return Array.from({ length: 6 }, () => chars[crypto.getRandomValues(new Uint32Array(1))[0] % chars.length]).join("");
 }
 
 export default function PrivateStudyRooms({

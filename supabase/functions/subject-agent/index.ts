@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const label = SUBJECT_LABELS[subject] ?? subject;
+    const label = SUBJECT_LABELS[subject] ?? "school subject";
     const context = await fetchSubjectContext(subject, chapter, clientContext);
     const lang = language === "ar" ? "Arabic" : "English";
     const refusal = language === "ar"

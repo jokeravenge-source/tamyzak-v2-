@@ -25,7 +25,7 @@ export const CHALLENGE_SUBJECTS: { key: ChallengeSubject; ar: string; en: string
 export const CHALLENGE_COUNTS = [5, 10, 15, 20];
 
 export function newRoomCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
 }
 
 export function setPendingBattle(p: PendingBattle) {

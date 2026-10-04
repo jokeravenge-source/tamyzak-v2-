@@ -1,5 +1,6 @@
 import { protect } from "../_shared/guard.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,6 +28,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const guard = await protect(req, "send-to-human-grader", { max: 5, windowSeconds: 60 });
   if (!guard.ok) return new Response(JSON.stringify({ error: guard.error }), { status: guard.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return new Response(JSON.stringify({ error: auth.error }), { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
     const TOKEN = Deno.env.get("HUMAN_GRADER_BOT_TOKEN");
@@ -59,11 +63,14 @@ Deno.serve(async (req) => {
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (supabaseUrl && serviceKey) {
         const adminDb = createClient(supabaseUrl, serviceKey);
-        const { data: examRow } = await adminDb
-          .from("course_exams")
-          .select("answer_path")
-          .eq("id", examId)
-          .maybeSingle();
+        // Only attach the answer key for exams the caller actually submitted (or admins).
+        const [{ data: done }, { data: isAdmin }] = await Promise.all([
+          adminDb.from("course_exam_completions").select("id").eq("exam_id", examId).eq("user_id", auth.userId).maybeSingle(),
+          adminDb.rpc("has_role", { _user_id: auth.userId, _role: "admin" }),
+        ]);
+        const { data: examRow } = done || isAdmin
+          ? await adminDb.from("course_exams").select("answer_path").eq("id", examId).maybeSingle()
+          : { data: null };
         if (examRow?.answer_path) {
           answerBucket = "course-exams";
           answerPath = String(examRow.answer_path);

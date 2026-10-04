@@ -396,7 +396,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
         subject: "general" as BattleSubject,
       }));
 
-      const c = String(Math.floor(100000 + Math.random() * 900000));
+      const c = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
       setCode(c);
       setIsHost(true);
       setupChannel(c, true, qs);
