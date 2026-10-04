@@ -1,6 +1,6 @@
 // One-off maintenance endpoint: (re)registers the Telegram webhook.
-// Requires a static setup token header so it cannot be triggered publicly.
-const SETUP_TOKEN = "212ab77c7c8527c01adf7c7669bc1525";
+// Admin-only.
+import { requireAdmin } from "../_shared/auth.ts";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
 
 async function deriveSecret(apiKey: string): Promise<string> {
@@ -11,9 +11,8 @@ async function deriveSecret(apiKey: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
-  if (req.headers.get("x-setup-token") !== SETUP_TOKEN) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return new Response(auth.error, { status: auth.status });
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY");
