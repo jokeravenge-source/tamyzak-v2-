@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "polls bucket guest insert" ON storage.objects;
