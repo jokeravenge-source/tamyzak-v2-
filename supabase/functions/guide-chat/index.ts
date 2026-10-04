@@ -67,10 +67,10 @@ ${TOOLS}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const guard = await protect(req, "guide-chat", { max: 20, windowSeconds: 60 });
-  if (!guard.ok) {
   const auth = await requireUser(req);
   if (!auth.ok) return new Response(JSON.stringify({ error: auth.error }), { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const guard = await protect(req, "guide-chat", { max: 20, windowSeconds: 60 });
+  if (!guard.ok) {
     return new Response(JSON.stringify({ error: guard.error }), {
       status: guard.status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
