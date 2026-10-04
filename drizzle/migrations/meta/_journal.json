@@ -43,6 +43,13 @@
       "when": 1790539278184,
       "tag": "0005_student_weakness_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791131339520,
+      "tag": "0006_polls_uploads_signed_in_only",
+      "breakpoints": true
     }
   ]
 }
