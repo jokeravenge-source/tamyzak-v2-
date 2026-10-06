@@ -8,6 +8,7 @@ export const SUBJECT_STORAGE_KEY = "app_subject_v1";
 export const PREVIOUS_SUBJECT_STORAGE_KEY = "app_previous_subject_v1";
 export const PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY = "physics_flashcard_teacher_v1";
 export const BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY = "biology_flashcard_teacher_v1";
+export const CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY = "chemistry_flashcard_teacher_v1";
 
 export type AppSubject = "physics" | "english" | "chemistry" | "biology" | "french" | "arabic" | "islamic" | "math" | "revision";
 
@@ -118,6 +119,9 @@ const Subjects = ({
     }
     if (s.code === "biology") {
       sessionStorage.removeItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY);
+    }
+    if (s.code === "chemistry") {
+      sessionStorage.removeItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY);
     }
     localStorage.setItem(SUBJECT_STORAGE_KEY, s.code);
     onSelectSubject(s.code);

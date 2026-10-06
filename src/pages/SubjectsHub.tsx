@@ -8,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { TOOL_PLACEHOLDER_KEY } from "@/pages/ToolPlaceholder";
 import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
+import { CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY } from "@/pages/Subjects";
 
 type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic" | "math";
 
@@ -194,6 +195,9 @@ const SubjectsHub = ({
     if (open) {
       try {
         localStorage.setItem("app_subject_v1", open);
+        if (open === "chemistry" && t.key === "flashcards") {
+          sessionStorage.removeItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY);
+        }
         if (t.key === "ministerialBank") {
           sessionStorage.setItem("ministerial_subject_focus_v1", open);
         }

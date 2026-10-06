@@ -40,6 +40,7 @@ import { flashcardsBioCh5NadiaAr } from "@/data/flashcardsBioCh5NadiaAr";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
+import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
 import { flashcardsChemCh4En } from "@/data/flashcardsChemCh4En";
 import { flashcardsChemCh5En } from "@/data/flashcardsChemCh5En";
 import { flashcardsChemCh6En } from "@/data/flashcardsChemCh6En";
@@ -99,7 +100,11 @@ import {
   type SrsRating,
   type SrsState,
 } from "@/lib/srs";
-import { BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, PREVIOUS_SUBJECT_STORAGE_KEY } from "@/pages/Subjects";
+import {
+  BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
+  CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY,
+  PREVIOUS_SUBJECT_STORAGE_KEY,
+} from "@/pages/Subjects";
 import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
 
 
@@ -134,6 +139,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const isNadiaBiologyDeck = subject === "biology"
     && (chapter === "1" || chapter === "2" || chapter === "3" || chapter === "4" || chapter === "5")
     && biologyFlashcardTeacher === "nadia-al-nuaimi";
+  const chemistryFlashcardTeacher = typeof window !== "undefined"
+    ? sessionStorage.getItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY)
+    : null;
+  const isWijdanChemistryDeck = subject === "chemistry"
+    && chapter === "3"
+    && chemistryFlashcardTeacher === "wijdan";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -258,6 +269,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }
 
       if (subject === "chemistry") {
+        if (isWijdanChemistryDeck) {
+          return {
+            title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+            eyebrow: language === "ar"
+              ? "الكيمياء · الفصل الثالث · الاتزان الأيوني · ست وجدان"
+              : "Chemistry · Chapter 3 · Ionic Equilibrium · Miss Wijdan",
+            cards: flashcardsChemCh3WijdanEn,
+          };
+        }
         const chemEn: Record<string, typeof flashcards> = {
           "1": flashcardsChemCh1En, "2": flashcardsChemCh2En, "3": flashcardsChemCh3En,
           "4": flashcardsChemCh4En, "5": flashcardsChemCh5En, "6": flashcardsChemCh6En,
@@ -444,13 +464,20 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       return baseDeck;
     },
-    [baseDeck, chapter, isNadiaBiologyDeck, language, subject]
+    [baseDeck, chapter, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject]
   );
   const text = copy[language];
   // Explicit, source-derived topic groups for decks that are built from
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
+    if (isWijdanChemistryDeck) {
+      return wijdanChemCh3TopicRanges.map((topic) => ({
+        key: topic.key,
+        label: language === "ar" ? topic.ar : topic.en,
+        cards: flashcardsChemCh3WijdanEn.slice(topic.start - 1, topic.end),
+      }));
+    }
     if (isNadiaBiologyDeck) {
       const topicRanges = chapter === "1"
         ? nadiaBioCh1TopicRanges
@@ -477,12 +504,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     return null;
-  }, [chapter, isNadiaBiologyDeck, language]);
+  }, [chapter, isNadiaBiologyDeck, isWijdanChemistryDeck, language]);
 
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
     () => {
-      const listExtraCards = isNadiaBiologyDeck ? [] : extraCards;
+      const listExtraCards = isNadiaBiologyDeck || isWijdanChemistryDeck ? [] : extraCards;
       if (explicitGroups) {
         const withExtras: TopicGroup[] =
           listExtraCards.length > 0
@@ -509,7 +536,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }
       return groupFlashcardsByTopic(([] as any[]).concat(deck.cards as any[], listExtraCards as any[]), language);
     },
-    [deck, extraCards, isNadiaBiologyDeck, language, explicitGroups, subject, chapter]
+    [deck, extraCards, isNadiaBiologyDeck, isWijdanChemistryDeck, language, explicitGroups, subject, chapter]
   );
   const hasTopics = topicResult.topics.length > 1;
   const [topicKey, setTopicKey] = useState<string>(topicResult.allKey);
@@ -542,7 +569,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   }, [topicResult, topicKey, dailyTarget, subject, chapter]);
 
   const [cards, setCards] = useState(activeTopicCards);
-  const deckProgressScope = isNadiaBiologyDeck ? "nadia-al-nuaimi" : "default";
+  const deckProgressScope = isNadiaBiologyDeck
+    ? "nadia-al-nuaimi"
+    : isWijdanChemistryDeck
+      ? "wijdan"
+      : "default";
   const progressKey = `flashcard-progress:${subject}:${chapter}:${deckProgressScope}:${savedView ? "saved" : topicKey}`;
   const readSavedIndex = (max: number) => {
     try {

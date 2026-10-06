@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, ArrowLeft, ArrowRight, Sparkles, Dna, Layers3 } from "lucide-react";
+import { Lock, ArrowLeft, ArrowRight, Sparkles, Dna, Layers3, FlaskConical } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import {
@@ -8,6 +8,7 @@ import {
   PREVIOUS_SUBJECT_STORAGE_KEY,
   PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
   BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
+  CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY,
 } from "@/pages/Subjects";
 import SubjectAgent from "@/components/SubjectAgent";
 import { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "@/pages/EnglishCategory";
@@ -50,29 +51,42 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
     const stored = sessionStorage.getItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY);
     return stored === "mohammed-al-anzi" || stored === "nadia-al-nuaimi" ? stored : null;
   });
+  const [chemistryTeacher, setChemistryTeacher] = useState<"ahmed-al-nadawi" | "wijdan" | null>(() => {
+    if (subject !== "chemistry") return "ahmed-al-nadawi";
+    const stored = sessionStorage.getItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY);
+    return stored === "ahmed-al-nadawi" || stored === "wijdan" ? stored : null;
+  });
   const showPhysicsTeacherPicker = subject === "physics" && !physicsTeacherSelected;
   const showBiologyTeacherPicker = subject === "biology" && biologyTeacher === null;
-  const showTeacherPicker = showPhysicsTeacherPicker || showBiologyTeacherPicker;
+  const showChemistryTeacherPicker = subject === "chemistry" && chemistryTeacher === null;
+  const showTeacherPicker = showPhysicsTeacherPicker || showBiologyTeacherPicker || showChemistryTeacherPicker;
   const defaultBadge = (teacherBadge[subject] ?? { ar: "", en: "" })[language];
   const badge = subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
     ? (language === "ar" ? "نادية النعيمي" : "NADIA AL-NUAIMI")
-    : defaultBadge;
+    : subject === "chemistry" && chemistryTeacher === "wijdan"
+      ? (language === "ar" ? "ست وجدان" : "MISS WIJDAN")
+      : defaultBadge;
   const englishCategory = (typeof window !== "undefined"
     ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null)
     : null);
   const chapters = getFlashcardChapters(subject, (englishCategory ?? "grammar") as FlashcardSection);
-  const visibleChapters = subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
+  const visibleChapters = subject === "chemistry" && chemistryTeacher === "wijdan"
     ? chapters
-        .filter((chapter) => chapter.n >= 1 && chapter.n <= 5)
-        .map((chapter) => chapter.n === 4
-          ? { ...chapter, title: "Embryonic Development", arTitle: "التطور الجنيني", locked: false }
-          : chapter)
-    : chapters;
+        .filter((chapter) => chapter.n === 3)
+        .map((chapter) => ({ ...chapter, title: "Ionic Equilibrium", arTitle: "الاتزان الأيوني", locked: false }))
+    : subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
+      ? chapters
+          .filter((chapter) => chapter.n >= 1 && chapter.n <= 5)
+          .map((chapter) => chapter.n === 4
+            ? { ...chapter, title: "Embryonic Development", arTitle: "التطور الجنيني", locked: false }
+            : chapter)
+      : chapters;
 
   const handleChangeLanguage = () => {
     localStorage.removeItem(SUBJECT_STORAGE_KEY);
     sessionStorage.removeItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY);
     sessionStorage.removeItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY);
+    sessionStorage.removeItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY);
     onChangeLanguage();
   };
 
@@ -84,6 +98,11 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   const chooseBiologyTeacher = (teacher: "mohammed-al-anzi" | "nadia-al-nuaimi") => {
     sessionStorage.setItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, teacher);
     setBiologyTeacher(teacher);
+  };
+
+  const chooseChemistryTeacher = (teacher: "ahmed-al-nadawi" | "wijdan") => {
+    sessionStorage.setItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY, teacher);
+    setChemistryTeacher(teacher);
   };
 
   const handleClick = (chapter: typeof chapters[number]) => {
@@ -127,7 +146,11 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             {showTeacherPicker
-              ? (subject === "biology" ? (language === "ar" ? "الأحياء" : "Biology") : (language === "ar" ? "الفيزياء" : "Physics"))
+              ? (subject === "biology"
+                  ? (language === "ar" ? "الأحياء" : "Biology")
+                  : subject === "chemistry"
+                    ? (language === "ar" ? "الكيمياء" : "Chemistry")
+                    : (language === "ar" ? "الفيزياء" : "Physics"))
               : badge}
           </span>
         </div>
@@ -139,12 +162,14 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
         <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
           {showTeacherPicker
             ? (language === "ar"
-                ? `اختر المدرّس لعرض ${subject === "biology" ? "بطاقات الأحياء" : "فصول الفيزياء وبطاقاتها التعليمية"}.`
-                : `Choose a teacher to view ${subject === "biology" ? "their Biology flashcards" : "all eight Physics chapters and their flashcards"}.`)
+                ? `اختر المدرّس لعرض ${subject === "biology" ? "بطاقات الأحياء" : subject === "chemistry" ? "بطاقات الكيمياء" : "فصول الفيزياء وبطاقاتها التعليمية"}.`
+                : `Choose a teacher to view ${subject === "biology" ? "their Biology flashcards" : subject === "chemistry" ? "their Chemistry flashcards" : "all eight Physics chapters and their flashcards"}.`)
             : subject === "math"
               ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
               : subject === "biology"
                 ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
+                : subject === "chemistry"
+                  ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
                 : text.description}
         </p>
       </header>
@@ -177,6 +202,50 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
               </span>
             </div>
           </button>
+          ) : showChemistryTeacherPicker ? (
+            <div className="grid w-full max-w-4xl grid-cols-1 gap-5 sm:grid-cols-2" dir="rtl">
+              <button
+                type="button"
+                onClick={() => chooseChemistryTeacher("ahmed-al-nadawi")}
+                className="group relative min-h-72 overflow-hidden rounded-[2rem] border border-rose-400/30 bg-gradient-to-br from-rose-500/20 via-secondary to-secondary p-7 text-right shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                aria-label={language === "ar" ? "فتح بطاقات احمد النداوي" : "Open Ahmed Al-Nadawi flashcards"}
+              >
+                <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-rose-400/20 blur-3xl" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-rose-400/15 text-rose-300 ring-1 ring-rose-300/30">
+                    <FlaskConical className="h-8 w-8" />
+                  </span>
+                  <div>
+                    <span className="mb-3 inline-flex rounded-full border border-rose-300/25 bg-rose-950/20 px-3 py-1 text-xs font-bold text-rose-200">
+                      {language === "ar" ? "الفصول 1–6" : "Chapters 1–6"}
+                    </span>
+                    <h2 className="text-3xl font-black text-foreground">احمد النداوي</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Ahmed Al-Nadawi · Chemistry</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => chooseChemistryTeacher("wijdan")}
+                className="group relative min-h-72 overflow-hidden rounded-[2rem] border border-cyan-400/35 bg-gradient-to-br from-cyan-500/20 via-sky-500/10 to-secondary p-7 text-right shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                aria-label={language === "ar" ? "فتح بطاقات ست وجدان" : "Open Miss Wijdan flashcards"}
+              >
+                <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-300/30">
+                    <Layers3 className="h-8 w-8" />
+                  </span>
+                  <div>
+                    <span className="mb-3 inline-flex rounded-full border border-cyan-300/25 bg-cyan-950/20 px-3 py-1 text-xs font-bold text-cyan-200">
+                      {language === "ar" ? "الفصل الثالث · 138 بطاقة" : "Chapter 3 · 138 cards"}
+                    </span>
+                    <h2 className="text-3xl font-black text-foreground">ست وجدان</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Miss Wijdan · Chemistry</p>
+                  </div>
+                </div>
+              </button>
+            </div>
           ) : (
             <div className="grid w-full max-w-4xl grid-cols-1 gap-5 sm:grid-cols-2" dir="rtl">
               <button

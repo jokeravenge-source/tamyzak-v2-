@@ -43,6 +43,15 @@ export const FLASHCARD_LISTS = [
     subjectEn: "Chemistry",
   },
   {
+    id: "chemistry-wijdan-ch3",
+    subject: "chemistry",
+    selectorValue: "wijdan",
+    nameAr: "ست وجدان",
+    nameEn: "Miss Wijdan",
+    subjectAr: "الكيمياء · الفصل الثالث · 138 بطاقة",
+    subjectEn: "Chemistry · Chapter 3 · 138 cards",
+  },
+  {
     id: "french-mohammed-ali-al-kinani",
     subject: "french",
     selectorValue: "mohammed-ali-al-kinani",

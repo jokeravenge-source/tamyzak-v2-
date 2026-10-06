@@ -12,6 +12,7 @@ import { useState, Suspense } from "react";
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
 import Subjects, {
   BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
+  CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY,
   SUBJECT_STORAGE_KEY,
   PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY,
   type AppSubject,
@@ -653,6 +654,12 @@ const StudentApp = () => {
             const list = params.get("list");
             if (list === "nadia-al-nuaimi" || list === "mohammed-al-anzi") {
               sessionStorage.setItem(BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY, list);
+            }
+          }
+          if (s === "chemistry") {
+            const list = params.get("list");
+            if (list === "wijdan" || list === "ahmed-al-nadawi") {
+              sessionStorage.setItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY, list);
             }
           }
         } catch { /* ignore */ }
