@@ -41,6 +41,7 @@ import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
 import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
+import { flashcardsChemCh3WijdanAr } from "@/data/flashcardsChemCh3WijdanAr";
 import { flashcardsChemCh4En } from "@/data/flashcardsChemCh4En";
 import { flashcardsChemCh5En } from "@/data/flashcardsChemCh5En";
 import { flashcardsChemCh6En } from "@/data/flashcardsChemCh6En";
@@ -275,7 +276,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             eyebrow: language === "ar"
               ? "الكيمياء · الفصل الثالث · الاتزان الأيوني · ست وجدان"
               : "Chemistry · Chapter 3 · Ionic Equilibrium · Miss Wijdan",
-            cards: flashcardsChemCh3WijdanEn,
+            cards: language === "ar" ? flashcardsChemCh3WijdanAr : flashcardsChemCh3WijdanEn,
           };
         }
         const chemEn: Record<string, typeof flashcards> = {
@@ -472,10 +473,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
     if (isWijdanChemistryDeck) {
+      const topicCards = language === "ar" ? flashcardsChemCh3WijdanAr : flashcardsChemCh3WijdanEn;
       return wijdanChemCh3TopicRanges.map((topic) => ({
         key: topic.key,
         label: language === "ar" ? topic.ar : topic.en,
-        cards: flashcardsChemCh3WijdanEn.slice(topic.start - 1, topic.end),
+        cards: topicCards.slice(topic.start - 1, topic.end),
       }));
     }
     if (isNadiaBiologyDeck) {
