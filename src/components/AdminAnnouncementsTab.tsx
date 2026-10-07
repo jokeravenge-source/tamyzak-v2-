@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trash2, Plus, Eye, EyeOff, Sparkles, Wrench } from "lucide-react";
+import { Trash2, Plus, Eye, EyeOff, Sparkles, Wrench, Link2, ExternalLink } from "lucide-react";
+import { normalizeAnnouncementLink } from "@/lib/announcementLinks";
 
 type Row = {
   id: string;
@@ -10,6 +11,7 @@ type Row = {
   title_en: string;
   desc_ar: string;
   desc_en: string;
+  link_url: string | null;
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -21,6 +23,7 @@ const empty = {
   title_en: "",
   desc_ar: "",
   desc_en: "",
+  link_url: "",
   sort_order: 0,
 };
 
@@ -51,9 +54,15 @@ const AdminAnnouncementsTab = () => {
       toast.error("العنوان بالعربي والإنكليزي مطلوب");
       return;
     }
+    const linkUrl = normalizeAnnouncementLink(form.link_url);
+    if (form.link_url.trim() && !linkUrl) {
+      toast.error("الرابط غير صالح. استخدم رابط HTTPS أو مساراً يبدأ بـ /");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("feature_announcements").insert({
       ...form,
+      link_url: linkUrl,
       sort_order: Number(form.sort_order) || 0,
     });
     setSaving(false);
@@ -125,6 +134,20 @@ const AdminAnnouncementsTab = () => {
             placeholder="Description (English)"
             className="min-h-20 rounded-lg border border-border bg-background px-3 py-2 text-sm"
           />
+          <label className="space-y-1.5 sm:col-span-2">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Link2 className="h-3.5 w-3.5" /> رابط الإعلان (اختياري)
+            </span>
+            <input
+              type="text"
+              inputMode="url"
+              dir="ltr"
+              value={form.link_url}
+              onChange={(e) => setForm({ ...form, link_url: e.target.value })}
+              placeholder="https://example.com أو /flashcards"
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-left text-sm"
+            />
+          </label>
         </div>
         <button
           onClick={add}
@@ -156,6 +179,12 @@ const AdminAnnouncementsTab = () => {
                 <p className="font-semibold text-sm">{r.title_ar}</p>
                 <p className="text-xs text-muted-foreground">{r.title_en}</p>
                 <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{r.desc_ar}</p>
+                {r.link_url && (
+                  <p dir="ltr" className="mt-1 flex items-center gap-1 truncate text-left text-[11px] text-primary">
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{r.link_url}</span>
+                  </p>
+                )}
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   الترتيب: {r.sort_order} · {r.active ? "ظاهر" : "مخفي"}
                 </p>
