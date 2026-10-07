@@ -1163,7 +1163,6 @@ export type Database = {
           desc_en: string
           id: string
           kind: string
-          link_url: string | null
           sort_order: number
           title_ar: string
           title_en: string
@@ -1177,7 +1176,6 @@ export type Database = {
           desc_en?: string
           id?: string
           kind?: string
-          link_url?: string | null
           sort_order?: number
           title_ar: string
           title_en: string
@@ -1191,7 +1189,6 @@ export type Database = {
           desc_en?: string
           id?: string
           kind?: string
-          link_url?: string | null
           sort_order?: number
           title_ar?: string
           title_en?: string
