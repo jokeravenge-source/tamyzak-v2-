@@ -10,16 +10,20 @@ import {
   GraduationCap,
   Languages,
   Layers,
+  ListChecks,
   Loader2,
+  Lock,
   Network,
   PlayCircle,
   Plus,
   ScrollText,
   Settings,
   Sparkles,
+  Video,
 } from "lucide-react";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
 import type { AppLanguage } from "@/components/LanguageGate";
+import biologyTheme from "@/assets/themes/biology.png";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -47,6 +51,26 @@ type TeacherProfile = {
   tools: string[] | null;
   flashcard_list_ids: string[] | null;
   sort_order: number;
+};
+
+const NADIA_TEACHER_ID = "nadia-al-nuaimy";
+const NADIA_ARABIC_LECTURE_COUNT = 39;
+
+const BUILT_IN_NADIA_PROFILE: TeacherProfile = {
+  id: NADIA_TEACHER_ID,
+  name: "نادية النعيمي",
+  background_image_url: biologyTheme,
+  tools: [],
+  flashcard_list_ids: [],
+  sort_order: 10_000,
+};
+
+const isNadiaProfile = (teacher: TeacherProfile) => {
+  if (teacher.id === NADIA_TEACHER_ID) return true;
+  const name = teacher.name.trim().toLocaleLowerCase();
+  const latinName = name.replace(/[^a-z]/g, "");
+  return (name.includes("نادية") && name.includes("النعيمي"))
+    || (latinName.includes("nadia") && (latinName.includes("nuaimy") || latinName.includes("nuamey")));
 };
 
 const toolIcons: Partial<Record<TeacherToolKey, React.ComponentType<{ className?: string }>>> = {
@@ -83,6 +107,7 @@ const copy = {
     description: "اختَر المدرّس حتى تشوف الأدوات والمحتوى الخاص بيه.",
     back: "العودة للرئيسية",
     backToTeachers: "العودة للمدرسين",
+    backToTeacherContent: "العودة لمحتوى الأستاذة",
     teacherTools: "أدوات المدرّس",
     open: "فتح الأداة",
     empty: "ماكو مدرسين مضافين حالياً.",
@@ -99,6 +124,7 @@ const copy = {
     description: "Choose a teacher to see their selected tools and learning content.",
     back: "Back to home",
     backToTeachers: "Back to teachers",
+    backToTeacherContent: "Back to teacher content",
     teacherTools: "Teacher tools",
     open: "Open tool",
     empty: "No teachers have been added yet.",
@@ -111,6 +137,118 @@ const copy = {
     chooseList: "Choose a flashcard list",
   },
 } as const;
+
+const nadiaCopy = {
+  ar: {
+    subject: "الأحياء",
+    teacherTools: "أدوات الأستاذة",
+    content: "المحاضرات وبنك الأسئلة",
+    description: "افتح قائمة محاضرات المنهج العربي من المحاضرة 1 إلى المحاضرة 39.",
+    lectures: "محاضرات المنهج العربي",
+    lecture: "المحاضرة",
+    curriculum: "المنهج العربي",
+    listDescription: "39 محاضرة مرتبة للمنهج العربي.",
+    open: "عرض المحاضرات",
+    comingSoon: "قريباً",
+  },
+  en: {
+    subject: "Biology",
+    teacherTools: "Teacher tools",
+    content: "Lectures & MCQ Bank",
+    description: "Open the Arabic-curriculum lecture list from Lecture 1 through Lecture 39.",
+    lectures: "Arabic Curriculum Lectures",
+    lecture: "Lecture",
+    curriculum: "Arabic Curriculum",
+    listDescription: "39 Arabic-curriculum lectures in order.",
+    open: "View lectures",
+    comingSoon: "Coming soon",
+  },
+} as const;
+
+function NadiaDirectoryContent({
+  teacher,
+  language,
+  view,
+  onOpenLectures,
+}: {
+  teacher: TeacherProfile;
+  language: AppLanguage;
+  view: "overview" | "lectures";
+  onOpenLectures: () => void;
+}) {
+  const text = nadiaCopy[language];
+
+  if (view === "lectures") {
+    return (
+      <>
+        <header className="mb-7 text-center">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300">
+            <Video className="h-4 w-4" /> {text.curriculum}
+          </span>
+          <h1 className="text-3xl font-black sm:text-4xl">{text.lectures}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{text.listDescription}</p>
+        </header>
+
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={text.lectures}>
+          {Array.from({ length: NADIA_ARABIC_LECTURE_COUNT }, (_, index) => index + 1).map((lectureNumber) => (
+            <button
+              type="button"
+              key={lectureNumber}
+              disabled
+              aria-label={`${text.lecture} ${lectureNumber} — ${text.comingSoon}`}
+              className="flex min-h-24 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+                <Lock className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-black text-foreground">{text.lecture} {lectureNumber}</span>
+                <span className="mt-1 block text-xs font-bold text-muted-foreground">{text.curriculum}</span>
+                <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{text.comingSoon}</span>
+              </span>
+            </button>
+          ))}
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section
+        className="relative isolate mb-8 min-h-[260px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center shadow-xl"
+        style={{ backgroundImage: `url(${JSON.stringify(teacher.background_image_url).slice(1, -1)})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-slate-900/55 to-emerald-900/10" />
+        <div className="relative flex min-h-[260px] flex-col justify-end p-6 text-white sm:p-9">
+          <span className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-bold backdrop-blur">
+            <GraduationCap className="h-4 w-4" /> {text.subject}
+          </span>
+          <h1 className="text-3xl font-black sm:text-5xl">{teacher.name}</h1>
+        </div>
+      </section>
+
+      <section className="max-w-2xl" aria-label={text.teacherTools}>
+        <button
+          type="button"
+          onClick={onOpenLectures}
+          className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        >
+          <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
+            <Video className="h-5 w-5" />
+            <span className="h-5 w-px bg-white/35" />
+            <ListChecks className="h-5 w-5" />
+          </span>
+          <h2 className="text-xl font-black">{text.content}</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{text.description}</p>
+          <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
+            {text.open} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+          </span>
+        </button>
+      </section>
+    </>
+  );
+}
 
 const TeacherDirectory = ({
   language,
@@ -131,6 +269,7 @@ const TeacherDirectory = ({
   const [managing, setManaging] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [choosingFlashcardList, setChoosingFlashcardList] = useState(false);
+  const [nadiaView, setNadiaView] = useState<"overview" | "lectures">("overview");
 
   useEffect(() => {
     let active = true;
@@ -171,7 +310,13 @@ const TeacherDirectory = ({
     return () => { active = false; };
   }, [refreshVersion]);
 
-  const selected = teachers.find((teacher) => teacher.id === selectedId) ?? null;
+  const directoryTeachers = useMemo(() => {
+    if (teachers.some(isNadiaProfile)) return teachers;
+    return [...teachers, BUILT_IN_NADIA_PROFILE];
+  }, [teachers]);
+
+  const selected = directoryTeachers.find((teacher) => teacher.id === selectedId) ?? null;
+  const selectedIsNadia = selected ? isNadiaProfile(selected) : false;
   const selectedTools = useMemo(() => {
     if (!selected) return [];
     const assigned = new Set((selected.tools ?? []).filter(isTeacherToolKey));
@@ -220,8 +365,13 @@ const TeacherDirectory = ({
     ? closeManager
     : choosingFlashcardList
       ? () => setChoosingFlashcardList(false)
+      : selectedIsNadia && nadiaView === "lectures"
+        ? () => setNadiaView("overview")
       : selected
-        ? () => setSelectedId(null)
+        ? () => {
+            setSelectedId(null);
+            setNadiaView("overview");
+          }
         : onBack;
 
   return (
@@ -234,7 +384,15 @@ const TeacherDirectory = ({
             className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold transition-colors hover:border-primary/40 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-            {managing ? text.closeManage : choosingFlashcardList ? text.backToTeachers : selected ? text.backToTeachers : text.back}
+            {managing
+              ? text.closeManage
+              : choosingFlashcardList
+                ? text.backToTeachers
+                : selectedIsNadia && nadiaView === "lectures"
+                  ? text.backToTeacherContent
+                  : selected
+                    ? text.backToTeachers
+                    : text.back}
           </button>
           {canManage && !managing && !selected && (
             <button
@@ -285,6 +443,13 @@ const TeacherDirectory = ({
               ))}
             </section>
           </>
+        ) : selectedIsNadia && selected ? (
+          <NadiaDirectoryContent
+            teacher={selected}
+            language={language}
+            view={nadiaView}
+            onOpenLectures={() => setNadiaView("lectures")}
+          />
         ) : selected ? (
           <>
             <section
@@ -344,35 +509,43 @@ const TeacherDirectory = ({
 
             {loading ? (
               <div className="flex min-h-52 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-            ) : error ? (
-              <div className="rounded-3xl border border-red-500/20 bg-red-500/5 p-10 text-center text-red-600 dark:text-red-300">{text.loadError}</div>
-            ) : teachers.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{text.empty}</div>
             ) : (
-              <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {teachers.map((teacher) => (
-                  <button
-                    type="button"
-                    key={teacher.id}
-                    onClick={() => setSelectedId(teacher.id)}
-                    className="group relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center text-start shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    style={{ backgroundImage: `url(${JSON.stringify(teacher.background_image_url).slice(1, -1)})` }}
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent transition-colors group-hover:via-slate-900/25" />
-                    <span className="absolute inset-x-5 bottom-5 text-white">
-                      <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/25 px-2.5 py-1 text-[11px] font-bold backdrop-blur">
-                        <GraduationCap className="h-3.5 w-3.5" /> {text.teacherTools}
-                      </span>
-                      <span className="flex items-end justify-between gap-4">
-                        <span className="text-2xl font-black leading-tight">{teacher.name}</span>
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-slate-900 transition-transform group-hover:scale-110">
-                          <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              <>
+                {error && (
+                  <div className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-center text-sm text-red-600 dark:text-red-300">{text.loadError}</div>
+                )}
+                {directoryTeachers.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{text.empty}</div>
+                ) : (
+                  <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {directoryTeachers.map((teacher) => (
+                      <button
+                        type="button"
+                        key={teacher.id}
+                        onClick={() => {
+                          setNadiaView("overview");
+                          setSelectedId(teacher.id);
+                        }}
+                        className="group relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center text-start shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        style={{ backgroundImage: `url(${JSON.stringify(teacher.background_image_url).slice(1, -1)})` }}
+                      >
+                        <span className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent transition-colors group-hover:via-slate-900/25" />
+                        <span className="absolute inset-x-5 bottom-5 text-white">
+                          <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/25 px-2.5 py-1 text-[11px] font-bold backdrop-blur">
+                            <GraduationCap className="h-3.5 w-3.5" /> {text.teacherTools}
+                          </span>
+                          <span className="flex items-end justify-between gap-4">
+                            <span className="text-2xl font-black leading-tight">{teacher.name}</span>
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-slate-900 transition-transform group-hover:scale-110">
+                              <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+                            </span>
+                          </span>
                         </span>
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </section>
+                      </button>
+                    ))}
+                  </section>
+                )}
+              </>
             )}
           </>
         )}
