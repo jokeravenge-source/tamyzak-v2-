@@ -47,6 +47,18 @@ describe("Nadia teacher hub", () => {
     expect(screen.getByRole("button", { name: "المحاضرة 39" })).toBeEnabled();
   });
 
+  it("limits Arabic chapter 5 to lectures 1 through 24", () => {
+    window.history.replaceState({}, "", "/teachers?nadia=1");
+    render(<Teachers language="ar" onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة/ }));
+    fireEvent.click(screen.getByRole("button", { name: "الفصل 5: الوراثة" }));
+
+    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(24);
+    expect(screen.getByRole("button", { name: "المحاضرة 24" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "المحاضرة 25" })).not.toBeInTheDocument();
+  });
+
   it("lets an admin paste a YouTube link and generate lecture notes", async () => {
     render(
       <NadiaLectureWorkspace

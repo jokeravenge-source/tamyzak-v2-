@@ -62,4 +62,23 @@ describe("Our Teachers Nadia entry", () => {
     expect(screen.getByRole("button", { name: "المحاضرة 1" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "المحاضرة 39" })).toBeEnabled();
   });
+
+  it("shows only lectures 1 through 24 for Arabic chapter 5", async () => {
+    render(
+      <TeacherDirectory
+        language="ar"
+        onBack={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /نادية النعيمي/ }));
+    fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة/ }));
+    fireEvent.click(screen.getByRole("button", { name: "الفصل 5: الوراثة" }));
+
+    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(24);
+    expect(screen.getByRole("button", { name: "المحاضرة 24" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "المحاضرة 25" })).not.toBeInTheDocument();
+    expect(screen.getByText("24 محاضرة مرتبة للمنهج العربي.")).toBeInTheDocument();
+  });
 });

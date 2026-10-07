@@ -27,7 +27,6 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  NADIA_ARABIC_LECTURE_COUNT,
   NADIA_CHAPTERS,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
@@ -158,7 +157,7 @@ const nadiaCopy = {
     lectures: "محاضرات المنهج العربي",
     lecture: "المحاضرة",
     curriculum: "المنهج العربي",
-    listDescription: "39 محاضرة مرتبة للمنهج العربي.",
+    listDescription: (count: number) => `${count} محاضرة مرتبة للمنهج العربي.`,
     open: "عرض المحاضرات",
     comingSoon: "قريباً",
   },
@@ -173,7 +172,7 @@ const nadiaCopy = {
     lectures: "Arabic Curriculum Lectures",
     lecture: "Lecture",
     curriculum: "Arabic Curriculum",
-    listDescription: "39 Arabic-curriculum lectures in order.",
+    listDescription: (count: number) => `${count} Arabic-curriculum lectures in order.`,
     open: "View lectures",
     comingSoon: "Coming soon",
   },
@@ -260,11 +259,11 @@ function NadiaDirectoryContent({
           <p className="mt-2 font-bold text-foreground">
             {text.chapter} {chapter.number}: {language === "ar" ? chapter.ar : chapter.en}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">{text.listDescription}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{text.listDescription(chapter.lectureCount)}</p>
         </header>
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={text.lectures}>
-          {Array.from({ length: NADIA_ARABIC_LECTURE_COUNT }, (_, index) => index + 1).map((lectureNumber) => (
+          {Array.from({ length: chapter.lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
             <button
               type="button"
               key={lectureNumber}

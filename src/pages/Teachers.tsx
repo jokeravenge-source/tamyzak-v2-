@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
 import {
-  NADIA_ARABIC_LECTURE_COUNT,
   NADIA_CHAPTERS,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
@@ -927,7 +926,7 @@ function NadiaTeacherFlow({
       lectures: "محاضرات المنهج العربي",
       lecture: "المحاضرة",
       arabicCurriculum: "المنهج العربي",
-      listDescription: "39 محاضرة مرتبة للمنهج العربي.",
+      listDescription: (count: number) => `${count} محاضرة مرتبة للمنهج العربي.`,
       comingSoon: "قريباً",
       back: "رجوع",
     },
@@ -943,7 +942,7 @@ function NadiaTeacherFlow({
       lectures: "Arabic Curriculum Lectures",
       lecture: "Lecture",
       arabicCurriculum: "Arabic Curriculum",
-      listDescription: "39 Arabic-curriculum lectures in order.",
+      listDescription: (count: number) => `${count} Arabic-curriculum lectures in order.`,
       comingSoon: "Coming soon",
       back: "Back",
     },
@@ -1072,10 +1071,10 @@ function NadiaTeacherFlow({
             <p className="mt-1 font-bold text-foreground">
               {copy.chapter} {activeChapter.number}: {isRTL ? activeChapter.ar : activeChapter.en}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription(activeChapter.lectureCount)}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: NADIA_ARABIC_LECTURE_COUNT }, (_, index) => index + 1).map((lectureNumber) => (
+            {Array.from({ length: activeChapter.lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
               <button
                 type="button"
                 key={lectureNumber}
