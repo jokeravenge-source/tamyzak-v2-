@@ -37,7 +37,7 @@ vi.mock("@/integrations/supabase/client", () => {
 });
 
 describe("Our Teachers Nadia entry", () => {
-  it("shows Nadia in the directory and opens all 39 Arabic-curriculum lectures", async () => {
+  it("shows Nadia, lets the student choose a chapter, then opens 39 lectures", async () => {
     render(
       <TeacherDirectory
         language="ar"
@@ -52,6 +52,11 @@ describe("Our Teachers Nadia entry", () => {
     const contentTool = screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة/ });
     fireEvent.click(contentTool);
 
+    const chapters = screen.getAllByRole("button", { name: /^الفصل \d:/ });
+    expect(chapters).toHaveLength(5);
+    fireEvent.click(screen.getByRole("button", { name: "الفصل 3: التكاثر" }));
+
+    expect(screen.getByText("الفصل 3: التكاثر")).toBeInTheDocument();
     const lectures = screen.getAllByRole("button", { name: /المحاضرة \d+ — قريباً/ });
     expect(lectures).toHaveLength(39);
     expect(screen.getByRole("button", { name: "المحاضرة 1 — قريباً" })).toBeDisabled();

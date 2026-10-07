@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, Lock, ListChecks, Video } from "lucide-react";
+import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, Lock, ListChecks, Video, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -9,6 +9,11 @@ import { missionsData } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
+import {
+  NADIA_ARABIC_LECTURE_COUNT,
+  NADIA_CHAPTERS,
+  type NadiaChapterNumber,
+} from "@/data/nadiaTeacherContent";
 
 const t = {
   en: {
@@ -891,9 +896,7 @@ function PracticeModal({
 export default Teachers;
 
 // ================= Nadia Al-Nuaimy flow =================
-type NadiaStage = "overview" | "lectures";
-
-const NADIA_ARABIC_LECTURE_COUNT = 39;
+type NadiaStage = "overview" | "chapters" | "lectures";
 
 function NadiaTeacherFlow({
   teacher,
@@ -906,13 +909,17 @@ function NadiaTeacherFlow({
 }) {
   const isRTL = language === "ar";
   const [stage, setStage] = useState<NadiaStage>("overview");
+  const [selectedChapter, setSelectedChapter] = useState<NadiaChapterNumber | null>(null);
   const copy = {
     ar: {
       subject: "الأحياء",
       tools: "محتوى الأستاذة",
       toolsDescription: "المحاضرات وبنك الأسئلة ضمن أداة واحدة للمنهج العربي.",
       content: "المحاضرات وبنك الأسئلة",
-      contentDescription: "افتح قائمة محاضرات المنهج العربي من المحاضرة 1 إلى المحاضرة 39.",
+      contentDescription: "اختَر الفصل أولاً، وبعدها افتح قائمة محاضرات المنهج العربي.",
+      chapters: "فصول المنهج العربي",
+      chooseChapter: "اختَر الفصل الذي تريد دراسته",
+      chapter: "الفصل",
       lectures: "محاضرات المنهج العربي",
       lecture: "المحاضرة",
       arabicCurriculum: "المنهج العربي",
@@ -925,7 +932,10 @@ function NadiaTeacherFlow({
       tools: "Teacher content",
       toolsDescription: "Lectures and the MCQ bank combined in one Arabic-curriculum tool.",
       content: "Lectures & MCQ Bank",
-      contentDescription: "Open the Arabic-curriculum lecture list from Lecture 1 through Lecture 39.",
+      contentDescription: "Choose a chapter first, then open its Arabic-curriculum lecture list.",
+      chapters: "Arabic Curriculum Chapters",
+      chooseChapter: "Choose the chapter you want to study",
+      chapter: "Chapter",
       lectures: "Arabic Curriculum Lectures",
       lecture: "Lecture",
       arabicCurriculum: "Arabic Curriculum",
@@ -934,9 +944,14 @@ function NadiaTeacherFlow({
       back: "Back",
     },
   }[language];
+  const activeChapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
 
   const goBack = () => {
     if (stage === "lectures") {
+      setStage("chapters");
+      return;
+    }
+    if (stage === "chapters") {
       setStage("overview");
       return;
     }
@@ -961,7 +976,7 @@ function NadiaTeacherFlow({
             <h1 className="truncate text-lg font-black text-foreground md:text-2xl">
               {isRTL ? teacher.nameAr : teacher.nameEn}
             </h1>
-            {stage === "lectures" && (
+            {stage !== "overview" && (
               <p className="text-xs text-muted-foreground">
                 {copy.arabicCurriculum}
               </p>
@@ -986,7 +1001,7 @@ function NadiaTeacherFlow({
           <div className="max-w-2xl">
             <button
               type="button"
-              onClick={() => setStage("lectures")}
+              onClick={() => setStage("chapters")}
               className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
             >
               <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
@@ -997,9 +1012,44 @@ function NadiaTeacherFlow({
               <h3 className="text-xl font-black text-foreground">{copy.content}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.contentDescription}</p>
               <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
-                {copy.lectures} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </span>
             </button>
+          </div>
+        </section>
+      ) : stage === "chapters" ? (
+        <section>
+          <div className="mb-5 text-center">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+              {copy.arabicCurriculum}
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-foreground">{copy.chapters}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.chooseChapter}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {NADIA_CHAPTERS.map((chapter) => (
+              <button
+                type="button"
+                key={chapter.number}
+                onClick={() => {
+                  setSelectedChapter(chapter.number);
+                  setStage("lectures");
+                }}
+                aria-label={`${copy.chapter} ${chapter.number}: ${isRTL ? chapter.ar : chapter.en}`}
+                className="group flex min-h-32 items-center gap-4 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-card to-sky-500/10 p-5 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-emerald-500/45 hover:shadow-lg"
+              >
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-lg font-black text-white shadow-lg shadow-emerald-500/20">
+                  {chapter.number}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    <BookOpen className="h-3.5 w-3.5" /> {copy.chapter} {chapter.number}
+                  </span>
+                  <span className="mt-1 block text-lg font-black text-foreground">{isRTL ? chapter.ar : chapter.en}</span>
+                </span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-emerald-600 transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
+              </button>
+            ))}
           </div>
         </section>
       ) : (
@@ -1009,6 +1059,9 @@ function NadiaTeacherFlow({
               {copy.arabicCurriculum}
             </p>
             <h2 className="mt-1 text-2xl font-black text-foreground">{copy.lectures}</h2>
+            <p className="mt-1 font-bold text-foreground">
+              {copy.chapter} {activeChapter.number}: {isRTL ? activeChapter.ar : activeChapter.en}
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

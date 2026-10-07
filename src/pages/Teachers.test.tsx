@@ -15,7 +15,7 @@ describe("Nadia teacher hub", () => {
     window.history.replaceState({}, "", "/teachers");
   });
 
-  it("opens 39 Arabic-curriculum lecture placeholders from the combined tool", async () => {
+  it("asks for a chapter before opening the 39 Arabic-curriculum lectures", async () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
 
@@ -23,6 +23,10 @@ describe("Nadia teacher hub", () => {
     expect(combinedTool).toBeInTheDocument();
 
     fireEvent.click(combinedTool);
+    const chapters = screen.getAllByRole("button", { name: /^الفصل \d:/ });
+    expect(chapters).toHaveLength(5);
+    fireEvent.click(screen.getByRole("button", { name: "الفصل 1: الخلية والانقسام" }));
+
     const lectures = screen.getAllByRole("button", { name: /المحاضرة \d+ — قريباً/ });
     expect(lectures).toHaveLength(39);
     expect(screen.getByRole("button", { name: "المحاضرة 1 — قريباً" })).toBeDisabled();
