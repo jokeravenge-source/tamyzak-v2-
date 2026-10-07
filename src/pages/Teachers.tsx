@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus } from "lucide-react";
+import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, Lock, ListChecks, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import anziAsset from "@/assets/teachers/mohammed-anzi.jpg.asset.json";
+import biologyTheme from "@/assets/themes/biology.png";
 import { missionsData } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
@@ -104,6 +105,14 @@ const teachers: Teacher[] = [
     subject: "biology",
     chapterKey: "bio-1",
   },
+  {
+    id: "nadia-al-nuaimy",
+    nameAr: "نادية النعيمي",
+    nameEn: "Nadia Al-Nuaimy",
+    photo: biologyTheme,
+    subject: "biology",
+    chapterKey: "bio-1",
+  },
 ];
 
 // Chapter 4 course (same concept, separate playlists/lecture count)
@@ -152,6 +161,10 @@ const Teachers = ({
   const [view, setView] = useState<View>(() => {
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search);
+      if (p.get("nadia")) {
+        const nadia = teachers.find((teacher) => teacher.id === "nadia-al-nuaimy");
+        if (nadia) return { kind: "topics", teacher: nadia };
+      }
       if (p.get("anzi") || p.get("lec")) {
         const wantCh4 = p.get("ch") === "4";
         const anzi = teachers.find((t) => t.id === (wantCh4 ? "mohammed-anzi-ch4" : "mohammed-anzi"));
@@ -168,6 +181,8 @@ const Teachers = ({
     });
   }, []);
   const isOwner = ownerEmail === "majs11@gmail.com";
+  const usesDedicatedTeacherFlow = view.kind === "topics"
+    && (view.teacher.id.startsWith("mohammed-anzi") || view.teacher.id === "nadia-al-nuaimy");
 
   const goBackTop = () => {
     if (view.kind === "topic") setView({ kind: "topics", teacher: view.teacher });
@@ -177,11 +192,11 @@ const Teachers = ({
 
   return (
     <main
-      className={`min-h-screen px-3 pb-32 sm:px-4 ${view.kind === "topics" && view.teacher.id.startsWith("mohammed-anzi") ? "py-4 md:py-6" : "py-10 md:py-14"}`}
+      className={`min-h-screen px-3 pb-32 sm:px-4 ${usesDedicatedTeacherFlow ? "py-4 md:py-6" : "py-10 md:py-14"}`}
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div className="max-w-5xl mx-auto">
-        {!(view.kind === "topics" && view.teacher.id.startsWith("mohammed-anzi")) && (
+        {!usesDedicatedTeacherFlow && (
           <button
             onClick={goBackTop}
             className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-border bg-card text-sm font-semibold hover:border-primary/40 hover:bg-secondary transition-colors mb-8"
@@ -258,6 +273,13 @@ const Teachers = ({
                 teacher={view.teacher}
                 isAdmin={!!isAdmin}
                 ch={view.teacher.id === "mohammed-anzi-ch4" ? 4 : 3}
+                onExit={() => setView({ kind: "list" })}
+              />
+            ) : view.teacher.id === "nadia-al-nuaimy" ? (
+              <NadiaTeacherFlow
+                key={view.teacher.id}
+                teacher={view.teacher}
+                language={language}
                 onExit={() => setView({ kind: "list" })}
               />
             ) : (
@@ -867,6 +889,177 @@ function PracticeModal({
 }
 
 export default Teachers;
+
+// ================= Nadia Al-Nuaimy flow =================
+type NadiaTool = "mcq" | "lectures";
+type NadiaStage = { screen: "tools" } | { screen: "chapters"; tool: NadiaTool };
+
+const NADIA_CHAPTERS = [
+  { number: 1, ar: "الخلية والانقسام", en: "Cell & Cell Division" },
+  { number: 2, ar: "الأنسجة", en: "Tissues" },
+  { number: 3, ar: "التكاثر", en: "Reproduction" },
+  { number: 4, ar: "التطور الجنيني", en: "Embryonic Development" },
+  { number: 5, ar: "الوراثة", en: "Genetics" },
+] as const;
+
+function NadiaTeacherFlow({
+  teacher,
+  language,
+  onExit,
+}: {
+  teacher: Teacher;
+  language: AppLanguage;
+  onExit: () => void;
+}) {
+  const isRTL = language === "ar";
+  const [stage, setStage] = useState<NadiaStage>({ screen: "tools" });
+  const copy = {
+    ar: {
+      subject: "الأحياء",
+      tools: "اختَر نوع المحتوى",
+      toolsDescription: "بنك الأسئلة والمحاضرات الخاصة بالأستاذة نادية النعيمي.",
+      mcq: "بنك الأسئلة",
+      mcqDescription: "أسئلة اختيار من متعدد مرتبة حسب الفصول.",
+      lectures: "المحاضرات",
+      lecturesDescription: "محاضرات المنهج مرتبة حسب الفصول.",
+      chapters: "الفصول",
+      chapter: "الفصل",
+      locked: "مغلق حالياً",
+      lockedDescription: "سيتم توفير محتوى هذا الفصل قريباً.",
+      back: "رجوع",
+    },
+    en: {
+      subject: "Biology",
+      tools: "Choose content",
+      toolsDescription: "Nadia Al-Nuaimy's MCQ bank and course lectures.",
+      mcq: "MCQ Bank",
+      mcqDescription: "Multiple-choice questions organized by chapter.",
+      lectures: "Lectures",
+      lecturesDescription: "Course lectures organized by chapter.",
+      chapters: "Chapters",
+      chapter: "Chapter",
+      locked: "Locked for now",
+      lockedDescription: "Content for this chapter will be available soon.",
+      back: "Back",
+    },
+  }[language];
+
+  const goBack = () => {
+    if (stage.screen === "chapters") {
+      setStage({ screen: "tools" });
+      return;
+    }
+    onExit();
+  };
+
+  const activeTool = stage.screen === "chapters" ? stage.tool : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      dir={isRTL ? "rtl" : "ltr"}
+    >
+      <header className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-card/85 p-3 shadow-sm backdrop-blur md:p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <img
+            src={teacher.photo}
+            alt={isRTL ? teacher.nameAr : teacher.nameEn}
+            className="h-12 w-12 shrink-0 rounded-xl border border-emerald-500/25 object-cover shadow-sm md:h-14 md:w-14"
+          />
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-600 dark:text-emerald-300">{copy.subject}</p>
+            <h1 className="truncate text-lg font-black text-foreground md:text-2xl">
+              {isRTL ? teacher.nameAr : teacher.nameEn}
+            </h1>
+            {activeTool && (
+              <p className="text-xs text-muted-foreground">
+                {activeTool === "mcq" ? copy.mcq : copy.lectures}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={goBack}
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-semibold transition-all hover:border-primary/40 hover:bg-secondary active:scale-[0.98] md:px-4"
+        >
+          <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /> {copy.back}
+        </button>
+      </header>
+
+      {stage.screen === "tools" ? (
+        <section>
+          <div className="mb-5">
+            <h2 className="text-2xl font-black text-foreground">{copy.tools}</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.toolsDescription}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setStage({ screen: "chapters", tool: "mcq" })}
+              className="group rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-indigo-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
+            >
+              <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
+                <ListChecks className="h-6 w-6" />
+              </span>
+              <h3 className="text-xl font-black text-foreground">{copy.mcq}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.mcqDescription}</p>
+              <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
+                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStage({ screen: "chapters", tool: "lectures" })}
+              className="group rounded-3xl border border-sky-500/25 bg-gradient-to-br from-sky-500/15 via-card to-cyan-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-lg"
+            >
+              <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-500/20">
+                <Video className="h-6 w-6" />
+              </span>
+              <h3 className="text-xl font-black text-foreground">{copy.lectures}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.lecturesDescription}</p>
+              <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-sky-600 dark:text-sky-300">
+                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+              </span>
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section>
+          <div className="mb-5">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+              {stage.tool === "mcq" ? copy.mcq : copy.lectures}
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-foreground">{copy.chapters}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.lockedDescription}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {NADIA_CHAPTERS.map((chapter) => (
+              <button
+                type="button"
+                key={`${stage.tool}-${chapter.number}`}
+                disabled
+                aria-label={`${copy.chapter} ${chapter.number} — ${copy.locked}`}
+                className="flex min-h-28 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+                  <Lock className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold text-muted-foreground">{copy.chapter} {chapter.number}</span>
+                  <span className="mt-1 block font-black text-foreground">{isRTL ? chapter.ar : chapter.en}</span>
+                  <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{copy.locked}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </motion.div>
+  );
+}
 
 // ================= Mohammed Al-Anzi flow =================
 const ANZI_CHAPTERS: Record<number, { playlists: Record<AnziLang, string>; counts: Record<AnziLang, number> }> = {
