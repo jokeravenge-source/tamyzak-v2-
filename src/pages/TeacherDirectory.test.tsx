@@ -63,7 +63,7 @@ describe("Our Teachers Nadia entry", () => {
     expect(screen.getByRole("button", { name: "المحاضرة 39" })).toBeEnabled();
   });
 
-  it("shows only lectures 1 through 24 for Arabic chapter 5", async () => {
+  it("shows lectures 1 through 25 for Arabic chapter 5", async () => {
     render(
       <TeacherDirectory
         language="ar"
@@ -76,9 +76,9 @@ describe("Our Teachers Nadia entry", () => {
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة/ }));
     fireEvent.click(screen.getByRole("button", { name: "الفصل 5: الوراثة" }));
 
-    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(24);
-    expect(screen.getByRole("button", { name: "المحاضرة 24" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "المحاضرة 25" })).not.toBeInTheDocument();
-    expect(screen.getByText("24 محاضرة مرتبة للمنهج العربي.")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(25);
+    expect(screen.getByRole("button", { name: "المحاضرة 25" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "المحاضرة 26" })).not.toBeInTheDocument();
+    expect(screen.getByText("25 محاضرة مرتبة للمنهج العربي.")).toBeInTheDocument();
   });
 });
