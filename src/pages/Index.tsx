@@ -370,7 +370,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       if (subject === "english" && engCat === "paragraphs" && chapter === "1") {
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
-          eyebrow: language === "ar" ? "الإنجليزية · الفقرات" : "English · Paragraphs",
+          eyebrow: language === "ar" ? "الإنجليزية · قطع الكتاب" : "English · Textbook Passages",
           cards: flashcardsEngParagraphs,
         };
       }

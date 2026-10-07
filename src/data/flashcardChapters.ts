@@ -75,7 +75,7 @@ export const englishLiteratureChapters = [
   { n: 1, title: "Coming Soon", arTitle: "قريباً", subtitle: "", locked: true },
 ];
 export const englishParagraphsChapters = [
-  { n: 1, title: "Paragraphs", arTitle: "الفقرات", subtitle: "Reading comprehension flashcards", locked: false },
+  { n: 1, title: "Textbook Passages", arTitle: "قطع الكتاب", subtitle: "Reading-comprehension flashcards", locked: false },
 ];
 
 /** Shared with the flashcard picker: never use ministerial-bank chapter numbers here. */

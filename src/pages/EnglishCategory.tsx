@@ -6,10 +6,10 @@ export type EnglishCategory = "grammar" | "literature" | "paragraphs" | "verbs" 
 
 const items: Array<{ code: EnglishCategory; en: string; ar: string; Icon: React.ComponentType<{ className?: string }> }> = [
   { code: "grammar", en: "Grammar", ar: "القواعد", Icon: Type },
-  { code: "literature", en: "Literature", ar: "الأدب", Icon: BookOpen },
-  { code: "paragraphs", en: "Paragraphs", ar: "الفقرات", Icon: FileText },
-  { code: "verbs", en: "Verb Forms", ar: "تصريف الأفعال", Icon: SpellCheck2 },
-  { code: "readingPractice", en: "Reading Practice", ar: "تدريب القطعة", Icon: FileQuestion },
+  { code: "literature", en: "Literature & Story", ar: "الأدب والقصة", Icon: BookOpen },
+  { code: "paragraphs", en: "Textbook Passages", ar: "قطع الكتاب", Icon: FileText },
+  { code: "verbs", en: "Irregular Verbs", ar: "الأفعال الشاذة", Icon: SpellCheck2 },
+  { code: "readingPractice", en: "Unseen Passages", ar: "القطع الخارجية", Icon: FileQuestion },
 ];
 
 const copy = {
