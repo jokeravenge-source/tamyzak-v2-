@@ -12,7 +12,6 @@ import {
   Layers,
   ListChecks,
   Loader2,
-  Lock,
   Network,
   PlayCircle,
   Plus,
@@ -25,6 +24,7 @@ import AdminTeachersTab from "@/components/AdminTeachersTab";
 import type { AppLanguage } from "@/components/LanguageGate";
 import biologyTheme from "@/assets/themes/biology.png";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
 import {
   NADIA_ARABIC_LECTURE_COUNT,
@@ -113,6 +113,7 @@ const copy = {
     backToTeachers: "العودة للمدرسين",
     backToTeacherContent: "العودة لمحتوى الأستاذة",
     backToChapters: "العودة للفصول",
+    backToLectures: "العودة للمحاضرات",
     teacherTools: "أدوات المدرّس",
     open: "فتح الأداة",
     empty: "ماكو مدرسين مضافين حالياً.",
@@ -131,6 +132,7 @@ const copy = {
     backToTeachers: "Back to teachers",
     backToTeacherContent: "Back to teacher content",
     backToChapters: "Back to chapters",
+    backToLectures: "Back to lectures",
     teacherTools: "Teacher tools",
     open: "Open tool",
     empty: "No teachers have been added yet.",
@@ -182,17 +184,34 @@ function NadiaDirectoryContent({
   language,
   view,
   selectedChapter,
+  selectedLecture,
+  isAdmin,
   onOpenChapters,
   onSelectChapter,
+  onSelectLecture,
 }: {
   teacher: TeacherProfile;
   language: AppLanguage;
-  view: "overview" | "chapters" | "lectures";
+  view: "overview" | "chapters" | "lectures" | "lecture";
   selectedChapter: NadiaChapterNumber | null;
+  selectedLecture: number | null;
+  isAdmin: boolean;
   onOpenChapters: () => void;
   onSelectChapter: (chapter: NadiaChapterNumber) => void;
+  onSelectLecture: (lecture: number) => void;
 }) {
   const text = nadiaCopy[language];
+
+  if (view === "lecture") {
+    return (
+      <NadiaLectureWorkspace
+        language={language}
+        chapter={selectedChapter ?? 1}
+        lecture={selectedLecture ?? 1}
+        isAdmin={isAdmin}
+      />
+    );
+  }
 
   if (view === "chapters") {
     return (
@@ -249,18 +268,18 @@ function NadiaDirectoryContent({
             <button
               type="button"
               key={lectureNumber}
-              disabled
-              aria-label={`${text.lecture} ${lectureNumber} — ${text.comingSoon}`}
-              className="flex min-h-24 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
+              onClick={() => onSelectLecture(lectureNumber)}
+              aria-label={`${text.lecture} ${lectureNumber}`}
+              className="group flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-                <Lock className="h-5 w-5" />
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <PlayCircle className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-black text-foreground">{text.lecture} {lectureNumber}</span>
                 <span className="mt-1 block text-xs font-bold text-muted-foreground">{text.curriculum}</span>
-                <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{text.comingSoon}</span>
               </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
             </button>
           ))}
         </section>
@@ -324,8 +343,9 @@ const TeacherDirectory = ({
   const [managing, setManaging] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [choosingFlashcardList, setChoosingFlashcardList] = useState(false);
-  const [nadiaView, setNadiaView] = useState<"overview" | "chapters" | "lectures">("overview");
+  const [nadiaView, setNadiaView] = useState<"overview" | "chapters" | "lectures" | "lecture">("overview");
   const [nadiaChapter, setNadiaChapter] = useState<NadiaChapterNumber | null>(null);
+  const [nadiaLecture, setNadiaLecture] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -421,6 +441,8 @@ const TeacherDirectory = ({
     ? closeManager
     : choosingFlashcardList
       ? () => setChoosingFlashcardList(false)
+      : selectedIsNadia && nadiaView === "lecture"
+        ? () => setNadiaView("lectures")
       : selectedIsNadia && nadiaView === "lectures"
         ? () => setNadiaView("chapters")
       : selectedIsNadia && nadiaView === "chapters"
@@ -446,7 +468,9 @@ const TeacherDirectory = ({
               ? text.closeManage
               : choosingFlashcardList
                 ? text.backToTeachers
-                : selectedIsNadia && nadiaView === "lectures"
+                : selectedIsNadia && nadiaView === "lecture"
+                  ? text.backToLectures
+                  : selectedIsNadia && nadiaView === "lectures"
                   ? text.backToChapters
                   : selectedIsNadia && nadiaView === "chapters"
                     ? text.backToTeacherContent
@@ -509,10 +533,16 @@ const TeacherDirectory = ({
             language={language}
             view={nadiaView}
             selectedChapter={nadiaChapter}
+            selectedLecture={nadiaLecture}
+            isAdmin={canManage}
             onOpenChapters={() => setNadiaView("chapters")}
             onSelectChapter={(chapter) => {
               setNadiaChapter(chapter);
               setNadiaView("lectures");
+            }}
+            onSelectLecture={(lecture) => {
+              setNadiaLecture(lecture);
+              setNadiaView("lecture");
             }}
           />
         ) : selected ? (
@@ -590,6 +620,7 @@ const TeacherDirectory = ({
                         onClick={() => {
                           setNadiaView("overview");
                           setNadiaChapter(null);
+                          setNadiaLecture(null);
                           setSelectedId(teacher.id);
                         }}
                         className="group relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center text-start shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"

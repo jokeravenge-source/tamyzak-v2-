@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, Lock, ListChecks, Video, BookOpen } from "lucide-react";
+import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, ListChecks, Video, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -285,6 +285,7 @@ const Teachers = ({
                 key={view.teacher.id}
                 teacher={view.teacher}
                 language={language}
+                isAdmin={!!isAdmin}
                 onExit={() => setView({ kind: "list" })}
               />
             ) : (
@@ -896,20 +897,23 @@ function PracticeModal({
 export default Teachers;
 
 // ================= Nadia Al-Nuaimy flow =================
-type NadiaStage = "overview" | "chapters" | "lectures";
+type NadiaStage = "overview" | "chapters" | "lectures" | "lecture";
 
 function NadiaTeacherFlow({
   teacher,
   language,
+  isAdmin,
   onExit,
 }: {
   teacher: Teacher;
   language: AppLanguage;
+  isAdmin: boolean;
   onExit: () => void;
 }) {
   const isRTL = language === "ar";
   const [stage, setStage] = useState<NadiaStage>("overview");
   const [selectedChapter, setSelectedChapter] = useState<NadiaChapterNumber | null>(null);
+  const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
   const copy = {
     ar: {
       subject: "الأحياء",
@@ -947,6 +951,10 @@ function NadiaTeacherFlow({
   const activeChapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
 
   const goBack = () => {
+    if (stage === "lecture") {
+      setStage("lectures");
+      return;
+    }
     if (stage === "lectures") {
       setStage("chapters");
       return;
@@ -978,7 +986,9 @@ function NadiaTeacherFlow({
             </h1>
             {stage !== "overview" && (
               <p className="text-xs text-muted-foreground">
-                {copy.arabicCurriculum}
+                {stage === "lecture" && selectedLecture
+                  ? `${copy.lecture} ${selectedLecture}`
+                  : copy.arabicCurriculum}
               </p>
             )}
           </div>
@@ -1052,7 +1062,7 @@ function NadiaTeacherFlow({
             ))}
           </div>
         </section>
-      ) : (
+      ) : stage === "lectures" ? (
         <section>
           <div className="mb-5">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
@@ -1069,24 +1079,246 @@ function NadiaTeacherFlow({
               <button
                 type="button"
                 key={lectureNumber}
-                disabled
-                aria-label={`${copy.lecture} ${lectureNumber} — ${copy.comingSoon}`}
-                className="flex min-h-24 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
+                onClick={() => {
+                  setSelectedLecture(lectureNumber);
+                  setStage("lecture");
+                }}
+                aria-label={`${copy.lecture} ${lectureNumber}`}
+                className="group flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/40 hover:shadow-md"
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
-                  <Lock className="h-5 w-5" />
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Video className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-black text-foreground">{copy.lecture} {lectureNumber}</span>
                   <span className="mt-1 block text-xs font-bold text-muted-foreground">{copy.arabicCurriculum}</span>
-                  <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{copy.comingSoon}</span>
                 </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
               </button>
             ))}
           </div>
         </section>
+      ) : (
+        <NadiaLectureWorkspace
+          language={language}
+          chapter={activeChapter.number}
+          lecture={selectedLecture ?? 1}
+          isAdmin={isAdmin}
+        />
       )}
     </motion.div>
+  );
+}
+
+export function NadiaLectureWorkspace({
+  language,
+  chapter,
+  lecture,
+  isAdmin,
+}: {
+  language: AppLanguage;
+  chapter: NadiaChapterNumber;
+  lecture: number;
+  isAdmin: boolean;
+}) {
+  const isRTL = language === "ar";
+  const [tab, setTab] = useState<"notes" | "mcq">("notes");
+  const teacher: Teacher = {
+    id: "nadia-al-nuaimy",
+    nameAr: "نادية النعيمي",
+    nameEn: "Nadia Al-Nuaimy",
+    photo: biologyTheme,
+    subject: "biology",
+    chapterKey: `bio-${chapter}`,
+  };
+  const baseTopicKey = `nadia-ar-ch${chapter}-lec${lecture}`;
+  const chapterInfo = NADIA_CHAPTERS.find((item) => item.number === chapter) ?? NADIA_CHAPTERS[0];
+
+  return (
+    <section dir={isRTL ? "rtl" : "ltr"}>
+      <header className="mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5">
+        <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+          {language === "ar"
+            ? `الفصل ${chapter}: ${chapterInfo.ar}`
+            : `Chapter ${chapter}: ${chapterInfo.en}`}
+        </p>
+        <h2 className="mt-1 text-2xl font-black text-foreground">
+          {language === "ar" ? `المحاضرة ${lecture}` : `Lecture ${lecture}`}
+        </h2>
+      </header>
+
+      <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card/70 p-1.5 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setTab("notes")}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-all ${
+            tab === "notes"
+              ? "border-primary bg-primary text-primary-foreground shadow-sm"
+              : "border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          {language === "ar" ? "الفيديو والملاحظات" : "Video & notes"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("mcq")}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-all ${
+            tab === "mcq"
+              ? "border-primary bg-primary text-primary-foreground shadow-sm"
+              : "border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+          }`}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          {language === "ar" ? "بنك الأسئلة" : "MCQ bank"}
+        </button>
+      </div>
+
+      {tab === "notes" ? (
+        <TeacherLectureVideos
+          teacherId={teacher.id}
+          topicKey={`${baseTopicKey}-study`}
+          language={language}
+          isAdmin={isAdmin}
+        />
+      ) : (
+        <NadiaLectureMcqBank
+          teacher={teacher}
+          topicKey={`${baseTopicKey}-exam`}
+          language={language}
+          isAdmin={isAdmin}
+        />
+      )}
+    </section>
+  );
+}
+
+function NadiaLectureMcqBank({
+  teacher,
+  topicKey,
+  language,
+  isAdmin,
+}: {
+  teacher: Teacher;
+  topicKey: string;
+  language: AppLanguage;
+  isAdmin: boolean;
+}) {
+  const L = t[language];
+  const [sets, setSets] = useState<MCQSet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [practice, setPractice] = useState<MCQSet | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("teacher_topic_mcqs")
+        .select("id, teacher_id, topic_key, title, questions, created_at")
+        .eq("teacher_id", teacher.id)
+        .eq("topic_key", topicKey)
+        .order("created_at", { ascending: false });
+      if (!active) return;
+      if (error) toast.error(error.message);
+      else setSets((data ?? []) as unknown as MCQSet[]);
+      setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [teacher.id, topicKey]);
+
+  const removeSet = async (id: string) => {
+    if (!confirm(L.confirmDelete)) return;
+    const { error } = await supabase.from("teacher_topic_mcqs").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setSets((current) => current.filter((set) => set.id !== id));
+  };
+
+  return (
+    <section>
+      {isAdmin && (
+        <div className="mb-6">
+          {!showGenerator ? (
+            <button
+              type="button"
+              onClick={() => setShowGenerator(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 text-sm font-semibold text-primary hover:bg-primary/20"
+            >
+              <Plus className="h-4 w-4" /> {L.generateTitle}
+            </button>
+          ) : (
+            <GeneratorPanel
+              teacher={teacher}
+              topicKey={topicKey}
+              language={language}
+              L={L}
+              onCreated={(row) => {
+                setSets((current) => [row, ...current]);
+                setShowGenerator(false);
+              }}
+              onCancel={() => setShowGenerator(false)}
+            />
+          )}
+        </div>
+      )}
+
+      <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+        {language === "ar" ? "مجموعات الأسئلة" : "MCQ sets"}
+      </h3>
+      {loading ? (
+        <div className="p-6 text-center text-muted-foreground"><Loader2 className="inline h-5 w-5 animate-spin" /></div>
+      ) : sets.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{L.noSets}</p>
+      ) : (
+        <ul className="grid gap-3">
+          {sets.map((set) => (
+            <li key={set.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{set.title || `${set.questions.length} ${L.questions}`}</p>
+                <p className="text-xs text-muted-foreground">{set.questions.length} {L.questions}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPractice(set)}
+                  className="h-9 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  {L.practice}
+                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => removeSet(set.id)}
+                    aria-label={L.delete}
+                    className="grid h-9 w-9 place-items-center rounded-lg border border-border text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {practice && (
+        <PracticeModal
+          set={practice}
+          language={language}
+          L={L}
+          onClose={() => setPractice(null)}
+          isAdmin={isAdmin}
+          onSetUpdated={(next) => {
+            if (next === null) setSets((current) => current.filter((set) => set.id !== practice.id));
+            else {
+              setSets((current) => current.map((set) => set.id === next.id ? next : set));
+              setPractice(next);
+            }
+          }}
+        />
+      )}
+    </section>
   );
 }
 

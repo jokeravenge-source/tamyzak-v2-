@@ -57,9 +57,9 @@ describe("Our Teachers Nadia entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "الفصل 3: التكاثر" }));
 
     expect(screen.getByText("الفصل 3: التكاثر")).toBeInTheDocument();
-    const lectures = screen.getAllByRole("button", { name: /المحاضرة \d+ — قريباً/ });
+    const lectures = screen.getAllByRole("button", { name: /^المحاضرة \d+$/ });
     expect(lectures).toHaveLength(39);
-    expect(screen.getByRole("button", { name: "المحاضرة 1 — قريباً" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "المحاضرة 39 — قريباً" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "المحاضرة 1" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "المحاضرة 39" })).toBeEnabled();
   });
 });
