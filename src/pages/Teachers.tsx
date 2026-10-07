@@ -891,8 +891,7 @@ function PracticeModal({
 export default Teachers;
 
 // ================= Nadia Al-Nuaimy flow =================
-type NadiaTool = "mcq" | "lectures";
-type NadiaStage = { screen: "tools" } | { screen: "chapters"; tool: NadiaTool };
+type NadiaStage = "overview" | "chapters";
 
 const NADIA_CHAPTERS = [
   { number: 1, ar: "الخلية والانقسام", en: "Cell & Cell Division" },
@@ -912,16 +911,14 @@ function NadiaTeacherFlow({
   onExit: () => void;
 }) {
   const isRTL = language === "ar";
-  const [stage, setStage] = useState<NadiaStage>({ screen: "tools" });
+  const [stage, setStage] = useState<NadiaStage>("overview");
   const copy = {
     ar: {
       subject: "الأحياء",
-      tools: "اختَر نوع المحتوى",
-      toolsDescription: "بنك الأسئلة والمحاضرات الخاصة بالأستاذة نادية النعيمي.",
-      mcq: "بنك الأسئلة",
-      mcqDescription: "أسئلة اختيار من متعدد مرتبة حسب الفصول.",
-      lectures: "المحاضرات",
-      lecturesDescription: "محاضرات المنهج مرتبة حسب الفصول.",
+      tools: "محتوى الأستاذة",
+      toolsDescription: "المحاضرات وبنك الأسئلة ضمن أداة واحدة مرتبة حسب الفصول.",
+      content: "المحاضرات وبنك الأسئلة",
+      contentDescription: "ادخل إلى الفصل للوصول إلى محاضراته وأسئلة الاختيار من متعدد الخاصة به.",
       chapters: "الفصول",
       chapter: "الفصل",
       locked: "مغلق حالياً",
@@ -930,12 +927,10 @@ function NadiaTeacherFlow({
     },
     en: {
       subject: "Biology",
-      tools: "Choose content",
-      toolsDescription: "Nadia Al-Nuaimy's MCQ bank and course lectures.",
-      mcq: "MCQ Bank",
-      mcqDescription: "Multiple-choice questions organized by chapter.",
-      lectures: "Lectures",
-      lecturesDescription: "Course lectures organized by chapter.",
+      tools: "Teacher content",
+      toolsDescription: "Lectures and the MCQ bank combined in one chapter-based tool.",
+      content: "Lectures & MCQ Bank",
+      contentDescription: "Open a chapter to access its lectures and multiple-choice questions.",
       chapters: "Chapters",
       chapter: "Chapter",
       locked: "Locked for now",
@@ -945,14 +940,12 @@ function NadiaTeacherFlow({
   }[language];
 
   const goBack = () => {
-    if (stage.screen === "chapters") {
-      setStage({ screen: "tools" });
+    if (stage === "chapters") {
+      setStage("overview");
       return;
     }
     onExit();
   };
-
-  const activeTool = stage.screen === "chapters" ? stage.tool : null;
 
   return (
     <motion.div
@@ -972,9 +965,9 @@ function NadiaTeacherFlow({
             <h1 className="truncate text-lg font-black text-foreground md:text-2xl">
               {isRTL ? teacher.nameAr : teacher.nameEn}
             </h1>
-            {activeTool && (
+            {stage === "chapters" && (
               <p className="text-xs text-muted-foreground">
-                {activeTool === "mcq" ? copy.mcq : copy.lectures}
+                {copy.content}
               </p>
             )}
           </div>
@@ -988,39 +981,26 @@ function NadiaTeacherFlow({
         </button>
       </header>
 
-      {stage.screen === "tools" ? (
+      {stage === "overview" ? (
         <section>
           <div className="mb-5">
             <h2 className="text-2xl font-black text-foreground">{copy.tools}</h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.toolsDescription}</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="max-w-2xl">
             <button
               type="button"
-              onClick={() => setStage({ screen: "chapters", tool: "mcq" })}
-              className="group rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-indigo-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
+              onClick={() => setStage("chapters")}
+              className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
             >
-              <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
-                <ListChecks className="h-6 w-6" />
+              <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
+                <Video className="h-5 w-5" />
+                <span className="h-5 w-px bg-white/35" />
+                <ListChecks className="h-5 w-5" />
               </span>
-              <h3 className="text-xl font-black text-foreground">{copy.mcq}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.mcqDescription}</p>
+              <h3 className="text-xl font-black text-foreground">{copy.content}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.contentDescription}</p>
               <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
-                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStage({ screen: "chapters", tool: "lectures" })}
-              className="group rounded-3xl border border-sky-500/25 bg-gradient-to-br from-sky-500/15 via-card to-cyan-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-lg"
-            >
-              <span className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-500/20">
-                <Video className="h-6 w-6" />
-              </span>
-              <h3 className="text-xl font-black text-foreground">{copy.lectures}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.lecturesDescription}</p>
-              <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-sky-600 dark:text-sky-300">
                 {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </span>
             </button>
@@ -1030,7 +1010,7 @@ function NadiaTeacherFlow({
         <section>
           <div className="mb-5">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-              {stage.tool === "mcq" ? copy.mcq : copy.lectures}
+              {copy.content}
             </p>
             <h2 className="mt-1 text-2xl font-black text-foreground">{copy.chapters}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{copy.lockedDescription}</p>
@@ -1039,7 +1019,7 @@ function NadiaTeacherFlow({
             {NADIA_CHAPTERS.map((chapter) => (
               <button
                 type="button"
-                key={`${stage.tool}-${chapter.number}`}
+                key={chapter.number}
                 disabled
                 aria-label={`${copy.chapter} ${chapter.number} — ${copy.locked}`}
                 className="flex min-h-28 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"

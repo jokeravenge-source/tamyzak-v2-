@@ -15,14 +15,14 @@ describe("Nadia teacher hub", () => {
     window.history.replaceState({}, "", "/teachers");
   });
 
-  it("shows MCQ Bank and Lectures with five locked chapters each", async () => {
+  it("combines lectures and the MCQ bank into one tool with five locked chapters", async () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: /بنك الأسئلة/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /المحاضرات/ })).toBeInTheDocument();
+    const combinedTool = screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة/ });
+    expect(combinedTool).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /بنك الأسئلة/ }));
+    fireEvent.click(combinedTool);
     const lockedChapters = screen.getAllByRole("button", { name: /مغلق حالياً/ });
     expect(lockedChapters).toHaveLength(5);
     lockedChapters.forEach((chapter) => expect(chapter).toBeDisabled());
