@@ -649,6 +649,11 @@ const StudentApp = () => {
       if (s) {
         try {
           localStorage.setItem(SUBJECT_STORAGE_KEY, s);
+          // The teacher's main English link should always open the English
+          // flashcard sections menu, not a category remembered on this device.
+          if (s === "english" && window.location.pathname.replace(/\/+$/, "") === "/flashcards") {
+            localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
+          }
           if (s === "physics") sessionStorage.setItem(PHYSICS_FLASHCARD_TEACHER_STORAGE_KEY, "haydar-diwan");
           if (s === "biology") {
             const list = params.get("list");
