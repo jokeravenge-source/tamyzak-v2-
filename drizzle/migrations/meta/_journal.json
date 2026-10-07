@@ -50,6 +50,13 @@
       "when": 1791131339520,
       "tag": "0006_polls_uploads_signed_in_only",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791354469353,
+      "tag": "0007_migration",
+      "breakpoints": true
     }
   ]
 }
