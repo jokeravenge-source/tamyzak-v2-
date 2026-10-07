@@ -891,15 +891,9 @@ function PracticeModal({
 export default Teachers;
 
 // ================= Nadia Al-Nuaimy flow =================
-type NadiaStage = "overview" | "chapters";
+type NadiaStage = "overview" | "lectures";
 
-const NADIA_CHAPTERS = [
-  { number: 1, ar: "الخلية والانقسام", en: "Cell & Cell Division" },
-  { number: 2, ar: "الأنسجة", en: "Tissues" },
-  { number: 3, ar: "التكاثر", en: "Reproduction" },
-  { number: 4, ar: "التطور الجنيني", en: "Embryonic Development" },
-  { number: 5, ar: "الوراثة", en: "Genetics" },
-] as const;
+const NADIA_ARABIC_LECTURE_COUNT = 39;
 
 function NadiaTeacherFlow({
   teacher,
@@ -916,31 +910,33 @@ function NadiaTeacherFlow({
     ar: {
       subject: "الأحياء",
       tools: "محتوى الأستاذة",
-      toolsDescription: "المحاضرات وبنك الأسئلة ضمن أداة واحدة مرتبة حسب الفصول.",
+      toolsDescription: "المحاضرات وبنك الأسئلة ضمن أداة واحدة للمنهج العربي.",
       content: "المحاضرات وبنك الأسئلة",
-      contentDescription: "ادخل إلى الفصل للوصول إلى محاضراته وأسئلة الاختيار من متعدد الخاصة به.",
-      chapters: "الفصول",
-      chapter: "الفصل",
-      locked: "مغلق حالياً",
-      lockedDescription: "سيتم توفير محتوى هذا الفصل قريباً.",
+      contentDescription: "افتح قائمة محاضرات المنهج العربي من المحاضرة 1 إلى المحاضرة 39.",
+      lectures: "محاضرات المنهج العربي",
+      lecture: "المحاضرة",
+      arabicCurriculum: "المنهج العربي",
+      listDescription: "39 محاضرة مرتبة للمنهج العربي.",
+      comingSoon: "قريباً",
       back: "رجوع",
     },
     en: {
       subject: "Biology",
       tools: "Teacher content",
-      toolsDescription: "Lectures and the MCQ bank combined in one chapter-based tool.",
+      toolsDescription: "Lectures and the MCQ bank combined in one Arabic-curriculum tool.",
       content: "Lectures & MCQ Bank",
-      contentDescription: "Open a chapter to access its lectures and multiple-choice questions.",
-      chapters: "Chapters",
-      chapter: "Chapter",
-      locked: "Locked for now",
-      lockedDescription: "Content for this chapter will be available soon.",
+      contentDescription: "Open the Arabic-curriculum lecture list from Lecture 1 through Lecture 39.",
+      lectures: "Arabic Curriculum Lectures",
+      lecture: "Lecture",
+      arabicCurriculum: "Arabic Curriculum",
+      listDescription: "39 Arabic-curriculum lectures in order.",
+      comingSoon: "Coming soon",
       back: "Back",
     },
   }[language];
 
   const goBack = () => {
-    if (stage === "chapters") {
+    if (stage === "lectures") {
       setStage("overview");
       return;
     }
@@ -965,9 +961,9 @@ function NadiaTeacherFlow({
             <h1 className="truncate text-lg font-black text-foreground md:text-2xl">
               {isRTL ? teacher.nameAr : teacher.nameEn}
             </h1>
-            {stage === "chapters" && (
+            {stage === "lectures" && (
               <p className="text-xs text-muted-foreground">
-                {copy.content}
+                {copy.arabicCurriculum}
               </p>
             )}
           </div>
@@ -990,7 +986,7 @@ function NadiaTeacherFlow({
           <div className="max-w-2xl">
             <button
               type="button"
-              onClick={() => setStage("chapters")}
+              onClick={() => setStage("lectures")}
               className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
             >
               <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
@@ -1001,7 +997,7 @@ function NadiaTeacherFlow({
               <h3 className="text-xl font-black text-foreground">{copy.content}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.contentDescription}</p>
               <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
-                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                {copy.lectures} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </span>
             </button>
           </div>
@@ -1010,27 +1006,27 @@ function NadiaTeacherFlow({
         <section>
           <div className="mb-5">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-              {copy.content}
+              {copy.arabicCurriculum}
             </p>
-            <h2 className="mt-1 text-2xl font-black text-foreground">{copy.chapters}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{copy.lockedDescription}</p>
+            <h2 className="mt-1 text-2xl font-black text-foreground">{copy.lectures}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription}</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {NADIA_CHAPTERS.map((chapter) => (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: NADIA_ARABIC_LECTURE_COUNT }, (_, index) => index + 1).map((lectureNumber) => (
               <button
                 type="button"
-                key={chapter.number}
+                key={lectureNumber}
                 disabled
-                aria-label={`${copy.chapter} ${chapter.number} — ${copy.locked}`}
-                className="flex min-h-28 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
+                aria-label={`${copy.lecture} ${lectureNumber} — ${copy.comingSoon}`}
+                className="flex min-h-24 cursor-not-allowed items-center gap-4 rounded-2xl border border-border bg-muted/35 p-4 text-start opacity-75"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
                   <Lock className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-bold text-muted-foreground">{copy.chapter} {chapter.number}</span>
-                  <span className="mt-1 block font-black text-foreground">{isRTL ? chapter.ar : chapter.en}</span>
-                  <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{copy.locked}</span>
+                  <span className="block font-black text-foreground">{copy.lecture} {lectureNumber}</span>
+                  <span className="mt-1 block text-xs font-bold text-muted-foreground">{copy.arabicCurriculum}</span>
+                  <span className="mt-1 block text-xs font-bold text-amber-600 dark:text-amber-300">{copy.comingSoon}</span>
                 </span>
               </button>
             ))}

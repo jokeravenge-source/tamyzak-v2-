@@ -15,7 +15,7 @@ describe("Nadia teacher hub", () => {
     window.history.replaceState({}, "", "/teachers");
   });
 
-  it("combines lectures and the MCQ bank into one tool with five locked chapters", async () => {
+  it("opens 39 Arabic-curriculum lecture placeholders from the combined tool", async () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
 
@@ -23,8 +23,9 @@ describe("Nadia teacher hub", () => {
     expect(combinedTool).toBeInTheDocument();
 
     fireEvent.click(combinedTool);
-    const lockedChapters = screen.getAllByRole("button", { name: /مغلق حالياً/ });
-    expect(lockedChapters).toHaveLength(5);
-    lockedChapters.forEach((chapter) => expect(chapter).toBeDisabled());
+    const lectures = screen.getAllByRole("button", { name: /المحاضرة \d+ — قريباً/ });
+    expect(lectures).toHaveLength(39);
+    expect(screen.getByRole("button", { name: "المحاضرة 1 — قريباً" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "المحاضرة 39 — قريباً" })).toBeDisabled();
   });
 });
