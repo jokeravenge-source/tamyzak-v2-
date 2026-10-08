@@ -68,6 +68,7 @@ import { flashcardsFrenchFeminineAr } from "@/data/flashcardsFrenchFeminineAr";
 import { flashcardsFrenchPluralAr } from "@/data/flashcardsFrenchPluralAr";
 import { flashcardsFrenchAdverbsAr } from "@/data/flashcardsFrenchAdverbsAr";
 import { flashcardsMathCh1Ar } from "@/data/flashcardsMathCh1Ar";
+import { flashcardsMathCh2Ar } from "@/data/flashcardsMathCh2Ar";
 import { flashcardsCh1 } from "@/data/flashcardsCh1";
 import { flashcardsCh2 } from "@/data/flashcardsCh2";
 import { flashcardsCh4 } from "@/data/flashcardsCh4";
@@ -418,6 +419,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             cards: d.cards,
           };
         }
+      }
+
+      if (subject === "math" && chapter === "2") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? "الرياضيات · الفصل الثاني · القطوع المخروطية" : "Mathematics · Chapter 2 · Conic Sections",
+          cards: flashcardsMathCh2Ar,
+        };
       }
 
       if (subject === "math" && chapter === "1") {
