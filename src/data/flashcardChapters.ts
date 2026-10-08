@@ -55,8 +55,9 @@ export const frenchChapters = [
 
 export const mathChapters = [
   { n: 1, title: "Complex Numbers", arTitle: "الأعداد المركبة", subtitle: "بطاقات الفصل الأول", locked: false },
-  ...Array.from({ length: 7 }, (_, i) => ({
-    n: i + 2,
+  { n: 2, title: "Conic Sections", arTitle: "القطوع المخروطية", subtitle: "61 بطاقة · الفصل الثاني", locked: false },
+  ...Array.from({ length: 6 }, (_, i) => ({
+    n: i + 3,
     title: `Chapter ${i + 2}`,
     arTitle: `الفصل ${i + 2}`,
     subtitle: "",
