@@ -124,7 +124,12 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 const SearchFAB = lazy(() => import("./components/SearchFAB"));
 const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"));
-const WeaknessCheckInAgent = lazy(() => import("./components/WeaknessCheckInAgent"));
+// Optional global widget: if its file can't load (stale deploy), render nothing instead of blanking the app.
+const WeaknessCheckInAgent = lazy(() =>
+  import("./components/WeaknessCheckInAgent").catch(() =>
+    import("./components/WeaknessCheckInAgent").catch(() => ({ default: (() => null) as unknown as typeof import("./components/WeaknessCheckInAgent").default })),
+  ),
+);
 import TelegramGate from "./components/TelegramGate";
 const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
