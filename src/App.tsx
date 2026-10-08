@@ -127,7 +127,7 @@ const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"
 // Optional global widget: if its file can't load (stale deploy), render nothing instead of blanking the app.
 const WeaknessCheckInAgent = lazy(() =>
   import("./components/WeaknessCheckInAgent").catch(() =>
-    import("./components/WeaknessCheckInAgent").catch(() => ({ default: (() => null) as any })),
+    import("./components/WeaknessCheckInAgent").catch(() => ({ default: (() => null) as unknown as typeof import("./components/WeaknessCheckInAgent").default })),
   ),
 );
 import TelegramGate from "./components/TelegramGate";
