@@ -284,6 +284,17 @@ export function applyTheme(id: ThemeId) {
 
 export function getInitialTheme(): ThemeId {
   if (typeof window === "undefined") return "notion-light";
+  // One-time switch: everyone moves to the light theme; they can still pick another afterwards.
+  const MIGRATION_KEY = "app_theme_light_default_v1";
+  if (!localStorage.getItem(MIGRATION_KEY)) {
+    localStorage.setItem(MIGRATION_KEY, "1");
+    const prev = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
+    const prevDef = THEMES.find((t) => t.id === prev);
+    if (!prevDef || prevDef.mode === "dark") {
+      localStorage.setItem(THEME_STORAGE_KEY, "notion-light");
+      return "notion-light";
+    }
+  }
   const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
   if (stored && THEMES.some((t) => t.id === stored)) return stored;
   return "notion-light";
