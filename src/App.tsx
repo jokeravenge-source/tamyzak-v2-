@@ -28,6 +28,7 @@ const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
+const FlashcardsDashboard = lazy(() => import("./pages/FlashcardsDashboard"));
 const NadiaMinisterialQuestions = lazy(() => import("./pages/NadiaMinisterialQuestions"));
 import AdminLogin from "./pages/AdminLogin";
 import AdminMcqReview from "./pages/AdminMcqReview";
@@ -174,6 +175,17 @@ const SpotifyAuthCallback = () => {
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Standalone password-protected flashcards management dashboard.
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/flashcards-dashboard") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={null}>
+          <FlashcardsDashboard />
+        </Suspense>
+      </QueryClientProvider>
+    );
+  }
+
   // Standalone password-protected review dashboard for Nadia's Biology decks.
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-flashcards") {
     return (
