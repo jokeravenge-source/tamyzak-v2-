@@ -17,6 +17,13 @@ export default function McqReviewDashboard() {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<McqRow | null>(null);
   useEffect(() => {
+    const root = document.documentElement;
+    const wasDark = root.classList.contains("dark");
+    const wasNotionDark = root.classList.contains("theme-notion-dark");
+    root.classList.remove("dark", "theme-notion-dark");
+    return () => { if (wasDark) root.classList.add("dark"); if (wasNotionDark) root.classList.add("theme-notion-dark"); };
+  }, []);
+  useEffect(() => {
     let active = true;
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { if (active) setAuthorized(false); return; }
@@ -69,7 +76,7 @@ export default function McqReviewDashboard() {
   };
   if (authorized === null) return <main className="grid min-h-screen place-items-center"><Loader2 className="animate-spin" /></main>;
   if (!authorized) return <main className="grid min-h-screen place-items-center p-6"><div className="text-center"><ShieldAlert className="mx-auto mb-3 text-destructive" /><h1 className="font-bold">Admin access required</h1><p className="text-sm text-muted-foreground">Sign in to Tamayzak with an administrator account.</p><a href="/" className="mt-4 inline-block text-primary underline">Go to Tamayzak</a></div></main>;
-  return <main dir="rtl" className="min-h-screen bg-background p-4 pb-24 text-foreground md:p-8"><div className="mx-auto max-w-6xl space-y-6">
+  return <main dir="rtl" className="min-h-screen bg-[#F7F4EC] p-4 pb-24 text-[#183A72] md:p-8"><div className="mx-auto max-w-6xl space-y-6">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-primary">TAMAYZAK · ADMIN</p><h1 className="text-3xl font-black">لوحة مراجعة بنك الأسئلة</h1><p className="text-sm text-muted-foreground">مراجعة وتعديل وحذف الأسئلة الموجودة في قاعدة البيانات</p></div><Button variant="outline" disabled={busy} onClick={load}><RefreshCw className="h-4 w-4" /> تحديث</Button></header>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">{[[ "إجمالي الأسئلة", rows.length ],["النتائج المفلترة", filtered.length],["المواد", subjects.length]].map(([label,value]) => <div key={String(label)} className="rounded-2xl border bg-card p-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-black">{value}</p></div>)}</div>
     <section className="grid gap-3 rounded-2xl border bg-card p-4 md:grid-cols-4"><label className="flex items-center gap-2 rounded-lg border px-3"><Search className="h-4 w-4" /><input className="h-10 w-full bg-transparent outline-none" placeholder="ابحث عن سؤال..." value={search} onChange={e => setSearch(e.target.value)} /></label>
