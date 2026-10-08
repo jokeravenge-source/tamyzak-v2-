@@ -67,6 +67,7 @@ const News = lazy(() => import("./pages/News"));
 const Premium = lazy(() => import("./pages/Premium"));
 const MinisterialBank = lazy(() => import("./pages/MinisterialBank"));
 const McqBank = lazy(() => import("./pages/McqBank"));
+const McqReviewDashboard = lazy(() => import("./pages/McqReviewDashboard"));
 const MyMistakes = lazy(() => import("./pages/MyMistakes"));
 const MindMap = lazy(() => import("./pages/MindMap"));
 const IslamicSurahs = lazy(() => import("./pages/IslamicSurahs"));
@@ -190,6 +191,7 @@ const McqBankDeepLink = () => {
 };
 
 const App = () => {
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-review") return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}><McqReviewDashboard /></Suspense></TooltipProvider></QueryClientProvider>;
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;
 
   // Standalone password-protected flashcards management dashboard.
