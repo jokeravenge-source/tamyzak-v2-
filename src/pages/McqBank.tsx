@@ -148,7 +148,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .order("sort_order", { ascending: true })
           .limit(2000),
         supabase.rpc("get_due_mcq_bank_reviews"),
-        topicTarget ? loadTopicPractice() : Promise.resolve([] as PracticeAttempt[]),
+        loadTopicPractice(),
         topicTarget ? supabase.from("mcq_banks")
           .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
           .eq("language", lang).eq("subject", topicTarget.subject)
@@ -341,6 +341,27 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     </main>;
   }
 
+  const mcqAttempts = topicAttempts.filter((attempt) => attempt.source === "mcq_bank");
+  const uniqueAttempts = [...new Map([...mcqAttempts].reverse().map((attempt) => [`${attempt.subject}:${attempt.chapter}:${attempt.question_key}`, attempt])).values()];
+  const correctCount = mcqAttempts.filter((attempt) => attempt.correct).length;
+  const accuracy = mcqAttempts.length ? Math.round(correctCount / mcqAttempts.length * 100) : 0;
+  const topicStats = [...mcqAttempts.reduce((map, attempt) => {
+    const key = attempt.category_key;
+    const current = map.get(key) ?? { key, right: 0, total: 0, subject: attempt.subject, chapter: attempt.chapter };
+    current.total += 1;
+    if (attempt.correct) current.right += 1;
+    map.set(key, current);
+    return map;
+  }, new Map<string, { key: string; right: number; total: number; subject: string; chapter: string }>()).values()];
+  const weakTopics = topicStats.filter((topic) => topic.total >= 3 && topic.right / topic.total < 0.7)
+    .sort((a, b) => a.right / a.total - b.right / b.total).slice(0, 4);
+  const dashboardMetrics = [
+    { label: isAr ? "الأسئلة المحلولة" : "Attempts", value: mcqAttempts.length },
+    { label: isAr ? "أسئلة مختلفة" : "Unique questions", value: uniqueAttempts.length },
+    { label: isAr ? "نسبة الإجابات الصحيحة" : "Accuracy", value: `${accuracy}%` },
+    { label: isAr ? "إجابات صحيحة" : "Correct answers", value: correctCount },
+  ];
+
   // ---- Subject picker ----
   if (!subject && !reviewing) {
     return (
@@ -357,6 +378,20 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold">
               <span className="rounded-full border border-border/70 bg-background/55 px-3 py-1.5">{rows.length} {isAr ? "سؤال متاح" : "questions"}</span>
               <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-emerald-600 dark:text-emerald-300">+5 {isAr ? "نقاط للإجابة الصحيحة" : "points per correct answer"}</span>
+            </div>
+          </div>
+        </section>
+        <section className="mb-6 space-y-4" aria-label={isAr ? "لوحة تقدم بنك الأسئلة" : "MCQ bank progress dashboard"}>
+          <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-black">{isAr ? "لوحة إنجازك" : "Your performance dashboard"}</h3><span className="text-xs text-muted-foreground">{isAr ? "حسب إجاباتك المسجلة" : "Based on recorded answers"}</span></div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {dashboardMetrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"><div className="text-xs text-muted-foreground">{metric.label}</div><div className="mt-2 text-3xl font-black tabular-nums">{metric.value}</div></div>)}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-border/70 bg-card p-5"><h4 className="mb-3 font-bold">{isAr ? "تقدمك حسب المادة" : "Progress by subject"}</h4>
+              {subjects.length ? subjects.map(([code]) => { const attempts = mcqAttempts.filter((a) => a.subject === code); const percent = attempts.length ? Math.round(attempts.filter((a) => a.correct).length / attempts.length * 100) : 0; return <div key={code} className="mb-3"><div className="mb-1 flex justify-between text-sm"><span>{subjectLabel(code, isAr)}</span><span className="tabular-nums">{attempts.length ? `${percent}% · ${attempts.length}` : (isAr ? "لم تبدأ" : "Not started")}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div></div>; }) : <p className="text-sm text-muted-foreground">{isAr ? "ابدأ بحل الأسئلة لعرض تقدمك." : "Start practicing to see progress."}</p>}
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-card p-5"><h4 className="mb-3 font-bold">{isAr ? "مواضيع تحتاج مراجعة" : "Topics to review"}</h4>
+              {weakTopics.length ? weakTopics.map((topic) => <div key={topic.key} className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-muted/50 p-3"><div className="min-w-0"><div className="truncate text-sm font-semibold">{categoryLabel(topic.key, lang)}</div><div className="text-xs text-muted-foreground">{subjectLabel(topic.subject, isAr)} · {isAr ? "الفصل" : "Chapter"} {topic.chapter}</div></div><span className="font-bold tabular-nums text-amber-600">{Math.round(topic.right / topic.total * 100)}%</span></div>) : <p className="text-sm text-muted-foreground">{isAr ? "لا توجد مواضيع ضعيفة مؤكدة بعد (تحتاج 3 محاولات لكل موضوع)." : "No confirmed weak topics yet (at least 3 attempts per topic)."} </p>}
             </div>
           </div>
         </section>
