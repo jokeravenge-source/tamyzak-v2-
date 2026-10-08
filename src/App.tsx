@@ -174,7 +174,24 @@ const SpotifyAuthCallback = () => {
 
 const queryClient = new QueryClient();
 
+const McqBankDeepLink = () => {
+  const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const language: AppLanguage = (() => { try { return localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "ar"; } catch { return "ar"; } })();
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => { if (active) { setAuthed(!!data.user); setChecking(false); } });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (active) setAuthed(!!session?.user); });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+  return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}>
+    {checking ? null : authed ? <McqBank language={language} onBack={() => { window.location.href = "/"; }} /> : <Auth onAuthed={() => setAuthed(true)} />}
+  </Suspense></TooltipProvider></QueryClientProvider>;
+};
+
 const App = () => {
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;
+
   // Standalone password-protected flashcards management dashboard.
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/flashcards-dashboard") {
     return (
