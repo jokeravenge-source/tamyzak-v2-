@@ -55,3 +55,13 @@ describe("room participant clock", () => {
     }, now)).toBe(300);
   });
 });
+
+import { displayedPresenceSeconds } from "./sessionPresenceClock";
+describe("recent presence display", () => {
+  it("shows a frozen time for a student seen 10 minutes ago", () => {
+    expect(displayedPresenceSeconds(presence(300, true, now - 10 * 60_000), now)).toBe(300);
+  });
+  it("hides a student seen over 30 minutes ago", () => {
+    expect(displayedPresenceSeconds(presence(300, true, now - 31 * 60_000), now)).toBeNull();
+  });
+});
