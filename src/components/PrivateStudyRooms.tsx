@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
-import { elapsedFromFreshPresence, displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
+import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
@@ -686,7 +686,6 @@ export default function PrivateStudyRooms({
             const mine = m.user_id === userId;
             const roomOwner = m.user_id === room.owner_id;
             const memberPresence = presence[m.user_id];
-            const liveSeconds = memberPresence ? elapsedFromFreshPresence(memberPresence, now) : null;
             const remoteSeconds = memberPresence ? displayedPresenceSeconds(memberPresence, now) : null;
             const hasLocalTimer = mine && timerStarted !== undefined;
             return (
@@ -717,7 +716,7 @@ export default function PrivateStudyRooms({
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
-                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : liveSeconds !== null && memberPresence?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && memberPresence?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
                     <Timer className="w-2.5 h-2.5" />
                     {hasLocalTimer
                       ? timerStarted ? fmtClock(timerSeconds ?? 0) : "--:--"

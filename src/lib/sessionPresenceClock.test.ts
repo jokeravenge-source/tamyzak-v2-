@@ -61,7 +61,13 @@ describe("room timer display", () => {
   it("shows the live time for a student whose timer is running", () => {
     expect(displayedPresenceSeconds(presence(300, true), now)).toBe(310);
   });
-  it("stays blank for a student who left 10 minutes ago", () => {
-    expect(displayedPresenceSeconds(presence(300, true, now - 10 * 60_000), now)).toBeNull();
+  it("keeps counting for a running student whose phone locked 10 minutes ago", () => {
+    expect(displayedPresenceSeconds(presence(300, true, now - 10 * 60_000), now)).toBe(900);
+  });
+  it("shows the frozen time for a paused student whose phone locked", () => {
+    expect(displayedPresenceSeconds(presence(300, false, now - 10 * 60_000), now)).toBe(300);
+  });
+  it("stays blank for a timer left behind more than 65 minutes ago", () => {
+    expect(displayedPresenceSeconds(presence(300, true, now - 66 * 60_000), now)).toBeNull();
   });
 });
