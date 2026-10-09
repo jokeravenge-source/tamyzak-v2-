@@ -33,6 +33,18 @@ const fmtClock = (s: number) => {
   return h > 0 ? `${p(h)}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
 };
 
+// Public rooms can hold hundreds of students. A single `.in(...)` with that many
+// ids makes the request URL too long and the whole lookup fails, so query in chunks.
+async function selectInChunks(table: "profiles" | "active_sessions", columns: string, ids: string[]): Promise<{ rows: any[]; failed: boolean }> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 60) chunks.push(ids.slice(i, i + 60));
+  const results = await Promise.all(chunks.map((chunk) => supabase.from(table).select(columns).in("user_id", chunk)));
+  return {
+    rows: results.flatMap((r) => (r.data ?? []) as any[]),
+    failed: results.some((r) => !!r.error),
+  };
+}
+
 function mergePresenceRows(rows: any[], previous: Record<string, Presence>): Record<string, Presence> {
   const observedAtMs = Date.now();
   return Object.fromEntries(rows.map((s: any) => {
@@ -205,20 +217,14 @@ export default function PrivateStudyRooms({
     const allIds = Array.from(new Set([...base.map((m) => m.user_id), ...rawMsgs.map((m) => m.user_id)]));
     const profById = new Map<string, any>();
     if (allIds.length > 0) {
-      const { data: allProfs } = await supabase
-        .from("profiles")
-        .select("user_id,display_name,gender,character")
-        .in("user_id", allIds);
-      (allProfs ?? []).forEach((p: any) => profById.set(p.user_id, p));
+      const { rows: allProfs } = await selectInChunks("profiles", "user_id,display_name,gender,character", allIds);
+      allProfs.forEach((p: any) => profById.set(p.user_id, p));
     }
     if (base.length > 0) {
       const ids = base.map((m) => m.user_id);
       const profs = ids.map((id) => profById.get(id)).filter(Boolean);
-      const { data: sess } = await supabase
-        .from("active_sessions")
-        .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
-        .in("user_id", ids);
-      setPresence((previous) => mergePresenceRows(sess ?? [], previous));
+      const { rows: sess, failed: sessFailed } = await selectInChunks("active_sessions", "user_id,elapsed_seconds,is_running,last_seen_at,subject,mission", ids);
+      if (!sessFailed) setPresence((previous) => mergePresenceRows(sess, previous));
       const byId = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
       setMembers(
         base.map((m) => {
@@ -334,11 +340,9 @@ export default function PrivateStudyRooms({
     const ids = memberIds.split(",");
     const refresh = async () => {
       if (document.visibilityState === "hidden") return;
-      const { data, error } = await supabase.from("active_sessions")
-        .select("user_id,elapsed_seconds,is_running,last_seen_at,subject,mission")
-        .in("user_id", ids);
-      if (active && !error) {
-        setPresence((previous) => mergePresenceRows(data ?? [], previous));
+      const { rows, failed } = await selectInChunks("active_sessions", "user_id,elapsed_seconds,is_running,last_seen_at,subject,mission", ids);
+      if (active && !failed) {
+        setPresence((previous) => mergePresenceRows(rows, previous));
       }
     };
     void refresh();

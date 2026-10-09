@@ -36,13 +36,7 @@ export function elapsedFromFreshPresence(presence: SessionPresence, nowMs: numbe
   return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.floor(tickLagMs / 1000));
 }
 
-/** Recently-left students keep showing their last saved time (frozen, not ticking). */
-export const RECENT_PRESENCE_MS = 30 * 60_000;
+/** Only students whose timer is started (fresh heartbeat) show a time; everyone else stays blank. */
 export function displayedPresenceSeconds(presence: SessionPresence, nowMs: number): number | null {
-  const live = elapsedFromFreshPresence(presence, nowMs);
-  if (live !== null) return live;
-  const lag = nowMs - Date.parse(presence.last_seen_at);
-  const e = presence.elapsed_seconds;
-  if (!Number.isFinite(lag) || lag > RECENT_PRESENCE_MS || !Number.isFinite(e) || e <= 0 || e > MAX_SESSION_SECONDS) return null;
-  return Math.floor(e);
+  return elapsedFromFreshPresence(presence, nowMs);
 }
