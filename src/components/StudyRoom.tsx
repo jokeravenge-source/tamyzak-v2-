@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
-import { elapsedFromFreshPresence } from "@/lib/sessionPresenceClock";
+import { elapsedFromFreshPresence, displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
 import { Users } from "lucide-react";
@@ -216,7 +216,8 @@ export default function StudyRoom({
           <div className="relative z-10 pt-6 pb-6 px-4 flex flex-wrap gap-5 justify-center items-end" style={{ minHeight: 280 }}>
             {people.map((p) => {
               const isMe = currentUserId && p.user_id === currentUserId;
-              const remoteSeconds = elapsedFromFreshPresence(p, now);
+              const liveSeconds = elapsedFromFreshPresence(p, now);
+              const remoteSeconds = displayedPresenceSeconds(p, now);
               const hasLocalTimer = isMe && timerStarted !== undefined;
               return (
                 <button
@@ -230,7 +231,7 @@ export default function StudyRoom({
                   <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-xs font-medium max-w-[120px] truncate ${isMe ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30"}`}>
                     {isMe ? (language === "ar" ? "أنت" : "You") : p.display_name}
                   </div>
-                  {remoteSeconds !== null && !!p.mission && (
+                  {liveSeconds !== null && !!p.mission && (
                     <div className="mb-1 max-w-[120px] truncate rounded-full bg-background/75 px-2 py-0.5 text-[10px] text-muted-foreground" title={p.mission}>
                       {p.mission}
                     </div>
@@ -243,7 +244,7 @@ export default function StudyRoom({
                       <div className="w-0.5 h-3.5 bg-primary/40" />
                     </div>
                   </div>
-                  <div className={`mt-1.5 text-[11px] font-mono px-2 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && p.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-border"}`}>
+                  <div className={`mt-1.5 text-[11px] font-mono px-2 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : liveSeconds !== null && p.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-border"}`}>
                     {hasLocalTimer
                       ? timerStarted ? formatHMS(timerSeconds ?? 0) : "--:--"
                       : remoteSeconds !== null ? formatHMS(remoteSeconds) : "--:--"}
