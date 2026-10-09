@@ -481,6 +481,22 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
+    // Math chapter 2 has six carefully named groups in the source deck.
+    // Use them instead of auto-generated single-word topic labels.
+    if (subject === "math" && chapter === "2" && language === "ar") {
+      const labels: Record<string, string> = {
+        "القطع المكافئ": "القطع المكافئ ومعادلته",
+        "القطع الناقص": "القطع الناقص ومعادلته",
+        "القطع الزائد": "القطع الزائد ومعادلته",
+        "الإزاحة": "إزاحة القطع المكافئ",
+        "العلاقات والقوانين": "العلاقات والقوانين الأساسية",
+        "أسئلة إضافية": "تطبيقات ومسائل متنوعة",
+      };
+      return Object.entries(labels).map(([key, label]) => ({
+        key: `math-ch2-${key}`, label,
+        cards: flashcardsMathCh2Ar.filter((card) => card.topic === key),
+      }));
+    }
     if (isWijdanChemistryDeck) {
       const topicCards = language === "ar" ? flashcardsChemCh3WijdanAr : flashcardsChemCh3WijdanEn;
       return wijdanChemCh3TopicRanges.map((topic) => ({
