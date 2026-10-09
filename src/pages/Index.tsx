@@ -39,6 +39,7 @@ import { flashcardsBioCh5NadiaEn, nadiaBioCh5TopicRanges } from "@/data/flashcar
 import { flashcardsBioCh5NadiaAr } from "@/data/flashcardsBioCh5NadiaAr";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { ahmedNadawiChemCh1Cards, ahmedNadawiChemCh1Topics } from "@/data/flashcardsChemCh1AhmedNadawi";
+import { ahmedNadawiChemCh1CardsAr, ahmedNadawiChemCh1TopicsAr } from "@/data/flashcardsChemCh1AhmedNadawiAr";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
 import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
@@ -145,7 +146,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const chemistryFlashcardTeacher = typeof window !== "undefined"
     ? sessionStorage.getItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
-  const isAhmedNadawiDeck = subject === "chemistry" && chemistryFlashcardTeacher !== "wijdan";
+  const isAhmedNadawiDeck = subject === "chemistry" && chemistryFlashcardTeacher === "ahmed-al-nadawi";
   const isWijdanChemistryDeck = subject === "chemistry"
     && chapter === "3"
     && chemistryFlashcardTeacher === "wijdan";
@@ -198,13 +199,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
   const deck = useMemo(
     () => {
-      // Fresh start: Ahmed Al-Nadawi's list is empty, without touching
-      // other teachers' chemistry source decks.
+      // Ahmed Al-Nadawi: dedicated source-matched decks in both languages.
       if (isAhmedNadawiDeck) {
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
-          cards: chapter === "1" ? (language === "ar" ? flashcardsChemCh1Ar : ahmedNadawiChemCh1Cards) : [],
+          cards: chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards) : [],
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -492,7 +492,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
-    if (isAhmedNadawiDeck && chapter === "1" && language !== "ar") return ahmedNadawiChemCh1Topics.map(t => ({ key: `nadawi-${t.key}`, label: t.title, cards: ahmedNadawiChemCh1Cards.filter(c => c.topic === t.key) }));
+    if (isAhmedNadawiDeck && chapter === "1") {
+      const translatedCards = language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards;
+      return ahmedNadawiChemCh1Topics.map(t => ({
+        key: `nadawi-${t.key}`,
+        label: language === "ar" ? ahmedNadawiChemCh1TopicsAr[t.key] : t.title,
+        cards: translatedCards.filter(c => c.topic === t.key),
+      }));
+    }
     // Math chapter 2 has six carefully named groups in the source deck.
     // Use them instead of auto-generated single-word topic labels.
     if (subject === "math" && chapter === "2" && language === "ar") {
