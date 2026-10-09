@@ -36,7 +36,22 @@ export function elapsedFromFreshPresence(presence: SessionPresence, nowMs: numbe
   return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.floor(tickLagMs / 1000));
 }
 
-/** Only students whose timer is started (fresh heartbeat) show a time; everyone else stays blank. */
+// Phones stop sending heartbeats when the screen locks or the tab is in the
+// background, but the student's own timer keeps counting. Keep showing a started
+// timer for this long after its last heartbeat (sessions pause at least hourly).
+export const STARTED_PRESENCE_MS = 65 * 60_000;
+
+/** Students who started their timer show a time; anyone who never started (or left long ago) stays blank. */
 export function displayedPresenceSeconds(presence: SessionPresence, nowMs: number): number | null {
-  return elapsedFromFreshPresence(presence, nowMs);
+  const fresh = elapsedFromFreshPresence(presence, nowMs);
+  if (fresh !== null) return fresh;
+  const elapsed = presence.elapsed_seconds;
+  if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed > MAX_SESSION_SECONDS) return null;
+  const heartbeatMs = Date.parse(presence.last_seen_at);
+  if (!Number.isFinite(heartbeatMs)) return null;
+  const lagMs = nowMs - heartbeatMs;
+  if (lagMs < 0 || lagMs > STARTED_PRESENCE_MS) return null;
+  const snapshotSeconds = Math.floor(elapsed);
+  if (!presence.is_running) return snapshotSeconds;
+  return Math.min(MAX_SESSION_SECONDS, snapshotSeconds + Math.floor(lagMs / 1000));
 }
