@@ -41,6 +41,7 @@ import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
 import { ahmedNadawiChemCh1Cards, ahmedNadawiChemCh1Topics } from "@/data/flashcardsChemCh1AhmedNadawi";
 import { ahmedNadawiChemCh1CardsAr, ahmedNadawiChemCh1TopicsAr } from "@/data/flashcardsChemCh1AhmedNadawiAr";
 import { ahmedNadawiChemCh2Cards, ahmedNadawiChemCh2Topics } from "@/data/flashcardsChemCh2AhmedNadawi";
+import { ahmedNadawiChemCh2CardsAr } from "@/data/flashcardsChemCh2AhmedNadawiAr";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
 import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
@@ -206,7 +207,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
           cards: chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards)
-            : chapter === "2" ? ahmedNadawiChemCh2Cards : [],
+            : chapter === "2" ? (language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards) : [],
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -503,10 +504,11 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "2") {
+      const chapterTwoCards = language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards;
       return ahmedNadawiChemCh2Topics.map(t => ({
         key: `nadawi-ch2-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
-        cards: ahmedNadawiChemCh2Cards.filter(c => c.topic === t.key),
+        cards: chapterTwoCards.filter(c => c.topic === t.key),
       }));
     }
     // Math chapter 2 has six carefully named groups in the source deck.
