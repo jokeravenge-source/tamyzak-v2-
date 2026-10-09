@@ -204,7 +204,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
-          cards: chapter === "1" ? ahmedNadawiChemCh1Cards : [],
+          cards: chapter === "1" ? (language === "ar" ? flashcardsChemCh1Ar : ahmedNadawiChemCh1Cards) : [],
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -492,7 +492,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
-    if (isAhmedNadawiDeck && chapter === "1") return ahmedNadawiChemCh1Topics.map(t => ({ key: `nadawi-${t.key}`, label: t.title, cards: ahmedNadawiChemCh1Cards.filter(c => c.topic === t.key) }));
+    if (isAhmedNadawiDeck && chapter === "1" && language !== "ar") return ahmedNadawiChemCh1Topics.map(t => ({ key: `nadawi-${t.key}`, label: t.title, cards: ahmedNadawiChemCh1Cards.filter(c => c.topic === t.key) }));
     // Math chapter 2 has six carefully named groups in the source deck.
     // Use them instead of auto-generated single-word topic labels.
     if (subject === "math" && chapter === "2" && language === "ar") {
