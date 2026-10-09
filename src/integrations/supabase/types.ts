@@ -3443,6 +3443,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      cleanup_inactive_study_room_members: { Args: never; Returns: number }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       get_due_mcq_bank_reviews: {
         Args: never

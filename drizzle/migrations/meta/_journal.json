@@ -57,6 +57,13 @@
       "when": 1791354469353,
       "tag": "0007_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791538531774,
+      "tag": "0008_room_kick_after_hour_without_timer",
+      "breakpoints": true
     }
   ]
 }
