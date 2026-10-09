@@ -429,7 +429,20 @@ export default function PrivateStudyRooms({
   }, [userId]);
 
   const isOwner = !!room && (room.owner_id === userId || isAdmin);
-  const visibleMembers = showAllMembers ? members : members.slice(0, MEMBER_PREVIEW_LIMIT);
+  // Students who are studying come first, so their timers are not hidden
+  // behind "show more" in big rooms: you, then running timers, then paused ones.
+  const memberRank = (m: Member) => {
+    if (m.user_id === userId) return 0;
+    const p = presence[m.user_id];
+    const seconds = p ? displayedPresenceSeconds(p, now) : null;
+    if (seconds === null) return 3;
+    return p?.is_running ? 1 : 2;
+  };
+  const sortedMembers = members
+    .map((m, i) => ({ m, i, r: memberRank(m) }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((x) => x.m);
+  const visibleMembers = showAllMembers ? sortedMembers : sortedMembers.slice(0, MEMBER_PREVIEW_LIMIT);
 
   const shareLink = () => {
     if (!room) return;
