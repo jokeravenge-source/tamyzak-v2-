@@ -576,6 +576,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   });
   const todos = useTodos();
   useEffect(() => {
+    // Deep links can select a specific topic, rather than always opening "All".
+    const requestedTopic = new URLSearchParams(window.location.search).get("topic");
+    if (requestedTopic) {
+      const matched = topicResult.topics.find((group) =>
+        group.key === requestedTopic || group.label === requestedTopic ||
+        (subject === "math" && chapter === "2" && group.key === `math-ch2-${requestedTopic}`)
+      );
+      if (matched) { setTopicKey(matched.key); return; }
+    }
     if (dailyTarget?.subject === subject && dailyTarget.chapterNumber === Number(chapter)) {
       const wanted = `${dailyTarget.topicEn} ${dailyTarget.topicAr}`.toLocaleLowerCase();
       const matched = topicResult.topics.find((group) => {
