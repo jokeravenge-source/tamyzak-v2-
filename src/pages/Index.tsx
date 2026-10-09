@@ -38,6 +38,7 @@ import { flashcardsBioCh5En } from "@/data/flashcardsBioCh5En";
 import { flashcardsBioCh5NadiaEn, nadiaBioCh5TopicRanges } from "@/data/flashcardsBioCh5NadiaEn";
 import { flashcardsBioCh5NadiaAr } from "@/data/flashcardsBioCh5NadiaAr";
 import { flashcardsChemCh1En } from "@/data/flashcardsChemCh1En";
+import { ahmedNadawiChemCh1Cards, ahmedNadawiChemCh1Topics } from "@/data/flashcardsChemCh1AhmedNadawi";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
 import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
@@ -203,7 +204,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
-          cards: [],
+          cards: chapter === "1" ? ahmedNadawiChemCh1Cards : [],
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -491,6 +492,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
+    if (isAhmedNadawiDeck && chapter === "1") return ahmedNadawiChemCh1Topics.map(t => ({ key: `nadawi-${t.key}`, label: t.title, cards: ahmedNadawiChemCh1Cards.filter(c => c.topic === t.key) }));
     // Math chapter 2 has six carefully named groups in the source deck.
     // Use them instead of auto-generated single-word topic labels.
     if (subject === "math" && chapter === "2" && language === "ar") {
@@ -541,7 +543,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     return null;
-  }, [chapter, isNadiaBiologyDeck, isWijdanChemistryDeck, language]);
+  }, [chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language]);
 
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
@@ -562,7 +564,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         const preset = explicitTopics(withExtras, language);
         if (preset) return preset;
       }
-      if (isAhmedNadawiDeck) return groupFlashcardsByTopic([], language);
+      if (isAhmedNadawiDeck && chapter !== "1") return groupFlashcardsByTopic([], language);
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
       // Custom cards belong to the original subject collection. Keep Nadia's
       // supplied list isolated so its 264 cards remain a separate deck.
