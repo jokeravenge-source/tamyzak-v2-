@@ -144,6 +144,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   const chemistryFlashcardTeacher = typeof window !== "undefined"
     ? sessionStorage.getItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
+  const isAhmedNadawiDeck = subject === "chemistry" && chemistryFlashcardTeacher !== "wijdan";
   const isWijdanChemistryDeck = subject === "chemistry"
     && chapter === "3"
     && chemistryFlashcardTeacher === "wijdan";
@@ -196,6 +197,15 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
   const deck = useMemo(
     () => {
+      // Fresh start: Ahmed Al-Nadawi's list is empty, without touching
+      // other teachers' chemistry source decks.
+      if (isAhmedNadawiDeck) {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
+          cards: [],
+        };
+      }
       if (subject === "biology" && chapter === "1") {
         if (isNadiaBiologyDeck) {
           return {
@@ -474,7 +484,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       return baseDeck;
     },
-    [baseDeck, chapter, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject]
+    [baseDeck, chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject]
   );
   const text = copy[language];
   // Explicit, source-derived topic groups for decks that are built from
@@ -536,7 +546,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
     () => {
-      const listExtraCards = isNadiaBiologyDeck || isWijdanChemistryDeck ? [] : extraCards;
+      const listExtraCards = isNadiaBiologyDeck || isWijdanChemistryDeck || isAhmedNadawiDeck ? [] : extraCards;
       if (explicitGroups) {
         const withExtras: TopicGroup[] =
           listExtraCards.length > 0
@@ -552,6 +562,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         const preset = explicitTopics(withExtras, language);
         if (preset) return preset;
       }
+      if (isAhmedNadawiDeck) return groupFlashcardsByTopic([], language);
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
       // Custom cards belong to the original subject collection. Keep Nadia's
       // supplied list isolated so its 264 cards remain a separate deck.
@@ -563,7 +574,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }
       return groupFlashcardsByTopic(([] as any[]).concat(deck.cards as any[], listExtraCards as any[]), language);
     },
-    [deck, extraCards, isNadiaBiologyDeck, isWijdanChemistryDeck, language, explicitGroups, subject, chapter]
+    [deck, extraCards, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, explicitGroups, subject, chapter]
   );
   const hasTopics = topicResult.topics.length > 1;
   const [topicKey, setTopicKey] = useState<string>(topicResult.allKey);
