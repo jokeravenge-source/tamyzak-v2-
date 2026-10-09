@@ -7,7 +7,18 @@ import { flashcardsChemCh2AhmedNadawi_226_300 } from "./flashcardsChemCh2AhmedNa
 import { flashcardsChemCh2AhmedNadawi_301_375 } from "./flashcardsChemCh2AhmedNadawi_301_375";
 import { flashcardsChemCh2AhmedNadawi_376_429 } from "./flashcardsChemCh2AhmedNadawi_376_429";
 
-export const ahmedNadawiChemCh2Cards = [
+export type AhmedNadawiChemCh2Card = {
+  id: string;
+  q: string;
+  a: string;
+  topic: string;
+  kind: string;
+  pages: string;
+  ministerialYear?: number;
+  sourceNotes?: string;
+};
+
+export const ahmedNadawiChemCh2Cards: AhmedNadawiChemCh2Card[] = [
   ...flashcardsChemCh2AhmedNadawi_001_075,
   ...flashcardsChemCh2AhmedNadawi_076_150,
   ...flashcardsChemCh2AhmedNadawi_151_225,
