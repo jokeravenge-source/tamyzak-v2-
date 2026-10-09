@@ -57,11 +57,11 @@ describe("room participant clock", () => {
 });
 
 import { displayedPresenceSeconds } from "./sessionPresenceClock";
-describe("recent presence display", () => {
-  it("shows a frozen time for a student seen 10 minutes ago", () => {
-    expect(displayedPresenceSeconds(presence(300, true, now - 10 * 60_000), now)).toBe(300);
+describe("room timer display", () => {
+  it("shows the live time for a student whose timer is running", () => {
+    expect(displayedPresenceSeconds(presence(300, true), now)).toBe(310);
   });
-  it("hides a student seen over 30 minutes ago", () => {
-    expect(displayedPresenceSeconds(presence(300, true, now - 31 * 60_000), now)).toBeNull();
+  it("stays blank for a student who left 10 minutes ago", () => {
+    expect(displayedPresenceSeconds(presence(300, true, now - 10 * 60_000), now)).toBeNull();
   });
 });
