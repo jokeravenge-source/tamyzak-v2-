@@ -580,7 +580,7 @@ type AnswerCheckResult = {
         </p>
       </header>
 
-      {onCreateAccount && !subject && (
+      {onCreateAccount && chapterN === null && (
         <section className="max-w-3xl mx-auto mt-8 md:mt-10 px-4 z-10 relative">
           <div className="rounded-[28px] border border-primary/25 bg-card/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_22px_60px_-28px_hsl(var(--primary)/0.4)] text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.28)]">
