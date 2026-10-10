@@ -1008,6 +1008,15 @@ const StudentApp = () => {
             <Route path="*" element={<Auth onAuthed={() => setAuthed(true)} />} />
           </Routes>
         </BrowserRouter>
+      ) : !authed && isNadiaMinisterialRoute ? (
+        // Guests can use Nadia's ministerial bank without an account.
+        <MinisterialBank
+          language={language ?? "ar"}
+          onBack={leaveMinisterialBank}
+          initialSubject="biology"
+          initialChapter={nadiaMinisterialInitialChapter}
+          questionSource="nadia"
+        />
       ) : !authed ? (
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
