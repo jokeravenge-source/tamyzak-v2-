@@ -470,9 +470,8 @@ const StudentApp = () => {
   const [tgVerified, setTgVerified] = useState(false);
   const [tgLoading, setTgLoading] = useState(false);
   const CHANNEL_VERIFIED_STORAGE_KEY = "tg_channel_verified_v1";
-  const [channelVerified, _setChannelVerified] = useState<boolean>(
-    () => (typeof window !== "undefined" && localStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) === "1")
-  );
+  // "Join Tamayzak" channel gate is disabled for now: everyone counts as verified.
+  const [channelVerified, _setChannelVerified] = useState<boolean>(() => true);
   const setChannelVerified = (v: boolean) => {
     _setChannelVerified(v);
     if (typeof window !== "undefined") {
@@ -654,25 +653,8 @@ const StudentApp = () => {
     );
   }, [authed]);
 
-  useEffect(() => {
-    if (!authed || authRole === "admin") return;
-    if (!channelVerified) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("telegram-channel-check");
-        if (cancelled || error) return;
-        if (data && data.ok === true && data.joined === false) {
-          setChannelVerified(false);
-        }
-      } catch {
-        // Network/other errors: keep the user verified, don't nag.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authed, authRole]);
+  // Periodic "did the user leave the Tamayzak channel?" re-check is disabled
+  // while the join gate is removed.
   const [language, setLanguage] = useState<AppLanguage | null>(() => {
     if (typeof window === "undefined") return null;
     // Deep links such as /teachers?lang=en or /enrichments?lang=ar.
