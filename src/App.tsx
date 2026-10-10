@@ -1012,22 +1012,29 @@ const StudentApp = () => {
         </BrowserRouter>
       ) : !authed && isNadiaMinisterialRoute ? (
         // Guests can use Nadia's ministerial bank without an account.
-        nadiaAuthOpen ? (
-          <Auth
-            onAuthed={() => setAuthed(true)}
-            onGuest={() => setNadiaAuthOpen(false)}
-            initialMode="signup"
-          />
-        ) : (
-          <MinisterialBank
-            language={language ?? "ar"}
-            onBack={leaveMinisterialBank}
-            initialSubject="biology"
-            initialChapter={nadiaMinisterialInitialChapter}
-            questionSource="nadia"
-            onCreateAccount={() => setNadiaAuthOpen(true)}
-          />
-        )
+        <>
+          {nadiaAuthOpen && (
+            <Auth
+              onAuthed={() => setAuthed(true)}
+              onGuest={() => setNadiaAuthOpen(false)}
+              initialMode="signup"
+            />
+          )}
+          {/* Stay mounted while signing up so the guest returns to the same question. */}
+          <div hidden={nadiaAuthOpen}>
+            <MinisterialBank
+              language={language ?? "ar"}
+              onBack={leaveMinisterialBank}
+              initialSubject="biology"
+              initialChapter={nadiaMinisterialInitialChapter}
+              questionSource="nadia"
+              onCreateAccount={() => {
+                setNadiaAuthOpen(true);
+                window.scrollTo(0, 0);
+              }}
+            />
+          </div>
+        </>
       ) : !authed ? (
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
