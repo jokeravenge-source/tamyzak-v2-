@@ -21,6 +21,8 @@ type AuthProps = {
   onAuthed: () => void;
   onGoAdmin?: () => void;
   onGuest?: () => void;
+  /** Which tab to show first when the page opens. Defaults to "signin". */
+  initialMode?: AuthMode;
 };
 
 const GoogleIcon = () => (
@@ -38,8 +40,8 @@ const AppleIcon = () => (
   </svg>
 );
 
-export const Auth = ({ onAuthed, onGuest }: AuthProps) => {
-  const [mode, setMode] = useState<AuthMode>("signin");
+export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) => {
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
