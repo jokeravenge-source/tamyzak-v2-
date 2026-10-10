@@ -679,6 +679,11 @@ const StudentApp = () => {
       localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
       return "biology";
     }
+    if (window.location.pathname.replace(/\/+$/, "") === "/flashcards/ahmed-al-nadawi") {
+      localStorage.setItem(SUBJECT_STORAGE_KEY, "chemistry");
+      sessionStorage.setItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY, "ahmed-al-nadawi");
+      return "chemistry";
+    }
     if (window.location.pathname.startsWith("/flashcards")) {
       const params = new URLSearchParams(window.location.search);
       const s = params.get("subject") as AppSubject | null;
@@ -982,6 +987,7 @@ const StudentApp = () => {
         // Guests can study flashcards without an account.
         <BrowserRouter>
           <Routes>
+            <Route path="/flashcards/ahmed-al-nadawi" element={<Chapters language={language ?? "ar"} subject={subject} onChangeLanguage={resetSubject} />} />
             <Route path="/flashcards" element={<Index language={language ?? "ar"} subject={subject} />} />
             <Route path="/flashcards/:chapter" element={<Index language={language ?? "ar"} subject={subject} />} />
             <Route path="*" element={<Auth onAuthed={() => setAuthed(true)} />} />
@@ -1187,6 +1193,7 @@ const StudentApp = () => {
       ) : (
       <BrowserRouter>
         <Routes>
+          <Route path="/flashcards/ahmed-al-nadawi" element={<Chapters language={language} subject={subject} onChangeLanguage={resetSubject} />} />
           <Route path="/" element={<Chapters language={language} subject={subject} onChangeLanguage={resetSubject} />} />
           <Route path="/flashcards" element={<Index language={language} subject={subject} />} />
           <Route path="/flashcards/:chapter" element={<Index language={language} subject={subject} />} />
