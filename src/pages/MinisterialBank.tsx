@@ -222,21 +222,24 @@ type AnswerCheckResult = {
   mistakes: { studentClaim: string; correction: string }[];
 };
 
-type MinisterialBankProps = {
-  language: AppLanguage;
-  onBack: () => void;
-  initialSubject?: BankSubject;
-  initialChapter?: number | null;
-  questionSource?: "default" | "nadia";
-};
+ type MinisterialBankProps = {
+   language: AppLanguage;
+   onBack: () => void;
+   initialSubject?: BankSubject;
+   initialChapter?: number | null;
+   questionSource?: "default" | "nadia";
+   // Provided only when the visitor is browsing without an account.
+   onCreateAccount?: () => void;
+ };
 
-const MinisterialBank = ({
-  language,
-  onBack,
-  initialSubject,
-  initialChapter = null,
-  questionSource = "default",
-}: MinisterialBankProps) => {
+ const MinisterialBank = ({
+   language,
+   onBack,
+   initialSubject,
+   initialChapter = null,
+   questionSource = "default",
+   onCreateAccount,
+ }: MinisterialBankProps) => {
   useFeatureUsed("ministerial_questions");
   const t = copy[language];
   const isNadiaBank = questionSource === "nadia";
@@ -576,6 +579,40 @@ const MinisterialBank = ({
           <PointsHint action="ministerial_set" language={language === "ar" ? "ar" : "en"} bonus />
         </p>
       </header>
+
+      {onCreateAccount && chapterN === null && (
+        <section className="max-w-3xl mx-auto mt-8 md:mt-10 px-4 z-10 relative">
+          <div className="rounded-[28px] border border-primary/25 bg-card/85 backdrop-blur-xl p-5 sm:p-7 shadow-[0_22px_60px_-28px_hsl(var(--primary)/0.4)] text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.28)]">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-foreground leading-snug">
+              {language === "ar"
+                ? "سجّل حسابك المجاني لتتابع تقدمك"
+                : "Create your free account to keep your progress"}
+            </h2>
+            <p className="mt-2 text-sm sm:text-base leading-relaxed text-muted-foreground">
+              {language === "ar"
+                ? "أنشئ حسابًا أو سجّل الدخول لتجمع النقاط، وتحفظ أخطائك، وتستخدم التصحيح بالذكاء الاصطناعي."
+                : "Create an account or sign in to earn points, save your mistakes, and use AI answer checking."}
+            </p>
+            <button
+              type="button"
+              onClick={onCreateAccount}
+              className="group mt-5 inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary px-7 text-sm font-extrabold text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.22)] transition hover:-translate-y-0.5 hover:bg-primary/90"
+            >
+              {language === "ar" ? "إنشاء حساب / تسجيل الدخول" : "Create account / Sign in"}
+              <ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${language === "ar" ? "rotate-180" : ""}`} />
+            </button>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {language === "ar"
+                ? "أو تابع تصفّح الأسئلة بدون حساب."
+                : "Or keep browsing the questions without an account."}
+            </p>
+          </div>
+        </section>
+      )}
+
 
       {(isNadiaBank || subject === "biology") && (
         <div className="fixed bottom-3 inset-x-0 z-30 flex justify-center pointer-events-none">
