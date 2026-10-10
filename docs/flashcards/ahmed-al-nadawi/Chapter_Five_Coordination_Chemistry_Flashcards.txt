@@ -1,0 +1,794 @@
+CHAPTER FIVE — COORDINATION CHEMISTRY
+EXTENDED FLASHCARD AND PROBLEM DECK
+Source: Chapter five.pdf (130 pages)
+
+FORMAT: QUESTION / ANSWER. Similar ministerial questions are combined into one concept card when their answers are identical.
+IMPORTANT: “Ministerial” in the PDF is often denoted by small years/round labels; not all are legible in extracted text. This deck covers distinct chapter question types and many repeated ministerial variants, but is NOT a verified transcription of every original ministerial question and year. The original PDF remains the authority for literal phrasing and page-year association.
+
+
+
+### 1. Foundations and double salts
+
+CARD 001
+Q: Define coordination chemistry
+A: Branch of inorganic chemistry studying coordination compounds and their properties.
+
+CARD 002
+Q: Define a coordination compound
+A: A central metal ion or atom bonded through coordinate bonds to ligand molecules or ions.
+
+CARD 003
+Q: Why is coordination chemistry important?
+A: Applications in industry, agriculture, medicine, pharmacy; examples include haemoglobin, chlorophyll and vitamin B12.
+
+CARD 004
+Q: Define transition elements
+A: Elements with incompletely filled d or f subshells in the atom or in at least one compound (wording from chapter).
+
+CARD 005
+Q: Classify transition elements
+A: Main transition d-block: three series of ten; inner transition f-block: lanthanide and actinide series of fourteen.
+
+CARD 006
+Q: State properties of transition elements
+A: Variable oxidation states, unpaired electrons and paramagnetism, commonly coloured compounds, and tendency to form complexes.
+
+CARD 007
+Q: What are the two kinds of addition compounds?
+A: Double salts and coordination compounds.
+
+CARD 008
+Q: Define double salt
+A: An addition salt that dissociates into its constituent ions in water; the ions retain their characteristic reactions.
+
+CARD 009
+Q: Define Mohr salt and its formula
+A: Iron(II) ammonium sulfate hexahydrate: FeSO4·(NH4)2SO4·6H2O.
+
+CARD 010
+Q: Write the preparation equation of Mohr salt
+A: FeSO4 + (NH4)2SO4 + 6H2O → FeSO4·(NH4)2SO4·6H2O.
+
+CARD 011
+Q: What happens when ammonia is added to CuSO4?
+A: A tetraamminecopper(II) complex forms: CuSO4 + 4NH3 → [Cu(NH3)4]SO4 (chapter representation).
+
+CARD 012
+Q: Distinguish double salts from coordination compounds
+A: Double salt gives separate original ions in water (Mohr salt → Fe2+, NH4+, SO4^2−); a coordination compound gives intact complex ion(s) and counterions ([Cu(NH3)4]SO4 → [Cu(NH3)4]2+ + SO4^2−).
+
+CARD 013
+Q: Why is Fe(NH4)2(SO4)2 a double salt but K3[Fe(CN)6] a complex salt?
+A: Fe(NH4)2(SO4)2 yields its component ions; K3[Fe(CN)6] → 3K+ + [Fe(CN)6]3−: iron and cyanide remain inside a complex ion.
+
+CARD 014
+Q: Compare mixing FeSO4 with (NH4)2SO4 and mixing CuSO4 with NH3
+A: The first makes a double salt with analytically detectable Fe2+; the second makes a Cu(II)-ammine complex whose copper is coordinated within [Cu(NH3)4]2+.
+
+CARD 015
+Q: Name the two major ionic types of complexes
+A: Positive complex cation and simple anion: [Co(NH3)6]Cl3; simple cation and negative complex ion: K3[Fe(CN)6].
+
+CARD 016
+Q: Give a coordination complex with a negative complex ion
+A: K3[Fe(CN)6] → 3K+ + [Fe(CN)6]3−.
+
+CARD 017
+Q: Why does K[FeCl4] behave as a complex salt?
+A: K[FeCl4] → K+ + [FeCl4]−; Fe3+ and the coordinated Cl− do not appear as separate free ions.
+
+CARD 018
+Q: Explain why Na2[NiCl4] is a complex salt
+A: Na2[NiCl4] → 2Na+ + [NiCl4]2−; nickel and coordinated chloride remain in the complex ion.
+
+CARD 019
+Q: Explain why [Cr(NH3)6](NO3)3 is a complex salt
+A: It produces [Cr(NH3)6]3+ and 3NO3− in water, not free Cr3+ ions.
+
+
+### 2. Chain theory and Werner theory
+
+CARD 020
+Q: What event marks the historical beginning of coordination chemistry?
+A: Preparation of CoCl3·6NH3 in 1798, according to the chapter.
+
+CARD 021
+Q: Describe the Chain Theory
+A: Early model: ligands could link into chains, as carbon does, and central metal was assumed to satisfy one kind of valence.
+
+CARD 022
+Q: List hypotheses of Chain Theory
+A: Cobalt forms bonds according to oxidation number; NH3 molecules bond directly or in chains; chlorine may attach directly or indirectly, explaining which chloride precipitates with AgNO3.
+
+CARD 023
+Q: Under Chain Theory, explain CoCl3·6NH3 precipitation
+A: All three chloride ions precipitate readily with AgNO3.
+
+CARD 024
+Q: Under Chain Theory, explain CoCl3·5NH3 precipitation
+A: Two chloride ions precipitate; one is held inside the proposed structure.
+
+CARD 025
+Q: Under Chain Theory, explain CoCl3·4NH3 precipitation
+A: One chloride ion precipitates; two are proposed to be directly bonded.
+
+CARD 026
+Q: Why did Chain Theory fail for CoCl3·3NH3?
+A: The proposed chain model could not correctly explain the observed absence of chloride-ion precipitation; Werner theory accounts for it.
+
+CARD 027
+Q: State Werner’s central hypothesis
+A: Metals exhibit primary valence (oxidation state) and secondary valence (coordination number); secondary valences occupy definite spatial directions.
+
+CARD 028
+Q: Define primary valence
+A: Metal oxidation state, satisfied by anions and generally ionizable when the anions lie outside the coordination sphere.
+
+CARD 029
+Q: Define secondary valence
+A: Coordination number; number of donor atoms directly bonded to the metal; directed in space.
+
+CARD 030
+Q: Define coordination sphere
+A: Bracketed region containing the central metal and its coordinated ligands.
+
+CARD 031
+Q: Define ionization sphere
+A: Counterions outside the square brackets that separate in solution.
+
+CARD 032
+Q: Give Werner’s formula for CoCl3·6NH3
+A: [Co(NH3)6]Cl3; primary valence 3, secondary valence 6; three free Cl− ions.
+
+CARD 033
+Q: Give Werner’s formula for CoCl3·5NH3
+A: [Co(NH3)5Cl]Cl2; oxidation state Co = +3; coordination number = 6; two outer Cl− ions.
+
+CARD 034
+Q: Give Werner’s formula for CoCl3·4NH3
+A: [Co(NH3)4Cl2]Cl; oxidation state Co = +3; coordination number = 6; one outer Cl− ion.
+
+CARD 035
+Q: Give Werner’s formula for CoCl3·3NH3
+A: [Co(NH3)3Cl3]; oxidation state Co = +3; coordination number = 6; no counterion chloride.
+
+CARD 036
+Q: How many mol of AgCl form per mol of [Co(NH3)6]Cl3?
+A: 3 mol AgCl, upon addition of excess AgNO3.
+
+CARD 037
+Q: How many mol of AgCl form per mol of [Co(NH3)5Cl]Cl2?
+A: 2 mol AgCl, upon addition of excess AgNO3.
+
+CARD 038
+Q: How many mol of AgCl form per mol of [Co(NH3)4Cl2]Cl?
+A: 1 mol AgCl, upon addition of excess AgNO3.
+
+CARD 039
+Q: How much AgCl precipitates from [Co(NH3)3Cl3]?
+A: None from readily ionizable chloride (no free counterion chloride).
+
+CARD 040
+Q: Why do ions in a coordination sphere not precipitate as free ions?
+A: They remain attached to the metal in the inner sphere during ordinary ionic dissociation.
+
+CARD 041
+Q: Write ionization and precipitation of [Co(NH3)5Cl]Cl2
+A: [Co(NH3)5Cl]Cl2 → [Co(NH3)5Cl]2+ + 2Cl−; 2Ag+ + 2Cl− → 2AgCl(s).
+
+CARD 042
+Q: Which chloride ions are present in the ionization and coordination spheres of [Co(NH3)5Cl]Cl2?
+A: Two outside the brackets are ionizable; one inside is coordinated.
+
+CARD 043
+Q: Why does IrCl3·3NH3 fail to yield an immediate chloride precipitate?
+A: In the Werner-style structure [Ir(NH3)3Cl3], all three chloride ligands occupy the coordination sphere.
+
+
+### 3. Bonds, ligands, oxidation state and coordination number
+
+CARD 044
+Q: Why is NH3 a Lewis base but a metal cation a Lewis acid?
+A: NH3 donates its nitrogen lone pair; a metal cation accepts electron pair(s) into available orbitals.
+
+CARD 045
+Q: Define Lewis acid
+A: Electron-pair acceptor; examples BF3, H+, Ag+, Cu2+, Co3+.
+
+CARD 046
+Q: Define Lewis base
+A: Electron-pair donor; examples NH3 and other ligand molecules or ions.
+
+CARD 047
+Q: Define donor atom
+A: An atom donating a free electron pair for a coordinate bond.
+
+CARD 048
+Q: Define acceptor atom
+A: An atom with an orbital able to accept a donor electron pair.
+
+CARD 049
+Q: Distinguish NH3 and CH4 Lewis structures
+A: Nitrogen in NH3 retains a lone pair available for coordination; carbon in CH4 has no corresponding lone pair.
+
+CARD 050
+Q: Define ligand
+A: Molecule or ion binding to the central metal by donating electron pair(s).
+
+CARD 051
+Q: Define monodentate ligand; give examples
+A: One donor atom: NH3, H2O, CN−, Cl−.
+
+CARD 052
+Q: Define bidentate ligand; give examples
+A: Two donor atoms: en (ethylenediamine), oxalate (C2O4^2−), dmg as treated in chapter.
+
+CARD 053
+Q: Define chelating ligand
+A: Ligand bound to the same central atom through two or more donor positions.
+
+CARD 054
+Q: Why is EDTA hexadentate?
+A: EDTA can coordinate through six donor sites.
+
+CARD 055
+Q: Define central atom/ion
+A: Metal atom or ion accepting the ligand electron pairs.
+
+CARD 056
+Q: Define coordination number
+A: Number of attached donor atoms, not necessarily the number of separate ligands.
+
+CARD 057
+Q: Define neutral coordination complex
+A: A complex carrying zero overall electrical charge and having no ionization sphere; examples [Ni(dmg)2], Ni(CO)4, [Pt(NH3)2Cl2].
+
+CARD 058
+Q: Why do some neutral coordination complexes not ionize in water?
+A: They have no counterions outside the coordination sphere.
+
+CARD 059
+Q: What oxidation-state rule is used in complex calculations?
+A: Sum of metal oxidation state plus all ligand charges equals total complex-ion charge.
+
+CARD 060
+Q: What are the charges of NH3, H2O, CO, CN− and Cl−?
+A: NH3, H2O, CO: 0; CN−, Cl−: −1.
+
+CARD 061
+Q: What are charges of en, oxalate and dmg according to the worked ideas?
+A: en = 0; oxalate = −2; dmg = −1 in [Ni(dmg)2].
+
+CARD 062
+Q: Find primary and secondary valences in [Cr(NH3)6](NO3)3
+A: Cr oxidation state +3; coordination number 6.
+
+CARD 063
+Q: Find primary and secondary valences in K4[Fe(CN)6]
+A: Fe oxidation state +2; coordination number 6.
+
+CARD 064
+Q: Find primary and secondary valences in [Co(NH3)5Cl]Cl2
+A: Co oxidation state +3; coordination number 6.
+
+CARD 065
+Q: Find oxidation number of Fe in Fe(CO)5
+A: 0 because five CO ligands are neutral and the complex is neutral.
+
+CARD 066
+Q: Find oxidation number of Fe in K3[Fe(CN)6]
+A: +3; x − 6 = −3.
+
+CARD 067
+Q: Find oxidation number of Cr in [Cr(H2O)4Cl2]+
+A: +3; x − 2 = +1.
+
+CARD 068
+Q: Find oxidation number of Fe in [Fe(C2O4)3]3−
+A: +3; x − 6 = −3.
+
+CARD 069
+Q: Find oxidation number of Ni and coordination number in [Ni(dmg)2]
+A: Ni = +2, coordination number = 4 (two bidentate dmg ligands).
+
+CARD 070
+Q: Find oxidation state of Ni in Ni(CO)4
+A: 0; four CO ligands are neutral.
+
+CARD 071
+Q: Find oxidation state and coordination number in [Fe(CN)6]4−
+A: Fe = +2, coordination number 6.
+
+CARD 072
+Q: Find oxidation state of Pt in [PtCl6]2−
+A: +4; x − 6 = −2.
+
+CARD 073
+Q: Find oxidation state of Pd in [Pd(CN)4]2−
+A: +2; x − 4 = −2.
+
+CARD 074
+Q: What is the distinction between valence in simple vs coordination compounds?
+A: A simple compound is assigned oxidation state; in complexes both primary (oxidation state) and secondary (coordination number) valences are discussed.
+
+
+### 4. EAN and metal-metal bonding
+
+CARD 075
+Q: Define effective atomic number (EAN)
+A: Electron count assigned to central metal after including electrons donated by attached ligands (and metal-metal bonds where relevant).
+
+CARD 076
+Q: State the EAN rule
+A: The chapter compares EAN with noble-gas atomic numbers; equality means the complex follows the EAN rule.
+
+CARD 077
+Q: Write the ordinary EAN equation
+A: EAN = metal atomic number − metal oxidation number + electrons donated by ligands.
+
+CARD 078
+Q: How many electrons does one monodentate ammine or carbonyl donate?
+A: Two electrons.
+
+CARD 079
+Q: How many electrons does one bidentate en ligand donate?
+A: Four electrons.
+
+CARD 080
+Q: How does a single metal–metal bond count toward EAN?
+A: Adds one electron to each bonded metal’s count in the simple electron-counting treatment.
+
+CARD 081
+Q: What EAN corresponds to krypton, xenon and radon?
+A: Kr = 36; Xe = 54; Rn = 86.
+
+CARD 082
+Q: Calculate EAN in [Co(NH3)6]3+ (Co=27)
+A: 27 − 3 + 6×2 = 36; meets Kr EAN.
+
+CARD 083
+Q: Calculate EAN in [PtCl6]2− (Pt=78)
+A: 78 − 4 + 6×2 = 86; meets Rn EAN.
+
+CARD 084
+Q: Calculate EAN in [Ag(NH3)4]+ (Ag=47)
+A: 47 − 1 + 4×2 = 54; meets Xe EAN.
+
+CARD 085
+Q: Calculate EAN in [Ag(NH3)2]+ (Ag=47)
+A: 47 − 1 + 2×2 = 50; does not equal noble-gas atomic number.
+
+CARD 086
+Q: Calculate EAN in [Cr(NH3)6]3+ (Cr=24)
+A: 24 − 3 + 12 = 33; does not satisfy noble-gas EAN.
+
+CARD 087
+Q: Calculate EAN in [Pd(NH3)6]4+ (Pd=46)
+A: 46 − 4 + 12 = 54; matches Xe.
+
+CARD 088
+Q: Calculate EAN in [Fe(CN)6]3− (Fe=26)
+A: 26 − 3 + 12 = 35; not Kr.
+
+CARD 089
+Q: Calculate EAN in [Fe(CN)6]4− (Fe=26)
+A: 26 − 2 + 12 = 36; matches Kr.
+
+CARD 090
+Q: Calculate EAN in [Ni(en)3]2+ (Ni=28)
+A: 28 − 2 + 3×4 = 38; not noble-gas number.
+
+CARD 091
+Q: Calculate EAN in [Ni(NH3)6]2+ (Ni=28)
+A: 28 − 2 + 12 = 38; not noble-gas number.
+
+CARD 092
+Q: Calculate EAN in [Cu(en)3]SO4 (Cu=29)
+A: Central Cu is +2: 29 − 2 + 3×4 = 39; not noble-gas number.
+
+CARD 093
+Q: Calculate EAN in [Mn(CO)5] (Mn=25), as isolated neutral fragment
+A: 25 + 5×2 = 35; not noble-gas number.
+
+CARD 094
+Q: Calculate EAN per Mn atom in Mn2(CO)10 (Mn=25)
+A: 25 + 5×2 + 1 from Mn–Mn bond = 36; satisfies Kr rule.
+
+CARD 095
+Q: Calculate EAN per Co in Co2(CO)8 (Co=27)
+A: 27 + 4×2 + 1 from Co–Co bond = 36; satisfies Kr rule under chapter electron-counting model.
+
+CARD 096
+Q: Calculate EAN per Re atom in Re2(CO)10 (Re=75)
+A: 75 + 5×2 + 1 from Re–Re bond = 86; meets Rn.
+
+CARD 097
+Q: Calculate EAN of Fe(CO)5 (Fe=26)
+A: 26 + 5×2 = 36; matches Kr.
+
+CARD 098
+Q: Calculate EAN of [CoCl4]2− (Co=27)
+A: 27 − 2 + 4×2 = 33; does not meet noble-gas number.
+
+
+### 5. IUPAC nomenclature
+
+CARD 099
+Q: Give the order of terms in naming a coordination salt
+A: Name cation before anion; within complex name ligands alphabetically, then metal with oxidation state in Roman numerals.
+
+CARD 100
+Q: Name common ligand prefixes for 2–6
+A: di-, tri-, tetra-, penta-, hexa-; bis-/tris- used when ligand names are more complicated.
+
+CARD 101
+Q: How do anionic complex-metal names end?
+A: Usually with -ate (e.g., ferrate, cobaltate, nickelate, platinate).
+
+CARD 102
+Q: Give names of NH3, H2O, Cl−, CN− as ligands
+A: ammine, aqua, chloro (chapter style), cyano.
+
+CARD 103
+Q: Name [Co(NH3)6]Cl3
+A: Hexaamminecobalt(III) chloride.
+
+CARD 104
+Q: Name [Cr(H2O)6]Cl3
+A: Hexaaquachromium(III) chloride.
+
+CARD 105
+Q: Name [Cr(H2O)4Cl2]Cl·2H2O
+A: Tetraaquadichlorochromium(III) chloride dihydrate.
+
+CARD 106
+Q: Name [Cr(H2O)5Cl]Cl2·H2O
+A: Pentaaquachlorochromium(III) chloride monohydrate.
+
+CARD 107
+Q: Name K2[PtCl6]
+A: Potassium hexachloroplatinate(IV).
+
+CARD 108
+Q: Name [PtCl4]2−
+A: Tetrachloroplatinate(II) ion.
+
+CARD 109
+Q: Name K3[Fe(CN)6]
+A: Potassium hexacyanoferrate(III).
+
+CARD 110
+Q: Name K4[Fe(CN)6]
+A: Potassium hexacyanoferrate(II).
+
+CARD 111
+Q: Name [Cu(NH3)4]2+
+A: Tetraamminecopper(II) ion.
+
+CARD 112
+Q: Name [Ni(dmg)2]
+A: Bis(dimethylglyoximato)nickel(II).
+
+CARD 113
+Q: Name [Fe(H2O)6]SO4
+A: Hexaaquairon(II) sulfate.
+
+CARD 114
+Q: Name K2[Ni(CN)4] when nickel has +2 oxidation state
+A: Potassium tetracyanonickelate(II).
+
+CARD 115
+Q: Write formula of potassium hexachloroplatinate(IV)
+A: K2[PtCl6].
+
+CARD 116
+Q: Write formula of hexaamminechromium(III) chloride
+A: [Cr(NH3)6]Cl3.
+
+CARD 117
+Q: Write formula of triamminetrinitrocobalt(III)
+A: [Co(NH3)3(NO2)3], for the chapter’s nitro formulation.
+
+CARD 118
+Q: Write formula of tris(ethylenediamine)cobalt(III) nitrate
+A: [Co(en)3](NO3)3.
+
+CARD 119
+Q: Write formula of potassium tetracyanonickelate(0)
+A: K4[Ni(CN)4].
+
+
+### 6. VBT, magnetism and shapes
+
+CARD 120
+Q: State the central VBT picture for coordination compounds
+A: Ligands donate lone pairs into vacant orbitals on metal; orbital hybridization determines shape.
+
+CARD 121
+Q: Define paramagnetic and diamagnetic complexes
+A: Paramagnetic complexes have one or more unpaired electrons; diamagnetic complexes have no unpaired electrons.
+
+CARD 122
+Q: State spin-only magnetic-moment formula
+A: μ = √[n(n+2)] BM, where n is number of unpaired electrons.
+
+CARD 123
+Q: How can n be found from a known μ?
+A: Solve n(n+2) = μ² using a nonnegative integer n.
+
+CARD 124
+Q: What does μ = 0 mean?
+A: No unpaired electrons; diamagnetic.
+
+CARD 125
+Q: If n=1, what is μ?
+A: √3 = 1.73 BM.
+
+CARD 126
+Q: If n=2, what is μ?
+A: √8 = 2.83 BM.
+
+CARD 127
+Q: If n=3, what is μ?
+A: √15 = 3.87 BM.
+
+CARD 128
+Q: If n=4, what is μ?
+A: √24 = 4.90 BM.
+
+CARD 129
+Q: If n=5, what is μ?
+A: √35 = 5.92 BM (usually approximately 5.9).
+
+CARD 130
+Q: What hybridization and shape correspond to CN=2 in chapter examples?
+A: sp, linear.
+
+CARD 131
+Q: What hybridization and shape correspond to outer-orbital CN=4?
+A: sp3, tetrahedral.
+
+CARD 132
+Q: What hybridization and shape correspond to inner-orbital CN=4?
+A: dsp2, square planar.
+
+CARD 133
+Q: What is the common shape of coordination number 6?
+A: Octahedral; d2sp3 or sp3d2 in VBT notation.
+
+CARD 134
+Q: What is geometry of [Ag(NH3)2]+?
+A: Linear, sp, diamagnetic for Ag+ (4d10).
+
+CARD 135
+Q: What is geometry of [NiCl4]2−?
+A: Ni2+ d8; weak-field chloride: sp3 tetrahedral, 2 unpaired electrons, paramagnetic, μ≈2.83 BM.
+
+CARD 136
+Q: What is geometry of [Ni(CN)4]2−?
+A: Ni2+ d8; strong-field cyanide: dsp2 square planar, zero unpaired, diamagnetic, μ=0.
+
+CARD 137
+Q: Why are [NiCl4]2− and [Ni(CN)4]2− magnetically different?
+A: Weak Cl− gives tetrahedral sp3 with two unpaired Ni2+ electrons; strong CN− produces square-planar dsp2 with paired electrons.
+
+CARD 138
+Q: Explain [PtCl4]2− according to VBT
+A: Pt2+ d8, square planar dsp2, all electrons paired, diamagnetic.
+
+CARD 139
+Q: Explain [PdCl4]2− according to VBT
+A: Pd2+ d8, dsp2 square planar, diamagnetic.
+
+CARD 140
+Q: Explain [Pd(CN)4]2− according to VBT
+A: Pd2+ d8, dsp2 square planar, diamagnetic.
+
+CARD 141
+Q: Explain [Zn(CN)4]2− according to VBT
+A: Zn2+ d10; sp3 tetrahedral, all electrons paired, diamagnetic.
+
+CARD 142
+Q: Explain [CoCl4]2− according to VBT
+A: Co2+ d7; sp3 tetrahedral with three unpaired electrons, paramagnetic, μ≈3.87 BM.
+
+CARD 143
+Q: Explain [Co(H2O)4]2+ according to VBT
+A: Co2+ d7, sp3 tetrahedral, three unpaired electrons, paramagnetic in the chapter treatment.
+
+CARD 144
+Q: Explain [Co(CN)4]2− according to chapter VBT case
+A: Co2+ d7; refer to chapter’s orbital diagram/ligand strength discussion for exact arrangement; a four-coordinate cobalt(II) complex need not follow the Ni(II) d8 pairing pattern.
+
+CARD 145
+Q: What does a 5.9 BM moment imply for [MnL4]2− with Mn2+ and weak monodentate L?
+A: n=5 for high-spin Mn2+ d5; sp3 tetrahedral geometry.
+
+CARD 146
+Q: What does μ=3.87 BM imply for [CoL4]2+ (Co2+)?
+A: n=3; in the chapter’s four-coordinate case sp3, tetrahedral.
+
+CARD 147
+Q: Why is [NiCl4]2− paramagnetic while [PtCl4]2− is diamagnetic?
+A: Ni2+ in a weak-field tetrahedral sp3 environment has two unpaired electrons; Pt2+ forms dsp2 square-planar with paired electrons.
+
+CARD 148
+Q: Compare [Zn(CN)4]2− with [Pd(CN)4]2−
+A: Both diamagnetic; Zn(II) d10 is sp3 tetrahedral; Pd(II) d8 is dsp2 square planar.
+
+CARD 149
+Q: Compare [Ni(H2O)4]2+ and [Ni(NH3)4]2+ in textbook four-coordinate VBT discussion
+A: Check the distinct orbital configurations shown in the PDF; Ni2+ is d8 and the number of unpaired electrons depends on pairing/hybridization adopted.
+
+CARD 150
+Q: State ligands classified by spectrochemical strength
+A: The chapter separates weak ligands (e.g., Cl−, Br−, H2O) from strong ligands (e.g., CN−) on whether they produce pairing in relevant configurations.
+
+CARD 151
+Q: What is the structural shape of [HgI3]− in the chapter?
+A: Trigonal planar (coordination number 3) in the chapter’s geometrical examples.
+
+CARD 152
+Q: What is the structural shape of [SnCl3]− in the chapter?
+A: Trigonal pyramidal (coordination number 3) in the chapter’s geometrical examples.
+
+CARD 153
+Q: Name common tetrahedral coordination-number-4 examples
+A: [NiCl4]2−, [CoCl4]2−, [Zn(CN)4]2−.
+
+CARD 154
+Q: Name common square-planar coordination-number-4 examples
+A: [Ni(CN)4]2−, [PtCl4]2−, [Pd(CN)4]2−.
+
+
+### SOURCE QUESTION CHECKLIST (verbatim-ish English text recovered from explicitly labelled “Question” sections)
+
+Use this checklist with the numbered cards to confirm an exact wording/ministerial exam-year label. PDF text extraction contains some corrupted characters and several questions are embedded in diagrams; no year has been invented.
+
+SOURCE-Q001 — PDF p.2: Studying the coordination compounds is important for modern life.
+
+SOURCE-Q002 — PDF p.2: Define the transition elements. Give their types and properties
+
+SOURCE-Q003 — PDF p.3: What is Mohr's salt? How does it form? Explain it with a chemical equation.
+
+SOURCE-Q004 — PDF p.4: What is the result when ammonia is added to cupper sulfate dissolved in a certain dissolver? .
+
+SOURCE-Q005 — PDF p.4: 2013 What are the divisions of the addition compounds and what is the difference between them?
+
+SOURCE-Q006 — PDF p.5: What are the types of coordination compounds according to their forming positive and negative ions Cation and Anion ?
+
+SOURCE-Q007 — PDF p.5: 1 2014 Give an example for a coordination compound formed from a simple positive ion and a negative complex ion ;
+
+SOURCE-Q008 — PDF p.5: Explain: the compound Fe(NH4)2(SO4)2 is classified as a double salt while the compound K3[Fe(CN)6] is accepted as a complex compound .tell the reason for that . K3 [Fe (CN)6] Fe(NH4)2 (SO4)2
+
+SOURCE-Q009 — PDF p.6: when FeSO4 and (NH4)2SO4 solutions are mixed in 1:1 mole ratio , Fe+2 ion appears in the resulting solution , But when CuSO4 solution is mixed with ammonia solution in 4:1 ratio , o Cu+2 ion is observed .Explain this by giving reasons when FeSO4 and (NH4)2SO4 solutions are mixed in 1:1 mole , then the resulting compound is as shown in the following equation : o The resulting co
+
+SOURCE-Q010 — PDF p.9: What are the most eminent theories that explain the formation of the coordination compounds?
+
+SOURCE-Q011 — PDF p.9: What are the most eminent hypotheses of the Chain Theory?
+
+SOURCE-Q012 — PDF p.10: How does the Chain Theory explains the structure of CoCl3 . 6NH3
+
+SOURCE-Q013 — PDF p.10: Chain structure was used in order to explain the shape where 6 ammonia molecules are bonded in CoCl3.6NH3 Compound , Show that : CoCl3 . 6NH3 : NH3+Cl- Co NH3 - NH3 - NH3 - NH3+ Cl- NH3+ Cl- According to this , Chloride ions aren t bonded to cobalt directly , When silver nitrate solution is added to aqueous solution of this compound , it precipitates as silver chloride . Co .Co
+
+SOURCE-Q014 — PDF p.10: Homework Explain AgCl precipitates so quickly when adding AgNO3 to the aqueous solution of the complex compound CoCl3 . 6NH3 ;
+
+SOURCE-Q015 — PDF p.10: How does the Chain Theory explains the structure of CoCl3 . 5NH3 Cl Co NH3 - NH3 - NH3 - NH3+Cl- NH3+ Cl- According to this , one single chloride ion that doesn t precipitate is directly- bonded to cobalt when silver nitrate is added . Mean while , other two chloride ions precipitate easily.
+
+SOURCE-Q016 — PDF p.11: How does the Chain Theory explains the structure of CoCl3 . 4NH3 Cl Co NH3 - NH3 - NH3 - NH3+ - Cl- Cl CoCl3 . 4NH3 compound is shown with this formula , that compatible with scientific experiment . According to this formula , there are two ions which are bonded to cobalt directly doesn t precipitate when silver nitrate is added .But third chloride ion is not bonded to cobalt d
+
+SOURCE-Q017 — PDF p.11: explain the structural formula of the compound CoCl3 . 5NH3 and the compound CoCl3 . 4NH3 according to the chain theory. Cl Cl Co NH3 - NH3- NH3 - NH3+ Cl- Co NH3 - NH3 - NH3 - NH3+ Cl- Cl NH3+Cl- The above formulae are compatible with the scientific experiments. So We can precipitate chloride ion which is not bonded to cobalt directly as AgCl when AgNO3 is added to the solutio
+
+SOURCE-Q018 — PDF p.11: Is the following formula suggested for the compound CoCl3 . 3NH3 correct? Cl Co NH3 - NH3 - NH3+ Cl- Cl Is it compatible with the scientific experiments? . CoCl3 . 3NH3
+
+SOURCE-Q019 — PDF p.12: What are the most important hypotheses depended by Werner in his theory? Werner proposed his theory which prepared a basis for modern theoris based on the following hypotheses: 1- Most of t
+
+SOURCE-Q020 — PDF p.13: How does Werner show the compound CoCl3 . 6NH3 with the structure formula. And What is its molecular formula? And What is the primary valence and secondary valence of cobalt III? CoCl3 . 6NH3 .III The oxidation state of cobalt is (+3) .Therefore , 3 NH3 NH3 Cl chloride ions try to satisfy the first valence (balancing of Cl NH3 cobalt ion charge) . Second valence or coordination
+
+SOURCE-Q021 — PDF p.13: How does Werner show the compound CoCl3 . 5NH3 in structure formula and molecular formula? Cl Here, one of the chloride ions saturated both primary and NH3 NH3 secondary valences. And expressed the bond that connects it to the metal with Cl Co Cl
+
+SOURCE-Q022 — PDF p.14: 1 2014 What does the coordination sphere and the ionization sphere mean?
+
+SOURCE-Q023 — PDF p.15: What are the components of the ionization sphere and the coordination sphere of the coordination compound [Co(NH3)5 Cl)]Cl2? .[Co(NH3)5 Cl)]Cl2
+
+SOURCE-Q024 — PDF p.16: What is the difference between Cl ions in the Ionization sphere and coordination sphere of coordination compound [Co(NH3)5 Cl)]Cl2? +2 - [Co(NH3)5 Cl)]Cl2 [Co(NH3)5 Cl)] + 2Cl 2Ag+ + 2Cl- 2AgCl White precipitate Two (2) Cl- ions inside ionization sphere can be precipitated as silver chloride (AgCl) (white precipitate) through addition of silver nitrate (AgNO3). But Cl- ion insi
+
+SOURCE-Q025 — PDF p.16: Using equations, show how to precipitate the components of the ionization sphere of the compound [Co(NH3)5Cl)]Cl2 .[Co(NH3)5Cl)]Cl2 ; [Co (NH3)5Cl)]Cl2 o [Co (NH3)5Cl)]+2 + 2Cl- 2Ag+ + 2Cl- o 2AgCl
+
+SOURCE-Q026 — PDF p.16: white precipitate What is the difference between the coordination and ionization sphere ? Ionization Sphere Coordination Sphere The part out of the brackets (out of central atom and ligands are shown in the coordination sphere) is called as brackets [ ]. These brackets show the ionization sphere or outer sphere. coordination field and it is called as inner sphere. Ions written
+
+SOURCE-Q027 — PDF p.17: What is the structure formula of the compound CoCl3. 4NH3 according to Werner's coordination theory? What is the molecular formula? . CoCl3. 4NH3 : : Cl According to this , two chloride ions satisfy both first and NH3 NH3 second valences Therefore , these are bonded strongly in coordination area . Cl Co When silver nitrate solution is added , only one chloride ion NH3 NH3 which
+
+SOURCE-Q028 — PDF p.17: What is the structure formula and the molecular formula of the compound CoCl3 .3NH3 according to Werner's coordination theory? And then explain Why can't it be precipitated? . . CoCl3 .3NH3 :
+
+SOURCE-Q029 — PDF p.18: Homework How do the chain theory and Werner's theory show the compound CoCl3. 6NH3? What are the primary valence and the secondary valence according to Werner's theory? Then write down the molecular formula. How many ions precipitate? CoCl3. 6NH3 :
+
+SOURCE-Q030 — PDF p.18: Homework How do the chain theory and Werner's theory show the compound CoCl3 . 5NH3? What are the primary and secondary valences according to Werner's theory? Then write down the molecular formula. How many ions precipitate?
+
+SOURCE-Q031 — PDF p.18: Homework How do the chain theory and Werner's theory show the compound CoCl3 . 4NH3? What are the primary and secondary valences according to Werner's theory? Then write down the molecular formula. How many ions precipitate?
+
+SOURCE-Q032 — PDF p.18: How do the chain theory and Werner's theory show the compound CoCl3 . 3NH3? Did the chain theory succeed in explaining all properties? What are the primary and secondary valences according to Werner's theory? Then write down the molecular formula. How many ions precipitate?
+
+SOURCE-Q033 — PDF p.18: The compound IrCl3 . 3NH3 neither ionizes nor precipitates. What is its structure formula according to Werner's theory and chain theory?
+
+SOURCE-Q034 — PDF p.22: 1 2013 2016 What are the first valence (oxidation state) and the second valence (coordination number ) for the central metal of these two compounds? 1- [Cr (NH3)6](NO3)3 2-K4[Fe(CN)6] : ( ) K4[Fe(CN)6] 2 [Cr (NH3)6](NO3)3 -1
+
+SOURCE-Q035 — PDF p.23: 5 5 What are the oxidation states (first valence) of the following compounds? 1- [Fe(CO)5] 2- K3[Fe(CN)6] 3- [Cr(H2O)4Cl2]+ 4- [Fe(C2O4)3]-3 5- [Fe(H2O)5(NO)]SO4 6- [pt (C2H4) Cl2]-
+
+SOURCE-Q036 — PDF p.24: +RPHZRUN 2014-3rd What is the primary and secondary valence of Ferro in Fe(CO)5 ,;; K3[Fe(CN)6] ?
+
+SOURCE-Q037 — PDF p.24: In the complex ion [Fe(CN)6]-4 , Ferro has an oxidation number as .. , and a coordination number as ..
+
+SOURCE-Q038 — PDF p.24: What are the primary and secondary valences of cobalt [Co (NH3)5 Cl] Cl2
+
+SOURCE-Q039 — PDF p.24: What is Lewis's sign for each of the methane molecule and ammonia molecule? What is the different point between them? H H .. . . H: C : H , H:N: . . .. H H
+
+SOURCE-Q040 — PDF p.25: Why the ligand is considered as Lewis base and the central atom is considered as Lewis acid? Write example for that )
+
+SOURCE-Q041 — PDF p.25: 9 What's the meaning of Lewis's acid and Lewis's base?
+
+SOURCE-Q042 — PDF p.31: What is the meaning of the ligand? What are its types? With examples 3 2014
+
+SOURCE-Q043 — PDF p.32: What is the chelating Ligand?
+
+SOURCE-Q044 — PDF p.33: What is: the central Atom? The coordination complex? The coordinate number? The neutral complex?
+
+SOURCE-Q045 — PDF p.33: What is the difference between the valences of simple compounds and coordination compound In coordination complexes, central atom has two valences. one is the oxidation number and the other is coordination number , in simple ~l|{ compounds there is only oxidation number V9 P
+
+SOURCE-Q046 — PDF p.33: Coordination number is --- but coordination sphere is--- ( : ) Neutral Complex 3 2014 The complex that doesn t carry charge They don t ionize in water [Ni (dMg)2] , [Pt (NH3)2Cl2] , Ni (CO)4 , [Co (NH3)3Cl3] : .
+
+SOURCE-Q047 — PDF p.34: Some coordination compounds don t dissolve in water because ---- therefore ----- it called ---- for example------- A/ They don t ionize completely , it don t give ions when it react with water , neutral compounds [Ni(Co)4] and [Ni(dmg)2]
+
+SOURCE-Q048 — PDF p.34: Neutral Complex don t ionize in water ? %HFDXVH LW GRQ W FRQWDLQ ionization sphere outside the coordination sphere ;
+
+SOURCE-Q049 — PDF p.34: With examples , explain complex ions whose ligands are generally neutral, negative or both .
+
+SOURCE-Q050 — PDF p.40: What is the effective atomic number the following compound ?Is EAN rule valid in this compound ? (Atomic number of cobalt CO = 27 , Pt =78 , Ag=47) . [EAN] : [Co (NH3)6]+3 [Pt Cl6]2- [Ag (NH3)4]+; 1) Co (NH3)6]3+ Co = 27 e- Co Co 3+ = 24e- 1 (x) + 6(0) = +3 X = +3
+
+SOURCE-Q051 — PDF p.41: Define effective atomic number. Then calculate this number in the following complexes: 1- [PtCl6]-2 - [Pt(NH3)6] - [Cr(NH3)6] +3 - [pd (NH3)6] - [FeCl4]- - [Ag(NH3)2]+ (Note that the Atomic number of Cr = 24 , Pt =78 , Ag=47 , Fe =26 , Pd = 46) ; Effective Atomic Number (EAN) is the total number of electrons on the central atom which are donated by ligands.
+
+SOURCE-Q052 — PDF p.45: Homework Calculate EAN for the following compounds. Do they follow EAN rule? : ; [Ni (en)3]+2;;;;;;;[Pd (NH3)6]+4;;;;;;[Fe (CN)6]-3 , [Ni(NH3)6] +2 28 Ni 26 Fe 46 Pd ; These complex compounds seem to follow EAN rule. On the other hand , metals with odd atomic numbers which make compounds with ligands like above don t follow EAN rule. Because the result is always an odd electron
+
+SOURCE-Q053 — PDF p.45: Does the complex [Mn0 (CO)5] follow EAN rule? EAN [Mn0 (CO)5] 25 Mno = 25e- - 5 CO = 2 5 = 10e Mn (CO)5 = 35e- 7KH HIIHFWLYH DWRPLF QXPEHU LV 7KLV QXPEHU LVQ W HTXDO WR DWRPLF number of any noble gases 7KHUHIRUH WKH FRPSOH[ FRPSRXQG LVQ
+
+SOURCE-Q054 — PDF p.46: Do the following complexes follow EAN rule? [Co 2 (CO)8] [Mn2 (CO)10] [Co (CO)4]2 [Mn (CO)5]2 2 :
+
+SOURCE-Q055 — PDF p.47: EAN of the complex [Mn2 (CO)10] with atomic number Mn = 25 is . ......... Mn =25 [Mn2 (CO)10] : .4e- *
+
+SOURCE-Q056 — PDF p.47: Does the compound [Cu(en)3]SO4 follow EAN rule?Atomic number of cupper is 29. .29 EAN [Cu (en)3] SO4 Bidentate ligands ; 29Cu = 29e- So it gives 4e- Cu+2 = 27e- 3(en) 3 4 = 12e- [Cu (en)3] SO4 = 39 e- 7KH HIIHFWLYH DWRPLF QXPEHU LV 7KLV QXPEHU LVQ W HTXDO WR DWRPLF number of any noble gases 7KHUHIRUH WKH FRPSOH[ FRPSRXQG LVQ W VWDEOH DV LW GRHVQ W follows the EAN rule .6e- ? *
+
+SOURCE-Q057 — PDF p.47: Homework Calculate EAN for the complexes : [Mn (CO)5] , [Cr (OX)3]-3 (Note that the atomic mass of Cr=24 , Mn =25 ) . C2O4-2 -2 OX *
+
+SOURCE-Q058 — PDF p.59: 7 Write down structural formulas for the following complex compounds:
+
+SOURCE-Q059 — PDF p.61: ;;;;;;;;;;;;H.W) Name the following complex compounds: [Cr (H2O)4 Cl2] Cl. 2H2O [Cr (H2O)6] Cl3 [Cr (H2O)5Cl] Cl2. H2O
+
+SOURCE-Q060 — PDF p.72: What is the geometrical shape of [NiCl4]-2? Show the electrons configuration and What is the magnetic property of It? What type is their hybridization of central atom ? How many electrons are donated by ligands? The atomic number is 28Ni , 17 Cl )
+
+SOURCE-Q061 — PDF p.74: (5-11) What are the number of single ( unpaired) electrons in the following coordination compounds according to Valence Bond Theory ? What is the value of magnetic moment value(P) in each ? Ni =28 [Ni (H2O)4]+2 and [Ni (NH3)4]+2
+
+SOURCE-Q062 — PDF p.78: According to VBT, what is the type of hybridization, geometric shape and magnetic property of the two complexes? [pdCl4]-2 knowing that the atomic number is 46pd x x x
+
+SOURCE-Q063 — PDF p.81: What is the geometrical shape of [ptCl4]-2? Show the electrons configuration and What is the magnetic property of each of them? What type is their hybridization of central atom ? How many electrons are donated by ligands? The atomic number is 78pt ,
+
+SOURCE-Q064 — PDF p.87: Homework According to VBT, what is the type of hybridization, geometric shape and magnetic property of the two complexes? [pdCl4]-2 [Co(H2O)4]+2 knowing that the atomic number is 27Co , Pd =46
+
+SOURCE-Q065 — PDF p.88: What is the geometric shape of each of the following? Show the electrons configuration then Explain the geometric shape of each of them, the type of hybridization, and the number of the electrons donated by the ligands. The atomic number Ag = 47. [Ag (NH3)2]+ x x [Ag (NH3
+
+SOURCE-Q066 — PDF p.91: 13 5 Suppose that [NiL4]2- complex ion contains Ni (II) and L monodentate ligand which is weak.
+
+SOURCE-Q067 — PDF p.93: 12-5 As the magnetic moment value of [MnL4]2- compound is 5.9 B.M, what is the type of hybridization of Mn (II) which has L monodentate ligand? What is the geometrical shape of this ion according to Valence Bond Theory? ; L II Mn 5.9 B.M [Mn L4]-2 P
+
+SOURCE-Q068 — PDF p.94: The magnetic momentum value of [Co(L)4]+2 complex ion is 3.87 and L is monodentate ligand , what is the type of hybridization of Co II central atom and what is the geometrical shape according to Valence Bond Theory ? ( 27Co) P = Square both side 3.87 = (by approximation ) 14.9 = e2 + 2e 15 = e2 + 2e- e2 + 2e- - 15 = 0
+
+SOURCE-Q069 — PDF p.95: Explain why [NiCl4]-2 shows paramagnetic property while [ptCl4]-2 shows a diamagnetic property according to VBT.then explain 1-What type is their hybridization of central atom ? , 2-What is their geometrical shape ? 3-and then calculate their . Note that The atomic number is 78pt, 17Cl , 28Ni ? I K ? i ? ) 3d8 4s2 4p0 28Ni
+
+SOURCE-Q070 — PDF p.96: Homework If the magnetic momentum P of the compound [MnBr4] 2- = 5.9 B.M, what is the type of hybridization? What is the expected geometric shape? 5.9 B.M [MnBr4]-2 P)
+
+SOURCE-Q071 — PDF p.97: Homework The coordination compound paramagnetic property
+
+SOURCE-Q072 — PDF p.97: Homework Explain why [ Ni (H2O)4 ] +2 shows paramagnetic property while [pdCN4]-2 shows a diamagnetic property according to VBT.. Note that The atomic number is 78pt, 17Cl , 28Ni
+
+SOURCE-Q073 — PDF p.97: Homework A coordination complex owns 3 single electrons. The value of the magnetic momentum P = . ........ (P) ( ) :
+
+SOURCE-Q074 — PDF p.97: Fill in the blank If P = 0 , then the magnetic property of the complex is magnetic ........ 0 = (P :
