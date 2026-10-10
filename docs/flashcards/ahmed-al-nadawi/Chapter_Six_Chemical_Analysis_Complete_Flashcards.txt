@@ -1,0 +1,632 @@
+CHAPTER SIX - CHEMICAL ANALYSIS
+Complete Flashcard Deck
+
+Coverage:
+- All distinct ministerial questions and numerical variants visible in the chapter's ministerial bank
+- Important definitions, rules, equations, and notes
+- A new practice problem for every major idea
+
+Legend:
+[M] Ministerial question from the source
+[N] Important note
+[P] New practice problem based only on chapter ideas
+
+============================================================
+SECTION 1 - FOUNDATIONS OF CHEMICAL ANALYSIS
+============================================================
+
+CARD 1 [N]
+Q: What is chemical analysis?
+A: It is the branch of chemistry used to identify the substances or elements in a sample, separate them when necessary, and determine their amounts.
+
+CARD 2 [N]
+Q: What is qualitative analysis?
+A: Analysis used to identify what components are present and how they are bonded or combined.
+
+CARD 3 [N]
+Q: What is quantitative analysis?
+A: A group of methods used to determine the amount or percentage of a target component in a sample.
+
+CARD 4 [P]
+Q: A chemist identifies chloride in a sample and then determines that it forms 18.5% of the sample. Which part is qualitative and which is quantitative?
+A: Identifying chloride is qualitative analysis; determining 18.5% is quantitative analysis.
+
+CARD 5 [N]
+Q: What two operations are required when a mixture of positive ions is analyzed qualitatively?
+A: (1) Separate the ions into groups or individual ions. (2) Detect each ion using a characteristic chemical reaction.
+
+CARD 6 [N]
+Q: What is a detector/reagent in qualitative analysis?
+A: A known chemical substance that converts the target ion into a compound with recognizable properties, such as a characteristic precipitate or color.
+
+CARD 7 [M]
+Q: What steps precede quantitative analysis?
+A: (1) Obtain a representative sample, (2) prepare it by grinding, mixing, homogenizing and removing moisture, (3) measure the sample, (4) dissolve it, and (5) separate interfering substances.
+
+CARD 8 [M]
+Q: What is sampling/representative sampling?
+A: Obtaining a sample that correctly represents the whole material to be analyzed.
+
+CARD 9 [P]
+Q: A solid sample contains wet lumps and is not homogeneous. What must be done before analysis?
+A: Grind it, mix it thoroughly, make it homogeneous, remove moisture, accurately measure it, then dissolve it in a suitable solvent.
+
+============================================================
+SECTION 2 - QUALITATIVE ANALYSIS OF POSITIVE IONS
+============================================================
+
+CARD 10 [N]
+Q: Give the positive-ion groups and their ions.
+A: Group I: Ag+, Hg2^2+, Pb2+. Group II: Cd2+, Bi3+, Cu2+, As3+, Sn2+, Sb3+, Hg2+, Pb2+. Group IIIA: Al3+, Cr3+, Fe3+. Group IIIB: Mn2+, Zn2+, Ni2+, Co2+. Group IV: Ba2+, Ca2+, Sr2+. Group V: Mg2+, Na+, K+, NH4+.
+
+CARD 11 [M]
+Q: What are the precipitants of Groups I, II, IIIA and IV?
+A: Group I: dilute HCl. Group II: H2S in the presence of dilute HCl. Group IIIA: NH4OH in the presence of NH4Cl. Group IV: (NH4)2CO3 in the presence of NH4OH and NH4Cl.
+
+CARD 12 [M]
+Q: What is the precipitant of Group IIIB?
+A: H2S in the presence of NH4OH and NH4Cl.
+
+CARD 13 [M]
+Q: Which two groups precipitate as sulfides?
+A: Group II and Group IIIB.
+
+CARD 14 [M]
+Q: Complete: Group I precipitates as ___, Group II as ___, Group IIIA as ___, Group IV as ___.
+A: Chlorides; sulfides; hydroxides; carbonates.
+
+CARD 15 [M]
+Q: Why is Pb2+ included in both Groups I and II?
+A: PbCl2 has appreciable solubility, so dilute HCl may not precipitate all Pb2+. The remaining Pb2+ can later precipitate as PbS with Group II.
+
+CARD 16 [P]
+Q: A solution contains Ag+, Fe3+ and Ba2+. State the ordered reagents used to separate them.
+A: Add dilute HCl to precipitate AgCl; filter. Add NH4OH with NH4Cl to precipitate Fe(OH)3; filter. Add (NH4)2CO3 with NH4OH/NH4Cl to precipitate BaCO3.
+
+CARD 17 [M - 3/2015, 2/2017, 1/2013]
+Q: How are Ag+ and Cd2+ separated?
+A: Add dilute HCl: Ag+ + HCl -> AgCl(s) + H+; filter AgCl. Pass H2S through the acidified filtrate: Cd2+ + H2S -> CdS(s) + 2H+; filter CdS.
+
+CARD 18 [M]
+Q: How are Ag+, Ba2+ and Al3+ separated?
+A: Dilute HCl precipitates AgCl. NH4OH/NH4Cl then precipitates Al(OH)3. Finally (NH4)2CO3 in NH4OH/NH4Cl precipitates BaCO3.
+
+CARD 19 [M]
+Q: How are Ag+, Ba2+ and Fe3+ separated?
+A: Dilute HCl precipitates AgCl; NH4OH/NH4Cl precipitates Fe(OH)3; (NH4)2CO3 in NH4OH/NH4Cl precipitates BaCO3.
+
+CARD 20 [M - 2/2019, 3/2016]
+Q: How are Ag+, Cd2+ and Fe3+ separated?
+A: Dilute HCl precipitates AgCl. H2S in dilute HCl precipitates CdS. NH4OH/NH4Cl precipitates Fe(OH)3.
+
+CARD 21 [M]
+Q: How are Sr2+, As3+ and Mn2+ separated?
+A: H2S in dilute HCl precipitates As2S3. H2S in NH4OH/NH4Cl precipitates MnS. (NH4)2CO3 in NH4OH/NH4Cl precipitates SrCO3.
+
+CARD 22 [M]
+Q: How are Cu2+ and Fe3+ in the same solution separated?
+A: Pass H2S in dilute HCl to precipitate CuS; filter. Add NH4OH/NH4Cl to the filtrate to precipitate Fe(OH)3.
+
+CARD 23 [M]
+Q: How are Sr2+ and Al3+ separated?
+A: Add NH4OH/NH4Cl to precipitate Al(OH)3; filter. Add (NH4)2CO3 in NH4OH/NH4Cl to precipitate SrCO3.
+
+CARD 24 [M]
+Q: How are Hg2^2+ and Hg2+ separated?
+A: Dilute HCl precipitates Hg2Cl2 from Hg2^2+; filter. Pass H2S through the acidified filtrate to precipitate HgS from Hg2+.
+
+CARD 25 [M - 2/2012]
+Q: How are Hg2^2+ and Bi3+ separated?
+A: Dilute HCl precipitates Hg2Cl2; filter. Pass H2S in dilute HCl to precipitate Bi2S3 from the filtrate.
+
+CARD 26 [M]
+Q: How are Hg2^2+, Bi3+ and Al3+ separated?
+A: Dilute HCl precipitates Hg2Cl2. H2S in dilute HCl precipitates Bi2S3. NH4OH/NH4Cl precipitates Al(OH)3.
+
+CARD 27 [M]
+Q: How can Cu2+ be separated from Zn2+?
+A: Pass H2S in dilute HCl. Cu2+ precipitates as CuS while Zn2+ remains dissolved; Zn2+ can later be precipitated as ZnS in NH4OH/NH4Cl medium.
+
+CARD 28 [M]
+Q: How can Cu2+ be separated from Ca2+?
+A: Pass H2S in dilute HCl to precipitate CuS; Ca2+ remains dissolved and can later be precipitated as CaCO3 with (NH4)2CO3 in NH4OH/NH4Cl.
+
+CARD 29 [M]
+Q: How can Co2+, Cu2+ and Ca2+ be separated?
+A: H2S in dilute HCl precipitates CuS. H2S in NH4OH/NH4Cl precipitates CoS. (NH4)2CO3 in NH4OH/NH4Cl precipitates CaCO3.
+
+CARD 30 [M]
+Q: How can Ca2+ and Ni2+ be separated?
+A: Pass H2S in NH4OH/NH4Cl to precipitate NiS; filter. Add (NH4)2CO3 in NH4OH/NH4Cl to precipitate CaCO3.
+
+CARD 31 [M]
+Q: Classify Cr3+ and state how it precipitates.
+A: Cr3+ is in Group IIIA and precipitates as Cr(OH)3 using NH4OH in the presence of NH4Cl.
+
+CARD 32 [M]
+Q: Name the Group IIIB ions and their precipitant.
+A: Mn2+, Zn2+, Ni2+ and Co2+. They precipitate as sulfides by passing H2S in the presence of NH4OH and NH4Cl.
+
+CARD 33 [M]
+Q: What are the Group IV ions, their precipitant and their precipitate type?
+A: Ba2+, Ca2+ and Sr2+; (NH4)2CO3 in NH4OH/NH4Cl; carbonate precipitates BaCO3, CaCO3 and SrCO3.
+
+CARD 34 [P]
+Q: Write the precipitation equation for Ca2+ in Group IV.
+A: Ca2+ + (NH4)2CO3 -> CaCO3(s) + 2NH4+ (in NH4OH/NH4Cl medium).
+
+CARD 35 [M]
+Q: How are Group I ions separated and detected?
+A: Precipitate AgCl, Hg2Cl2 and PbCl2 with dilute HCl. Hot water dissolves PbCl2; detect Pb2+ by yellow PbCrO4 after adding K2CrO4. NH3 dissolves AgCl as [Ag(NH3)2]Cl; reprecipitate AgCl with HNO3 or yellow AgI with KI. Hg2Cl2 reacts with NH3 to form a black mixture containing Hg.
+
+CARD 36 [M]
+Q: How is Pb2+ detected after separating Group I?
+A: Dissolve PbCl2 in hot water, then add K2CrO4: PbCl2 + K2CrO4 -> PbCrO4(s) + 2KCl. A yellow precipitate confirms Pb2+.
+
+CARD 37 [M]
+Q: How is Ag+ detected after separating Group I?
+A: Dissolve AgCl in NH3: AgCl + 2NH3 -> [Ag(NH3)2]Cl. Add dilute HNO3 to form white AgCl again, or add KI to form yellow AgI.
+
+CARD 38 [M - 1/2018]
+Q: How is mercury detected in HgCl2?
+A: Add SnCl2. A white Hg2Cl2 precipitate first forms, then turns black due to metallic Hg: 2HgCl2 + SnCl2 -> SnCl4 + Hg2Cl2(s); Hg2Cl2 + SnCl2 -> SnCl4 + 2Hg(s).
+
+CARD 39 [P]
+Q: An unknown Group I precipitate dissolves in NH3 and gives yellow AgI after KI is added. Identify the ion.
+A: Ag+.
+
+============================================================
+SECTION 3 - GRAVIMETRIC ANALYSIS AND VOLATILIZATION
+============================================================
+
+CARD 40 [N]
+Q: What is gravimetric analysis?
+A: Quantitative analysis based on separating a substance of known composition and accurately measuring its mass.
+
+CARD 41 [M]
+Q: Name the principal gravimetric methods.
+A: Volatilization, precipitation, electro-deposition/electrical precipitation, and other physical separation methods.
+
+CARD 42 [N]
+Q: What is direct volatilization?
+A: The volatile product is collected and weighed directly.
+
+CARD 43 [N]
+Q: What is indirect volatilization?
+A: The volatile component is determined from the loss in sample mass: mass volatile = mass before heating - mass after heating.
+
+CARD 44 [P]
+Q: A hydrated salt has a mass of 2.500 g before heating and 2.140 g after heating. Find the mass and percentage of volatile water.
+A: Water mass = 0.360 g; percentage = (0.360/2.500)x100 = 14.4%.
+
+CARD 45 [M]
+Q: List the quantitative steps in precipitation gravimetry.
+A: Accurately weigh and dissolve the sample; precipitate the target with a suitable reagent; separate by filtration; wash; dry or ignite; cool and accurately weigh the stable mass form.
+
+CARD 46 [M]
+Q: What conditions are required for accurate precipitation gravimetry?
+A: The precipitate must have very low solubility, crystals large enough for filtration and washing, low contamination, and the ability to be converted by drying/ignition into a pure stable compound of known formula.
+
+CARD 47 [M]
+Q: Why are dilute solutions preferred during precipitation?
+A: They slow precipitation and provide time for larger, purer crystals to form.
+
+CARD 48 [M]
+Q: Why is precipitation often carried out at elevated temperature?
+A: The higher solubility slows precipitation, giving ions time to form larger, well-crystallized particles.
+
+CARD 49 [M]
+Q: What factors affect formation and size of a crystalline precipitate?
+A: The chemical nature of the precipitate, its solubility, temperature, and concentrations of the reacting substances.
+
+CARD 50 [P]
+Q: Two procedures form the same precipitate. Procedure A rapidly mixes concentrated cold solutions; Procedure B slowly mixes dilute hot solutions. Which gives the better gravimetric precipitate?
+A: Procedure B, because slower precipitation favors larger, purer crystals that are easier to filter.
+
+CARD 51 [N]
+Q: What is the gravimetric factor (Gf)?
+A: The stoichiometric ratio of the molar mass of the sought substance to the molar mass of the weighed mass form: Gf = (a x M sought)/(b x M mass form).
+
+CARD 52 [P]
+Q: If 0.600 g of AgCl is obtained, what mass of Cl is present? Use AgCl = 143.5 g/mol and Cl = 35.5 g/mol.
+A: Gf = 35.5/143.5; mass Cl = 0.600 x 35.5/143.5 = 0.1484 g.
+
+CARD 53 [M]
+Q: Calculate Gf for Fe in Fe2O3. Use Fe = 56 and Fe2O3 = 160 g/mol.
+A: Gf = (2x56)/160 = 0.700.
+
+CARD 54 [M]
+Q: Calculate Gf for Fe in Fe3O4. Use Fe3O4 = 232 g/mol.
+A: Gf = (3x56)/232 = 0.7241.
+
+CARD 55 [M]
+Q: Calculate Gf for Fe2O3 represented by Fe3O4.
+A: Balance iron atoms: 2Fe3O4 corresponds to 3Fe2O3. Gf = (3x160)/(2x232) = 1.0345.
+
+CARD 56 [M]
+Q: A 0.700 g alloy gives 1.100 mg CO2 on combustion. Find %C.
+A: Carbon mass = 1.100x(12/44) = 0.300 mg; %C = (0.300/700)x100 = 0.0429%.
+
+CARD 57 [M]
+Q: Burning 5.700 mg of a hydrocarbon produces 15.675 mg CO2. Find %H.
+A: Carbon mass = 15.675x12/44 = 4.275 mg; hydrogen mass = 5.700-4.275 = 1.425 mg; %H = 25.0%.
+
+CARD 58 [M]
+Q: Burning a 24 mg organic compound gives 44 mg CO2 and 9 mg H2O. Find %C and %H.
+A: C = 44x12/44 = 12 mg, so %C = 50.0%. H = 9x2/18 = 1 mg, so %H = 4.167%.
+
+CARD 59 [M]
+Q: Burning 5.4 mg of a compound gives 13.2 mg CO2 and 2.7 mg H2O. Find %C and %H.
+A: C = 13.2x12/44 = 3.6 mg, so %C = 66.667%. H = 2.7x2/18 = 0.3 mg, so %H = 5.556%.
+
+CARD 60 [M]
+Q: A 0.500 g impure NaI sample gives 0.740 g AgI. Find %NaI. Use NaI = 150 and AgI = 235 g/mol.
+A: NaI mass = 0.740x150/235 = 0.4723 g; %NaI = 94.47%.
+
+CARD 61 [M]
+Q: A 0.600 g impure NaI sample gives 0.750 g AgI. Find %NaI.
+A: NaI mass = 0.750x150/235 = 0.4787 g; %NaI = 79.79%.
+
+CARD 62 [M]
+Q: What mass of CaO forms by complete heating of 10.0 g CaC2O4? Use CaO = 56 and CaC2O4 = 128 g/mol.
+A: Mass CaO = 10.0x56/128 = 4.375 g.
+
+CARD 63 [M]
+Q: A 24.4 g sample of BaX2.2H2O gives 23.3 g BaSO4. Identify X. Use BaSO4 = 233 and Ba = 137 g/mol.
+A: One mole ratio gives molar mass BaX2.2H2O = 244 g/mol. Thus 137 + 2X + 36 = 244, so X = 35.5; X is Cl.
+
+CARD 64 [M]
+Q: A 120 mg organic sample gives 160 mg AgCl. Find %Cl using Cl = 36 and AgCl = 144 g/mol.
+A: Cl mass = 160x36/144 = 40 mg; %Cl = 33.33%.
+
+CARD 65 [M]
+Q: What percent of a 0.740 g impure pesticide C14H9Cl5 is pure if it gives 0.253 g AgCl? Use pesticide = 354.5 and AgCl = 143.5 g/mol.
+A: Pure pesticide mass = (354.5/(5x143.5))x0.253 = 0.125 g; purity = about 17.0%.
+
+CARD 66 [M]
+Q: A 0.680 g phosphate sample gives 0.435 g Mg2P2O7. Find %P. Use Mg = 24, P = 31, O = 16.
+A: M(Mg2P2O7) = 222; P mass = 0.435x62/222 = 0.1215 g; %P = 17.87%.
+
+CARD 67 [P]
+Q: A 0.800 g sample gives 0.400 g Fe2O3. Find %Fe.
+A: Fe mass = 0.400x0.700 = 0.280 g; %Fe = 35.0%.
+
+============================================================
+SECTION 4 - VOLUMETRIC ANALYSIS AND TITRATION
+============================================================
+
+CARD 68 [N]
+Q: What is volumetric analysis?
+A: Quantitative analysis based on measuring the volume of a reagent of known concentration required to react with an unknown solution.
+
+CARD 69 [M]
+Q: Define titration.
+A: The gradual addition of a standard solution from a burette to an unknown solution until the end point is reached, allowing the unknown concentration to be calculated.
+
+CARD 70 [M]
+Q: Define a standard solution.
+A: A solution containing an accurately known amount of reagent in a known volume.
+
+CARD 71 [M]
+Q: Define an indicator and state why it is used.
+A: A substance that does not take part stoichiometrically in the reaction but shows a clear physical change, usually color, near completion; it locates the practical end point.
+
+CARD 72 [M - 2/2014, 2/2018]
+Q: Distinguish the end point from the equivalence point.
+A: The end point is observed experimentally using an indicator. The equivalence point is the theoretical point at which chemically equivalent amounts have reacted.
+
+CARD 73 [M - 3/2016, 1/2018, 2/2017]
+Q: What conditions must a primary standard substance satisfy?
+A: High purity; stable to air, moisture, oxygen, CO2 and light; large equivalent mass; soluble in the chosen solvent; preferably non-poisonous, inexpensive and readily available.
+
+CARD 74 [M]
+Q: Why should a standard substance have a large equivalent mass?
+A: To reduce the relative error caused by weighing uncertainty.
+
+CARD 75 [M]
+Q: What conditions must a titration reaction satisfy?
+A: It must have a simple balanced equation, proceed in one direction, be complete and fast, and have a detectable end point near the equivalence point.
+
+CARD 76 [M]
+Q: Name the four types of reactions used in titration.
+A: Neutralization, oxidation-reduction, precipitation, and complex-formation reactions.
+
+CARD 77 [P]
+Q: A reaction is slow, reversible and has no observable change near equivalence. Is it suitable for titration?
+A: No. It fails the requirements of rapid completion, one-direction behavior and detectable end point.
+
+============================================================
+SECTION 5 - MOLARITY, NORMALITY AND EQUIVALENT MASS
+============================================================
+
+CARD 78 [N]
+Q: Give the main concentration relations used in this chapter.
+A: m = M x molar mass x V(L); N = n x M; equivalent mass EM = molar mass/n; m = N x EM x V(L); and at equivalence N1V1 = N2V2.
+
+CARD 79 [M]
+Q: Define normality.
+A: The number of gram-equivalents of solute per liter of solution; a 1 N solution contains one equivalent per liter.
+
+CARD 80 [N]
+Q: Why is normality reaction-dependent?
+A: Because n, and therefore equivalent mass and normality, depends on the actual reaction and the number of H+, OH-, electrons, ionic charges or electron pairs involved.
+
+CARD 81 [M]
+Q: Define equivalent mass of an acid.
+A: The mass of acid that supplies one mole of ionizable H+ in the stated reaction: EM = molar mass/number of ionized H+.
+
+CARD 82 [M]
+Q: How is n determined in precipitation reactions?
+A: From the number of reacting ionic charges per formula unit; for a salt it is commonly the number of positive ions multiplied by their charge.
+
+CARD 83 [M]
+Q: How is n determined in redox reactions?
+A: It is the number of electrons gained or lost per formula unit in the stated reaction.
+
+CARD 84 [M]
+Q: How is equivalent mass determined in complex-formation reactions?
+A: EM = molar mass divided by the number of electron pairs donated or accepted.
+
+CARD 85 [P]
+Q: Find EM and N for 0.40 M H2SO4 in complete neutralization.
+A: n = 2; EM = 98/2 = 49 g/eq; N = 2x0.40 = 0.80 N.
+
+CARD 86 [M - 2/2018]
+Q: Find EM of AgNO3 in Ag+ + Br- -> AgBr and EM of Na2CO3 in Na2CO3 + 2H+ -> 2Na+ + CO2 + H2O.
+A: AgNO3: n=1, EM=170 g/eq. Na2CO3: n=2, EM=106/2=53 g/eq.
+
+CARD 87 [M]
+Q: A solution is 1.5 N and 0.5 M. Find n.
+A: n = N/M = 3 eq/mol.
+
+CARD 88 [M]
+Q: A solution is 1.0 N and 0.20 M. Find n.
+A: n = 5 eq/mol.
+
+CARD 89 [M]
+Q: Find the molarity of 0.20 N Fe2(SO4)3 in a precipitation reaction.
+A: n = 2x3 = 6; M = 0.20/6 = 0.0333 M.
+
+CARD 90 [M]
+Q: Find the molarity of 0.08 N Pb(IO3)2.
+A: n = 2; M = 0.08/2 = 0.040 M.
+
+CARD 91 [M]
+Q: Find the molarity of 0.30 N Al2(SO4)3.
+A: n = 2x3 = 6; M = 0.30/6 = 0.050 M.
+
+CARD 92 [M]
+Q: KMnO4 is reduced to MnO2. Find n and the normality of 0.05 M, 0.03 M and 0.08 M solutions.
+A: Mn changes from +7 to +4, so n=3. Normalities: 0.15 N, 0.09 N and 0.24 N respectively.
+
+CARD 93 [M]
+Q: Find EM of MnO4- in the acidic reaction where Mn(+7) becomes Mn2+. Use M(MnO4-) = 119 g/mol.
+A: n=5; EM=119/5=23.8 g/eq.
+
+CARD 94 [M]
+Q: For 6.0 M H3PO4, find EM and N when 3, 2 or 1 H+ react.
+A: n=3: EM=98/3=32.67 g/eq, N=18 N. n=2: EM=49 g/eq, N=12 N. n=1: EM=98 g/eq, N=6 N.
+
+CARD 95 [M]
+Q: What mass of NaOH is needed to prepare 500 mL of 0.20 M solution?
+A: m = 0.20x40x0.500 = 4.00 g.
+
+CARD 96 [M]
+Q: Find M and N for these Ba(OH)2 solutions (M=171): (a) 9.5 g/2.0 L, (b) 9.3 g/3.0 L, (c) 8.55 g/2.5 L, (d) 8.5 g/1.5 L.
+A: (a) M=0.0278, N=0.0556. (b) M=0.0181, N=0.0363. (c) M=0.0200, N=0.0400. (d) M=0.0331, N=0.0663.
+
+CARD 97 [M]
+Q: Find M and N for (a) 8.85 g Ba(OH)2 in 1.6 L and (b) 5.7 g in 1.5 L.
+A: (a) M=0.03235, N=0.0647. (b) M=0.02222, N=0.04444.
+
+CARD 98 [M]
+Q: Find M and N of 3.7 g Ca(OH)2 in 1.5 L. Use M=74 g/mol.
+A: M=3.7/(74x1.5)=0.0333 M; n=2; N=0.0667 N.
+
+CARD 99 [P]
+Q: What mass of Ca(OH)2 is required to prepare 250 mL of 0.40 N solution?
+A: EM=74/2=37 g/eq; m=0.40x37x0.250=3.70 g.
+
+CARD 100 [M]
+Q: What mass of K2Cr2O7 is required in its six-electron reduction? Use M=294 g/mol. (a) 2.4 L of 0.16 N, (b) 1.5 L of 0.16 N, (c) 2.0 L of 0.12 N.
+A: EM=294/6=49 g/eq. (a) 18.816 g. (b) 11.760 g. (c) 11.760 g.
+
+CARD 101 [M]
+Q: Calculate the mass of borax Na2B4O7.10H2O needed for 250 mL of 0.12 N solution in a reaction with n=2. Use M=381 g/mol.
+A: EM=381/2=190.5 g/eq; m=0.12x190.5x0.250=5.715 g.
+
+============================================================
+SECTION 6 - TITRATION CALCULATIONS: ALL MINISTERIAL VARIANTS
+============================================================
+
+CARD 102 [M]
+Q: 36.7 mL HCl is equivalent to 43.2 mL of 0.24 M NaOH. Find M and N of HCl.
+A: HCl and NaOH both have n=1. M(HCl)=N(HCl)=0.24x43.2/36.7=0.2825.
+
+CARD 103 [M]
+Q: 300 mL HCl is equivalent to 400 mL of 0.20 M NaOH. Find M(HCl).
+A: M(HCl)=0.20x400/300=0.2667 M.
+
+CARD 104 [M]
+Q: Find N for H2SO4 solutions in complete neutralization: (a) 0.23 M, (b) 0.43 M, (c) 0.25 M.
+A: n=2. (a) 0.46 N, (b) 0.86 N, (c) 0.50 N.
+
+CARD 105 [M]
+Q: Find M and N when 6.4 g H2SO4 is dissolved to 600 mL. Use M=98 g/mol.
+A: M=6.4/(98x0.600)=0.1088 M; N=2M=0.2177 N.
+
+CARD 106 [M]
+Q: Find M and N when 5.0 g H2SO4 is dissolved to 500 mL.
+A: M=5/(98x0.500)=0.1020 M; N=0.2041 N.
+
+CARD 107 [M]
+Q: A 50 mL HIO3 sample requires 45.8 mL of 0.145 N NaOH. Find N(HIO3).
+A: N=0.145x45.8/50=0.13282 N.
+
+CARD 108 [M]
+Q: A 42 mL HIO3 sample requires 38 mL of 0.15 N NaOH. Find its normality and mass. Use M(HIO3)=176 and n=1 for neutralization.
+A: N=0.1357 N; mass=NxEMxV=0.1357x176x0.042=1.003 g.
+
+CARD 109 [M]
+Q: A 45 mL HIO3 sample requires 42 mL of 0.15 N NaOH. Find its neutralization normality and its normality when HIO3 is reduced from I(+5) to I(+1).
+A: Neutralization N=0.140 N. Sample mass=0.140x176x0.045=1.1088 g. Redox n=4, so redox N=4x0.140=0.560 N.
+
+CARD 110 [M]
+Q: A 50 mL HIO3 sample requires 50 mL of 0.10 N NaOH. Find its neutralization normality and its redox normality for I(+5) to I(+1).
+A: Neutralization N=0.100 N; redox N=0.400 N.
+
+CARD 111 [M]
+Q: A 50 mL HIO3 sample requires 45 mL of 0.145 N NaOH. Find its neutralization normality and redox normality for I(+5) to I(+1).
+A: Neutralization N=0.1305 N; redox N=0.522 N.
+
+CARD 112 [M]
+Q: A 0.175 g impure H2C2O4 sample uses 40 mL of 0.09 M NaOH. Find purity. Use M=90 g/mol.
+A: n(acid)=2. Pure acid mass=0.09x40/1000x45=0.162 g; purity=92.57%.
+
+CARD 113 [M]
+Q: A 0.220 g impure H2C2O4 sample uses 43 mL of 0.09 M NaOH. Find purity.
+A: Pure mass=0.09x0.043x45=0.17415 g; purity=79.16%.
+
+CARD 114 [M]
+Q: A 0.180 g impure H2C2O4 sample uses 40 mL of 0.09 M NaOH. Find purity.
+A: Pure mass=0.162 g; purity=90.0%.
+
+CARD 115 [M]
+Q: A 1.600 g impure H2C2O4 sample uses 36 mL of 0.20 M NaOH. Find purity.
+A: Pure mass=0.20x0.036x45=0.324 g; purity=20.25%.
+
+CARD 116 [M - 1/2017]
+Q: A 0.1743 g impure H2C2O4 sample uses 39.82 mL of 0.09 M NaOH. Find purity.
+A: Pure mass=0.09x0.03982x45=0.16127 g; purity=92.52%.
+
+CARD 117 [M]
+Q: A 0.86 g acetic-acid sample uses 32.2 mL of 0.225 N NaOH. Find %CH3COOH. Use EM=60 g/eq.
+A: Acid mass=0.225x0.0322x60=0.4347 g; percentage=50.55%.
+
+CARD 118 [M]
+Q: A 1.20 g acetic-acid sample uses 35 mL of 0.30 N NaOH. Find the percentage.
+A: Acid mass=0.30x0.035x60=0.630 g; percentage=52.50%.
+
+CARD 119 [M]
+Q: A 0.96 g acetic-acid sample uses 35 mL of 0.25 N NaOH. Find the percentage.
+A: Acid mass=0.25x0.035x60=0.525 g; percentage=54.69%.
+
+CARD 120 [M - 3/2019]
+Q: A 0.958 g acetic-acid sample uses 33.6 mL of 0.225 N NaOH. Find the percentage.
+A: Acid mass=0.4536 g; percentage=47.35%.
+
+CARD 121 [M]
+Q: A 0.96 g acetic-acid sample uses 32.6 mL of 0.23 N NaOH. Find the percentage.
+A: Acid mass=0.23x0.0326x60=0.4499 g; percentage=46.86%.
+
+CARD 122 [M]
+Q: A 0.96 g acetic-acid sample uses 33.6 mL of 0.225 N NaOH. Find the percentage.
+A: Acid mass=0.4536 g; percentage=47.25%.
+
+CARD 123 [M]
+Q: A 0.88 g acetic-acid sample uses 32.6 mL of 0.24 N NaOH. Find the percentage.
+A: Acid mass=0.46944 g; percentage=53.35%.
+
+CARD 124 [M]
+Q: A 0.96 g acetic-acid sample uses 32.4 mL of 0.24 N NaOH. Find the percentage.
+A: Acid mass=0.46656 g; percentage=48.60%.
+
+CARD 125 [M]
+Q: 30 mL NaOH is titrated with 45 mL of 0.06 M H2SO4. Find M(NaOH) and the NaOH mass in 200 mL.
+A: M(NaOH)=2x0.06x45/30=0.18 M; mass=0.18x40x0.200=1.44 g.
+
+CARD 126 [M]
+Q: 30 mL NaOH is titrated with 55 mL of 0.06 M H2SO4. Find M(NaOH) and the NaOH mass in 500 mL.
+A: M=0.22 M; mass=0.22x40x0.500=4.40 g.
+
+CARD 127 [M]
+Q: 24 mL NaOH is titrated with 48 mL of 0.06 M H2SO4. Find M(NaOH) and the NaOH mass in 600 mL.
+A: M=0.24 M; mass=0.24x40x0.600=5.76 g.
+
+CARD 128 [M - 1/2021]
+Q: 25 mL NaOH is titrated with 47 mL of 0.08 M H2SO4. Find M(NaOH) and the NaOH mass in 600 mL.
+A: M=2x0.08x47/25=0.3008 M; mass=0.3008x40x0.600=7.219 g.
+
+CARD 129 [M]
+Q: 25 mL NaOH is titrated with 47.1 mL of 0.08 M H2SO4. Find M(NaOH) and the NaOH mass in 500 mL.
+A: M=0.30144 M; mass=0.30144x40x0.500=6.029 g.
+
+CARD 130 [M]
+Q: 32 mL NaOH is titrated with 48 mL of 0.08 M H2SO4. Find M(NaOH) and the NaOH mass in 400 mL.
+A: M=0.24 M; mass=0.24x40x0.400=3.84 g.
+
+CARD 131 [M]
+Q: 35 mL Ba(OH)2 is titrated with 55.5 mL of 0.04 M HNO3. Find M(Ba(OH)2) and its mass in 750 mL.
+A: 2M(base)x35 = 0.04x55.5, so M=0.03171 M. Mass=0.03171x171x0.750=4.07 g.
+
+CARD 132 [M]
+Q: 28 mL of 0.12 N HCl requires 24 mL Ba(OH)2. Find N(base) and the mass of Ba(OH)2 in 30 mL. Use M=171.
+A: N=0.12x28/24=0.14 N. EM=171/2=85.5; mass=0.14x85.5x0.030=0.3591 g.
+
+CARD 133 [M - 2/2016]
+Q: 20 mL of 0.30 N KMnO4 ultimately produces I2 that requires 25 mL Na2S2O3. Find N(thiosulfate) and its mass for 1.0 L and 2.0 L. Use M=158 and n=1.
+A: N=0.30x20/25=0.24 N. Mass for 1 L=37.92 g; for 2 L=75.84 g.
+
+CARD 134 [M]
+Q: 30 mL of 0.20 N KMnO4 ultimately produces I2 that requires 40 mL Na2S2O3. Find N(thiosulfate) and its mass for 1.5 L.
+A: N=0.15 N; mass=0.15x158x1.5=35.55 g.
+
+CARD 135 [M]
+Q: 30 mL of 0.28 N KMnO4 ultimately produces I2 that requires 20 mL Na2S2O3. Find N(thiosulfate) and its mass for 800 mL.
+A: N=0.42 N; mass=0.42x158x0.800=53.088 g.
+
+CARD 136 [M]
+Q: A 2.5 g metal carbonate MCO3 (M forms M2+) reacts with 100 mL of 0.60 N acid; excess acid requires 50 mL of 0.20 N NaOH. Identify M.
+A: Acid consumed by carbonate = 0.060-0.010=0.050 eq. EM(MCO3)=2.5/0.050=50 g/eq. Since n=2, molar mass MCO3=100; M=100-60=40 g/mol, so the metal is Ca.
+
+CARD 137 [M]
+Q: 16 mL of 0.10 M NaOH neutralizes 20 mL H2SO4. What mass of BaSO4 forms when 100 mL of that acid is completely precipitated? Use H2SO4=98 and BaSO4=233.
+A: M(H2SO4)=0.04 M. Moles in 100 mL=0.004 mol; BaSO4 is 1:1, so mass=0.004x233=0.932 g.
+
+CARD 138 [M]
+Q: 4.29 g Na2CO3.xH2O is dissolved to 250 mL. A 25 mL aliquot requires 15 mL of 0.20 N HCl. Find x.
+A: Solution N=0.20x15/25=0.12 N. Hydrate molar mass=286 g/mol. 106+18x=286, so x=10; the salt is Na2CO3.10H2O.
+
+CARD 139 [M]
+Q: A 160 mg sample containing Ni2O3 requires 38.3 mL of 0.137 N KCN in Ni2+ + 4CN- -> [Ni(CN)4]2-. Find %Ni2O3. Use M=165 g/mol.
+A: n(Ni2O3)=2 Ni x4=8; EM=165/8=20.625 g/eq. Mass Ni2O3=0.137x0.0383x20.625=0.1082 g; percentage=67.6% (about 67.8% with source rounding).
+
+CARD 140 [P]
+Q: A 0.500 g monoprotic acid sample requires 40.0 mL of 0.100 N NaOH. If the pure acid has EM=100 g/eq, find its purity.
+A: Pure mass=0.100x0.0400x100=0.400 g; purity=80.0%.
+
+============================================================
+FINAL RAPID-REVIEW CARDS
+============================================================
+
+CARD 141 [N]
+Q: What is the fastest way to decide the reagent order in a cation-separation problem?
+A: Identify each ion's group and apply group reagents in numerical order: I, II, IIIA/IIIB, then IV, filtering after every precipitate.
+
+CARD 142 [N]
+Q: What is the safest calculation sequence in a titration problem?
+A: Write the balanced reaction; determine n; convert M to N if needed; apply N1V1=N2V2; then use m=NxEMxV or m=MxMrxV; finally calculate percentage if requested.
+
+CARD 143 [N]
+Q: What is the safest calculation sequence in a gravimetric problem?
+A: Identify the sought substance and weighed mass form; balance their stoichiometric relation; calculate Gf; use mass sought=Gf x mass form; divide by original sample mass for percentage.
+
+CARD 144 [P]
+Q: A student uses the same numerical EM for H3PO4 in every reaction. What is the error?
+A: Equivalent mass is reaction-dependent. H3PO4 may have n=1, 2 or 3 depending on how many H+ ions participate.
+
+CARD 145 [M]
+Q: Calculate the gravimetric factor of Na3P3O10 (368 g/mol) represented by Mg2P2O7 (222.6 g/mol).
+A: Match six P atoms: 2Na3P3O10 corresponds to 3Mg2P2O7. Gf=(2x368)/(3x222.6)=1.102.
+
+CARD 146 [M]
+Q: Calculate the gravimetric factor of MgI2 (278 g/mol) represented by AgI (235 g/mol).
+A: One MgI2 contains two I atoms and corresponds to 2AgI. Gf=278/(2x235)=0.5915.
+
+CARD 147 [M]
+Q: Calculate the gravimetric factor of Fe3O4 represented by Fe2O3.
+A: Match six Fe atoms: 2Fe3O4 corresponds to 3Fe2O3. Gf=(2x232)/(3x160)=0.9667 (approximately 0.97).
+
+END OF DECK
+
+Deck total: 147 flashcards.

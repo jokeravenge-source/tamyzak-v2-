@@ -80,7 +80,7 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
           : chapter.n === 5
             ? { ...chapter, title: "Coordination Chemistry", arTitle: "الكيمياء التناسقية", subtitle: language === "ar" ? "154 بطاقة · المفاهيم والمسائل والتسمية" : "154 cards · Concepts, calculations and nomenclature" }
           : chapter.n === 6
-            ? { ...chapter, title: "Electrochemistry", arTitle: "الكيمياء الكهربائية", subtitle: language === "ar" ? "230 بطاقة · أسئلة وملاحظات وتطبيقات محلولة" : "230 cards · Questions, notes and worked practice" }
+            ? { ...chapter, title: "Chemical Analysis", arTitle: "التحليل الكيميائي", subtitle: language === "ar" ? "147 بطاقة · وزاريات وملاحظات وتطبيقات" : "147 cards · Ministerial questions, notes and practice" }
           : chapter)
     : subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
       ? chapters
