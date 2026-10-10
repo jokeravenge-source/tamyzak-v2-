@@ -997,7 +997,15 @@ const StudentApp = () => {
         <>
           {nadiaAuthOpen && (
             <Auth
-              onAuthed={() => setAuthed(true)}
+              onAuthed={() => {
+                // Keep the guest on the same questions page after signing up (no language screen detour).
+                if (!language) {
+                  localStorage.setItem(LANGUAGE_STORAGE_KEY, "ar");
+                  setLanguage("ar");
+                }
+                setNadiaAuthOpen(false);
+                setAuthed(true);
+              }}
               onGuest={() => setNadiaAuthOpen(false)}
               initialMode="signup"
             />
