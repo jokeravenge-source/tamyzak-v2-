@@ -27,6 +27,7 @@ const Summaries = lazy(() => import("./pages/Summaries"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminAhmedFlashcardsReview = lazy(() => import("./pages/AdminAhmedFlashcardsReview"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
 const FlashcardsDashboard = lazy(() => import("./pages/FlashcardsDashboard"));
 const NadiaMinisterialQuestions = lazy(() => import("./pages/NadiaMinisterialQuestions"));
@@ -425,6 +426,20 @@ const App = () => {
           <Toaster />
           <Sonner />
           <AdminMcqReview />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin/flashcards/ahmed-al-nadawi") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Suspense fallback={null}>
+            <AdminAhmedFlashcardsReview />
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
