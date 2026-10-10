@@ -1,0 +1,904 @@
+CHAPTER 7 — ORGANIC CHEMISTRY
+AHMED AL-NADAWI — EXTENDED FLASHCARD DECK
+Source: ف7 انكليزي احمد النداوي.pdf (144 pages)
+
+SOURCE-FIDELITY NOTE: Cards below are study conversions of the legible chapter material. Ministerial years are included only where clearly seen. The appended question/expression index preserves more source text, including partially garbled diagrams; do not treat OCR-like text as verified equations.
+
+
+=================================================================
+FOUNDATIONS — source PDF pages 6–9
+=================================================================
+CARD 001
+Q: Define organic chemistry.
+A: The branch of chemistry studying compounds in which carbon is the principal element.
+
+CARD 002
+Q: Define hydrocarbons.
+A: Organic compounds containing only carbon and hydrogen.
+
+CARD 003
+Q: Distinguish saturated and unsaturated hydrocarbons.
+A: Saturated: alkanes with C–C single bonds. Unsaturated: alkenes (C=C) and alkynes (C≡C).
+
+CARD 004
+Q: What are aromatic hydrocarbons?
+A: Benzene and its cyclic derivatives.
+
+CARD 005
+Q: What bond is present in alkanes, alkenes and alkynes?
+A: Alkanes: C–C; alkenes: C=C; alkynes: C≡C.
+
+CARD 006
+Q: Define isomeric compounds.
+A: Compounds having the same molecular formula but different structural formulas and properties.
+
+CARD 007
+Q: Give both structural isomers of C4H10.
+A: CH3–CH2–CH2–CH3 (butane); CH3–CH(CH3)–CH3 (2-methylpropane).
+
+CARD 008
+Q: Give all three structural isomers of C5H12.
+A: CH3–CH2–CH2–CH2–CH3; CH3–CH(CH3)–CH2–CH3; C(CH3)4.
+
+CARD 009
+Q: What are the alkane/alkene/alkyne naming suffixes?
+A: -ane / -ene / -yne.
+
+CARD 010
+Q: Give roots for carbon numbers 1–10.
+A: meth, eth, prop, but, pent, hex, hept, oct, non, dec.
+
+CARD 011
+Q: Define a functional group.
+A: An atom or group of atoms attached to carbon that gives organic compounds distinctive physical and chemical properties.
+
+CARD 012
+Q: State general formulas for alkyl halides, alcohols, ethers.
+A: R–X, R–OH, R–O–R′, respectively.
+
+
+=================================================================
+ALKYL HALIDES — source PDF pages 10–24, 61–65
+=================================================================
+CARD 013
+Q: Define an alkyl group.
+A: A group formed by removal of one hydrogen atom from an alkane: R–H → R–.
+
+CARD 014
+Q: What is an alkyl halide?
+A: An alkyl group bonded to a halogen (X = Cl, Br or I): R–X.
+
+CARD 015 | MINISTERIAL: 2021, 2022
+Q: How are alkyl halides classified?
+A: Primary (1°), secondary (2°), tertiary (3°), according to the carbon attached to X.
+
+CARD 016 | MINISTERIAL: 2017
+Q: Define Markovnikov’s rule.
+A: In addition of HX to an unsymmetrical alkene, H joins the double-bond carbon carrying more hydrogens and X joins the other carbon.
+
+CARD 017 | MINISTERIAL: 2016, 2017, 2018
+Q: Why does propene + HBr yield 2-bromopropane?
+A: Markovnikov addition: CH3–CH=CH2 + HBr → CH3–CHBr–CH3.
+
+CARD 018 | MINISTERIAL: 2014
+Q: Prepare 2-bromobutane from 1-butene.
+A: CH3–CH2–CH=CH2 + HBr → CH3–CH2–CHBr–CH3.
+
+CARD 019 | MINISTERIAL: 2013 / first sitting
+Q: Prepare 2-bromopropane from propene.
+A: CH3–CH=CH2 + HBr → CH3–CHBr–CH3.
+
+CARD 020 | MINISTERIAL: 2015, 2016
+Q: React HCl with 1-butene.
+A: CH3–CH2–CH=CH2 + HCl → CH3–CH2–CHCl–CH3.
+
+CARD 021 | MINISTERIAL: 2022
+Q: React HCl with 2-butene.
+A: CH3–CH=CH–CH3 + HCl → CH3–CH2–CHCl–CH3.
+
+CARD 022
+Q: React HCl with 2-methylpropene.
+A: (CH3)2C=CH2 + HCl → (CH3)3CCl (2-chloro-2-methylpropane).
+
+CARD 023 | MINISTERIAL: 2018
+Q: Why are alkyl halides insoluble in water?
+A: They cannot form hydrogen bonds with water; they dissolve well in organic solvents.
+
+CARD 024 | MINISTERIAL: 2015
+Q: Define electrophilic reagent.
+A: Electron-loving atom, ion or molecule able to accept a pair of electrons due to an empty orbital.
+
+CARD 025 | MINISTERIAL: 2014, 2017, 2019
+Q: Give the reaction of bromoethane with aqueous KOH, heated.
+A: CH3CH2Br + KOH(aq) → CH3CH2OH + KBr.
+
+CARD 026 | MINISTERIAL: 2021, 2022
+Q: Give the reaction of bromoethane with alcoholic KOH, heated.
+A: CH3CH2Br + KOH(ethanol) → CH2=CH2 + KBr + H2O.
+
+CARD 027
+Q: Compare aqueous versus alcoholic KOH with an alkyl halide.
+A: Aqueous: substitution forming alcohol; alcoholic: elimination forming alkene.
+
+CARD 028
+Q: React 1-bromopropane with aqueous KOH.
+A: CH3CH2CH2Br + KOH(aq) → CH3CH2CH2OH + KBr.
+
+CARD 029
+Q: React 1-bromopropane with alcoholic KOH.
+A: CH3CH2CH2Br + KOH(ethanol) → CH3CH=CH2 + KBr + H2O.
+
+CARD 030 | MINISTERIAL: 2016
+Q: React chloroethane with aqueous KOH.
+A: CH3CH2Cl + KOH(aq) → CH3CH2OH + KCl.
+
+CARD 031 | MINISTERIAL: 2021
+Q: React 2-chloro-2-methylpropane with aqueous KOH.
+A: (CH3)3CCl + KOH(aq) → (CH3)3COH + KCl.
+
+CARD 032 | MINISTERIAL: 2016
+Q: Prepare ethylmagnesium bromide (Grignard reagent).
+A: CH3CH2Br + Mg —dry ether→ CH3CH2MgBr.
+
+CARD 033
+Q: Prepare ethylmagnesium chloride from ethene.
+A: CH2=CH2 + HCl → CH3CH2Cl; then CH3CH2Cl + Mg —dry ether→ CH3CH2MgCl.
+
+CARD 034
+Q: Give the structural formula of 2,3-dibromobutane.
+A: CH3–CHBr–CHBr–CH3.
+
+CARD 035
+Q: Give the structural formula of 2-bromo-2-methylpentane.
+A: CH3–C(Br)(CH3)–CH2–CH2–CH3.
+
+
+=================================================================
+ALCOHOLS — source PDF pages 25–42, 66–77
+=================================================================
+CARD 036
+Q: Define alcohol and give the functional group.
+A: Hydroxyl (–OH) attached to a saturated carbon; R–OH. General formula CnH2n+2O for acyclic monohydric saturated alcohols.
+
+CARD 037
+Q: Classify alcohols by the carbon bearing OH.
+A: Primary RCH2OH; secondary R2CHOH; tertiary R3COH.
+
+CARD 038 | MINISTERIAL: 2022
+Q: Why do alcohols have relatively high boiling points?
+A: Intermolecular hydrogen bonds between –OH groups.
+
+CARD 039
+Q: Give the structural formula of 3-methyl-3-pentanol.
+A: CH3CH2–C(OH)(CH3)–CH2CH3.
+
+CARD 040
+Q: Prepare ethanol from ethene.
+A: CH2=CH2 + H2O —H+→ CH3CH2OH.
+
+CARD 041
+Q: Prepare ethanol from chloroethane.
+A: CH3CH2Cl + KOH(aq), heat → CH3CH2OH + KCl.
+
+CARD 042
+Q: Prepare 2-propanol from 2-bromopropane.
+A: CH3CHBrCH3 + KOH(aq), heat → CH3CHOHCH3 + KBr.
+
+CARD 043
+Q: What is Lucas reagent?
+A: Concentrated HCl with anhydrous ZnCl2.
+
+CARD 044
+Q: How does Lucas reagent distinguish 1°, 2° and 3° alcohols?
+A: Tertiary: immediate turbidity; secondary: delayed turbidity; primary: no turbidity at room temperature (as presented in the chapter).
+
+CARD 045
+Q: Distinguish 2-methyl-2-propanol from 2-propanol by Lucas reagent.
+A: 2-methyl-2-propanol (3°) gives immediate turbidity; 2-propanol (2°) gives turbidity more slowly.
+
+CARD 046
+Q: Distinguish ethanol from 2-methyl-2-propanol by Lucas reagent.
+A: Ethanol (1°) has no immediate turbidity; 2-methyl-2-propanol (3°) gives immediate turbidity.
+
+CARD 047
+Q: Write the Lucas substitution reaction of 2-propanol.
+A: CH3CHOHCH3 + HCl —ZnCl2→ CH3CHClCH3 + H2O.
+
+CARD 048
+Q: Write the Lucas substitution reaction of tert-butanol.
+A: (CH3)3COH + HCl —ZnCl2→ (CH3)3CCl + H2O.
+
+CARD 049
+Q: What oxidants are used for alcohol oxidation?
+A: Acidified K2Cr2O7 or KMnO4.
+
+CARD 050
+Q: Oxidize a primary alcohol to an aldehyde.
+A: RCH2OH + [O] → RCHO + H2O (controlled oxidation).
+
+CARD 051
+Q: Oxidize a primary alcohol completely to a carboxylic acid.
+A: RCH2OH + 2[O] → RCOOH + H2O.
+
+CARD 052
+Q: Oxidize a secondary alcohol.
+A: R2CHOH + [O] → R2CO + H2O.
+
+CARD 053
+Q: What happens when a tertiary alcohol is subjected to the usual mild oxidation?
+A: It does not undergo the corresponding carbonyl-forming oxidation under those conditions.
+
+CARD 054
+Q: Oxidize 2-propanol.
+A: CH3CHOHCH3 + [O] —K2Cr2O7/H+→ CH3COCH3 + H2O.
+
+CARD 055
+Q: Oxidize 2-butanol.
+A: CH3CH(OH)CH2CH3 + [O] → CH3COCH2CH3 + H2O.
+
+CARD 056
+Q: Oxidize 1-butanol completely.
+A: CH3CH2CH2CH2OH + 2[O] → CH3CH2CH2COOH + H2O.
+
+CARD 057
+Q: What is dehydration of alcohol?
+A: Elimination of water from alcohol to form an alkene (under suitable acid/heat conditions).
+
+CARD 058
+Q: Dehydrate ethanol to ethene.
+A: CH3CH2OH —conc. H2SO4, heat→ CH2=CH2 + H2O.
+
+CARD 059
+Q: React ethanol with sodium.
+A: 2CH3CH2OH + 2Na → 2CH3CH2ONa + H2.
+
+
+=================================================================
+ETHERS — source PDF pages 43–50, 78–80
+=================================================================
+CARD 060
+Q: What is the functional group of an ether?
+A: R–O–R′.
+
+CARD 061
+Q: Name CH3–O–CH3.
+A: Dimethyl ether (methoxymethane).
+
+CARD 062
+Q: Name CH3CH2–O–CH2CH3.
+A: Ethoxyethane (diethyl ether).
+
+CARD 063
+Q: What is Williamson ether synthesis?
+A: Alkoxide + alkyl halide → ether + halide salt.
+
+CARD 064
+Q: Prepare ethoxyethane using Williamson synthesis.
+A: CH3CH2ONa + CH3CH2Cl → CH3CH2OCH2CH3 + NaCl.
+
+CARD 065
+Q: Prepare ethoxypropane starting from ethanol (two steps).
+A: 2CH3CH2OH + 2Na → 2CH3CH2ONa + H2; CH3CH2ONa + CH3CH2CH2X → CH3CH2OCH2CH2CH3 + NaX.
+
+
+=================================================================
+ALDEHYDES AND KETONES — source PDF pages 82–102
+=================================================================
+CARD 066
+Q: Define aldehydes.
+A: Carbonyl compounds R–CHO, with a hydrogen attached to carbonyl carbon; general formula CnH2nO for saturated acyclic monoaldehydes.
+
+CARD 067
+Q: Define ketones.
+A: Carbonyl compounds R–CO–R′, with two alkyl groups attached to carbonyl carbon; general formula CnH2nO for saturated acyclic monoketones.
+
+CARD 068
+Q: Why are aldehydes and ketones called carbonyl compounds?
+A: Both possess the carbonyl group C=O.
+
+CARD 069
+Q: Why are aldehydes more readily oxidized than ketones?
+A: Aldehydes have a hydrogen directly bonded to the carbonyl carbon.
+
+CARD 070
+Q: What are aldehyde and ketone naming suffixes?
+A: Aldehyde: -al; ketone: -one.
+
+CARD 071
+Q: Give formulas of methanal, ethanal and propanal.
+A: HCHO; CH3CHO; CH3CH2CHO.
+
+CARD 072
+Q: Give formulas of propanone, butan-2-one and pentan-3-one.
+A: CH3COCH3; CH3COCH2CH3; CH3CH2COCH2CH3.
+
+CARD 073
+Q: Give the formula of 3-methylbutanal.
+A: CH3–CH(CH3)–CH2–CHO.
+
+CARD 074
+Q: Give the formula of hexan-2-one.
+A: CH3COCH2CH2CH2CH3.
+
+CARD 075
+Q: Prepare methanal from methanol.
+A: CH3OH + [O] —K2Cr2O7/H+→ HCHO + H2O.
+
+CARD 076
+Q: Prepare propanal from 1-propanol.
+A: CH3CH2CH2OH + [O] → CH3CH2CHO + H2O.
+
+CARD 077
+Q: Prepare propanone from 2-propanol.
+A: CH3CHOHCH3 + [O] → CH3COCH3 + H2O.
+
+CARD 078
+Q: Reduce propanal to 1-propanol.
+A: CH3CH2CHO + H2 —Ni→ CH3CH2CH2OH.
+
+CARD 079
+Q: Reduce propanone to 2-propanol.
+A: CH3COCH3 + H2 —Ni→ CH3CHOHCH3.
+
+CARD 080
+Q: Reduce propanal to propane (carbonyl removal).
+A: CH3CH2CHO —Zn/Hg + HCl→ CH3CH2CH3 (Clemmensen reduction).
+
+CARD 081
+Q: What is the aldehyde oxidation equation?
+A: RCHO + [O] → RCOOH.
+
+CARD 082
+Q: What is Tollens’ reagent used for?
+A: It distinguishes aldehydes from ketones by silver mirror formation with aldehydes.
+
+CARD 083
+Q: What is Fehling’s solution used for?
+A: It differentiates aldehydes from ketones: aldehydes give brick-red Cu2O precipitate (as studied in the PDF).
+
+CARD 084
+Q: What does propanone give with Tollens’ reagent?
+A: No reaction / no silver mirror.
+
+CARD 085
+Q: How can ethanal and propanone be distinguished experimentally?
+A: Tollens’ silver mirror or Fehling’s brick-red precipitate with ethanal; no corresponding positive test with propanone.
+
+CARD 086
+Q: Write the condensation of propanal with hydrazine.
+A: CH3CH2CHO + H2NNH2 → CH3CH2CH=NNH2 + H2O.
+
+
+=================================================================
+CARBOXYLIC ACIDS — source PDF pages 103–118
+=================================================================
+CARD 087
+Q: Define carboxylic acid and its functional group.
+A: R–COOH; carboxyl functional group –COOH composed of C=O and –OH. General formula CnH2nO2 for saturated acyclic monocarboxylic acids.
+
+CARD 088
+Q: What suffix is used to name carboxylic acids?
+A: -oic acid; the carbon of –COOH is carbon number 1.
+
+CARD 089
+Q: Name HCOOH, CH3COOH and CH3CH2COOH.
+A: Methanoic, ethanoic and propanoic acids.
+
+CARD 090
+Q: Give the structural formula of 2-methylbutanoic acid.
+A: CH3CH2CH(CH3)COOH.
+
+CARD 091
+Q: Give the structural formula of 3-chloropropanoic acid.
+A: ClCH2CH2COOH.
+
+CARD 092
+Q: Give the structural formula of butanoic acid.
+A: CH3CH2CH2COOH.
+
+CARD 093
+Q: Describe Grignard preparation of carboxylic acid.
+A: RX + Mg —dry ether→ RMgX; RMgX + CO2 → RCOOMgX; then H2O/H+ → RCOOH.
+
+CARD 094
+Q: Prepare ethanoic acid from chloromethane using Grignard.
+A: CH3Cl + Mg —dry ether→ CH3MgCl; + CO2 → CH3COOMgCl; + H2O/H+ → CH3COOH.
+
+CARD 095
+Q: Prepare ethanoic acid by oxidation of ethanol.
+A: CH3CH2OH + [O] → CH3CHO + H2O; CH3CHO + [O] → CH3COOH.
+
+CARD 096
+Q: Prepare propanoic acid from propanal.
+A: CH3CH2CHO + [O] —K2Cr2O7/H+→ CH3CH2COOH.
+
+CARD 097
+Q: How do carboxylic acids react with carbonates?
+A: 2RCOOH + Na2CO3 → 2RCOONa + CO2 + H2O.
+
+CARD 098
+Q: How do carboxylic acids react with bicarbonates?
+A: RCOOH + NaHCO3 → RCOONa + CO2 + H2O.
+
+CARD 099
+Q: How can you distinguish butanal from butanoic acid?
+A: Butanoic acid reacts with sodium bicarbonate to release CO2; butanal does not.
+
+CARD 100
+Q: Prepare ethyl ethanoate from ethanoic acid.
+A: CH3COOH + CH3CH2OH ⇌ CH3COOCH2CH3 + H2O (H+, heat).
+
+
+=================================================================
+ESTERS — source PDF pages 119–127
+=================================================================
+CARD 101
+Q: Define ester and functional group.
+A: Carboxylic acid derivative with general structure R–COO–R′.
+
+CARD 102
+Q: Name CH3COOCH3.
+A: Methyl ethanoate.
+
+CARD 103
+Q: Name HCOOCH3.
+A: Methyl methanoate.
+
+CARD 104
+Q: How are esters prepared by esterification?
+A: RCOOH + R′OH ⇌ RCOOR′ + H2O (acid-catalyzed).
+
+CARD 105
+Q: How is an ester hydrolyzed in acid?
+A: RCOOR′ + H2O ⇌ RCOOH + R′OH (H+).
+
+CARD 106
+Q: What is alkaline ester hydrolysis (saponification)?
+A: RCOOR′ + NaOH → RCOONa + R′OH.
+
+CARD 107
+Q: Hydrolyze methyl ethanoate with NaOH.
+A: CH3COOCH3 + NaOH → CH3COONa + CH3OH.
+
+CARD 108
+Q: Hydrolyze ethyl ethanoate with NaOH.
+A: CH3COOCH2CH3 + NaOH → CH3COONa + CH3CH2OH.
+
+
+=================================================================
+AMINES — source PDF pages 128–140
+=================================================================
+CARD 109
+Q: Define amines.
+A: Derivatives of ammonia NH3 in which one or more H atoms are replaced by alkyl groups.
+
+CARD 110
+Q: Classify amines by alkyl substitution.
+A: Primary RNH2; secondary R2NH; tertiary R3N.
+
+CARD 111
+Q: Give formulas for methylamine, ethylamine, propylamine.
+A: CH3NH2; CH3CH2NH2; CH3CH2CH2NH2.
+
+CARD 112
+Q: Prepare a primary amine from alkyl halide and ammonia.
+A: RX + NH3 → RNH3+X−; then base (NaOH) → RNH2 + NaX + H2O.
+
+CARD 113
+Q: Prepare propylamine from 1-iodopropane.
+A: CH3CH2CH2I + NH3 → [CH3CH2CH2NH3]I; + NaOH → CH3CH2CH2NH2 + NaI + H2O.
+
+CARD 114
+Q: Prepare methylamine from methanol.
+A: CH3OH + NH3 —Al2O3, heat→ CH3NH2 + H2O.
+
+CARD 115
+Q: Prepare ethylamine from ethanol.
+A: CH3CH2OH + NH3 —Al2O3, heat→ CH3CH2NH2 + H2O.
+
+CARD 116
+Q: Why are amines Lewis bases?
+A: The nitrogen atom has a lone electron pair that can be donated.
+
+CARD 117
+Q: How can you distinguish ethylamine and ethane?
+A: Ethylamine is basic and changes moist red litmus toward blue; ethane is not basic.
+
+
+=================================================================
+ADDITIONAL QUESTION INDEX — TEXT RECOVERABLE FROM THE FILE
+=================================================================
+This index is NOT a second set of verified answers. It helps audit all printed questions; diagrams/chemical structures must be read on the original page.
+PDF PAGE 7:
+• nh2 h2n oh c h nh2 p pv p const ch3 ch2 pv n const Question t Write down the structural formulas of C4H10 o n o o oh c h o o t ch3 C4cHh310 ـﻟ ﻟᣂᡨﻛﻴᙫᘭﺔ(ا) ﻟﺒﻨﺎﺋᘭﺔا ﻟﺼﻴﻎا oh al ᣦᢝ ﻣﺎ ͭ سo o ch2 c h2 3 Answer oh al 3 oh c h oh h2o cao c h2 2
+• ch3 c h3 Question Write down structural formulas for C 5H12 compound and name them ch2 ch2 ch2 ch2 ch .ﻣﻊᘻﺴﻤﻴﺘﻪ C5Hﻟﻠﻤﺮﻛﺐ12 ﻟᣂᡨﻛﻴᙫᘭﺔo2 ا ﻟﺼﻴﻎا ﺟﻤﻴﻊ ᜧﺘﺐ أ ͭ س Answer ch2 o ch3 c h3 cho h10h3cc4 91 pa CH3 – CH – CH2 - CH3
+• noh Question HWc : what are the possiblech2oh structural formulas for all alkanesconst witht o n a molecularch3 formula of C6H14 andch3 name themc h3 accordingo to othe ch2oh o ch2 ch ch IUPAC systemh2o oh alo nh co 3 oh h2o cao c h2 2 h chءﻻﺳﻤﺎch ا ﻛﺮذ ﻣﻊ C6Hﻟﺠᖂᗫᚊᘭﺔ14ا ﻟﺼᘭﻐﺔا ذوات تﻻﻟᝣﺎﻧﺎا ﻟﺠﻤﻴﻊ ﻟﻤﺤﺘﻤﻠﺔا ﻟᣂᡨﻛﻴᙫᘭﺔا ﻟﺼﻴﻎا ﻣﺎ ͭ س ﺟﺐ وا ᣦᢝ 91 .( )IUPAC كﻻﻳᖔᗖﺎا مﻧﻈﺎ ﺣﺴﺐ
+
+PDF PAGE 15:
+• Question o Writenh2 downo the structural formulas for the following compound ch3 ch2 ch2 91 n n oh : ᘌﺄ ﻣﻤﺎ ﻟᝣﻞ ﻟﺒﻨﺎﺋᘭﺔا ﻟﺼﻴﻎا ﺳﻢار ͭ س o o ᡨᣍ cho 1832 8 2 o o Cl Br
+
+PDF PAGE 16:
+• p Questionpv Write down thech2 systematicch3 names of the following compounds const o n t o o ch2oh ᘌﺄᣍᡨ o o h3 c ch3 اﻣﻤﺎ ﻟᝣﻞ ﻟﻨﻈﺎᣤᢝc ا ﻻﺳﻢn ا ᜧﺘﺐ ͭ س oh ch3 ch2oh al oh ch2 o ch ch 3 h2 c cao h2o oh 2 h2o Br Clco nh o2 CHCl3 | | h ch ch
+• Addition of Hydrogen Halides to Alkeneso the reaction of hydrogen2 8 1832 halides HX ch such as (HBr, HCl,o2HI) with an alkene, hydrogen atom is attached to one of the h c oh 0 o o nh2to the other carbon h3 carbonsc aroundch3 the double bond, halogench3 atomois attachedch2 ch2 ch2 ch2 and alkyl halide is obtained. cho n n h3c
+
+PDF PAGE 17:
+• Question 1832What8 2 is the result ofch3addingo HBr to Propene , oh c h o c h ᡧᢕᣌᗖوﻟᣂᢔا ᣠإ ﺿﺎﻓﺔHBrإ ﻧﺎﺗﺞ ﻣﺎ ͭ س o nh2 o ch3
+
+PDF PAGE 18:
+• n Questiont Write down the reactions of the following with HCl o o ch2oh c oh o o h3 c ch3 n ch3 1) 1-butene ch2oh al oh ch2 o ch ch 3 2) 2-buteneh2 c cao h2o oh 2 h2o co nh o2 h Answer ch ch
+• o2 0 Question Write down the chemical formulas for the following reaction h c oh o nh2 o ch2 h3 c ch3 ch3 o 1- Prepare 2-bromobutane using proper alkene ch2 ch2 ch2 cho n n h3c 2- Add HCl to 2-methyl-1-propene o o cho ch3 h c oh o o ﻵﺗᘭﺔ: ا تﻟﺘﻔﺎﻋﻼا ﺗﺤﻘﻖ ا ﺋᘭﺔﻟ᜻ᘭﻤᘭﺎا ﻟﺔدﻟﻤﻌﺎا ᜧﺘﺐا ͭ س ﻟᣎᡨᢝ
+• o nh2 o ch2 h3 c ch3 ch3 o 1- Prepare 2-bromobutane using proper alkene ch2 ch2 ch2 cho n n h3c 2- Add HCl to 2-methyl-1-propene o o cho ch3 h c oh o o ﻵﺗᘭﺔ: ا تﻟﺘﻔﺎﻋﻼا ﺗﺤﻘﻖ ا ﺋᘭﺔﻟ᜻ᘭﻤᘭﺎا ﻟﺔدﻟﻤﻌﺎا ᜧﺘﺐا ͭ س ﻟᣎᡨᢝ (ᡧᢕᣌᗖﻣﺜᘭﻞوﺑﺮ – )2 ᣠإ ﺣﺎﻣﺾHCl h ﺿﺎﻓﺔc إ -2 .ohﻣﻨﺎﺳﺐh2nﻟ᜻ᣌᢕᡧا ﻣﻦ (ﺑﺮنﻣᖔᗖﻴﻮﺗﺎnh2و – )2 ᢕᣂﺗﺤﻀp -1 pv ch2 ch3 const
+• 1) prepare chloroethane(ethyl choride) from Ethylene h2o o o 2) preparec 2- Iodopropane from propene c 16 oh
+
+PDF PAGE 20:
+• the bond between carbon and hydrogen atoms is polarized justify as the halogen of h c oh h2n nh2 alkyl halides has more electrons than carbon. The poles of this bond vary p pv ch2 ch3 const n the t halogen atom91 according to the type of halogen atom. The carbonoh which has o o becomes a good target for addition byh the cnucleophileoh group.o o h3 c 2 8 1832
+
+PDF PAGE 21:
+• Question Prepare : 1) Methanol 2)Ethanol ch2 o ch3 c h3 c4(ﻛﺤﻮcho2 ﻟﻤﺜᘭﻞا لﻛﺤﻮ ﺣ1(ᣆ ͭ س ﻻﺛᘭﻞh10اh3cل 91 pa 1832 8 2 ch3 o oh c h 1)
+• B) The reaction of alkyl halides RX with alcoholic potassium hydroxide (KOH)nh2 o ch3 ch2 p pv noh c (ﻛﺤﻮᣠᢝتﻻﻟ᜻ﻴﻨﺎch2ohا ﻟﺘﺤﻀᣂᢕ )ﻃᖁᗫﻘﺔ ﺗﻌﺘᣂᢔ KOH ﻣﻊ ﻻﻟ᜻ᘭﻞا ات ﻫﺎﻟᘭﺪconstﺗﻔﺎﻋﻞt ( ب n ch3 o o
+
+PDF PAGE 23:
+• nh2 h2n oh c h nh2 p pv p const ch3 ch2 pv t n const Questiono Obtain the following compounds starting from ethylene (CH2 = CH2). n o o oh c h o o t o o Write down the equations. ch3 c h3 oh al c h2 3 ch2 ا ﻣﻦ 19-7 ال3 ﺳﺆoh al oh: ﻣﻦ ᛿ﻞ ﺗﺤﻀᣂᢕc تh ﻻد ᗷﺎﻟﻤﻌﺎ ohﺑᣌᢕᡧ CHh2o2 = CH caoﻻﺛᘭﻠ2ᡧᢕᣌﻣﺒﺘﺪﺋﺎ᠍c h2 2 A) ethyl magnesiumo chloride
+• ch3 c h3 Question Write down chemical equations for the following reaction: ch2 ch2 ch2 ch2 ch : ﻣﻔﺎﻋﻠﺔ ﻋﻨﺪ ث ᘌﺤﺪ ذاﻣﺎ ﻟ᜻ᘭﻤᘭﺎﺋᘭﺔo2 ا ﻟﺔدᗷﺎﻟﻤﻌﺎ ﺿﺢو ͭ س ch2 1) The reaction of 2-chloro-2-methylo propane with aqueous KOH solutionch3 c h3 cho h10h3cc4 91 pa ( نᗖﺎوﺑﺮ ﻣﺜᘭﻞ – –2 رو᛿ﻠﻮ – ᡧᣚ2) ﻟﻤﺎᣍ᡽ا KOH لﻣﺤﻠﻮ ( 1 ﻣﻊ ﻣﺤﻠﻮﻟﻬﺎ 1832 8 2 ch3 o oh c h
+• ch2 1) The reaction of 2-chloro-2-methylo propane with aqueous KOH solutionch3 c h3 cho h10h3cc4 91 pa ( نᗖﺎوﺑﺮ ﻣﺜᘭﻞ – –2 رو᛿ﻠﻮ – ᡧᣚ2) ﻟﻤﺎᣍ᡽ا KOH لﻣﺤﻠﻮ ( 1 ﻣﻊ ﻣﺤﻠﻮﻟﻬﺎ 1832 8 2 ch3 o oh c h 2) The reaction of 1-bromo-3-ethylpentane with KOH in alcohol o c h o nh2 o
+• 2) The reaction of 1-bromo-3-ethylpentane with KOH in alcohol o c h o nh2 o ch3 .نﺑ ﺘﺎ ﺛᘭﻞا -3 – ﻣﻮوﺑﺮ – ﻣﻊ1 ا KOH لﻣﺤﻠﻮ ( 2 ﻟ᜻ﺤﻮᣠᢝ ch2 ch2 91 n n oh
+
+PDF PAGE 28:
+• p Questionpv Write down thech2 structuralch3 formulas for the compounds below: const o n t ch2oh o o : ᘌﺄ ﻣﺎ ﻟᝣﻞ ﻟﺒﻨﺎﺋᘭﺔا ﻟﺼᘭﻐﺔc ا ᜧﺘﺐ أ ͭ س oh o o ᡨᣍ h3 c ch3 n ch3 ch2oh al oh ch2 o ch ch 3 h2 c cao h2o oh 2 h2o CH3 OH co nh o2 | h ch ch |
+• 3 c cao h2o Question what are the probable structure formulasch2for alcoholsal ohthat have ah2 h c oh 0 H h c oh nh2 o molecular weight of 60 g/mol h3n nh2 ch2 ch2 ch2ﻟﻤﻮﻟᘭﺔ60g/molch2 ا ﻟ᜻ﺘﻠﺔا ذوات تﻟﻠ᜻ﺤﻮﻻ ﻟﻤﺤﺘﻤﻠﺔ n o ا ﻟﺒﻨﺎﺋᘭﺔا ﻟﺼﻴﻎا ᣦᢝ ﻣﺎ ͭ س ch2oh c oh
+
+PDF PAGE 30:
+• Question Prepare: 2-propanol from a proper(suitable) cho o alkene o ch3 h c oh o o وﺑﺮ -ﺣ2ᣆ ͭ س ﻣﻨﺎﺳﺐ ﻟ᜻ᣌᢕᡧا ﻣﻦ لᗖﺎﻧﻮnh2 h c oh h2n p pv ch2 ch3 const H2SO491 n t oh hot concentrated h c oh o o o o h3 c
+• ch2oh ch2 o Question o prepare : o2-butanol from 1-butene h2o ch ch h2o co nh o2 nh2 ͭ س p ᡧᢕᣌﺑﻴﻮﺗ -ﻣﻦ1 h لﺑﻴﻮﺗﺎﻧﻮch -chﺣ2ᣆ pv ch2 ch3 const 91 n pv t const pa 8 18 o o H2SO4 2 o h3 chot concentratedch3 t
+
+PDF PAGE 31:
+• nh2 h2n oh c h nh2 p pv p const ch3 ch2 pv t n const o n t Question oprepareo : ethanoloh fromc ethylene:h o o ch3 c h3 o o oh al c h2 3 ch2 ᡧᢕᣌᡧﻻﺛᘭﻠا ﻣﻦ لﻻﻳﺜﺎﻧﻮا ﺣᣆ ͭ س oh al 3 oh c h oh h2o cao c h2 2
+• ch2oh o ch2 c oh c ch ch h2o n n Question HW:Prepareco 2-methyl-2-butanol from a proper(suitable) Alkene ch3 nh h ch2oh ch ch o ch2 ch2oh h2o ch ch Nh2 ﻣﻨﺎﺳﺐ ﻟ᜻ᣌᢕᡧا ﻣﻦ لﺑﻴﻮﺗﺎﻧﻮ -2ﻣﺜᘭﻞ- -ﺣ2ᣆ ͭ س ﺟﺐ وا 91 o2 nh co pa const pv8 2 h t ch ch 2Naoh 2N2o 2Na 91
+
+PDF PAGE 33:
+• ch Question The solubility of alcohol decrease with an increase o2in the molecular weightch2 (or molar mass) o ch3 c h3 cho ا زنﻟﻮا دةᗫﺎز ﻣﻊ تﻟ᜻ﺤﻮﻻا نᗖﺎذو ﻗﺎᗷﻠᘭﺔ ﺗﻘﻞ 91 pa .(ﻋﻠﻞͭﻟﻤﻮﻟᘭﺔا ﻟ᜻ﺘﻠﺔا h10) h3cأوc4ﻟﺠᖂᗫᣎ᡽ᢝ 1832 8 2 ch3 o Because the greater the molar mass (molecularoh c weight)h the larger the size of the
+
+PDF PAGE 34:
+• Q:The gas obtained from the reaction of ethanol with sodiumo metalnh2 is H2o h c oh 0 ch2 h3 c ch3 ch3 o cho n n ch2 ch2 ch2 h3c o + H2  o 2CH3 – CH2 – OH + 2Na  2CH3–CH2–O-Na+cho ch3 o o Ethanol h Sodiumc ohethoxide h c oh h2n nh2
+
+PDF PAGE 35:
+• H 0 oh c h nh2 h2n oh c h p nh2 h3n o nh2 ch Question pvDifferentiate: 1-propanol , 2-propanol and 2-methyl -2-propanol const n t ch2 ch2 ch2 ch2 o o chemically. n o o oh c h o NO2 .ﺑﺮلᗖﺎﻧﻮو -2ﻣﺜᘭﻞ- -2 و لᗖﺎﻧﻮو-ﺑﺮ2 و لᗖﺎﻧﻮ ﻣᣂᢕᡧ ͭ س و-ﺑﺮﺑ1ᡧᢕᣌ ﻛᘭﻤᘭﺎﺋᘭﺎ᠍ ca c h2 3 oh al ch2 o o oh c h We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. nh2
+
+PDF PAGE 36:
+•  This way we can differentiate primary, secondarycho ando tertiary alcohols usingo Lucas' ch3 h c oh o o reagent. h c oh h2n nh2 1- For primary alcohols to react with Lucas' reagent, high temperature is necessary andpthey pv ch2 ch3 do not react at room temperature. Therefore, no turbidity91 is visiblen in solution.t const oh o o
+• co nh o2 nh2 3-Through reaction of tertiary alcohol with Lucas' reagent, slightly waterh soluble alkyl halide p ch ch formspv and it causes turbiditych2 ch3in solution const 91 n pv t const pa 8 18 ﻟﺜﺎﻟا لﻟ᜻ﺤﻮo ا ﻣﻊ ةﻣᘘﺎᣃᡫ ﻻﻟ᜻ᘭﻞا ﻫﺎﻟᘭﺪ نﻟﺘﻜﻮ ﻧᙬᘭﺠﺔ لﻟﻤﺤﻠﻮا ᣚᡧ ةﻋﻜﺮ ﺗﻈﻬﺮ 2 o ᢝᡵᣎᢝ o h3 c ch3 t ﻣﻬﻢ اغﻓﺮ al oh
+• Lucas’reagent (HCl/ZnCl2) used to differentiate between ——— A/Alcohols (primary,secondary and tertiary alcohols) h2o o o
+
+PDF PAGE 37:
+• nh2 h2n oh c h nh2 p pv p const ch3 ch2 pv t n const Questiono n How to differentiate experimentally between each of the followingt o o oh c h o o o o pairs of compounds. ch3 c h3 oh al c h2 3 ch2 ohالﺳﺆ al ﺗﻤᣂᢕᡧ ﻛᘭﻒ 133-7 oh c : hﻵﺗᘭﺔ ا ت ﻟﻤﺮﻛᘘﺎoh ا ﻣﻦh2oزوج ᛿ﻞcaoﺑᣌᢕᡧ ﻣﺘﺨᣂᢔᗫﺎ᠍c h2 2 2- methyl -2- propanol and 1-propanol o
+• ch ch What is the compound that is obtained by 9118 8 pa const pv heating ethanol and sulfuric acid ? 2 t h2o o o 35 c oh c
+
+PDF PAGE 38:
+• o2 h c oh 0 Question Prepare 2- butene from a proper( suitable )alcohol o nh2 o ch2 h3 c ch3 ch3 o ͭch2س ch2 ch2 cho .ﺑﻴﻮﺗᣌᢕᡧﻣﻨﺎﺳﺐn لﻛﺤﻮ ﻣﻦ n -ﺣ2ᣆ h3c cho o o ch3 o o Concentratedh H2SO4c oh nh2 CH3 – CH2 – CH – CH3  CH3h – CHc = CHoh –h2nCH3
+
+PDF PAGE 39:
+• This reaction is a method used to differentiate alcohols. o c ch2oh .*ت ﻟ᜻ﺤﻮﻻا ﺑᣌᢕᡧ ﻟﻠﺘﻤﻴᣂᢕᡧ ﺛﺎﻧᘭﺔ ﻃᖁᗫﻘﺔ تﻟﻠ᜻ﺤﻮﻻ ةﻻᜧﺴﺪا ﻋﻤﻠᘭﺔ ﺗﻌﺘᣂᢔ h2o n o o ch3 o ch2oh Primary alcoholso ch2 (1 ) oxidize firstc to aldehydes then toohcarboxylic .acids c ch ch h2o n n ch3 nh co
+• OH O Q: What is the compound 1832 8 2 ch3 o oh c h | K2Cr2O7 / H+ || obtained from oxidation of 2-propanol with the o c CH3h– CHo – CH3nh2 o CH3 – C – CH3 + H2O ch3 help of K2Cr2O7 in acidic [O] Propanone (acetone) ch2 ch22- Propanol 91 n n oh conditions? Secondaryo alcohols (2o) o cho 1832 8 2 o o
+
+PDF PAGE 40:
+• p pv ch2 ch3 const o n Question t Write down structural formulas and chemical reactions of the o o ch2oh c oh o o following: h3 c ch3 n ch3 ch2oh al oh ch2 cao -7س و ﺗﺮﻛﻴᙫᘭﺔo ᗷﺼﻴﻎch chﻋᣂᢔ 21ͭ 3 ﻟﺠﺪﻳﺪا ﻟﻤﻨﻬﺞh2 cا بﻛﺘﺎ ﺣﺴﺐ h2oفﺣﺬ oh 2 ﻣﻦ ﻟᝣﻞ ﻟ᜻ᘭﻤᘭﺎﺋᘭﺔh2oا تﻻدᗖﺎﻟﻤﻌﺎ co nh o2 1)Hydration of propene with presence of sulfuric acid and thenh oxidationch ch reaction
+• cho o o ch3 o o Question The following compoundsh c are ohformed from result of oxidation reactions of alcohols. Write down their reactions and structuralnh2 h c oh h2n pv ch2 ch3 formulas and names of alcohols. p const
+
+PDF PAGE 42:
+• p pv ch2 ch3 const o n Exerciset 7-11 write the oxidation reaction of following compounds o o ch2oh c oh o o h3 c ch3 n 1) 1-butanol ch3 ch2oh al oh ch2 o ch ch 3 2) 2- butanolh2 c cao h2o oh 2 h2o co nh o2 3) 2-methyl -2- propanol h ch ch 91 pv h2o o o const pa 8 18 2 t
+• a molecular weight of 60g/mol and what is the systematic name for ch each individual ,what areoits types and how do 2you8 1832differentiate o2 between them in two ways. o nh2 o h c oh 0 ch2 h3 c ch3 ch3 o
+• o ch2 ch2 ch2 ch2 n ch2oh c oh a propern Alkene and Questiono Homework) Prepare tertiary alcoholsNO2once fromch3 o once fromoa proper Alkyl halide. ch2 o ch2oh h2o ch ch h2o co nh o2 لﻛﺤﻮ ﺣᣆ ͭ س ﺟﺐ وا nh2 .ᡧﻣﻨﺎﺳﺐ ﻟ᜻ᘭﻞ ا ﻫﺎﻟᘭﺪ ﻣﻦ ىﺧﺮ أ ةﻣﺮو ﻣﻨﺎﺳﺐ ﻟ᜻ᣌᢕᡧا ﻣﻦ ةﻣﺮhﺛﺎﻟᣎᡵᢝ p ch ch pv ch2 ch3 const 91 n pv pa t 8 18 o o const 2
+
+PDF PAGE 44:
+• Question Write down systematic namesh cfor theoh followingh2n compoundsnh2 : p pv ch2 ch3 const 91 oh : ﻵﺗᘭﺔ nا تﻟﻠﻤﺮﻛᘘﺎt ﻟﻨﻈﺎᣤᢝo ا ﻻﺳﻢا ﻣﺎ ͭ سo h c oh o o h3 c 2 8 1832 CH3oh 3 h2 c cao h2o CH3 ch2 al | h c oh 0 H h c oh nh2 o 1 | h3n nh2 CH3 – O – C – CH3 CH3 – CH – O – CH3 o ch2 ch2 ch2 ch2 | n 3 2 ch2oh c oh o n NO2 ch3 CH3
+
+PDF PAGE 45:
+• Exercisen 7-13ch3: write down ostructural formulas for the following compounds. o ch2oh o ch2 c oh c ch ch h2o n n 1) 2,2-diethylmethoxyhexane ch3 co nh h 2) 2-chloro-2- methylpropoxypentane ch2oh ch ch o ch2 ch2oh h2o ch ch Nh2 91 o2 nh co pa const pv8 2 h t ch ch
+
+PDF PAGE 46:
+• 91 h2o o const pa 8 18 2 Question prepare methoxymethane from a proper(o suitable)pvt alcohol c oh c n n .ᡧﻣﻨﺎﺳﺐ لﻛﺤﻮ ﻣﻦ نﻟﻤﻴﺜﺎا 2Na 2N2oͭﺣᣆ2Naohس h2 ch3 ﻣﻴﺜﻮﻛᣓᢝ ch ch2oh ch2 o ch2oh 3 h2o o2  CH3 – OHch ch+ Na CH3 – ONa +al Nh2 𝟏𝟏 H2oh 𝟐𝟐 co nh o2
+• Question Prepare Ethoxyethane fromo a proper alcohol 2 8 1832 ch o2 h c oh 0 ا ͭﺣᣆ س o .ᡧلnh2ﻛﺤﻮ ﻣﻦ نoﻳﺜﺎا ﻳﺜﻮﻛᣓᢝ ch2 h3 c ch3 ch3 o cho n 𝟏𝟏 n ch2 ch2 ch2 CH3 – CH2 – OH + Na  CH3 – CH2h3c– ONa + H2
+• co nh o2 nh2 h Exercise 7-14:p ch ch pv ch2 ch3 const 91 const pa 8 18 n 1)write pv t theo synthesis reactiono of ethoxybutane from ethanol 2 o h3 c ch3 t
+
+PDF PAGE 47:
+• Justify theyo have lower boiling points than alcohols? p ch3 ch2 pv oh c ch2oh const n t n ch3 o o ch3 c h3 o ch2ohBecause Aso theych2 don't have hydrogen bonds between their molecules ch ch h2o oh alo nh co 3 oh h2o cao c h2 2 h **Ethersch ch do not dissolve in water as they cannot form hydrogen bonds with
+
+PDF PAGE 48:
+• 2 8 1832This reaction used to differentiate between Alkanes and don’t Ethersal asoh alkanes 3 ch2 h2 c cao h2o react with hconcentratedc ohacid. 0ForH example:h c oh nh2 o h3n. تﻷﻟᝣﺎﻧﺎ واnh2اتﻻﻳᣂᡵا ﺑᣌᢕᡧ ﻟﻠﺘﻤﻴᣂᢕᡧ ﻟﺘﻔﺎﻋﻞا ا ﻫﺬ م ᛒﺴﺘﺨﺪ o ch2 ch2 ch2 ch2 n
+• co nh o2 nh2 h p ch ch Questionpv How can youch2differentiatech3 between methoxymethane and Ethane const 91 n pv t 8 18 oTip: considero the reaction of ethers with water in presence const ofpa 2 o h3 c ch3 t concentrated sulfuric acid. al oh
+
+PDF PAGE 51:
+• ch2 ch2 n differentiate organic compounds n ohand give them different physical and chemical 91 properties.o o cho 1832 8 2 o o oh c h Alkyl halides:nh2 h2n oh c h H 0 p nh2 h3n o nh2 ch pv const organic compoundst n in which the alkyl group(R-) ch2is relatedch2 toch2a ch2halogen atom (-X) o o
+
+PDF PAGE 54:
+• pv Weo will use 1-chlorobutane to prepare 1- butanolh2o as follows:o 91 const pa 8 18 2 t c oh : ﻵﺗᘭﺔ ا ﻟﺔدﻟﻤﻌﺎc ᣚᡧ ᛿ﻤﺎ لﺑﻴﻮﺗﺎﻧﻮ -ﻟﺘﺤﻀ1ᢕᣂ᛿ﻠﻮن2Naᗖﻴﻮﺗﺎرو2N2o-1 ر2Naohﻧﺨﺘﺎ h2 ا ch3 n n ch ch2oh al oh ch2 o 3 h2oH2O ch2oh ch ch o2 Nh2 coCH3–CH2–CH2–CH2–Clnh + KOHo2  CH3–CH2–CH2–CH2 – OH + KCl
+• 91 pv const pa 8 18 h Question Explain the2following changes via chemical equations: t تﻻدᗷﻤﻌﺎ ﺿﺢو ͭ 14- ( س 2Na 2N2o 2Naoh h2 : ﻵﺗᘭﺔc4 h10ا تﻟﺘﺤﻮﻻا ث ﺗﺤﺪpaﻛᘭﻒ ﻛᘭﻤᘭﺎﺋᘭﺔ91 ch o 2 8 1832 o2 (أ h c oh 0
+• c oh CH3 – CH2 – CH = CH2 + H OH  CH3ch2oh– CH2 – CH – CH3 o NO2 ch3 1-butene | n o o ch2 o ch2oh ch ch h2o h2oOH co nh o2 nh2 2-butanol h p ch ch pv ch2 ch3 const 91 n pv pa t 8 18 o o const 2 o Question Write down theh3preparationc ch3processes of the followingt compounds al oh from the ? 1-propanol from 1-chloropropane startingcao substanceoh 3 h2o h2 c 2 H2O
+
+PDF PAGE 61:
+• Prepare 2-bromobutane using proper alkene Br
+• Prepare 2-Bromopropane from proper alkene Br /1 2013
+• Justify. When HBr is added to propene, 2-bromo propane is formed instead of 1- bromo propane This is because the addition was according to Markovnikov's Rule:
+
+PDF PAGE 62:
+• Write the reaction of adding HCl to 1-butene and 2-butene Cl
+• Define Markovnikov’s Rule /2 2017 When we add unsymmetrical double-ion carrying compounds to double bonded compounds which have unsymmetrical alkyl groups, positive ion (hydrogen ion)
+
+PDF PAGE 63:
+• Define Electrophile Reagent /3 2015 These are electron-loving atoms, molecules or ions which can accept a pair of electrons due to their empty orbitals. Lewis bases as NO2+, ,X+, R+, and Lewis acids as carbonyl
+• or Write the reaction of BromoEthane with aqueous potassium hydroxide first and second with alcoholic potassium hydroxide 
+• Write the reaction of Bromopropane with aqueous potassium hydroxide first and second with alcoholic potassium hydroxide 
+• Write down the reaction of aqueous potassium hydroxide with chloroethane H2O
+
+PDF PAGE 64:
+• Write down the reaction of magnesium with bromo ethane dry ether
+• Starting from ethylene obtain ethyl chloride magnesium 
+• Write the reaction of aqueous solution of potassium hydroxide with 2− chloro−𝟐𝟐− methylpropane 
+• Write the reaction of adding HCl to 2-methyl propene ? then mention the result names Cl
+
+PDF PAGE 65:
+• Write down the structural formulas of following organic compounds 1) 3-ethyl-2-methyl pentane
+
+PDF PAGE 66:
+• justify Alcohols boiling points are much higher than of corresponding alkynes Answer : Because they have strong intermolecular bonds
+• Justify : tertiary alcohol (3o ) do not oxidize Tertiary alcohol (3o ) do not oxidize as the carbon atom which carries the OH- group does
+• Write the chemical equation :Hydration of propene with presence of sulfuric acid and then oxidation reaction of product 
+• acid and then oxidation reaction of product H2SO4 /1 2021
+
+PDF PAGE 68:
+• Write the name of following compounds by IUPAC system. CH3 OH CH3
+• Alcohol contains (10) hydrogen atoms in its molecule, what are the probable structure formulas for this alcohol 
+
+PDF PAGE 69:
+• Write down the three isomers for Alcohol contain 4 carbon molecule and name Them 
+• Alcohol with (4) carbon atoms , what is it? Then write its probable structure Formulas CnH(2n+2)O
+• Write down the probable structural formula of compound C4H10O then mention its name and its function group 
+
+PDF PAGE 70:
+• What is the structural formula of Alcohol its molar mass 74g/mol which one is reacting with luca’s reagent ? Knowing that atomic mass is C = 12 , O = 16 , H = 1
+
+PDF PAGE 71:
+• What is the structural formula of Alcohol its molar mass 60g/mol then differentiate between them by luca’s reagent ? Knowing that atomic mass is C = 12 , O = 16 , H = 1
+• differentiate between them by luca’s reagent ? Knowing that atomic mass is C = 12 , O = 16 , H = 1 
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. 1)1-propanol (primary alcohol) does not react with lucas, reagent at room temperature 2) lucas, reagent react with 2-propanol (secondary alcohol) and 5 minutes later a layer
+
+PDF PAGE 72:
+• Obtain Ethyl chloride starting from ethanol write down the equations . or Write down the synthesis equations of Chloro ethane CH3CH2Cl starting from ethanol 
+• Write down the synthesis equations of Chloro ethane CH3CH2Cl starting from ethanol Pyridine
+• Differentiate between Alcohols Luca’s reaction is using to differentiate between . . . . . . /3 2018 /1 2016
+• Luca’s reaction is using to differentiate between . . . . . . /3 2018 /1 2016 Alcohols types
+• How to distinguish between primary and tertiary alcohols , show the answer with example ? We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent.
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. An example for primary alcohols is 1-propanol and for tertiary alcohols is (2-methyl-2-propaanol)
+
+PDF PAGE 73:
+• How to differentiate between 2- methyl -2- propanol and 2-propanol We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. /1 2016
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. /1 2016 lucas, reagent react with 2-propanol (secondary alcohol) and 5 minutes later a layer of 2-chloropropane is forms.
+• How to differentiate between 1-propanol and 2-propanol or How to differentiate between 1-propanol and 2-propanol using Luca’s reagent 
+• How to differentiate between 1-propanol and 2-propanol using Luca’s reagent We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent.
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. 1)1-propanol (primary alcohol) does not react with lucas, reagent at room temperature 2) lucas, reagent react with 2-propanol (secondary alcohol) and 5 minutes later a layer of
+
+PDF PAGE 74:
+• How to differentiate between ethanol and 2-methyl-2-propanol We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent.
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. Ethanol (primary alcohol) does not react with lucas, reagent at room temperature it reacts with 2-methyl -2-propanol(tertiary alcohol) readily
+• How to differentiate between 2- butanol and butane 2- butanol (Alcohol )reacts with sodium metal to produce Alkoxides and hydrogen gas . While butane doesn’t react or by oxidation reaction :
+• Differentiate: 1-propanol , 2-propanol and 2-methyl -2-propanol chemically. We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. 1)1-propanol (primary alcohol) does not react with lucas, reagent at room temperature
+• We can differentiate those compounds using dry ZnCl2 / HCl lucas, reagent. 1)1-propanol (primary alcohol) does not react with lucas, reagent at room temperature 2) lucas, reagent react with 2-propane (secondary alcohol) and 5 minutes later a layer of
+
+PDF PAGE 75:
+• What is the result of removing aqua molecule from 2-butanol /3 2019 Concentrated H2SO4
+
+PDF PAGE 76:
+• Write down the oxidation reaction equation of 2-butanol OH O
+• What is the result of completely oxidation for the following compounds : 1) Ethanol 
+• What is the result of oxidizing 1-propanol ت 2019/ ت 2018/ O O K2Cr2O7 / H+ || [O] ||
+
+PDF PAGE 77:
+• Write down the oxidation reaction equation of 1-butanol What is the result of completely oxidation for1-butanol
+• What is the result of completely oxidation for1-butanol O O
+• What is the result of reacting ethoxy ethane with phosphorous pentachloride 
+• Obtain ethoxy ethane from Ethylchloride or starting from Ethyl chloride( Chloroethane ) prepare ethoxy ethane ﯾﻔﻠﺶ الﺳﺆ
+• starting from Ethyl chloride( Chloroethane ) prepare ethoxy ethane ﯾﻔﻠﺶ الﺳﺆ H2O CH3 – CH2 – Cl + KOH  CH3 – CH2 – OH + KCl
+
+PDF PAGE 78:
+• By using methyl chloride and anything , prepare any ether ﯾﻔﻠﺶ الﺳﺆ 
+• How to differentiate chemically between :Methoxy methane and Methane Methoxymethane reacts with dilute sulfuric acids H2SO4 and heated formed methanol
+• Prepare Ethoxy butane from ethanol or Write the synthesis reaction of ethoxy butane from ethanol
+• Write the synthesis reaction of ethoxy butane from ethanol CH3 – CH2 – OH + Na+  CH3 – CH2 – O-Na+ + 𝟏𝟏 H2 𝟐𝟐
+
+PDF PAGE 79:
+• Prepare ethoxy propane from ethanol or Write the synthesis reaction of ethoxy propane from ethanol
+• Write the synthesis reaction of ethoxy propane from ethanol CH3 – CH2 – OH + Na+  CH3 – CH2 – O-Na+ + 𝟏𝟏 H2 𝟐𝟐
+• prepare ethoxyethane from proper alcohol /2 2021 /1 2018 /2 2017 prepare ethoxyethane from ethanol or
+• prepare ethoxyethane from ethanol or Write the synthesis reaction of ethoxyethane from ethanol or
+• Write the synthesis reaction of ethoxyethane from ethanol or CH3 – CH2 – OH + Na+  CH3 – CH2 – O-Na+ + 𝟏𝟏 H2 𝟐𝟐
+• prepare ethoxymethane from proper alcohol CH3 – CH2 – OH + Na+  CH3 – CH2 – O-Na+ + 𝟏𝟏 H2 𝟐𝟐
+
+PDF PAGE 80:
+• What is the result of reacting ethoxyethane once with diluted sulfuric acid and heat and one with cold concentrated sulfuric acid 
+• Write down reaction of ethoxyethane with diluted sulfuric acid with heat diluted H2SO4
+• justify :Ethers have lower boiling points than alcohols . or Ethers have lower boiling points than those of the corresponding alcohols. the
+• Justify : Ethers do not dissolve in water Ethers do not dissolve in water because of ------
+
+PDF PAGE 82:
+• Justify : Aldehydes and Ketones are called as carbonyl compound A: Aldehydes and Ketones have the same functional group . Its name is carbonyl group.This group is formed by oxygen atom attached with
+
+PDF PAGE 84:
+• write down formulas for the following compound : 3-methylbutanal CH 3
+
+PDF PAGE 85:
+• Exercis / 16 - 7 1) Write down systematic names for the following compounds :
+• 1) Write down systematic names for the following compounds : CH2 - CH3 =O
+• ) 2 Write down formulas for the following compound : 2-hexanone =O
+
+PDF PAGE 86:
+• Q From methanol prepare a corresponding aldehyde 𝐾𝐾2𝐶𝐶𝑟𝑟2𝑂𝑂7/𝐻𝐻+ =O
+• Q From propanol prepare propanal 𝐾𝐾2𝐶𝐶𝑟𝑟2𝑂𝑂7/𝐻𝐻+ =O
+
+PDF PAGE 87:
+• Q 17-7) Prepare Ethanal using suitable alcohols Q 7-3) Write down the preparation processes of the following compounds from the starting substances : Ethanal from Ethanol
+• Q 7-3) Write down the preparation processes of the following compounds from the starting substances : Ethanal from Ethanol 
+• Example 7-7) Write down oxidation products of 1-propanol O O K2Cr2O7 / H+ || K2Cr2O7 / H+ ||
+• Q From 2-propanol prepare a corresponding Ketones 
+
+PDF PAGE 88:
+• Q Example 7-7) Write down oxidation products of 2-pentanol 
+• Q 17-7) Prepare 2-butanone using suitable alcohols 
+• 4- these compounds are accepted as polarized.Justify Owing to the polar property of carbonyl group, 5- They can dissolve in water and organic solvents like ether.
+
+PDF PAGE 90:
+• Q What is the result of reducing ethanal with hydrogen? =O 𝑁𝑁𝑁𝑁
+• Q What is the result of reducing propanone (acetone) with hydrogen? Q Fill: The reaction which transforms propanone to 2-propanol is
+• Q Exercise 7-18: Complete following equations : OH
+
+PDF PAGE 91:
+• Q Prepare Ethane from a proper Aldehyde Q 7-8) Addition of amalgam (mercury-zinc) in the presence of HCl
+
+PDF PAGE 92:
+• Q Prepare propane form propanal 
+• Q Prepare butane from a proper Ketones 
+• Q Prepare propane from propanone (acetone) 
+• Q Write down the reaction of Ethanal with hydrazine 
+
+PDF PAGE 93:
+• Q Write down the reaction of propanal with hydrazine H H 
+• Q Write down the reaction of propanone(acetone) with hydrazine C H3 C H3
+
+PDF PAGE 94:
+• We can differentiate aldehydes and ketones using following reactions: : االتيه التفاعالت بحسب والكيتونات االلديهايدات بين التمييز يمكن و
+• solution that used in order to differentiate aldehydes .In this reaction ,Silver ion is reduced in solution and silver metal covers the tube,s surface as mirror showing the presence of aldehyde ,While Ketones doesn’t react
+
+PDF PAGE 95:
+• Q Differentiate between Ethanal and propanone using Tollen,s reagent Q Differentiate between acetaldehyde and acetone using Tollen,s reagent
+• Q Differentiate between acetaldehyde and acetone using Tollen,s reagent A: We can differentiate by using Tollen,s reagent , As Aldehyde (Ethanal) will react with this reagent , Silver ion is reduced in solution
+• A: We can differentiate by using Tollen,s reagent , As Aldehyde (Ethanal) will react with this reagent , Silver ion is reduced in solution and silver metal covers the tube,s surface as mirror showing the
+
+PDF PAGE 96:
+• Q Define Fehling ,s Solution then mention its uses? Fehling's solution is a solution of copper sulfate (II) salt. It's basic and dark blue. it contains negative roots such as citrate and tartrate to
+• Q Differentiate between Ethanal and propanone using Fehling ,s Solution 
+• Q Differentiate between acetaldehyde and acetone using Fehling ,s Solution 
+
+PDF PAGE 97:
+• A:We can differentiate by using Fehling ,s Solution as aldehyde (ethanal) will react with this reagent ,as copper (II) ions transforms into red copper (I) oxide. This red copper (I) oxide precipitate shows presence of aldehyde
+• Exercis 7-20 : How can you differentiate propanal and propanone compounds using the following practically ? Fehling ,s Solution - Tollen,s reagent
+• A: We can differentiate by using Tollen,s reagent , As Aldehyde (propanal) will react with this reagent , Silver ion is reduced in solution and silver metal covers the tube,s surface as mirror showing the
+
+PDF PAGE 98:
+• A:We can differentiate by using Fehling ,s Solution as aldehyde (propanal) will react with this reagent ,as copper (II) ions transforms into red copper (I) oxide. This red copper (I) oxide precipitate shows
+• A)Write down the structural formulas of A,B and C B) Write down the names of A , B and C C) Which of B and C has higher boiling point
+• B) Write down the names of A , B and C C) Which of B and C has higher boiling point D) Write down other structural formulas of compound B which doesn’t oxidize with
+• D) Write down other structural formulas of compound B which doesn’t oxidize with K2Cr2O7 in acidic conditions. 
+
+PDF PAGE 100:
+• Q 17-7) Obtain the following compounds starting from ethylene (CH2=CH2) .Write down the equations : ethanal 
+• (CH2=CH2) .Write down the equations : ethanal االيثانال
+
+PDF PAGE 101:
+• a)Write down the structural formulas of A,B and C B) Write down the formation equation of compounds A,B and C 
+• B) Write down the formation equation of compounds A,B and C 
+
+PDF PAGE 104:
+• Q Write the structure formula of the following compounds a) 2-methylbutanoic acid b) 3-chloropropanoic acid
+
+PDF PAGE 105:
+• Q Exercise 7-21 : Write the name of the following compounds : Cl
+• in order to prepare wanted carboxylic acid, hydrolysis (reaction with water) in acidic medium is realized. 
+
+PDF PAGE 107:
+• Q Prepare Ethanoic acid from a proper alkyl halide H2O
+• Q Starting from methyl chloride prepare Ethanoic acid Dry ether
+• Q Prepare propanoic acid from the following : 1)ethyl bromide 2)propanal 
+
+PDF PAGE 108:
+• Q Example 9 : prepare propanoic acid Starting from ethyl chloride 
+• Q Exercise 7-25 : prepare butanoic acid starting from 1-butanol 
+
+PDF PAGE 109:
+• Q Justify : the boiling points of carboxylic acids are higher than those of alcohol with the same number of carbons ? 
+
+PDF PAGE 110:
+• differentiate carbonyl group in carboxylic acids. :.والبيكاربونات الكاربونات مع الحوامض تفاعل 2
+• Q Exercise 7-23 : Write down the reaction equation of acetic acid with sodium bicarbonate (NaHCO3) 
+• The gas obtained from the reaction of ethanol with sodium metal is -------- 3- Reaction of carboxylic acid with alcohols (esterification reaction):
+• 3- Reaction of carboxylic acid with alcohols (esterification reaction): Carboxylic acids react with alcohols along with HCl or H2SO4 catalysts and form esters .This reaction is reversible and called as
+
+PDF PAGE 111:
+• Q Prepare Ethyl ethanoate from a proper Carboxylic acid 
+
+PDF PAGE 112:
+• Q Example 7-8 : Prepare propanoic acid starting from ethanal وبانويكالبر حامضحض بااليثانال مبتدا : 8 - 7 
+
+PDF PAGE 113:
+• Q 6-7) Write the equations showing the following reactions : 1) preparation of ethanoic acid starting from methanal 
+• 1) preparation of ethanoic acid starting from methanal 
+• Q H.W) Prepare butanoic acid starting from propanal ? 
+
+PDF PAGE 114:
+• Q Q 6-7) Write the equations showing the following reactions : 1) preparation of ethanol starting from methanol 
+• 1) preparation of ethanol starting from methanol 3CH3 – OH + PCl3 → 3CH3 – Cl +H3PO3
+• Q Q 6-7) Write the equations showing the following reactions : 1) preparation of propanoic acid starting from 1-bromopropane 
+• 1) preparation of propanoic acid starting from 1-bromopropane 
+
+PDF PAGE 115:
+• Q 9-7) Write down the synthesis equation of butanoic acid from suitable alkyl halide with Grignard reagent 
+
+PDF PAGE 116:
+• Q 7-10) Write down the names of organic compounds from A to E in the chain reactions starting with ethylene ( CH2=CH2) 
+
+PDF PAGE 117:
+• Q 7-11) How can you differentiate the following compound pairs experimentally? Butanal and butanoic acid 
+• A: We can differentiate between butanal (aldehyde) and butanoic acid ( carboxylic acid) by oxidation as : 
+• Q 7-11) How can you differentiate the following compound pairs experimentally? ethanol and ethanoic acid 
+• A: We can differentiate between ethanol (alcohol) and ethanoic acid ( carboxylic acid) by oxidation as : 
+
+PDF PAGE 118:
+• Q 16-7) Write down the synthesis equations of the following compounds starting from ethanol: ethanoic acid CH3COOH 
+• starting from ethanol: ethanoic acid CH3COOH : االتية المواد تحضير تبين كيميائية معادالت اكتب : 7- 16 الفصل أسئلة
+
+PDF PAGE 120:
+• Exercise CH3 =O =O
+• QUESTION Write down structural formula for the following compound : Propyl-2,3-dimethylhexanoate
+
+PDF PAGE 122:
+• QUESTION 3CH3 – CH2 – OH + PCl3 ⎯⎯→ 3CH3 – CH2 – Cl + H3PO3
+• same number of carbons. (Justify) Answer: They don't form hydrogen bonds between their molecules 3- Most esters don't dissolve in water but dissolve in many organic
+
+PDF PAGE 123:
+• to differentiate esters 
+
+PDF PAGE 126:
+• QUESTION Two of the following compounds were mixed in acidic conditions .At the end of the reaction , pleasant- smelling C4H8O2 compound formed .Find out those two
+• compounds and write down the equation : CH3CH3 CH3CH2 OH CH3CHO CH 3COOH CH 3CH3O CH3 
+• reaction of a carboxylic acid with an alcohol. الن استر يكون مقبولة رائحة له انه بما لكن استر او كاربوكسيلي حامض اما تمثل C 4 H8O 2 الصيغة / ج
+
+PDF PAGE 130:
+• Using ammonia , we can prepare the three types of amines. For this , alcoholic ammonia solution and alkyl halide are mixed in asealed test tube. 
+
+PDF PAGE 131:
+• QUESTION Justify : preparation of amines from the reaction of ammonia and alkyl halide is not a successful laboratory method ًعللمختبريا ناجحة غير تعتبر االلكيل هاليدات مع االمونيا تفاعل من االمينات تحضير طريقة :
+• difficult to separate are prepared. We only prepare primary amines with this method 
+• QUESTION 𝑁𝑁𝑁𝑁𝑁𝑁𝑁𝑁
+
+PDF PAGE 133:
+• 3- their boiling points are higher than those of compounds which cannot ionize justify Answer : These compounds form hydrogen bonds due to their ionization property 4- they can dissolve in organic solvents such as benzene and ether
+• 5- Amines can dissolve in water justify as they can form hydrogen bonds with water molecules. .االمونيا لرائحة مشابهه رائحة الواطئة المولية الكتل ذات االمينات تمتلك) 1
+
+PDF PAGE 134:
+• QUESTION justify : Amines are considered as bases According to Lewis ,s concept A : because nitrogen atom has a pair of electrons which can make bond with protons or lewis acids , this indicates its ability to react with acids
+
+PDF PAGE 135:
+• QUESTION How can you differentiate the following compound pairs experimentally Ethylamine and ethane 
+
+PDF PAGE 137:
+• QUESTION 5-7 : supply names for the following organic compounds according to IUPAC system 
+
+PDF PAGE 138:
+• QUESTION The number of structure formulas of C3H6Br2 compound: : هو C 3 H6 Br2 للمركب المحتملة البنائية الصيغ عدد .5 )د .4 )جـ .3 )ب .2 )أ
+• QUESTION There are two colorless liquids in two different test tubes . One is hexane , the other is 1-hexanol. How can you differentiate these two liquids
+• How can you differentiate these two liquids هكسانول- 1 إحداهما في ملونين غير سائلين على تحتويان اختبار انبوبتا 1- 7
+• We can differentiate between 1-hexanol (alcohol) and hexane (Alkane) by oxidation as alcohol oxidize into carboxylic acid while alkane doesn’t oxidize 
+
+PDF PAGE 139:
+• QUESTION Explain the following changes via chemical equations : 
+
+PDF PAGE 140:
+• Q) As A has three carbon atoms ,Write down the formulas of the following A,B,C,D,E organic compounds in the following equation chain 
