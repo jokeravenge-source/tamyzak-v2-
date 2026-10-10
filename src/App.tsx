@@ -1016,6 +1016,7 @@ const StudentApp = () => {
           <Auth
             onAuthed={() => setAuthed(true)}
             onGuest={() => setNadiaAuthOpen(false)}
+            initialMode="signup"
           />
         ) : (
           <MinisterialBank
