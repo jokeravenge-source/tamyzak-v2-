@@ -29,6 +29,7 @@ export const chemistryChapters = [
   { n: 5, title: "Chapter 5", arTitle: "الفصل الخامس", subtitle: "", locked: false },
   { n: 6, title: "Chapter 6", arTitle: "الفصل السادس", subtitle: "", locked: false },
   { n: 7, title: "Chapter 7", arTitle: "الفصل السابع", subtitle: "", locked: false },
+  { n: 8, title: "Chapter 8", arTitle: "الفصل الثامن", subtitle: "", locked: false },
 ];
 
 export const arabicChapters = [

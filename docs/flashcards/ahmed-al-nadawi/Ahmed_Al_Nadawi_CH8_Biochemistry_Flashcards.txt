@@ -1,0 +1,640 @@
+# Chapter 8 – Biochemistry
+
+Complete Flashcards Deck | Chemistry – أحمد النداوي
+
+Based on your uploaded Chapter Eight.pdf, I've organized the flashcards into topic-based sections, combining repeated ministerial questions while preserving their important answers.
+
+The deck includes definitions, justifications, comparisons, chemical equations, chapter exercises, and ministerial examination years where clearly stated in the file.
+
+## Section 1: Biochemistry & Carbohydrates
+
+Flashcards 1–8
+
+Flashcard 1 — Define biochemistry.
+
+Answer: Biochemistry is the branch of science that studies the chemical changes and biosynthesis occurring in living organisms and explains biological phenomena in chemical terms.
+
+Flashcard 2 — Define carbohydrates.
+
+Answer: Carbohydrates are organic compounds consisting of carbon, hydrogen, and oxygen. Their general formula is commonly represented as (CH₂O)ₙ or Cₙ(H₂O)ₙ.
+
+Flashcard 3 — Why are carbohydrates called carbohydrates?
+
+Answer: Because their name is derived from carbon and hydrate (water), reflecting their general composition.
+
+Flashcard 4 — Classify carbohydrates and give examples of each.
+
+Answer:
+
+1. Monosaccharides: Glucose and fructose.
+2. Disaccharides: Sucrose, maltose, and lactose.
+3. Polysaccharides: Starch and cellulose.
+
+Flashcard 5 — What are the two general groups of carbohydrates?
+
+Answer:
+
+1. Simple carbohydrates.
+2. Complex carbohydrates.
+
+Flashcard 6 — In which structural forms can carbohydrates exist?
+
+Answer: Open-chain and cyclic structures.
+
+Flashcard 7 — Give an example of a disaccharide.
+
+Answer: Maltose.
+
+Flashcard 8 — Give two examples of polysaccharides.
+
+Answer: Starch and cellulose.
+
+## Section 2: Glucose
+
+Flashcards 9–19
+
+Flashcard 9 — Define glucose and mention its occurrence in nature.
+
+Answer: Glucose is a monosaccharide known as grape sugar. It is naturally found in grapes and blood.
+
+Flashcard 10 — What is the molecular formula of glucose?
+
+Answer: C₆H₁₂O₆ or C₆(H₂O)₆.
+
+Flashcard 11 — Explain the open and cyclic structures of glucose.
+
+Answer:
+
+- Open structure: Contains one aldehyde group (–CHO) and several hydroxyl groups (–OH).
+- Cyclic structure: Contains an ether linkage and several hydroxyl groups.
+
+Flashcard 12 — Justify: Glucose has a high boiling point.
+
+Answer: Because hydrogen bonds form between glucose molecules through their hydroxyl groups, increasing its boiling point.
+
+Flashcard 13 — Justify: Glucose dissolves strongly in water.
+
+Answer: Because glucose forms hydrogen bonds with water molecules.
+
+Flashcard 14 — Justify: Glucose has chemical properties similar to alcohols and aldehydes.
+
+Answer: Because its open structure contains several hydroxyl groups (–OH) and one aldehyde group (–CHO).
+
+Flashcard 15 — Why does glucose react with Tollens' reagent and Fehling's solution?
+
+Answer: Because glucose contains an aldehyde group in its open-chain structure and behaves as a reducing sugar.
+
+Flashcard 16 — Mention the physical properties of glucose.
+
+Answer:
+
+1. Crystalline solid.
+2. High boiling point.
+3. Soluble in water.
+4. Forms hydrogen bonds.
+
+Flashcard 17 — Mention an important medical use of glucose.
+
+Answer: It is used as a nutrient for patients who cannot be fed orally and during surgical operations.
+
+Flashcard 18 — Write the open structural formula of glucose.
+
+Answer:
+
+```
+    CHO
+     |
+   H–C–OH
+     |
+  HO–C–H
+     |
+   H–C–OH
+     |
+   H–C–OH
+     |
+   CH₂OH
+```
+
+Flashcard 19 — What functional group distinguishes the open structure of glucose?
+
+Answer: The aldehyde group (–CHO).
+
+## Section 3: Fructose
+
+Flashcards 20–27
+
+Flashcard 20 — Define fructose.
+
+Answer: Fructose is a monosaccharide known as fruit sugar, found naturally in honey and most fruits.
+
+Flashcard 21 — What is the molecular formula of fructose?
+
+Answer: C₆H₁₂O₆.
+
+Flashcard 22 — Compare glucose and fructose.
+
+Answer:
+
+- Both have the molecular formula C₆H₁₂O₆.
+- Glucose contains an aldehyde group in its open structure.
+- Fructose contains a ketone group in its open structure.
+- Both contain hydroxyl groups.
+
+Flashcard 23 — Explain the open and cyclic structures of fructose.
+
+Answer:
+
+- Open structure: Contains a ketone carbonyl group and several hydroxyl groups.
+- Cyclic structure: Contains an ether linkage and hydroxyl groups.
+
+Flashcard 24 — Justify: Fructose is classified as a reducing sugar although it is a ketone.
+
+Answer: Because fructose gives positive reactions with Tollens' reagent and Fehling's solution.
+
+Flashcard 25 — Why do fructose and glucose have similar physical properties?
+
+Answer: Because they have the same molecular formula and contain several hydroxyl groups.
+
+Flashcard 26 — Why is fructose soluble in water and has a high boiling point?
+
+Answer: Because it contains hydroxyl groups capable of forming hydrogen bonds.
+
+Flashcard 27 — What functional group distinguishes open-chain fructose from glucose?
+
+Answer: The ketone group (C=O).
+
+## Section 4: Disaccharides & Sucrose
+
+Flashcards 28–35
+
+Flashcard 28 — Define disaccharides.
+
+Answer: Disaccharides are carbohydrates formed from two monosaccharide units joined by a glycosidic bond with the elimination of one water molecule.
+
+Flashcard 29 — Give three examples of disaccharides.
+
+Answer: Sucrose, maltose, and lactose.
+
+Flashcard 30 — Define sucrose.
+
+Answer: Sucrose is a disaccharide known as cane sugar, produced from sugar cane and consisting of glucose and fructose.
+
+Flashcard 31 — What is the molecular formula of sucrose?
+
+Answer: C₁₂H₂₂O₁₁.
+
+Flashcard 32 — Name the monosaccharides that form sucrose.
+
+Answer: Glucose and fructose.
+
+Flashcard 33 — What type of bond connects glucose and fructose in sucrose?
+
+Answer: A glycosidic bond.
+
+Flashcard 34 — Write the formation equation of sucrose.
+
+Answer:
+
+Glucose + Fructose → Sucrose + H₂O
+
+C₆H₁₂O₆ + C₆H₁₂O₆ → C₁₂H₂₂O₁₁ + H₂O
+
+Flashcard 35 — What happens to sucrose during digestion?
+
+Answer: Its glycosidic bond is broken by hydrolysis, producing glucose and fructose.
+
+Sucrose + H₂O → Glucose + Fructose
+
+## Section 5: Proteins & Amino Acids
+
+Flashcards 36–49
+
+Flashcard 36 — Define proteins.
+
+Answer: Proteins are organic compounds containing carbon, hydrogen, oxygen, and nitrogen, sometimes sulfur and phosphorus. They are formed by the bonding of many amino acids through peptide bonds.
+
+Flashcard 37 — What are the main building units of proteins?
+
+Answer: Amino acids.
+
+Flashcard 38 — What elements are found in proteins?
+
+Answer: Carbon, hydrogen, oxygen, and nitrogen. Some proteins also contain sulfur and phosphorus.
+
+Flashcard 39 — What is the general structural formula of an amino acid?
+
+Answer:
+
+```
+      H
+      |
+H₂N – C – COOH
+      |
+      R
+```
+
+Where:
+
+- –NH₂: Amino group.
+- –COOH: Carboxyl group.
+- R: Alkyl or side-chain group.
+
+Flashcard 40 — What two functional groups are found in all amino acids?
+
+Answer: Amino group (–NH₂) and carboxyl group (–COOH).
+
+Flashcard 41 — What causes the differences between amino acids?
+
+Answer: Differences in their R groups (side chains).
+
+Flashcard 42 — Justify: Proteins have amphoteric properties.
+
+Answer: Because they contain carboxyl groups with acidic properties and amino groups with basic properties, allowing them to react with both acids and bases.
+
+Flashcard 43 — Why can proteins react with acids and bases?
+
+Answer: Because they possess both acidic carboxyl groups and basic amino groups.
+
+Flashcard 44 — Justify: Proteins cannot easily be separated by simple chemical methods.
+
+Answer: Because they have similar chemical compositions and physical and chemical properties.
+
+Flashcard 45 — How are peptide bonds formed?
+
+Answer: By joining amino acids together with the elimination of water molecules.
+
+Flashcard 46 — What determines the functions of proteins?
+
+Answer: The types, numbers, and sequences of amino acids within their structures.
+
+Flashcard 47 — How can proteins be broken down into amino acids?
+
+Answer: By hydrolysis using inorganic acids such as HCl, which breaks peptide (amide) bonds.
+
+Flashcard 48 — What happens when proteins react with NaOH?
+
+Answer: They can be broken down to form salts of amino acids.
+
+Flashcard 49 — Give examples of important proteins in living organisms.
+
+Answer: Enzymes, hormones, hemoglobin, and keratin.
+
+## Section 6: Enzymes
+
+Ministerial focus
+
+Flashcards 50–61
+
+Flashcard 50 — Define enzymes.
+
+Ministerial: 2013 Preliminary, 2014 First Round, 2016, 2017, 2019 (as indicated in the chapter)
+
+Answer: Enzymes are biological catalysts, generally proteins, produced by living organisms. They participate in vital processes such as digestion, metabolism, and respiration by reducing the energy required for reactions.
+
+Flashcard 51 — Enumerate the properties of enzymes.
+
+Ministerial: 2013, 2014, 2016, 2017
+
+Answer:
+
+1. They are proteins.
+2. They are found in living cells.
+3. They act as biological catalysts.
+4. They participate in digestion, metabolism, and respiration.
+5. They are produced in living organisms.
+6. They are constantly renewed.
+7. They work at a specific pH.
+8. High temperatures can destroy their activity.
+9. They reduce the energy needed for reactions.
+
+Flashcard 52 — What are the two types of enzymes?
+
+Answer: Internal enzymes and external enzymes.
+
+Flashcard 53 — Define internal enzymes.
+
+Ministerial: 2014 Second Round, 2016 Third Round, 2018 Third Round
+
+Answer: Internal enzymes perform their functions inside cells and do not pass through the cell membrane, such as oxidative enzymes.
+
+Flashcard 54 — Define external enzymes.
+
+Ministerial: 2013 Second Round, 2015 First Round, 2018 First Round
+
+Answer: External enzymes perform their functions outside cells after being secreted, such as digestive enzymes.
+
+Flashcard 55 — Compare internal and external enzymes.
+
+Answer:
+
+| Internal enzymes           | External enzymes           |
+| -------------------------- | -------------------------- |
+| Work inside cells          | Work outside cells         |
+| Do not leave the cell      | Are secreted from cells    |
+| Example: Oxidative enzymes | Example: Digestive enzymes |
+
+Flashcard 56 — Justify: High temperatures affect enzyme activity.
+
+Answer: Because high temperatures disrupt the enzyme structure and prevent it from functioning properly.
+
+Flashcard 57 — Why do enzymes work at a specific pH?
+
+Answer: Their activity depends on the surrounding pH, and they function effectively within a suitable pH range.
+
+Flashcard 58 — Why are enzymes continuously renewed in living organisms?
+
+Answer: Because they gradually lose their effectiveness over time.
+
+Flashcard 59 — What is the role of enzymes in biological reactions?
+
+Answer: They act as catalysts that facilitate chemical reactions by lowering the required activation energy.
+
+Flashcard 60 — Fill in the blanks: External enzymes perform their duties \_\_\_\_\_\_ cells, such as \_\_\_\_\_\_ enzymes.
+
+Answer: Outside; digestive.
+
+Flashcard 61 — Give an example of each type of enzyme.
+
+Answer:
+
+- Internal: Oxidative enzymes.
+- External: Digestive enzymes.
+
+Exam note: The source's English explanation says enzymes supply energy for reactions, while its Arabic explanation describes reducing the required energy. The flashcards use the latter meaning.
+
+## Section 7: Lipids & Fats
+
+Flashcards 62–71
+
+Flashcard 62 — Define lipids.
+
+Answer: Lipids are organic compounds represented by animal fats and vegetable oils. They are used for energy storage and dissolve in organic solvents rather than water.
+
+Flashcard 63 — Compare animal fats and vegetable oils.
+
+Answer:
+
+| Animal fats                         | Vegetable oils                           |
+| ----------------------------------- | ---------------------------------------- |
+| Generally solid at room temperature | Generally liquid at room temperature     |
+| Found in animal tissues             | Found in plants, such as cotton and corn |
+
+Flashcard 64 — Why are lipids important to living organisms?
+
+Answer: They store energy that can be released when needed through digestion and oxidation.
+
+Flashcard 65 — Mention industrial uses of lipids.
+
+Answer: Soap, paint, and candle production.
+
+Flashcard 66 — Why don't lipids dissolve in water?
+
+Answer: Because they are largely nonpolar compounds, while water is polar.
+
+Flashcard 67 — Name two organic solvents in which lipids dissolve.
+
+Answer: Ether and chloroform.
+
+Flashcard 68 — How are triglycerides formed?
+
+Answer: By the esterification of glycerol with three fatty acid molecules.
+
+Flashcard 69 — Write the general equation for triglyceride formation.
+
+Answer:
+
+Glycerol + 3 Fatty acids → Triglyceride + 3H₂O
+
+Flashcard 70 — What is the carbon-chain range of fatty acids mentioned in the chapter?
+
+Answer: C₁₂–C₂₄.
+
+Flashcard 71 — What functional group is found at one end of a fatty acid?
+
+Answer: The carboxyl group (–COOH).
+
+## Section 8: Soaps & Saponification
+
+Ministerial focus
+
+Flashcards 72–83
+
+Flashcard 72 — Define soap.
+
+Ministerial: 2014 First Round
+
+Answer: Soap is the sodium or potassium salt of fatty acids.
+
+Flashcard 73 — Define saponification.
+
+Answer: Saponification is the reaction of fats or oils with strong bases, such as NaOH or KOH, to produce soap and glycerol.
+
+Flashcard 74 — What raw materials are used in soap production?
+
+Answer: Fats or vegetable oils and sodium hydroxide (NaOH) or potassium hydroxide (KOH).
+
+Flashcard 75 — Write the general saponification equation.
+
+Answer:
+
+Triglyceride + 3NaOH → Glycerol + 3RCOONa
+
+Where RCOONa represents the sodium salt of a fatty acid (soap).
+
+Flashcard 76 — Write the equation for the production of sodium palmitate soap.
+
+Ministerial: 2014, 2015 Preliminary
+
+Answer:
+
+Glyceryl tripalmitate + 3NaOH → Glycerol + 3Sodium palmitate
+
+C₃H₅(OCOC₁₅H₃₁)₃ + 3NaOH → C₃H₅(OH)₃ + 3C₁₅H₃₁COONa
+
+Flashcard 77 — On what do the shape and quality of soap depend?
+
+Answer: On the type of base and oil used during saponification.
+
+Flashcard 78 — What type of soap is produced using sodium hydroxide?
+
+Answer: Hard soap, such as ordinary soap bars.
+
+Flashcard 79 — What type of soap is produced using potassium hydroxide?
+
+Answer: Soft soap, such as liquid soap and shaving foam.
+
+Flashcard 80 — Justify: Sodium chloride is added during soap production.
+
+Answer: To separate and precipitate the soap from the reaction mixture.
+
+Flashcard 81 — Why is the final soap product washed with water?
+
+Answer: To remove remaining salt.
+
+Flashcard 82 — Why are calcium hydroxide and magnesium hydroxide not used instead of NaOH and KOH in soap production?
+
+Ministerial: 2017 First Round, Outside Iraq
+
+Answer: Because Ca²⁺ and Mg²⁺ ions are associated with water hardness, and soap does not foam properly in hard water.
+
+Flashcard 83 — Compare the products formed when NaOH and KOH are used in saponification.
+
+Answer:
+
+- NaOH: Sodium salts of fatty acids, producing hard soap.
+- KOH: Potassium salts of fatty acids, producing soft soap.
+
+## Section 9: Polysaccharides, Starch & Cellulose
+
+Flashcards 84–95
+
+Flashcard 84 — Define polysaccharides.
+
+Answer: Polysaccharides are large carbohydrate molecules (polymers) formed by joining many monosaccharide units.
+
+Flashcard 85 — Give two examples of polysaccharides.
+
+Answer: Starch and cellulose.
+
+Flashcard 86 — Define starch.
+
+Answer: Starch is a polysaccharide formed by linking many glucose molecules together to produce a large polymer.
+
+Flashcard 87 — What is the basic structural unit of starch?
+
+Answer: Glucose.
+
+Flashcard 88 — Give an example of a food that contains starch.
+
+Answer: Potato.
+
+Flashcard 89 — Define cellulose.
+
+Answer: Cellulose is a polysaccharide consisting of many glucose units linked together to form a large polymer.
+
+Flashcard 90 — What are the natural sources of cellulose mentioned in the chapter?
+
+Answer: Wood fibers and the peels of some fruits, including dates.
+
+Flashcard 91 — Why do starch and cellulose have different properties although both are formed from glucose?
+
+Answer: Because they differ in the number of glucose units and the way these units are bonded together.
+
+Flashcard 92 — What substances can break down cellulose molecules according to the chapter?
+
+Answer: Certain enzymes and acidic solutions.
+
+Flashcard 93 — How can starch be detected?
+
+Answer: Add a few drops of iodine solution in potassium iodide to the sample. The appearance of a blue color indicates starch.
+
+Flashcard 94 — How can you distinguish between starch and glucose?
+
+Answer:
+
+- Starch: Produces a blue color with iodine solution.
+- Glucose: Does not produce the blue color with iodine solution.
+
+Flashcard 95 — What is the basic unit common to both starch and cellulose?
+
+Answer: Glucose.
+
+## Section 10: Important Protein Reactions & Chapter Exercises
+
+Flashcards 96–106
+
+Flashcard 96 — What happens when proteins undergo hydrolysis?
+
+Answer: Their peptide bonds break, producing smaller units and ultimately amino acids.
+
+Flashcard 97 — What is the effect of HCl on proteins?
+
+Answer: It breaks the amide (peptide) bonds during hydrolysis, producing amino acids.
+
+Flashcard 98 — What is the effect of NaOH on proteins?
+
+Answer: It can hydrolyze proteins to form salts of amino acids.
+
+Flashcard 99 — How many different amino acids are mentioned in the chapter as occurring in nature?
+
+Answer: More than 20.
+
+Flashcard 100 — Give two different structural forms of proteins.
+
+Answer:
+
+1. Fibrous form, such as keratin in hair and wool.
+2. Approximately globular form, such as proteins found in eggs.
+
+Flashcard 101 — Why do proteins have different biological functions?
+
+Answer: Because their sizes, shapes, amino acid compositions, and amino acid sequences differ.
+
+Flashcard 102 — Which of the following is NOT a characteristic of proteins?
+
+a) They can contain carbon, oxygen, hydrogen, and sulfur.
+
+b) They contain carbon, hydrogen, and nitrogen.
+
+c) They react with acids and bases.
+
+Answer: None of the options is necessarily excluded; this question is ambiguous as written in the uploaded chapter.
+
+Flashcard 103 — Which units form sucrose?
+
+a) Glucose
+
+b) Fructose
+
+c) Glucose and fructose
+
+Answer: c) Glucose and fructose.
+
+Flashcard 104 — Which element is not part of the general amino acid structure?
+
+a) Nitrogen
+
+b) Phosphorus
+
+c) Oxygen
+
+d) Carbon
+
+Answer: b) Phosphorus.
+
+Flashcard 105 — Which of the following substances are formed from fatty acids?
+
+a) Proteins
+
+b) Carbohydrates
+
+c) Oils (lipids)
+
+Answer: c) Oils (lipids).
+
+Flashcard 106 — Justify: Fructose is considered a reducing sugar.
+
+Answer: Because it gives positive reactions with Tollens' reagent and Fehling's solution.
+
+## Ministerial question coverage
+
+The chapter repeatedly presents several questions under different examination years. I've grouped repeated versions into single flashcards to avoid unnecessary duplication.
+
+| Ministerial topic                      | Flashcards |
+| -------------------------------------- | ---------- |
+| Glucose properties, formula, structure | 9–19       |
+| Reducing properties of fructose        | 20–27, 106 |
+| Formation of sucrose                   | 28–35      |
+| Protein properties and amino acids     | 36–49      |
+| Enzyme definitions and properties      | 50–52      |
+| Internal and external enzymes          | 53–61      |
+| Lipids and triglycerides               | 62–71      |
+| Soap formation equation                | 72–76      |
+| Soap types and production              | 77–83      |
+| Calcium and magnesium hydroxides       | 82         |
+| Starch detection and comparison        | 93–95      |
+| End-of-chapter exercises               | 102–106    |
+
+Total: 106 flashcards across 10 sections. The deck covers the identifiable questions and major notes in the 26-page chapter, including the displayed chemical equations. Ministerial years are included where readable; some year labels in the PDF are incomplete or distorted, so I have not guessed them. Structural drawings have been condensed into text or formulas rather than reproduced as full diagrams.
+
+If you want these imported into Tamayzak, the deck can be labeled Chemistry → Ahmed Al Nadawi → Chapter 8: Biochemistry.
