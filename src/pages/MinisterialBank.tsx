@@ -271,6 +271,7 @@ type AnswerCheckResult = {
   const [studentText, setStudentText] = useState<string>("");
   const [studentImages, setStudentImages] = useState<string[]>([]);
   const [grading, setGrading] = useState(false);
+  const [guestPromptOpen, setGuestPromptOpen] = useState(false);
   const [gradeResult, setGradeResult] = useState<any>(null);
 
   const back = () => {
@@ -346,6 +347,10 @@ type AnswerCheckResult = {
   };
 
   const submitGrading = async () => {
+    if (onCreateAccount) {
+      setGuestPromptOpen(true);
+      return;
+    }
     if (!studentText.trim() && !studentImages.length) {
       toast({ title: t.provideAnswer, variant: "destructive" });
       return;
@@ -467,6 +472,10 @@ type AnswerCheckResult = {
   };
 
   const checkCurrentAnswer = async () => {
+    if (onCreateAccount) {
+      setGuestPromptOpen(true);
+      return;
+    }
     const studentAnswer = (answers[qIndex] ?? "").trim();
     if (!current || !studentAnswer) {
       toast({ title: t.answerRequired, variant: "destructive" });
@@ -613,6 +622,49 @@ type AnswerCheckResult = {
         </section>
       )}
 
+
+      {onCreateAccount && guestPromptOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setGuestPromptOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-[28px] border border-primary/25 bg-card p-6 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h2 className="text-xl font-black text-foreground leading-snug">
+              {language === "ar" ? "أنشئ حسابًا لإرسال إجابتك" : "Create an account to submit your answer"}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {language === "ar"
+                ? "التصحيح بالذكاء الاصطناعي وحفظ النقاط يحتاجان حسابًا مجانيًا. بعد التسجيل ستعود إلى الأسئلة."
+                : "AI checking and saving your points need a free account. You can come back to the questions afterwards."}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setGuestPromptOpen(false);
+                onCreateAccount();
+              }}
+              className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-primary px-7 text-sm font-extrabold text-primary-foreground transition hover:bg-primary/90"
+            >
+              {language === "ar" ? "إنشاء حساب / تسجيل الدخول" : "Create account / Sign in"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setGuestPromptOpen(false)}
+              className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl text-sm font-bold text-muted-foreground hover:text-foreground"
+            >
+              {language === "ar" ? "العودة إلى الأسئلة" : "Back to the questions"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {(isNadiaBank || subject === "biology") && (
         <div className="fixed bottom-3 inset-x-0 z-30 flex justify-center pointer-events-none">
