@@ -74,6 +74,10 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
     ? chapters
         .filter((chapter) => chapter.n === 3)
         .map((chapter) => ({ ...chapter, title: "Ionic Equilibrium", arTitle: "الاتزان الأيوني", locked: false }))
+    : subject === "chemistry" && chemistryTeacher === "ahmed-al-nadawi"
+      ? chapters.map((chapter) => chapter.n === 4
+          ? { ...chapter, title: "Electrochemistry", arTitle: "الكيمياء الكهربائية", subtitle: language === "ar" ? "230 بطاقة · أسئلة وملاحظات وتطبيقات محلولة" : "230 cards · Questions, notes and worked practice" }
+          : chapter)
     : subject === "biology" && biologyTeacher === "nadia-al-nuaimi"
       ? chapters
           .filter((chapter) => chapter.n >= 1 && chapter.n <= 5)

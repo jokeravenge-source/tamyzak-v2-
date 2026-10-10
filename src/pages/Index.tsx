@@ -43,6 +43,8 @@ import { ahmedNadawiChemCh1CardsAr, ahmedNadawiChemCh1TopicsAr } from "@/data/fl
 import { ahmedNadawiChemCh2Cards, ahmedNadawiChemCh2Topics } from "@/data/flashcardsChemCh2AhmedNadawi";
 import { ahmedNadawiChemCh2CardsAr } from "@/data/flashcardsChemCh2AhmedNadawiAr";
 import { ahmedNadawiChemCh3Cards, ahmedNadawiChemCh3Topics } from "@/data/flashcardsChemCh3AhmedNadawi";
+import { ahmedNadawiChemCh4Cards, ahmedNadawiChemCh4Topics } from "@/data/flashcardsChemCh4AhmedNadawi";
+import { ahmedNadawiChemCh4CardsAr } from "@/data/flashcardsChemCh4AhmedNadawiAr";
 import { flashcardsChemCh2En } from "@/data/flashcardsChemCh2En";
 import { flashcardsChemCh3En } from "@/data/flashcardsChemCh3En";
 import { flashcardsChemCh3WijdanEn, wijdanChemCh3TopicRanges } from "@/data/flashcardsChemCh3WijdanEn";
@@ -209,7 +211,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
           cards: chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards)
             : chapter === "2" ? (language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards)
-            : chapter === "3" ? ahmedNadawiChemCh3Cards : [],
+            : chapter === "3" ? ahmedNadawiChemCh3Cards
+            : chapter === "4" ? (language === "ar" ? ahmedNadawiChemCh4CardsAr : ahmedNadawiChemCh4Cards) : [],
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -520,6 +523,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         cards: ahmedNadawiChemCh3Cards.filter(c => c.topic === t.key),
       }));
     }
+    if (isAhmedNadawiDeck && chapter === "4") {
+      const chapterFourCards = language === "ar" ? ahmedNadawiChemCh4CardsAr : ahmedNadawiChemCh4Cards;
+      return ahmedNadawiChemCh4Topics.map(t => ({
+        key: `nadawi-ch4-${t.key}`,
+        label: language === "ar" ? t.titleAr : t.title,
+        cards: chapterFourCards.filter(c => c.topic === t.key),
+      }));
+    }
     // Math chapter 2 has six carefully named groups in the source deck.
     // Use them instead of auto-generated single-word topic labels.
     if (subject === "math" && chapter === "2" && language === "ar") {
@@ -591,7 +602,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         const preset = explicitTopics(withExtras, language);
         if (preset) return preset;
       }
-      if (isAhmedNadawiDeck && !["1", "2", "3"].includes(String(chapter))) return groupFlashcardsByTopic([], language);
+      if (isAhmedNadawiDeck && !["1", "2", "3", "4"].includes(String(chapter))) return groupFlashcardsByTopic([], language);
       // Curriculum-driven preset groups (PDF: دفتر مراجعة المتميزين).
       // Custom cards belong to the original subject collection. Keep Nadia's
       // supplied list isolated so its 264 cards remain a separate deck.
