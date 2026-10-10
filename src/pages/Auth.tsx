@@ -40,6 +40,14 @@ const AppleIcon = () => (
   </svg>
 );
 
+// Send people back to the page they were on (public pages only) after email confirmation / Google sign-in.
+const RETURN_PATH_PATTERN = /^\/(ministerial-questions|nadia-ministerial-questions|nadia-flashcards|flashcards|mcq-bank|malazam|teachers|enrichments|tools|math|room|follow)(\/|$)/;
+const getReturnUrl = () => {
+  if (typeof window === "undefined") return "";
+  const { origin, pathname, search } = window.location;
+  return RETURN_PATH_PATTERN.test(pathname) ? `${origin}${pathname}${search}` : origin;
+};
+
 export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -73,7 +81,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: getReturnUrl() },
         });
         if (error) throw error;
 
@@ -132,7 +140,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
     try {
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+        redirect_uri: getReturnUrl(),
       });
       console.log("[OAuth] signInWithOAuth result", {
         provider,
