@@ -463,6 +463,8 @@ const StudentApp = () => {
   }, []);
   const [authed, setAuthed] = useState(() => hasPersistedAuthSession());
   const [authLoading, setAuthLoading] = useState(() => !hasPersistedAuthSession());
+  // Guests browsing Nadia's bank can open the sign-in / sign-up page from the banner.
+  const [nadiaAuthOpen, setNadiaAuthOpen] = useState(false);
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [tgVerified, setTgVerified] = useState(false);
@@ -1010,13 +1012,21 @@ const StudentApp = () => {
         </BrowserRouter>
       ) : !authed && isNadiaMinisterialRoute ? (
         // Guests can use Nadia's ministerial bank without an account.
-        <MinisterialBank
-          language={language ?? "ar"}
-          onBack={leaveMinisterialBank}
-          initialSubject="biology"
-          initialChapter={nadiaMinisterialInitialChapter}
-          questionSource="nadia"
-        />
+        nadiaAuthOpen ? (
+          <Auth
+            onAuthed={() => setAuthed(true)}
+            onGuest={() => setNadiaAuthOpen(false)}
+          />
+        ) : (
+          <MinisterialBank
+            language={language ?? "ar"}
+            onBack={leaveMinisterialBank}
+            initialSubject="biology"
+            initialChapter={nadiaMinisterialInitialChapter}
+            questionSource="nadia"
+            onCreateAccount={() => setNadiaAuthOpen(true)}
+          />
+        )
       ) : !authed ? (
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
