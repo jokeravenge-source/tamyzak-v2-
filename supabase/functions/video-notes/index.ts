@@ -401,7 +401,7 @@ ${curriculumLanguageRules}
       for (const model of lovableModels) {
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), transcriptText ? 45_000 : 95_000);
+          const timeout = setTimeout(() => controller.abort(), transcriptText ? 60_000 : 140_000);
           const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             signal: controller.signal,
@@ -475,7 +475,8 @@ ${curriculumLanguageRules}
           lastGeminiError = { status: 500, payload, text, model: `lovable:${model}` };
         } catch (e) {
           console.error("Lovable AI fetch failed", model, e);
-          lastGeminiError = { status: 500, payload: null, text: String(e), model: `lovable:${model}` };
+          const aborted = (e as Error)?.name === "AbortError";
+          lastGeminiError = { status: aborted ? 503 : 500, payload: null, text: String(e), model: `lovable:${model}` };
         }
       }
     }
