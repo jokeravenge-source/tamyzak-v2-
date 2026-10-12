@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, ListChecks, Video, BookOpen } from "lucide-react";
+import { ArrowLeft, GraduationCap, ChevronRight, Upload, Sparkles, Trash2, Loader2, FileText, CheckCircle2, XCircle, Plus, Video, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -9,8 +9,12 @@ import { missionsData } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
+import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import {
   NADIA_CHAPTERS,
+  getNadiaCurriculumLabel,
+  getNadiaLectureTopicKey,
+  type NadiaCurriculum,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
 
@@ -550,6 +554,7 @@ function GeneratorPanel({
   teacher,
   topicKey,
   language,
+  questionLanguage = language,
   L,
   onCreated,
   onCancel,
@@ -557,6 +562,7 @@ function GeneratorPanel({
   teacher: Teacher;
   topicKey: string;
   language: AppLanguage;
+  questionLanguage?: AppLanguage;
   L: Record<keyof (typeof t)["en"], string>;
   onCreated: (row: MCQSet) => void;
   onCancel: () => void;
@@ -594,7 +600,7 @@ function GeneratorPanel({
           fileData: material.fileData,
           fileName: material.fileName,
           count,
-          language,
+          language: questionLanguage,
           adminGeneration: true,
         },
       });
@@ -913,37 +919,33 @@ function NadiaTeacherFlow({
   const [stage, setStage] = useState<NadiaStage>("overview");
   const [selectedChapter, setSelectedChapter] = useState<NadiaChapterNumber | null>(null);
   const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
+  const [curriculum, setCurriculum] = useState<NadiaCurriculum>("ar");
+  const curriculumLabel = getNadiaCurriculumLabel(curriculum, language);
   const copy = {
     ar: {
       subject: "الأحياء",
       tools: "محتوى الأستاذة",
-      toolsDescription: "المحاضرات وبنك الأسئلة ضمن أداة واحدة للمنهج العربي.",
-      content: "المحاضرات وبنك الأسئلة",
-      contentDescription: "اختَر الفصل أولاً، وبعدها افتح قائمة محاضرات المنهج العربي.",
-      chapters: "فصول المنهج العربي",
+      toolsDescription: "اختَر المنهج لفتح المحاضرات وبنك الأسئلة الخاص بيه.",
+      chapters: `فصول ${curriculumLabel}`,
       chooseChapter: "اختَر الفصل الذي تريد دراسته",
       chapter: "الفصل",
-      lectures: "محاضرات المنهج العربي",
+      lectures: `محاضرات ${curriculumLabel}`,
       lecture: "المحاضرة",
-      arabicCurriculum: "المنهج العربي",
-      listDescription: (count: number) => `${count} محاضرة مرتبة للمنهج العربي.`,
-      comingSoon: "قريباً",
+      curriculum: curriculumLabel,
+      listDescription: (count: number) => `${count} محاضرة مرتبة للمنهج ${curriculum === "ar" ? "العربي" : "الإنجليزي"}.`,
       back: "رجوع",
     },
     en: {
       subject: "Biology",
       tools: "Teacher content",
-      toolsDescription: "Lectures and the MCQ bank combined in one Arabic-curriculum tool.",
-      content: "Lectures & MCQ Bank",
-      contentDescription: "Choose a chapter first, then open its Arabic-curriculum lecture list.",
-      chapters: "Arabic Curriculum Chapters",
+      toolsDescription: "Choose a curriculum to open its own lectures and MCQ bank.",
+      chapters: `${curriculumLabel} Chapters`,
       chooseChapter: "Choose the chapter you want to study",
       chapter: "Chapter",
-      lectures: "Arabic Curriculum Lectures",
+      lectures: `${curriculumLabel} Lectures`,
       lecture: "Lecture",
-      arabicCurriculum: "Arabic Curriculum",
-      listDescription: (count: number) => `${count} Arabic-curriculum lectures in order.`,
-      comingSoon: "Coming soon",
+      curriculum: curriculumLabel,
+      listDescription: (count: number) => `${count} lectures in order for the ${curriculumLabel.toLowerCase()}.`,
       back: "Back",
     },
   }[language];
@@ -987,7 +989,7 @@ function NadiaTeacherFlow({
               <p className="text-xs text-muted-foreground">
                 {stage === "lecture" && selectedLecture
                   ? `${copy.lecture} ${selectedLecture}`
-                  : copy.arabicCurriculum}
+                  : copy.curriculum}
               </p>
             )}
           </div>
@@ -1007,30 +1009,21 @@ function NadiaTeacherFlow({
             <h2 className="text-2xl font-black text-foreground">{copy.tools}</h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.toolsDescription}</p>
           </div>
-          <div className="max-w-2xl">
-            <button
-              type="button"
-              onClick={() => setStage("chapters")}
-              className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg"
-            >
-              <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
-                <Video className="h-5 w-5" />
-                <span className="h-5 w-px bg-white/35" />
-                <ListChecks className="h-5 w-5" />
-              </span>
-              <h3 className="text-xl font-black text-foreground">{copy.content}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy.contentDescription}</p>
-              <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
-                {copy.chapters} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-              </span>
-            </button>
-          </div>
+          <NadiaCurriculumCards
+            language={language}
+            onSelect={(nextCurriculum) => {
+              setCurriculum(nextCurriculum);
+              setSelectedChapter(null);
+              setSelectedLecture(null);
+              setStage("chapters");
+            }}
+          />
         </section>
       ) : stage === "chapters" ? (
         <section>
           <div className="mb-5 text-center">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-              {copy.arabicCurriculum}
+              {copy.curriculum}
             </p>
             <h2 className="mt-1 text-2xl font-black text-foreground">{copy.chapters}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{copy.chooseChapter}</p>
@@ -1065,7 +1058,7 @@ function NadiaTeacherFlow({
         <section>
           <div className="mb-5">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
-              {copy.arabicCurriculum}
+              {copy.curriculum}
             </p>
             <h2 className="mt-1 text-2xl font-black text-foreground">{copy.lectures}</h2>
             <p className="mt-1 font-bold text-foreground">
@@ -1090,7 +1083,7 @@ function NadiaTeacherFlow({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-black text-foreground">{copy.lecture} {lectureNumber}</span>
-                  <span className="mt-1 block text-xs font-bold text-muted-foreground">{copy.arabicCurriculum}</span>
+                  <span className="mt-1 block text-xs font-bold text-muted-foreground">{copy.curriculum}</span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
               </button>
@@ -1099,6 +1092,7 @@ function NadiaTeacherFlow({
         </section>
       ) : (
         <NadiaLectureWorkspace
+          curriculum={curriculum}
           language={language}
           chapter={activeChapter.number}
           lecture={selectedLecture ?? 1}
@@ -1111,11 +1105,13 @@ function NadiaTeacherFlow({
 
 export function NadiaLectureWorkspace({
   language,
+  curriculum = "ar",
   chapter,
   lecture,
   isAdmin,
 }: {
   language: AppLanguage;
+  curriculum?: NadiaCurriculum;
   chapter: NadiaChapterNumber;
   lecture: number;
   isAdmin: boolean;
@@ -1130,12 +1126,14 @@ export function NadiaLectureWorkspace({
     subject: "biology",
     chapterKey: `bio-${chapter}`,
   };
-  const baseTopicKey = `nadia-ar-ch${chapter}-lec${lecture}`;
+  const studyTopicKey = getNadiaLectureTopicKey(curriculum, chapter, lecture, "study");
+  const examTopicKey = getNadiaLectureTopicKey(curriculum, chapter, lecture, "exam");
   const chapterInfo = NADIA_CHAPTERS.find((item) => item.number === chapter) ?? NADIA_CHAPTERS[0];
 
   return (
     <section dir={isRTL ? "rtl" : "ltr"}>
       <header className="mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5">
+        <p className="mb-2 text-sm font-black text-primary">{getNadiaCurriculumLabel(curriculum, language)}</p>
         <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
           {language === "ar"
             ? `الفصل ${chapter}: ${chapterInfo.ar}`
@@ -1175,15 +1173,19 @@ export function NadiaLectureWorkspace({
 
       {tab === "notes" ? (
         <TeacherLectureVideos
+          key={studyTopicKey}
           teacherId={teacher.id}
-          topicKey={`${baseTopicKey}-study`}
+          topicKey={studyTopicKey}
+          contentLanguage={curriculum}
           language={language}
           isAdmin={isAdmin}
         />
       ) : (
         <NadiaLectureMcqBank
+          key={examTopicKey}
           teacher={teacher}
-          topicKey={`${baseTopicKey}-exam`}
+          topicKey={examTopicKey}
+          curriculum={curriculum}
           language={language}
           isAdmin={isAdmin}
         />
@@ -1194,11 +1196,13 @@ export function NadiaLectureWorkspace({
 
 function NadiaLectureMcqBank({
   teacher,
+  curriculum,
   topicKey,
   language,
   isAdmin,
 }: {
   teacher: Teacher;
+  curriculum: NadiaCurriculum;
   topicKey: string;
   language: AppLanguage;
   isAdmin: boolean;
@@ -1251,6 +1255,7 @@ function NadiaLectureMcqBank({
               teacher={teacher}
               topicKey={topicKey}
               language={language}
+              questionLanguage={curriculum}
               L={L}
               onCreated={(row) => {
                 setSets((current) => [row, ...current]);
@@ -1876,3 +1881,4 @@ function AnziLectureView({
     </div>
   );
 }
+

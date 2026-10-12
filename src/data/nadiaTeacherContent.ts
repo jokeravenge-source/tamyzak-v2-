@@ -1,5 +1,5 @@
 /**
- * Shared structure for Nadia Al-Nuaimy's Arabic-curriculum content.
+ * Shared navigation for Nadia Al-Nuaimy's separate curriculum workspaces.
  * Keeping the chapter metadata separate lets every Nadia entry point use the
  * same navigation order while lecture links are added later.
  */
@@ -14,3 +14,22 @@ export const NADIA_CHAPTERS = [
 ] as const;
 
 export type NadiaChapterNumber = (typeof NADIA_CHAPTERS)[number]["number"];
+
+export const NADIA_CURRICULA = [
+  { id: "ar", ar: "المنهج العربي", en: "Arabic Curriculum" },
+  { id: "en", ar: "المنهج الإنجليزي", en: "English Curriculum" },
+] as const;
+
+export type NadiaCurriculum = (typeof NADIA_CURRICULA)[number]["id"];
+
+export const getNadiaCurriculumLabel = (curriculum: NadiaCurriculum, language: "ar" | "en") =>
+  NADIA_CURRICULA.find((item) => item.id === curriculum)![language];
+
+/** Keep the existing Arabic keys intact; English content has its own namespace. */
+export const getNadiaLectureTopicKey = (
+  curriculum: NadiaCurriculum,
+  chapter: NadiaChapterNumber,
+  lecture: number,
+  mode: "study" | "exam",
+) => `nadia-${curriculum}-ch${chapter}-lec${lecture}-${mode}`;
+

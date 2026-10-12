@@ -181,17 +181,18 @@ function renderMd(md: string, isRTL: boolean) {
 
 // ---- Main component ----------------------------------------------------
 export default function TeacherLectureVideos({
-  teacherId, topicKey, language, isAdmin,
+  teacherId, topicKey, language, contentLanguage = language, isAdmin,
 }: {
   teacherId: string;
   topicKey: string;
   language: AppLanguage;
+  contentLanguage?: AppLanguage;
   isAdmin: boolean;
 }) {
   const T = L[language];
   const isRTL = language === "ar";
   const usesArabicEnglishCurriculumStyle =
-    language === "en" && teacherId.startsWith("mohammed-anzi");
+    contentLanguage === "en" && teacherId.startsWith("mohammed-anzi");
   const [videos, setVideos] = useState<LectureVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -236,7 +237,7 @@ export default function TeacherLectureVideos({
 
       {isAdmin && showAdd && (
         <AdminAddVideo
-          teacherId={teacherId} topicKey={topicKey} language={language} T={T}
+          teacherId={teacherId} topicKey={topicKey} language={language} contentLanguage={contentLanguage} T={T}
           onCancel={() => setShowAdd(false)}
           onSaved={(row) => { setVideos((v) => [row, ...v]); setShowAdd(false); }}
         />
@@ -301,6 +302,7 @@ export default function TeacherLectureVideos({
           <VideoNotesModal
             video={openVideo}
             language={language}
+            contentLanguage={contentLanguage}
             usesArabicEnglishCurriculumStyle={usesArabicEnglishCurriculumStyle}
             T={T}
             onClose={() => setOpenVideo(null)}
@@ -313,11 +315,12 @@ export default function TeacherLectureVideos({
 
 // ---- Admin add + generate ---------------------------------------------
 function AdminAddVideo({
-  teacherId, topicKey, language, T, onCancel, onSaved,
+  teacherId, topicKey, language, contentLanguage, T, onCancel, onSaved,
 }: {
   teacherId: string;
   topicKey: string;
   language: AppLanguage;
+  contentLanguage: AppLanguage;
   T: (typeof L)[AppLanguage];
   onCancel: () => void;
   onSaved: (v: LectureVideo) => void;
@@ -336,10 +339,10 @@ function AdminAddVideo({
       const { data, error } = await supabase.functions.invoke("video-notes", {
         body: {
           url,
-          language,
+          language: contentLanguage,
           mode: "notes",
           adminGeneration: true,
-          notesStyle: language === "en" && teacherId.startsWith("mohammed-anzi")
+          notesStyle: contentLanguage === "en" && teacherId.startsWith("mohammed-anzi")
             ? "arabic-explanation-english-curriculum"
             : "default",
         },
@@ -424,7 +427,7 @@ function AdminAddVideo({
               {parts.map((p, i) => (
                 <div key={i} className="mb-4">
                   <h4 className="text-sm font-bold text-primary mb-1">{p.title}</h4>
-                  {renderMd(p.notes, language === "ar")}
+                  {renderMd(p.notes, contentLanguage === "ar")}
                 </div>
               ))}
             </div>
@@ -448,15 +451,16 @@ function AdminAddVideo({
 
 // ---- Notes viewer + beautiful/PDF export ------------------------------
 function VideoNotesModal({
-  video, language, usesArabicEnglishCurriculumStyle, T, onClose,
+  video, language, contentLanguage, usesArabicEnglishCurriculumStyle, T, onClose,
 }: {
   video: LectureVideo;
   language: AppLanguage;
+  contentLanguage: AppLanguage;
   usesArabicEnglishCurriculumStyle: boolean;
   T: (typeof L)[AppLanguage];
   onClose: () => void;
 }) {
-  const isRTL = language === "ar" || usesArabicEnglishCurriculumStyle;
+  const isRTL = contentLanguage === "ar" || usesArabicEnglishCurriculumStyle;
   const [pretty, setPretty] = useState<{ blocks: PrettyBlock[]; images: PrettyImage[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -474,7 +478,7 @@ function VideoNotesModal({
       const { data, error } = await supabase.functions.invoke("ai-notes-generate", {
         body: {
           topic: source,
-          language,
+          language: contentLanguage,
           notesStyle: usesArabicEnglishCurriculumStyle
             ? "arabic-explanation-english-curriculum"
             : "default",
@@ -669,3 +673,4 @@ function PrettyBlocks({
     </div>
   );
 }
+

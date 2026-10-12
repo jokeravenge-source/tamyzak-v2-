@@ -10,7 +10,6 @@ import {
   GraduationCap,
   Languages,
   Layers,
-  ListChecks,
   Loader2,
   Network,
   PlayCircle,
@@ -21,6 +20,7 @@ import {
   Video,
 } from "lucide-react";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
+import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import type { AppLanguage } from "@/components/LanguageGate";
 import biologyTheme from "@/assets/themes/biology.png";
 import type { MainMenuChoice } from "@/pages/MainMenu";
@@ -28,6 +28,8 @@ import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
 import {
   NADIA_CHAPTERS,
+  getNadiaCurriculumLabel,
+  type NadiaCurriculum,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
 import {
@@ -148,33 +150,15 @@ const copy = {
 const nadiaCopy = {
   ar: {
     subject: "الأحياء",
-    teacherTools: "أدوات الأستاذة",
-    content: "المحاضرات وبنك الأسئلة",
-    description: "اختَر الفصل أولاً، وبعدها افتح قائمة محاضرات المنهج العربي.",
-    chapters: "فصول المنهج العربي",
     chooseChapter: "اختَر الفصل الذي تريد دراسته",
     chapter: "الفصل",
-    lectures: "محاضرات المنهج العربي",
     lecture: "المحاضرة",
-    curriculum: "المنهج العربي",
-    listDescription: (count: number) => `${count} محاضرة مرتبة للمنهج العربي.`,
-    open: "عرض المحاضرات",
-    comingSoon: "قريباً",
   },
   en: {
     subject: "Biology",
-    teacherTools: "Teacher tools",
-    content: "Lectures & MCQ Bank",
-    description: "Choose a chapter first, then open its Arabic-curriculum lecture list.",
-    chapters: "Arabic Curriculum Chapters",
     chooseChapter: "Choose the chapter you want to study",
     chapter: "Chapter",
-    lectures: "Arabic Curriculum Lectures",
     lecture: "Lecture",
-    curriculum: "Arabic Curriculum",
-    listDescription: (count: number) => `${count} Arabic-curriculum lectures in order.`,
-    open: "View lectures",
-    comingSoon: "Coming soon",
   },
 } as const;
 
@@ -184,6 +168,7 @@ function NadiaDirectoryContent({
   view,
   selectedChapter,
   selectedLecture,
+  curriculum,
   isAdmin,
   onOpenChapters,
   onSelectChapter,
@@ -194,16 +179,27 @@ function NadiaDirectoryContent({
   view: "overview" | "chapters" | "lectures" | "lecture";
   selectedChapter: NadiaChapterNumber | null;
   selectedLecture: number | null;
+  curriculum: NadiaCurriculum;
   isAdmin: boolean;
-  onOpenChapters: () => void;
+  onOpenChapters: (curriculum: NadiaCurriculum) => void;
   onSelectChapter: (chapter: NadiaChapterNumber) => void;
   onSelectLecture: (lecture: number) => void;
 }) {
-  const text = nadiaCopy[language];
+  const curriculumLabel = getNadiaCurriculumLabel(curriculum, language);
+  const text = {
+    ...nadiaCopy[language],
+    curriculum: curriculumLabel,
+    chapters: language === "ar" ? `فصول ${curriculumLabel}` : `${curriculumLabel} Chapters`,
+    lectures: language === "ar" ? `محاضرات ${curriculumLabel}` : `${curriculumLabel} Lectures`,
+    listDescription: (count: number) => language === "ar"
+      ? `${count} محاضرة مرتبة للمنهج ${curriculum === "ar" ? "العربي" : "الإنجليزي"}.`
+      : `${count} lectures in order for the ${curriculumLabel.toLowerCase()}.`,
+  };
 
   if (view === "lecture") {
     return (
       <NadiaLectureWorkspace
+        curriculum={curriculum}
         language={language}
         chapter={selectedChapter ?? 1}
         lecture={selectedLecture ?? 1}
@@ -301,24 +297,7 @@ function NadiaDirectoryContent({
         </div>
       </section>
 
-      <section className="max-w-2xl" aria-label={text.teacherTools}>
-        <button
-          type="button"
-          onClick={onOpenChapters}
-          className="group w-full rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-sky-500/10 p-6 text-start shadow-sm transition-all hover:-translate-y-1 hover:border-violet-500/50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-        >
-          <span className="mb-5 flex h-12 w-[5.5rem] items-center justify-center gap-2 rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-500/20">
-            <Video className="h-5 w-5" />
-            <span className="h-5 w-px bg-white/35" />
-            <ListChecks className="h-5 w-5" />
-          </span>
-          <h2 className="text-xl font-black">{text.content}</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{text.description}</p>
-          <span className="mt-5 inline-flex items-center gap-2 text-xs font-black text-violet-600 dark:text-violet-300">
-            {text.chapters} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-          </span>
-        </button>
-      </section>
+      <NadiaCurriculumCards language={language} onSelect={onOpenChapters} />
     </>
   );
 }
@@ -345,6 +324,7 @@ const TeacherDirectory = ({
   const [nadiaView, setNadiaView] = useState<"overview" | "chapters" | "lectures" | "lecture">("overview");
   const [nadiaChapter, setNadiaChapter] = useState<NadiaChapterNumber | null>(null);
   const [nadiaLecture, setNadiaLecture] = useState<number | null>(null);
+  const [nadiaCurriculum, setNadiaCurriculum] = useState<NadiaCurriculum>("ar");
 
   useEffect(() => {
     let active = true;
@@ -533,8 +513,14 @@ const TeacherDirectory = ({
             view={nadiaView}
             selectedChapter={nadiaChapter}
             selectedLecture={nadiaLecture}
+            curriculum={nadiaCurriculum}
             isAdmin={canManage}
-            onOpenChapters={() => setNadiaView("chapters")}
+            onOpenChapters={(curriculum) => {
+              setNadiaCurriculum(curriculum);
+              setNadiaChapter(null);
+              setNadiaLecture(null);
+              setNadiaView("chapters");
+            }}
             onSelectChapter={(chapter) => {
               setNadiaChapter(chapter);
               setNadiaView("lectures");
@@ -620,6 +606,7 @@ const TeacherDirectory = ({
                           setNadiaView("overview");
                           setNadiaChapter(null);
                           setNadiaLecture(null);
+                          setNadiaCurriculum("ar");
                           setSelectedId(teacher.id);
                         }}
                         className="group relative isolate min-h-[280px] overflow-hidden rounded-[2rem] border border-white/20 bg-slate-900 bg-cover bg-center text-start shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -651,3 +638,4 @@ const TeacherDirectory = ({
 };
 
 export default TeacherDirectory;
+
