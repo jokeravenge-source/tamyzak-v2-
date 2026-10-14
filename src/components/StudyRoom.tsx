@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
+import { displayedStudyTimerSeconds, formatStudyTimer as formatHMS } from "@/lib/studyTimerDisplay";
+import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
 import { Users } from "lucide-react";
@@ -34,15 +36,6 @@ const SUBJECT_LABEL: Record<string, { en: string; ar: string }> = {
 const ROOM_CAPACITY = 20;
 const PRESENCE_WINDOW_MS = 8 * 60 * 1000;
 
-function formatHMS(totalSeconds: number) {
-  const diff = Math.max(0, Math.floor(totalSeconds));
-  const h = Math.floor(diff / 3600);
-  const m = Math.floor((diff % 3600) / 60);
-  const s = diff % 60;
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-}
-
 export default function StudyRoom({
   language,
   subject,
@@ -59,6 +52,7 @@ export default function StudyRoom({
   timerStarted?: boolean;
 }) {
   const [people, setPeople] = useState<Occupant[]>([]);
+  const roomTimers = useStudyTimerPresence();
   const [now, setNow] = useState(Date.now());
   const [openProfile, setOpenProfile] = useState<string | null>(null);
   const loadRef = useRef<(() => void) | null>(null);
@@ -216,7 +210,8 @@ export default function StudyRoom({
           <div className="relative z-10 pt-6 pb-6 px-4 flex flex-wrap gap-5 justify-center items-end" style={{ minHeight: 280 }}>
             {people.map((p) => {
               const isMe = currentUserId && p.user_id === currentUserId;
-              const remoteSeconds = displayedPresenceSeconds(p, now);
+              const roomTimer = roomTimers[p.user_id];
+              const remoteSeconds = displayedStudyTimerSeconds(roomTimer, now) ?? displayedPresenceSeconds(p, now);
               const hasLocalTimer = isMe && timerStarted !== undefined;
               return (
                 <button
@@ -243,7 +238,7 @@ export default function StudyRoom({
                       <div className="w-0.5 h-3.5 bg-primary/40" />
                     </div>
                   </div>
-                  <div className={`mt-1.5 text-[11px] font-mono px-2 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && p.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-border"}`}>
+                  <div dir="ltr" className={`mt-1.5 text-sm font-semibold font-mono tabular-nums px-2 py-1 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && (roomTimer?.isRunning ?? p.is_running)) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-border"}`}>
                     {hasLocalTimer
                       ? timerStarted ? formatHMS(timerSeconds ?? 0) : "--:--"
                       : remoteSeconds !== null ? formatHMS(remoteSeconds) : "--:--"}

@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import PullToRefresh from "./components/PullToRefresh";
+import { StudyTimerPresenceSync } from "./hooks/useStudyTimerPresence";
 import { initFirebase } from "./lib/firebase";
 import "./index.css";
 
@@ -16,6 +17,7 @@ import "@fontsource/plus-jakarta-sans/700.css";
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
+    <StudyTimerPresenceSync />
     <PullToRefresh />
     <App />
   </HelmetProvider>,

@@ -3,6 +3,8 @@ import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
+import { displayedStudyTimerSeconds, formatStudyTimer as fmtClock } from "@/lib/studyTimerDisplay";
+import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
@@ -23,15 +25,6 @@ type Presence = {
 
 const LS_KEY = "study_room_active_v1";
 const MEMBER_PREVIEW_LIMIT = 30;
-
-const fmtClock = (s: number) => {
-  const t = Math.max(0, Math.floor(s));
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const sec = t % 60;
-  const p = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${p(h)}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
-};
 
 // Public rooms can hold hundreds of students. A single `.in(...)` with that many
 // ids makes the request URL too long and the whole lookup fails, so query in chunks.
@@ -81,6 +74,7 @@ export default function PrivateStudyRooms({
   onRoomMembershipChange,
   timerSeconds,
   timerRunning,
+  timerDisplayRunning,
   timerStarted,
 }: {
   language: "en" | "ar";
@@ -89,6 +83,7 @@ export default function PrivateStudyRooms({
   onRoomMembershipChange?: (joined: boolean) => void;
   timerSeconds?: number;
   timerRunning?: boolean;
+  timerDisplayRunning?: boolean;
   timerStarted?: boolean;
 }) {
   const ar = language === "ar";
@@ -104,6 +99,7 @@ export default function PrivateStudyRooms({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [presence, setPresence] = useState<Record<string, Presence>>({});
+  const roomTimers = useStudyTimerPresence();
   const [now, setNow] = useState(Date.now());
   const [isAdmin, setIsAdmin] = useState(false);
   const [bans, setBans] = useState<{ user_id: string; display_name: string | null }[]>([]);
@@ -699,10 +695,13 @@ export default function PrivateStudyRooms({
             const mine = m.user_id === userId;
             const roomOwner = m.user_id === room.owner_id;
             const memberPresence = presence[m.user_id];
-            const remoteSeconds = memberPresence ? displayedPresenceSeconds(memberPresence, now) : null;
+            const roomTimer = roomTimers[m.user_id];
+            const remoteSeconds = memberPresence
+              ? displayedStudyTimerSeconds(roomTimer, now) ?? displayedPresenceSeconds(memberPresence, now)
+              : null;
             const hasLocalTimer = mine && timerStarted !== undefined;
             return (
-              <div key={m.user_id} className="flex flex-col items-center" style={{ width: 96 }}>
+              <div key={m.user_id} className="flex flex-col items-center" style={{ width: 112 }}>
                 <button
                   type="button"
                   onClick={() => setOpenProfile(m.user_id)}
@@ -729,8 +728,8 @@ export default function PrivateStudyRooms({
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
-                  <span className={`mt-1 flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-full border ${(hasLocalTimer ? timerStarted && timerRunning : remoteSeconds !== null && memberPresence?.is_running) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
-                    <Timer className="w-2.5 h-2.5" />
+                  <span dir="ltr" className={`mt-1 flex items-center gap-1 text-sm font-semibold font-mono tabular-nums px-2 py-1 rounded-full border ${(hasLocalTimer ? timerStarted && (timerDisplayRunning ?? timerRunning) : remoteSeconds !== null && (roomTimer?.isRunning ?? memberPresence?.is_running)) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                    <Timer className="w-3 h-3" />
                     {hasLocalTimer
                       ? timerStarted ? fmtClock(timerSeconds ?? 0) : "--:--"
                       : remoteSeconds !== null ? fmtClock(remoteSeconds) : "--:--"}

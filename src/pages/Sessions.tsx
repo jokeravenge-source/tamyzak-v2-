@@ -27,6 +27,8 @@ import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
+import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
+import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 import {
   matchingPomodoroPreset,
   POMODORO_PRESETS,
@@ -347,7 +349,7 @@ const QURAN_TRACK_LABELS = {
   en: ["Surah Yasin"],
 } as const;
 const MAX_SECONDS = 48 * 3600;
-const PERSIST_KEY = "study_session_state_v1";
+const PERSIST_KEY = STUDY_SESSION_STORAGE_KEY;
 const POMODORO_KEY = "pomodoro_settings_v1";
 const DEFAULT_WORK_MIN = 45;
 const DEFAULT_REST_MIN = 5;
@@ -443,7 +445,6 @@ const T = {
     chooseCycle: "Choose your focus cycle",
     focusFor: "Focus",
     restFor: "Rest",
-    totalStudied: "Total studied",
     soundReady: "A sound plays when focus and rest finish.",
     skipBreak: "Skip break",
     discard: "Discard session",
@@ -492,7 +493,6 @@ const T = {
     chooseCycle: "اختر نظام التركيز والراحة",
     focusFor: "دراسة",
     restFor: "راحة",
-    totalStudied: "إجمالي وقت الدراسة",
     soundReady: "يشتغل صوت عند انتهاء الدراسة وعند انتهاء الراحة.",
     skipBreak: "تخطي الراحة",
     discard: "إلغاء الجلسة",
@@ -519,13 +519,6 @@ const T = {
     sessionMenu: "قائمة الجلسة", hideMenu: "إخفاء القائمة", optionalTask: "مهمة اختيارية",
   },
 } as const;
-
-const fmt = (s: number) => {
-  const h = Math.floor(s / 3600).toString().padStart(2, "0");
-  const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${h}:${m}:${sec}`;
-};
 
 const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
@@ -572,8 +565,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const savingRef = useRef(false);
   const heartbeatRef = useRef<number | null>(null);
-  // Mirror the studying timer so presence writes can reflect accumulated seconds
-  // (paused-aware), making the room timer match the user's own timer exactly.
+  // Accumulated study seconds remain the source for saved sessions and rewards.
+  // The single visible timer is also shared with rooms via realtime presence.
   const secondsRef = useRef(0);
   useEffect(() => { secondsRef.current = seconds; }, [seconds]);
   const runningRef = useRef(false);
@@ -837,6 +830,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       restEndsAt: phase === "rest" ? restEndsAtRef.current : 0,
     };
     localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+    notifyStudyTimerChanged();
   }, [started, subject, mission, completed, running, seconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
 
   // Flush the latest session snapshot whenever the page is about to be hidden
@@ -867,7 +861,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         phaseStartSeconds: phaseStartRef.current,
         restEndsAt: phaseRef.current === "rest" ? restEndsAtRef.current : 0,
       };
-      try { localStorage.setItem(PERSIST_KEY, JSON.stringify(payload)); } catch {}
+      try {
+        localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+        notifyStudyTimerChanged();
+      } catch {}
     };
     const onHide = () => { if (document.visibilityState === "hidden") flush(); };
     window.addEventListener("pagehide", flush);
@@ -1056,7 +1053,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     if (savingRef.current) return;
     if (durationSeconds <= 0) {
       setStarted(false); setRunning(false); setMission(""); setCompleted(false);
+      await clearPresence();
       localStorage.removeItem(PERSIST_KEY);
+      notifyStudyTimerChanged();
       return;
     }
     savingRef.current = true;
@@ -1100,6 +1099,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     try { localStorage.setItem("session_completed_today_v1", new Date().toISOString().slice(0,10)); } catch {}
     setStarted(false); setSeconds(0); setMission(""); setCompleted(false);
     localStorage.removeItem(PERSIST_KEY);
+    notifyStudyTimerChanged();
     setPhase("work");
     phaseRef.current = "work";
     phaseStartRef.current = 0;
@@ -1144,7 +1144,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         running: false,
         startedAt: null,
         accumulated: adjustedSeconds,
+        pomodoro: pomodoroRef.current,
+        pomodoroWorkMin: pomodoroWorkMinRef.current,
+        pomodoroRestMin: pomodoroRestMinRef.current,
+        phase: phaseRef.current,
+        phaseStartSeconds: phaseStartRef.current,
+        restEndsAt: restEndsAtRef.current,
       }));
+      notifyStudyTimerChanged();
     } catch { /* storage is best-effort; database save still continues */ }
     setSaveOpen(false);
     setEditingSaveTime(false);
@@ -1169,6 +1176,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setRestRemaining(0);
     lastPhaseSwitchRef.current = -1;
     localStorage.removeItem(PERSIST_KEY);
+    notifyStudyTimerChanged();
     setDiscardOpen(false);
     lastHourPromptRef.current = 0;
     setHourPauseOpen(false);
@@ -1192,6 +1200,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setTrackIdx(0);
     setTimeout(() => { if (musicPlaying) audioRef.current?.play().catch(() => {}); }, 50);
   };
+
+  const mainTimer = studyTimerDisplay({
+    elapsedSeconds: seconds, started, running, pomodoro, phase,
+    phaseStartSeconds: phaseStartRef.current,
+    workMinutes: pomodoroWorkMin, restRemaining,
+  });
 
   if (!subject) {
     return (
@@ -1235,7 +1249,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             ))}
           </div>
 
-        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
+        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
           <div className="text-sm font-semibold mb-1">
             {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك" : "Start your study timer inside your room"}
           </div>
@@ -1293,12 +1307,11 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         </header>
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
-        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={seconds} timerRunning={running} timerStarted={started}>
+        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
         <div className="space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
           <div className="py-5 text-center">
             <p className={`mb-2 text-xs font-bold uppercase tracking-[0.18em] ${phase === "rest" ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`}>{started ? (pomodoro ? (phase === "rest" ? L.restPhase : running ? L.workPhase : L.pause) : running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
-            <div className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(started && pomodoro ? pomodoroRemaining : seconds)}</div>
-            {started && pomodoro && <p className="mt-3 text-xs font-semibold text-muted-foreground">{L.totalStudied}: <span className="font-mono text-foreground">{fmt(seconds)}</span></p>}
+            <div dir="ltr" className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(mainTimer.seconds)}</div>
             <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{started && pomodoro ? (phase === "rest" ? L.restPhase : L.workPhase) : (language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour")}</span><span>{Math.floor(started && pomodoro ? pomodoroProgress : nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className={`h-full rounded-full transition-all ${phase === "rest" && pomodoro ? "bg-gradient-to-r from-sky-500 to-cyan-300" : "bg-gradient-to-r from-primary to-cyan-400"}`} style={{ width: `${started && pomodoro ? pomodoroProgress : nextHourProgress}%` }} /></div></div>
           </div>
 
@@ -1445,7 +1458,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/95 p-4 shadow-sm md:p-5">
           <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
-          <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={seconds} timerRunning={running} timerStarted={started} />
+          <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={mainTimer.seconds} timerRunning={mainTimer.isRunning} timerStarted={started} />
         </section>}
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/95">
