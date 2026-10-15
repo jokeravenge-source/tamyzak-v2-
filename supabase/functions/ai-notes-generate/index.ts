@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
 
     // The Lovable gateway requires its dedicated API-key headers. The old
     // Bearer authorization format returns a non-2xx FunctionsHttpError.
-    const models = ["google/gemini-3.5-flash", "google/gemini-2.5-flash"];
+    const models = ["google/gemini-3.8-flash", "google/gemini-3.8-flash"];
     let parsed: any = null;
     let lastStatus = 500;
     for (const model of models) {
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
             "X-Lovable-AIG-SDK": "vercel-ai-sdk",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
+            model: "google/gemini-3.1-flash-lite-image",
             messages: [{ role: "user", content: `Educational infographic-style illustration, clean flat vector, soft pastel colors, no text, no labels, no watermarks. Subject: ${p}` }],
             modalities: ["image", "text"],
           }),

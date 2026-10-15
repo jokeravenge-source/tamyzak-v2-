@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const OCR_MODEL = "google/gemini-2.5-flash";
+const OCR_MODEL = "google/gemini-3.8-flash";
 const MAX_IMAGES_PER_CALL = 6;
 
 Deno.serve(async (req) => {

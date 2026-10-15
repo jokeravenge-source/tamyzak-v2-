@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3.8-flash",
         messages: [
           { role: "system", content: sys },
           { role: "user", content: `SOURCE TEXT:\n${text.slice(0, 12000)}\n\nGenerate the script.` },
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3.8-flash",
           messages: [
             { role: "system", content: `You write precise English prompts for an AI image generator. Every prompt must depict EXACTLY the concept of one scene, grounded in the overall topic. Be concrete: name the subject, setting, key objects, and any actions/relationships from the scene. Style: clean modern flat vector infographic illustration, soft pastel background, bold simple shapes, subtle depth, friendly educational look. STRICT RULES: no text/letters/numbers/labels/watermark/logos, no UI mockups, no collages, single coherent scene, centered composition. Translate any non-English source terms to clear English. Return via the submit tool.` },
             { role: "user", content: `Topic title: ${topicSummary}\nSource excerpt:\n${sourceSnippet}\n\nScenes (one prompt per scene, same order):\n${scenes.map((s, i) => `${i + 1}. KEYWORD: ${s.keyword}\n   NARRATION: ${s.narration}\n   BULLETS: ${(s.bullets || []).join(" | ")}`).join("\n")}` },
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image",
+            model: "google/gemini-3.1-flash-lite-image",
             messages: [{ role: "user", content: fullPrompt }],
             modalities: ["image", "text"],
           }),

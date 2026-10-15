@@ -251,7 +251,7 @@ export async function callTutorJson(prompt: string, maxTokens = 3500): Promise<u
   const configuredModel = Deno.env.get("PODCAST_AI_MODEL");
   const models = configuredModel
     ? [configuredModel]
-    : ["google/gemini-2.5-flash-lite", "google/gemini-2.5-flash"];
+    : ["google/gemini-3.1-flash-lite", "google/gemini-3.8-flash"];
 
   for (const model of models) {
     try {

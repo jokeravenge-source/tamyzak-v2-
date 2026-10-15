@@ -12,12 +12,12 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GRADE_MODELS = [
   // Flash first: pro regularly needs 60s+ on multi-image papers and the
   // connection dies before it answers.
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
+  "google/gemini-3.8-flash",
+  "google/gemini-3.1-pro-preview",
 ];
 const STRUCTURE_MODELS = [
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
+  "google/gemini-3.8-flash",
+  "google/gemini-3.1-pro-preview",
 ];
 const MAX_IMAGES = 10;
 // Whole-request budget. The edge runtime / proxy drops the connection well
