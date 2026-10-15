@@ -249,9 +249,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           body: { title: notifForm.title, body: notifForm.body, link: link || null, photo_url, video_url, audience: "all", notification_key: `notif:${notificationId}` },
         });
         if (tg && typeof tg === "object" && "sent" in (tg as Record<string, unknown>)) {
-          const t = tg as { sent: number; failed: number; total: number };
+          const t = tg as { sent: number; failed: number; total: number; continuing?: boolean };
           if (t.sent > 0) await supabase.from("notifications").update({ telegram_sent: true }).eq("id", notificationId);
-          toast.success(`Telegram: ${t.sent}/${t.total} delivered${t.failed ? ` (${t.failed} failed)` : ""}`);
+          toast.success(t.continuing
+            ? `Telegram: first ${t.sent} delivered — sending to the rest of ${t.total} in the background`
+            : `Telegram: ${t.sent}/${t.total} delivered${t.failed ? ` (${t.failed} failed)` : ""}`);
         }
       } catch (e: any) {
         toast.error(`Telegram push failed: ${e?.message ?? e}`);
