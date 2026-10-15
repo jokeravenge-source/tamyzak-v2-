@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
           }
         } else {
           failed++;
+          if (failed <= 3) console.error(`send failed [${res.status}]: ${JSON.stringify(res.data).slice(0, 300)}`);
           if (deliveryId) await admin.from("telegram_notifications_sent").delete().eq("id", deliveryId);
         }
         await new Promise((r) => setTimeout(r, 50));
