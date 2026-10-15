@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const AI_MODELS = ["google/gemini-2.5-flash-lite", "google/gemini-2.5-flash"];
+const AI_MODELS = ["google/gemini-3.1-flash-lite", "google/gemini-3.8-flash"];
 
 type QuestionType = "short" | "true_false" | "fill_blank" | "title";
 type PracticeQuestion = { id: number; prompt: string; type: QuestionType };

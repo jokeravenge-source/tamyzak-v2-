@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const AI_MODEL = "google/gemini-2.5-flash";
+const AI_MODEL = "google/gemini-3.8-flash";
 
 const SUBJECT_AR: Record<string, string> = {
   physics: "الفيزياء",

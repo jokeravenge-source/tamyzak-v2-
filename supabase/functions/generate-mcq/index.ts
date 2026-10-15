@@ -25,7 +25,7 @@ const MAX_QUESTIONS = 100;
 const MAX_CONCURRENT_BATCHES = 3;
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 600;
-const MODEL = "google/gemini-3.5-flash";
+const MODEL = "google/gemini-3.8-flash";
 
 const PDF_DATA_URL_PREFIX = "data:application/pdf;base64,";
 const IMAGE_DATA_URL_RE = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=\s]+$/;
