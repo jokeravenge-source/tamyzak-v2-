@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
           "X-Lovable-AIG-SDK": "vercel-ai-sdk",
         },
         body: JSON.stringify({
-          model: "google/gemini-3.8-flash",
+          model: "google/gemini-3.1-flash-lite",
           messages: [{ role: "system", content: sys }, { role: "user", content: userMsg }],
           tools: [{
             type: "function",
@@ -338,18 +338,15 @@ ${curriculumLanguageRules}
     // Try Lovable AI Gateway first (multiple models for fallback on quota/overload),
     // then fall back to direct Gemini if available.
     const transcriptModels = [
-      "google/gemini-3-flash-preview",
-      "google/gemini-3.8-flash",
-      "google/gemini-3.8-flash",
       "google/gemini-3.1-flash-lite",
       "google/gemini-3.1-flash-lite",
-      "google/gemini-3.1-pro-preview",
+      "google/gemini-3.8-flash",
     ];
     // Video requests are much slower and must not cascade through many models,
     // otherwise the edge function reaches its wall-clock timeout.
     const lovableModels = transcriptText
       ? transcriptModels
-      : ["google/gemini-3.8-flash"];
+      : ["google/gemini-3.1-flash-lite"];
     const geminiDirectModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
