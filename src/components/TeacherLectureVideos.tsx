@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
+import { getCuratedTeacherLectureNote } from "@/data/teacherLectureNotes";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -197,6 +198,10 @@ export default function TeacherLectureVideos({
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [openVideo, setOpenVideo] = useState<LectureVideo | null>(null);
+  const curatedNote = useMemo(
+    () => getCuratedTeacherLectureNote(teacherId, topicKey),
+    [teacherId, topicKey],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -207,10 +212,25 @@ export default function TeacherLectureVideos({
       .eq("topic_key", topicKey)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    else setVideos((data ?? []) as unknown as LectureVideo[]);
+    else {
+      const savedVideos = (data ?? []) as unknown as LectureVideo[];
+      const curatedVideo: LectureVideo[] = curatedNote ? [{
+        id: `curated:${teacherId}:${topicKey}`,
+        teacher_id: teacherId,
+        topic_key: topicKey,
+        youtube_url: "",
+        video_id: null,
+        title: curatedNote.title,
+        transcript: null,
+        notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }],
+        approved: true,
+        created_at: curatedNote.createdAt,
+      }] : [];
+      setVideos([...curatedVideo, ...savedVideos]);
+    }
     setLoading(false);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey, curatedNote]);
 
   const remove = async (id: string) => {
     if (!confirm(T.confirmDelete)) return;
@@ -251,8 +271,9 @@ export default function TeacherLectureVideos({
         <ul className="grid gap-3 sm:grid-cols-2">
           {videos.map((v) => (
             <li key={v.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="relative aspect-video bg-black">
-                {v.video_id && (
+              {(v.video_id || v.youtube_url) && (
+                <div className="relative aspect-video bg-black">
+                  {v.video_id && (
                   <img
                     src={`https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`}
                     alt={v.title || ""}
@@ -260,12 +281,13 @@ export default function TeacherLectureVideos({
                     loading="lazy"
                   />
                 )}
-                {!v.approved && (
-                  <span className="absolute top-2 start-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-yellow-500/90 text-black font-semibold">
-                    {T.pending}
-                  </span>
-                )}
-              </div>
+                  {!v.approved && (
+                    <span className="absolute top-2 start-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-yellow-500/90 text-black font-semibold">
+                      {T.pending}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="p-3">
                 <p className="font-semibold text-sm truncate">{v.title || v.youtube_url}</p>
                 <div className="mt-2 flex items-center gap-2">
@@ -275,13 +297,15 @@ export default function TeacherLectureVideos({
                   >
                     <BookOpen className="w-3.5 h-3.5" /> {T.openNotes}
                   </button>
-                  <a
-                    href={v.youtube_url} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-xs hover:bg-secondary"
-                  >
-                    <Youtube className="w-3.5 h-3.5 text-red-500" /> {T.watch}
-                  </a>
-                  {isAdmin && (
+                  {v.youtube_url && (
+                    <a
+                      href={v.youtube_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-xs hover:bg-secondary"
+                    >
+                      <Youtube className="w-3.5 h-3.5 text-red-500" /> {T.watch}
+                    </a>
+                  )}
+                  {isAdmin && !v.id.startsWith("curated:") && (
                     <button
                       onClick={() => remove(v.id)}
                       className="ms-auto h-8 w-8 grid place-items-center rounded-lg border border-border text-destructive hover:bg-destructive/10"
