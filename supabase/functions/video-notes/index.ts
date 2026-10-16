@@ -346,7 +346,7 @@ ${curriculumLanguageRules}
     // otherwise the edge function reaches its wall-clock timeout.
     const lovableModels = transcriptText
       ? transcriptModels
-      : ["google/gemini-3.1-flash-lite"];
+      : ["google/gemini-3.8-flash"];
     const geminiDirectModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
