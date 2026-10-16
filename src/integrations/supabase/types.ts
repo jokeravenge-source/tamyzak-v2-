@@ -3281,6 +3281,27 @@ export type Database = {
         }
         Relationships: []
       }
+      video_notes_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          notes: string
+          parts: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          notes: string
+          parts?: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          notes?: string
+          parts?: Json
+        }
+        Relationships: []
+      }
       weekly_learning_profiles: {
         Row: {
           chapter_key: string

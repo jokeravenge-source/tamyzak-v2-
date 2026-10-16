@@ -64,6 +64,13 @@
       "when": 1791538531774,
       "tag": "0008_room_kick_after_hour_without_timer",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792185856791,
+      "tag": "0009_migration",
+      "breakpoints": true
     }
   ]
 }
