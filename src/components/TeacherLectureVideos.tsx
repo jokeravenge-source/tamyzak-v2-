@@ -33,7 +33,7 @@ type PrettyImage = { prompt: string; dataUrl: string };
 
 const L = {
   en: {
-    videos: "Video Lectures",
+    videos: "Lectures & notes",
     addVideo: "Add YouTube lecture",
     ytUrl: "YouTube URL",
     optionalTitle: "Title (optional)",
@@ -60,7 +60,7 @@ const L = {
     illustrations: "Illustrations",
   },
   ar: {
-    videos: "محاضرات فيديو",
+    videos: "المحاضرات والملاحظات",
     addVideo: "إضافة محاضرة يوتيوب",
     ytUrl: "رابط اليوتيوب",
     optionalTitle: "العنوان (اختياري)",
@@ -271,23 +271,30 @@ export default function TeacherLectureVideos({
         <ul className="grid gap-3 sm:grid-cols-2">
           {videos.map((v) => (
             <li key={v.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-              {(v.video_id || v.youtube_url) && (
-                <div className="relative aspect-video bg-black">
-                  {v.video_id && (
+              <div className="relative aspect-video bg-black">
+                {v.video_id ? (
                   <img
                     src={`https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`}
                     alt={v.title || ""}
                     className="w-full h-full object-cover opacity-90"
                     loading="lazy"
                   />
-                )}
-                  {!v.approved && (
-                    <span className="absolute top-2 start-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-yellow-500/90 text-black font-semibold">
-                      {T.pending}
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 px-5 text-center text-white">
+                    <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur">
+                      <BookOpen className="h-7 w-7" />
                     </span>
-                  )}
-                </div>
-              )}
+                    <span className="text-sm font-black">
+                      {language === "ar" ? "ملاحظات المحاضرة" : "Lecture notes"}
+                    </span>
+                  </div>
+                )}
+                {!v.approved && (
+                  <span className="absolute top-2 start-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-yellow-500/90 text-black font-semibold">
+                    {T.pending}
+                  </span>
+                )}
+              </div>
               <div className="p-3">
                 <p className="font-semibold text-sm truncate">{v.title || v.youtube_url}</p>
                 <div className="mt-2 flex items-center gap-2">
