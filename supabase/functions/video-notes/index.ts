@@ -220,6 +220,21 @@ Deno.serve(async (req) => {
     // Cap transcript size to stay well under model limits.
     if (transcriptText.length > 120000) transcriptText = transcriptText.slice(0, 120000);
 
+    // Cache: the same video is never paid for twice.
+    const cacheClient = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
+    );
+    const vid = url ? extractYouTubeId(url.trim()) : "";
+    const cacheKey = runMode === "notes" && vid && !providedTranscript
+      ? `${vid}|${lang0}|${arabicEnglishCurriculum ? "encur" : "std"}`
+      : "";
+    if (cacheKey) {
+      const { data: cached } = await cacheClient
+        .from("video_notes_cache").select("notes, parts").eq("cache_key", cacheKey).maybeSingle();
+      if (cached?.notes) return jsonResponse({ notes: cached.notes, parts: cached.parts, transcript: transcriptText, cached: true });
+    }
+
     // ===== Flashcards mode (tool-call structured output) =====
     if (runMode === "flashcards") {
       if (!transcriptText) {
@@ -424,6 +439,7 @@ ${curriculumLanguageRules}
                       ],
                     },
                   ],
+              max_tokens: 3000,
               tools: [partsTool],
               tool_choice: { type: "function", function: { name: "submit_video_notes" } },
             }),
@@ -553,6 +569,10 @@ ${curriculumLanguageRules}
 
     if (!notes.trim()) {
       return jsonResponse({ error: "Empty response from model", retryable: true }, 502);
+    }
+    if (cacheKey) {
+      await cacheClient.from("video_notes_cache")
+        .upsert({ cache_key: cacheKey, notes, parts }).then(() => {}, (e) => console.error("cache save failed", e));
     }
     return jsonResponse({ notes, parts, transcript: transcriptText });
   } catch (e) {
