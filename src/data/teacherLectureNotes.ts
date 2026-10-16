@@ -1,5 +1,6 @@
 import nadiaEnChapter3Lecture2 from "@/data/lectureNotes/nadia-en-ch3-lec2.md?raw";
 import nadiaEnChapter3Lecture4 from "@/data/lectureNotes/nadia-en-ch3-lec4.md?raw";
+import nadiaEnChapter3Lecture6 from "@/data/lectureNotes/nadia-en-ch3-lec6.md?raw";
 
 export type CuratedTeacherLectureNote = {
   title: string;
@@ -17,6 +18,11 @@ const CURATED_TEACHER_LECTURE_NOTES: Record<string, CuratedTeacherLectureNote> =
     title: "المحاضرة الرابعة — تكاثر الفيروسات",
     notes: nadiaEnChapter3Lecture4,
     createdAt: "2026-10-17T00:47:45+03:00",
+  },
+  "nadia-al-nuaimy:nadia-en-ch3-lec6-study": {
+    title: "المحاضرة السادسة — التكاثر الجنسي في البكتيريا بالاقتران",
+    notes: nadiaEnChapter3Lecture6,
+    createdAt: "2026-10-17T00:54:14+03:00",
   },
 };
 
