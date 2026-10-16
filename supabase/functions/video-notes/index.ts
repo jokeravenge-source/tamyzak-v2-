@@ -349,7 +349,7 @@ ${curriculumLanguageRules}
 
 لا تكتب أي شيء خارج هذه البنية. ${arabicEnglishCurriculum ? "استخدم العربية في الشرح العام، واستخدم الإنجليزية داخل أسماء المصطلحات الثنائية وفي نص أسئلة Review Questions فقط." : "لا تستخدم لغة غير العربية في الشرح (المصطلحات الإنجليزية مسموحة فقط بين قوسين)."}
 
-تقسيم إجباري: قسّم الفيديو إلى عدة أجزاء متتابعة (4 إلى 8 أجزاء حسب طول المحتوى)، ولكل جزء أعد كامل البنية أعلاه (نظرة عامة، مفاهيم، تعريفات، قوانين، أمثلة، نقاط مهمة، خلاصة) خاصة بذلك الجزء فقط. ابدأ كل جزء بعنوان واضح يصف موضوعه. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
+تقسيم إجباري: قسّم الفيديو إلى عدة أجزاء متتابعة (2 إلى 3 أجزاء فقط)، واكتب بإيجاز مركّز على ما يأتي بالامتحان، ولكل جزء أعد كامل البنية أعلاه (نظرة عامة، مفاهيم، تعريفات، قوانين، أمثلة، نقاط مهمة، خلاصة) خاصة بذلك الجزء فقط. ابدأ كل جزء بعنوان واضح يصف موضوعه. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
     // Try Lovable AI Gateway first (multiple models for fallback on quota/overload),
     // then fall back to direct Gemini if available.
     const transcriptModels = [
@@ -368,8 +368,8 @@ ${curriculumLanguageRules}
     let notes = "";
 
     const userPrompt = transcriptText
-      ? `Here is the transcript of a YouTube video. Divide it into 4-8 sequential parts and write detailed notes for each part. Call submit_video_notes with the parts array.\n\nTRANSCRIPT:\n${transcriptText}`
-      : `Watch this YouTube video, split it into 4-8 sequential parts, and write detailed notes for each part. Call submit_video_notes.`;
+      ? `Here is the transcript of a YouTube video. Divide it into 2-3 sequential parts and write concise exam-focused notes for each part. Call submit_video_notes with the parts array.\n\nTRANSCRIPT:\n${transcriptText}`
+      : `Watch this YouTube video, split it into 2-3 sequential parts, and write concise exam-focused notes for each part. Call submit_video_notes.`;
 
     const partsTool = {
       type: "function" as const,
