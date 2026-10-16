@@ -12,6 +12,7 @@ import TeacherLectureVideos from "@/components/TeacherLectureVideos";
 import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import {
   NADIA_CHAPTERS,
+  getNadiaLectureCount,
   getNadiaCurriculumLabel,
   getNadiaLectureTopicKey,
   type NadiaCurriculum,
@@ -950,6 +951,7 @@ function NadiaTeacherFlow({
     },
   }[language];
   const activeChapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
+  const lectureCount = getNadiaLectureCount(curriculum, activeChapter.number);
 
   const goBack = () => {
     if (stage === "lecture") {
@@ -1064,10 +1066,10 @@ function NadiaTeacherFlow({
             <p className="mt-1 font-bold text-foreground">
               {copy.chapter} {activeChapter.number}: {isRTL ? activeChapter.ar : activeChapter.en}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription(activeChapter.lectureCount)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription(lectureCount)}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: activeChapter.lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
+            {Array.from({ length: lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
               <button
                 type="button"
                 key={lectureNumber}

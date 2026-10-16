@@ -28,6 +28,7 @@ import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
 import {
   NADIA_CHAPTERS,
+  getNadiaLectureCount,
   getNadiaCurriculumLabel,
   type NadiaCurriculum,
   type NadiaChapterNumber,
@@ -245,6 +246,7 @@ function NadiaDirectoryContent({
 
   if (view === "lectures") {
     const chapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
+    const lectureCount = getNadiaLectureCount(curriculum, chapter.number);
     return (
       <>
         <header className="mb-7 text-center">
@@ -255,11 +257,11 @@ function NadiaDirectoryContent({
           <p className="mt-2 font-bold text-foreground">
             {text.chapter} {chapter.number}: {language === "ar" ? chapter.ar : chapter.en}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">{text.listDescription(chapter.lectureCount)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{text.listDescription(lectureCount)}</p>
         </header>
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={text.lectures}>
-          {Array.from({ length: chapter.lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
+          {Array.from({ length: lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
             <button
               type="button"
               key={lectureNumber}

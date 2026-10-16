@@ -22,6 +22,11 @@ export const NADIA_CURRICULA = [
 
 export type NadiaCurriculum = (typeof NADIA_CURRICULA)[number]["id"];
 
+export const getNadiaLectureCount = (curriculum: NadiaCurriculum, chapter: NadiaChapterNumber) => {
+  if (curriculum === "ar" && chapter === 3) return 34;
+  return NADIA_CHAPTERS.find((item) => item.number === chapter)?.lectureCount ?? NADIA_ARABIC_LECTURE_COUNT;
+};
+
 export const getNadiaCurriculumLabel = (curriculum: NadiaCurriculum, language: "ar" | "en") =>
   NADIA_CURRICULA.find((item) => item.id === curriculum)![language];
 
