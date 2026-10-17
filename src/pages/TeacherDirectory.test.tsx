@@ -48,7 +48,7 @@ vi.mock("@/integrations/supabase/client", () => {
 });
 
 describe("Our Teachers Nadia entry", () => {
-  it("shows Nadia's Arabic chapter 3 with exactly 34 lectures", async () => {
+  it("shows Nadia's Arabic chapter 3 by its 33 available topics", async () => {
     render(
       <TeacherDirectory
         language="ar"
@@ -68,11 +68,10 @@ describe("Our Teachers Nadia entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "الفصل 3: التكاثر" }));
 
     expect(screen.getByText("الفصل 3: التكاثر")).toBeInTheDocument();
-    const lectures = screen.getAllByRole("button", { name: /^المحاضرة \d+$/ });
-    expect(lectures).toHaveLength(34);
-    expect(screen.getByRole("button", { name: "المحاضرة 1" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "المحاضرة 34" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "المحاضرة 35" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "مواضيع الفصل" })).toBeInTheDocument();
+    expect(screen.getByText("33 موضوعاً مرتبة حسب محتوى الفصل.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "مقدمة في التكاثر" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "التكاثر العذري والخنثي" })).toBeEnabled();
   });
 
   it("shows Arabic chapter 5 as genetics topics", async () => {
@@ -108,7 +107,7 @@ describe("Our Teachers Nadia entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "العودة لمحتوى الأستاذة" }));
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج العربي/ }));
     fireEvent.click(screen.getByRole("button", { name: "الفصل 2: الأنسجة" }));
-    fireEvent.click(screen.getByRole("button", { name: "المحاضرة 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "مقدمة الأنسجة" }));
     expect(screen.getByTestId("selected-curriculum")).toHaveTextContent("ar");
   });
 
