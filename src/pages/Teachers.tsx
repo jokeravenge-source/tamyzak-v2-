@@ -14,7 +14,10 @@ import {
   NADIA_CHAPTERS,
   getNadiaLectureCount,
   getNadiaCurriculumLabel,
+  getNadiaNavigationItems,
   getNadiaLectureTopicKey,
+  getNadiaTopicTitle,
+  usesNadiaTopicNavigation,
   type NadiaCurriculum,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
@@ -951,7 +954,11 @@ function NadiaTeacherFlow({
     },
   }[language];
   const activeChapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
-  const lectureCount = getNadiaLectureCount(curriculum, activeChapter.number);
+  const topicBased = usesNadiaTopicNavigation(curriculum, activeChapter.number);
+  const navigationItems = getNadiaNavigationItems(curriculum, activeChapter.number);
+  const selectedTopicTitle = selectedLecture
+    ? getNadiaTopicTitle(curriculum, activeChapter.number, selectedLecture, language)
+    : undefined;
 
   const goBack = () => {
     if (stage === "lecture") {
@@ -990,7 +997,7 @@ function NadiaTeacherFlow({
             {stage !== "overview" && (
               <p className="text-xs text-muted-foreground">
                 {stage === "lecture" && selectedLecture
-                  ? `${copy.lecture} ${selectedLecture}`
+                  ? (selectedTopicTitle ?? `${copy.lecture} ${selectedLecture}`)
                   : copy.curriculum}
               </p>
             )}
@@ -1062,30 +1069,42 @@ function NadiaTeacherFlow({
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
               {copy.curriculum}
             </p>
-            <h2 className="mt-1 text-2xl font-black text-foreground">{copy.lectures}</h2>
+            <h2 className="mt-1 text-2xl font-black text-foreground">
+              {topicBased ? (language === "ar" ? "مواضيع الفصل" : "Chapter Topics") : copy.lectures}
+            </h2>
             <p className="mt-1 font-bold text-foreground">
               {copy.chapter} {activeChapter.number}: {isRTL ? activeChapter.ar : activeChapter.en}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">{copy.listDescription(lectureCount)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {topicBased
+                ? (language === "ar"
+                    ? `${navigationItems.length} موضوعاً مرتبة حسب محتوى الفصل.`
+                    : `${navigationItems.length} topics organized by chapter content.`)
+                : copy.listDescription(getNadiaLectureCount(curriculum, activeChapter.number))}
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
+            {navigationItems.map((item) => (
               <button
                 type="button"
-                key={lectureNumber}
+                key={item.lecture}
                 onClick={() => {
-                  setSelectedLecture(lectureNumber);
+                  setSelectedLecture(item.lecture);
                   setStage("lecture");
                 }}
-                aria-label={`${copy.lecture} ${lectureNumber}`}
+                aria-label={topicBased ? item[language] : `${copy.lecture} ${item.lecture}`}
                 className="group flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/40 hover:shadow-md"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <Video className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-black text-foreground">{copy.lecture} {lectureNumber}</span>
-                  <span className="mt-1 block text-xs font-bold text-muted-foreground">{copy.curriculum}</span>
+                  <span className="block font-black text-foreground">{item[language]}</span>
+                  <span className="mt-1 block text-xs font-bold text-muted-foreground">
+                    {topicBased
+                      ? (language === "ar" ? `الفصل ${activeChapter.number}` : `Chapter ${activeChapter.number}`)
+                      : copy.curriculum}
+                  </span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
               </button>
@@ -1131,6 +1150,7 @@ export function NadiaLectureWorkspace({
   const studyTopicKey = getNadiaLectureTopicKey(curriculum, chapter, lecture, "study");
   const examTopicKey = getNadiaLectureTopicKey(curriculum, chapter, lecture, "exam");
   const chapterInfo = NADIA_CHAPTERS.find((item) => item.number === chapter) ?? NADIA_CHAPTERS[0];
+  const topicTitle = getNadiaTopicTitle(curriculum, chapter, lecture, language);
 
   return (
     <section dir={isRTL ? "rtl" : "ltr"}>
@@ -1142,7 +1162,7 @@ export function NadiaLectureWorkspace({
             : `Chapter ${chapter}: ${chapterInfo.en}`}
         </p>
         <h2 className="mt-1 text-2xl font-black text-foreground">
-          {language === "ar" ? `المحاضرة ${lecture}` : `Lecture ${lecture}`}
+          {topicTitle ?? (language === "ar" ? `المحاضرة ${lecture}` : `Lecture ${lecture}`)}
         </h2>
       </header>
 
