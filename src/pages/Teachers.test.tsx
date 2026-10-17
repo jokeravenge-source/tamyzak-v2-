@@ -58,23 +58,26 @@ beforeEach(() => {
 });
 
 describe("Nadia teacher hub", () => {
-  it("offers separate curricula before opening the Arabic chapter and lecture list", () => {
+  it("offers separate curricula before opening Arabic Chapter 1 topics", () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
     expect(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج الإنجليزي/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج العربي/ }));
     expect(screen.getAllByRole("button", { name: /^الفصل \d:/ })).toHaveLength(5);
     fireEvent.click(screen.getByRole("button", { name: "الفصل 1: الخلية والانقسام" }));
-    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(39);
+    expect(screen.getByRole("button", { name: "الخلية والنظرية الخلوية" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "الانقسام الاختزالي والطور التمهيدي الأول" })).toBeEnabled();
+    expect(screen.getByText("26 موضوعاً مرتبة حسب محتوى الفصل.")).toBeInTheDocument();
   });
 
-  it("keeps Arabic chapter 5 limited to 25 lectures", () => {
+  it("shows Arabic Chapter 5 as 21 genetics topics", () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج العربي/ }));
     fireEvent.click(screen.getByRole("button", { name: "الفصل 5: الوراثة" }));
-    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(25);
-    expect(screen.queryByRole("button", { name: "المحاضرة 26" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "علم الوراثة وغريغور مندل" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "الهندسة الوراثية وتطبيقاتها" })).toBeEnabled();
+    expect(screen.getByText("21 موضوعاً مرتبة حسب محتوى الفصل.")).toBeInTheDocument();
   });
 
   it("loads only the selected curriculum's videos and MCQs", async () => {
