@@ -61,10 +61,11 @@ describe("Nadia topic navigation", () => {
     expect(items.at(-1)).toMatchObject({ lecture: 27, en: "Meiosis" });
   });
 
-  it("uses the source-deck topic map for English Chapter 5", () => {
+  it("matches English Chapter 5 to the 21 translated Arabic topics", () => {
     const items = getNadiaNavigationItems("en", 5);
     expect(usesNadiaTopicNavigation("en", 5)).toBe(true);
-    expect(items).toHaveLength(14);
-    expect(items.at(-1)?.en).toBe("Ministerial Review");
+    expect(items).toHaveLength(21);
+    expect(items[0]?.en).toBe("Genetics and Gregor Mendel");
+    expect(items.at(-1)?.en).toBe("Genetic Engineering and Its Applications");
   });
 });
