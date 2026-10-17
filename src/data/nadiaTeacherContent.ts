@@ -26,6 +26,8 @@ export type NadiaNavigationItem = {
   lecture: number;
   ar: string;
   en: string;
+  /** Optional source deck topic used when this topic has no saved MCQ set yet. */
+  sourceTopicKey?: string;
 };
 
 const NADIA_ARABIC_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNavigationItem[]>> = {
@@ -154,10 +156,20 @@ const NADIA_ARABIC_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNav
 
 const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNavigationItem[]>> = {
   1: [
-    { lecture: 2, ar: "الخلية والنظرية الخلوية", en: "Cells and Cell Theory" },
+    { lecture: 1, ar: "مقدمة في الخلية والنظرية الخلوية", en: "Introduction to Cells and Cell Theory" },
+    { lecture: 2, ar: "حجم الخلية والخلايا بدائية النواة", en: "Cell Size and Prokaryotic Cells" },
     { lecture: 3, ar: "الخلايا بدائية النواة", en: "Prokaryotic Cells" },
     { lecture: 4, ar: "تركيب الخلية البكتيرية", en: "Bacterial Cell Structure" },
     { lecture: 5, ar: "الخلايا حقيقية النواة", en: "Eukaryotic Cells" },
+    { lecture: 6, ar: "السايتوبلازم والشبكة البلازمية الداخلية", en: "Cytoplasm and Endoplasmic Reticulum" },
+    { lecture: 7, ar: "جهاز كولجي", en: "Golgi Apparatus" },
+    { lecture: 8, ar: "المايتوكوندريا", en: "Mitochondria" },
+    { lecture: 9, ar: "البلاستيدات", en: "Plastids" },
+    { lecture: 10, ar: "الجسيمات الحالة", en: "Lysosomes" },
+    { lecture: 11, ar: "هيكل الخلية", en: "Cytoskeleton" },
+    { lecture: 12, ar: "الجسيم المركزي والجسيم الحركي", en: "Centrosome and Kinetosome" },
+    { lecture: 13, ar: "الفجوات", en: "Vacuoles" },
+    { lecture: 14, ar: "النواة وأهميتها وتركيبها", en: "Nucleus: Importance and Structure" },
     { lecture: 15, ar: "الشبكة الكروماتينية وأعداد الكروموسومات", en: "Chromatin and Chromosome Numbers" },
     { lecture: 16, ar: "الأنشطة الخلوية والانتشار", en: "Cellular Activities and Diffusion" },
     { lecture: 17, ar: "النفوذية وأنواع الأغشية", en: "Permeability and Membrane Types" },
@@ -172,7 +184,19 @@ const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNa
     { lecture: 26, ar: "الانقسام الخيطي والانقسام السايتوبلازمي", en: "Mitosis and Cytokinesis" },
     { lecture: 27, ar: "الانقسام الاختزالي", en: "Meiosis" },
   ],
-  2: NADIA_ARABIC_TOPIC_NAVIGATION[2],
+  2: [
+    { lecture: 1, ar: "النسيج الإنشائي", en: "Meristematic Tissue", sourceTopicKey: "meristematic" },
+    { lecture: 2, ar: "النسيج الأساس", en: "Ground Tissue", sourceTopicKey: "ground" },
+    { lecture: 3, ar: "نسيج البشرة", en: "Epidermal Tissue", sourceTopicKey: "epidermal" },
+    { lecture: 4, ar: "النسيج الوعائي", en: "Vascular Tissue", sourceTopicKey: "vascular" },
+    { lecture: 5, ar: "النسيج الطلائي", en: "Epithelial Tissue", sourceTopicKey: "epithelial" },
+    { lecture: 6, ar: "خلايا النسيج الضام", en: "Connective Tissue Cells", sourceTopicKey: "connective-cells" },
+    { lecture: 7, ar: "النسيج الضام الأصيل", en: "Connective Tissue Proper", sourceTopicKey: "connective-proper" },
+    { lecture: 8, ar: "الغضروف", en: "Cartilage", sourceTopicKey: "cartilage" },
+    { lecture: 9, ar: "العظم", en: "Bone", sourceTopicKey: "bone" },
+    { lecture: 10, ar: "الدم", en: "Blood", sourceTopicKey: "blood" },
+    { lecture: 11, ar: "النسيج العضلي", en: "Muscular Tissue", sourceTopicKey: "muscular" },
+  ],
   3: [
     { lecture: 1, ar: "مقدمة في التكاثر", en: "Introduction to Reproduction" },
     { lecture: 2, ar: "تكوين النطف", en: "Spermatogenesis" },
@@ -181,6 +205,7 @@ const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNa
     { lecture: 5, ar: "التكاثر اللاجنسي في البكتيريا", en: "Asexual Reproduction in Bacteria" },
     { lecture: 7, ar: "الاقتران البكتيري", en: "Bacterial Conjugation" },
     { lecture: 8, ar: "التكاثر في الكلاميدوموناس", en: "Reproduction in Chlamydomonas" },
+    { lecture: 6, ar: "التكاثر اللاجنسي في الباراميسيوم", en: "Asexual Reproduction in Paramecium", sourceTopicKey: "paramecium-asexual" },
     { lecture: 9, ar: "التكاثر الجنسي في الباراميسيوم", en: "Sexual Reproduction in Paramecium" },
     { lecture: 10, ar: "التكاثر في اليوغلينا والفطريات", en: "Reproduction in Euglena and Fungi" },
     { lecture: 11, ar: "أصل النباتات وتعاقب الأجيال", en: "Origin of Land Plants and Alternation of Generations" },
@@ -205,10 +230,38 @@ const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNa
     { lecture: 30, ar: "الإخصاب والانغراس والحمل في الإنسان", en: "Human Fertilization, Implantation, and Pregnancy" },
     { lecture: 31, ar: "الدورة الحيضية والمبيضية", en: "Menstrual and Ovarian Cycle" },
     { lecture: 32, ar: "الدورة الرحمية", en: "Uterine Cycle" },
-    { lecture: 34, ar: "التكاثر العذري والخنثي", en: "Parthenogenesis and Hermaphroditism" },
+    { lecture: 33, ar: "التكاثر العذري والخنثي", en: "Parthenogenesis and Hermaphroditism" },
   ],
-  4: NADIA_ARABIC_TOPIC_NAVIGATION[4],
-  5: NADIA_ARABIC_TOPIC_NAVIGATION[5],
+  4: [
+    { lecture: 1, ar: "التكوين الجنيني وعلم الأجنة", en: "Embryonic Development and Embryology" },
+    { lecture: 2, ar: "التفلج ومراحل التكوين الجنيني المبكرة", en: "Cleavage and Early Embryonic Development" },
+    { lecture: 3, ar: "تاريخ علم الأجنة ونظرياته", en: "History and Theories of Embryology" },
+    { lecture: 10, ar: "علم الأجنة التجريبي والجزيئي", en: "Experimental and Molecular Embryology", sourceTopicKey: "experimental-molecular" },
+    { lecture: 4, ar: "التمايز الخلوي والتشكل والحث الجنيني", en: "Cell Differentiation, Morphogenesis, and Embryonic Induction" },
+    { lecture: 5, ar: "التشوهات الخلقية", en: "Congenital Anomalies" },
+    { lecture: 6, ar: "التوائم والولادات المتعددة", en: "Twins and Multiple Births" },
+    { lecture: 8, ar: "المباعدة بين الولادات", en: "Birth Spacing", sourceTopicKey: "birth-spacing" },
+    { lecture: 7, ar: "الخلايا الجذعية", en: "Stem Cells" },
+    { lecture: 11, ar: "تقنية النانو والاستنساخ الحيواني", en: "Nanotechnology and Animal Cloning", sourceTopicKey: "nanotechnology-cloning" },
+    { lecture: 9, ar: "العقم وتقنيات الإخصاب المساعد", en: "Infertility and Assisted Reproductive Technologies" },
+    { lecture: 12, ar: "تقنيات التجميد", en: "Freezing Techniques", sourceTopicKey: "freezing" },
+  ],
+  5: [
+    { lecture: 1, ar: "أساسيات وتاريخ علم الوراثة", en: "Foundations and History", sourceTopicKey: "foundations-history" },
+    { lecture: 2, ar: "أعداد الكروموسومات", en: "Chromosome Numbers", sourceTopicKey: "chromosome-numbers" },
+    { lecture: 3, ar: "الوراثة المندلية", en: "Mendelian Genetics", sourceTopicKey: "mendelian-genetics" },
+    { lecture: 4, ar: "أنماط السيادة", en: "Dominance Patterns", sourceTopicKey: "dominance" },
+    { lecture: 5, ar: "الأليلات المميتة", en: "Lethal Alleles", sourceTopicKey: "lethal-alleles" },
+    { lecture: 6, ar: "الأليلات المتعددة وفصائل ABO", en: "Multiple Alleles and ABO", sourceTopicKey: "abo" },
+    { lecture: 7, ar: "عامل ريسس Rh", en: "Rh Factor", sourceTopicKey: "rh" },
+    { lecture: 8, ar: "الارتباط ولون فراء الأرانب", en: "Linkage and Rabbit Fur", sourceTopicKey: "linkage-rabbits" },
+    { lecture: 9, ar: "إثبات أن DNA مادة وراثية", en: "DNA as Genetic Material", sourceTopicKey: "dna-evidence" },
+    { lecture: 10, ar: "تركيب DNA والقواعد النيتروجينية", en: "DNA Structure and Bases", sourceTopicKey: "dna-structure" },
+    { lecture: 11, ar: "الكروماتين ومقارنات القواعد", en: "Chromatin and Base Comparisons", sourceTopicKey: "chromatin-comparisons" },
+    { lecture: 12, ar: "RNA وأنواعه", en: "RNA and Its Types", sourceTopicKey: "rna" },
+    { lecture: 13, ar: "المسائل الوراثية", en: "Genetics Problems", sourceTopicKey: "problems" },
+    { lecture: 14, ar: "التعليلات والمراجعة الوزارية", en: "Ministerial Review", sourceTopicKey: "ministerial-review" },
+  ],
 };
 
 export const getNadiaLectureCount = (curriculum: NadiaCurriculum, chapter: NadiaChapterNumber) => {

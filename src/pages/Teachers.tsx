@@ -11,6 +11,10 @@ import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
 import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import {
+  getNadiaEnglishBuiltInMcqSet,
+  isNadiaBuiltInMcqSet,
+} from "@/data/nadiaEnglishTopicMcqs";
+import {
   NADIA_CHAPTERS,
   getNadiaLectureCount,
   getNadiaCurriculumLabel,
@@ -1208,6 +1212,8 @@ export function NadiaLectureWorkspace({
           teacher={teacher}
           topicKey={examTopicKey}
           curriculum={curriculum}
+          chapter={chapter}
+          lecture={lecture}
           language={language}
           isAdmin={isAdmin}
         />
@@ -1220,12 +1226,16 @@ function NadiaLectureMcqBank({
   teacher,
   curriculum,
   topicKey,
+  chapter,
+  lecture,
   language,
   isAdmin,
 }: {
   teacher: Teacher;
   curriculum: NadiaCurriculum;
   topicKey: string;
+  chapter: NadiaChapterNumber;
+  lecture: number;
   language: AppLanguage;
   isAdmin: boolean;
 }) {
@@ -1247,11 +1257,19 @@ function NadiaLectureMcqBank({
         .order("created_at", { ascending: false });
       if (!active) return;
       if (error) toast.error(error.message);
-      else setSets((data ?? []) as unknown as MCQSet[]);
+      else {
+        const savedSets = (data ?? []) as unknown as MCQSet[];
+        const builtInSet = curriculum === "en"
+          ? getNadiaEnglishBuiltInMcqSet(chapter, lecture)
+          : null;
+        setSets(savedSets.length > 0
+          ? savedSets
+          : (builtInSet ? [builtInSet as MCQSet] : []));
+      }
       setLoading(false);
     })();
     return () => { active = false; };
-  }, [teacher.id, topicKey]);
+  }, [chapter, curriculum, lecture, teacher.id, topicKey]);
 
   const removeSet = async (id: string) => {
     if (!confirm(L.confirmDelete)) return;
@@ -1312,7 +1330,7 @@ function NadiaLectureMcqBank({
                 >
                   {L.practice}
                 </button>
-                {isAdmin && (
+                {isAdmin && !isNadiaBuiltInMcqSet(set.id) && (
                   <button
                     type="button"
                     onClick={() => removeSet(set.id)}
@@ -1334,7 +1352,7 @@ function NadiaLectureMcqBank({
           language={language}
           L={L}
           onClose={() => setPractice(null)}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin && !isNadiaBuiltInMcqSet(practice.id)}
           onSetUpdated={(next) => {
             if (next === null) setSets((current) => current.filter((set) => set.id !== practice.id));
             else {

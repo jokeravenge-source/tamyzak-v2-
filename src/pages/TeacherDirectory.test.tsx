@@ -100,9 +100,9 @@ describe("Our Teachers Nadia entry", () => {
     expect(screen.getByRole("heading", { name: "فصول المنهج الإنجليزي" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "الفصل 1: الخلية والانقسام" }));
     expect(screen.getByRole("heading", { name: "مواضيع الفصل" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "الخلية والنظرية الخلوية" }));
+    fireEvent.click(screen.getByRole("button", { name: "مقدمة في الخلية والنظرية الخلوية" }));
     expect(screen.getByTestId("selected-curriculum")).toHaveTextContent("en");
-    fireEvent.click(screen.getByRole("button", { name: "العودة للمحاضرات" }));
+    fireEvent.click(screen.getByRole("button", { name: "العودة للمواضيع" }));
     fireEvent.click(screen.getByRole("button", { name: "العودة للفصول" }));
     fireEvent.click(screen.getByRole("button", { name: "العودة لمحتوى الأستاذة" }));
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج العربي/ }));

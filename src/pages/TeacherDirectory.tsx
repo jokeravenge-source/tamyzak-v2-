@@ -118,6 +118,7 @@ const copy = {
     backToTeacherContent: "العودة لمحتوى الأستاذة",
     backToChapters: "العودة للفصول",
     backToLectures: "العودة للمحاضرات",
+    backToTopics: "العودة للمواضيع",
     teacherTools: "أدوات المدرّس",
     open: "فتح الأداة",
     empty: "ماكو مدرسين مضافين حالياً.",
@@ -137,6 +138,7 @@ const copy = {
     backToTeacherContent: "Back to teacher content",
     backToChapters: "Back to chapters",
     backToLectures: "Back to lectures",
+    backToTopics: "Back to topics",
     teacherTools: "Teacher tools",
     open: "Open tool",
     empty: "No teachers have been added yet.",
@@ -465,7 +467,9 @@ const TeacherDirectory = ({
               : choosingFlashcardList
                 ? text.backToTeachers
                 : selectedIsNadia && nadiaView === "lecture"
-                  ? text.backToLectures
+                  ? (nadiaChapter && usesNadiaTopicNavigation(nadiaCurriculum, nadiaChapter)
+                      ? text.backToTopics
+                      : text.backToLectures)
                   : selectedIsNadia && nadiaView === "lectures"
                   ? text.backToChapters
                   : selectedIsNadia && nadiaView === "chapters"

@@ -45,25 +45,26 @@ describe("Nadia topic navigation", () => {
     expect(usesNadiaTopicNavigation("en", 2)).toBe(true);
     expect(usesNadiaTopicNavigation("en", 3)).toBe(true);
     expect(usesNadiaTopicNavigation("en", 4)).toBe(true);
-    expect(getNadiaNavigationItems("en", 2)).toHaveLength(24);
-    expect(getNadiaNavigationItems("en", 3)).toHaveLength(32);
-    expect(getNadiaNavigationItems("en", 4)).toHaveLength(7);
-    expect(getNadiaNavigationItems("en", 3).some((item) => item.lecture === 33)).toBe(false);
-    expect(getNadiaTopicTitle("en", 3, 34, "en")).toBe("Parthenogenesis and Hermaphroditism");
+    expect(getNadiaNavigationItems("en", 2)).toHaveLength(11);
+    expect(getNadiaNavigationItems("en", 3)).toHaveLength(33);
+    expect(getNadiaNavigationItems("en", 4)).toHaveLength(12);
+    expect(getNadiaTopicTitle("en", 3, 6, "en")).toBe("Asexual Reproduction in Paramecium");
+    expect(getNadiaTopicTitle("en", 3, 33, "en")).toBe("Parthenogenesis and Hermaphroditism");
   });
 
   it("organizes the existing English Chapter 1 content by topic", () => {
     const items = getNadiaNavigationItems("en", 1);
     expect(usesNadiaTopicNavigation("en", 1)).toBe(true);
-    expect(items).toHaveLength(17);
-    expect(items[0]).toMatchObject({ lecture: 2, en: "Cells and Cell Theory" });
+    expect(items).toHaveLength(27);
+    expect(items[0]).toMatchObject({ lecture: 1, en: "Introduction to Cells and Cell Theory" });
+    expect(items.find((item) => item.lecture === 7)?.en).toBe("Golgi Apparatus");
     expect(items.at(-1)).toMatchObject({ lecture: 27, en: "Meiosis" });
   });
 
-  it("uses the genetics topic map for English Chapter 5", () => {
+  it("uses the source-deck topic map for English Chapter 5", () => {
     const items = getNadiaNavigationItems("en", 5);
     expect(usesNadiaTopicNavigation("en", 5)).toBe(true);
-    expect(items).toHaveLength(21);
-    expect(items.at(-1)?.en).toBe("Genetic Engineering and Its Applications");
+    expect(items).toHaveLength(14);
+    expect(items.at(-1)?.en).toBe("Ministerial Review");
   });
 });
