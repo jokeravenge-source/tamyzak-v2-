@@ -682,6 +682,8 @@ export default function PrivateStudyRooms({
         <Link2 className="w-3.5 h-3.5" /> {L.share}
       </button>
 
+      {children && <div className="mb-5">{children}</div>}
+
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
         <Users className="w-3.5 h-3.5" /> {L.members}: {members.length}
       </div>
@@ -849,7 +851,6 @@ export default function PrivateStudyRooms({
         </button>
       </div>
 
-      {children && <div className="mt-5 pt-5 border-t border-white/10">{children}</div>}
       <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
     </section>
   );
