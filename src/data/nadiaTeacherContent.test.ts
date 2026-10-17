@@ -33,9 +33,23 @@ describe("Nadia topic navigation", () => {
     expect(items.at(-1)?.ar).toBe("الهندسة الوراثية وتطبيقاتها");
   });
 
-  it("keeps other chapters lecture-based", () => {
-    expect(usesNadiaTopicNavigation("en", 3)).toBe(false);
-    expect(getNadiaNavigationItems("ar", 3)).toHaveLength(34);
+  it("organizes the remaining Arabic chapters by their available topics", () => {
+    expect(getNadiaNavigationItems("ar", 2)).toHaveLength(24);
+    expect(getNadiaNavigationItems("ar", 3)).toHaveLength(33);
+    expect(getNadiaNavigationItems("ar", 4)).toHaveLength(7);
+    expect(getNadiaNavigationItems("ar", 3).some((item) => item.lecture === 11)).toBe(false);
+    expect(getNadiaTopicTitle("ar", 4, 9, "ar")).toBe("الاستنساخ الحيواني وتقنيات الإخصاب المساعد");
+  });
+
+  it("organizes the remaining English chapters by topic", () => {
+    expect(usesNadiaTopicNavigation("en", 2)).toBe(true);
+    expect(usesNadiaTopicNavigation("en", 3)).toBe(true);
+    expect(usesNadiaTopicNavigation("en", 4)).toBe(true);
+    expect(getNadiaNavigationItems("en", 2)).toHaveLength(24);
+    expect(getNadiaNavigationItems("en", 3)).toHaveLength(32);
+    expect(getNadiaNavigationItems("en", 4)).toHaveLength(7);
+    expect(getNadiaNavigationItems("en", 3).some((item) => item.lecture === 33)).toBe(false);
+    expect(getNadiaTopicTitle("en", 3, 34, "en")).toBe("Parthenogenesis and Hermaphroditism");
   });
 
   it("organizes the existing English Chapter 1 content by topic", () => {
