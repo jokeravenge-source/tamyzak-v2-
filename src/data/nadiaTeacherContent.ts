@@ -82,20 +82,48 @@ const NADIA_ARABIC_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNav
   ],
 };
 
+const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNavigationItem[]>> = {
+  1: [
+    { lecture: 2, ar: "الخلية والنظرية الخلوية", en: "Cells and Cell Theory" },
+    { lecture: 3, ar: "الخلايا بدائية النواة", en: "Prokaryotic Cells" },
+    { lecture: 4, ar: "تركيب الخلية البكتيرية", en: "Bacterial Cell Structure" },
+    { lecture: 5, ar: "الخلايا حقيقية النواة", en: "Eukaryotic Cells" },
+    { lecture: 15, ar: "الشبكة الكروماتينية وأعداد الكروموسومات", en: "Chromatin and Chromosome Numbers" },
+    { lecture: 16, ar: "الأنشطة الخلوية والانتشار", en: "Cellular Activities and Diffusion" },
+    { lecture: 17, ar: "النفوذية وأنواع الأغشية", en: "Permeability and Membrane Types" },
+    { lecture: 18, ar: "التناضح وتأثير تراكيز المحاليل", en: "Osmosis and Osmotic Solutions" },
+    { lecture: 19, ar: "النقل الفعال", en: "Active Transport" },
+    { lecture: 20, ar: "البلعمة", en: "Phagocytosis" },
+    { lecture: 21, ar: "الشرب الخلوي والإخراج الخلوي", en: "Pinocytosis and Exocytosis" },
+    { lecture: 22, ar: "الأيض الخلوي والتحلل السكري", en: "Cell Metabolism and Glycolysis" },
+    { lecture: 23, ar: "التنفس الهوائي ودورة كريبس", en: "Aerobic Respiration and the Krebs Cycle" },
+    { lecture: 24, ar: "تثبيت ثنائي أكسيد الكربون والبناء الضوئي", en: "Carbon Dioxide Fixation and Photosynthesis" },
+    { lecture: 25, ar: "انقسام الخلايا والطور البيني", en: "Cell Division and Interphase" },
+    { lecture: 26, ar: "الانقسام الخيطي والانقسام السايتوبلازمي", en: "Mitosis and Cytokinesis" },
+    { lecture: 27, ar: "الانقسام الاختزالي", en: "Meiosis" },
+  ],
+  5: NADIA_ARABIC_TOPIC_NAVIGATION[5],
+};
+
 export const getNadiaLectureCount = (curriculum: NadiaCurriculum, chapter: NadiaChapterNumber) => {
   if (curriculum === "ar" && chapter === 3) return 34;
   return NADIA_CHAPTERS.find((item) => item.number === chapter)?.lectureCount ?? NADIA_ARABIC_LECTURE_COUNT;
 };
 
 export const usesNadiaTopicNavigation = (curriculum: NadiaCurriculum, chapter: NadiaChapterNumber) =>
-  curriculum === "ar" && (chapter === 1 || chapter === 5);
+  (chapter === 1 || chapter === 5)
+  && Boolean((curriculum === "ar" ? NADIA_ARABIC_TOPIC_NAVIGATION : NADIA_ENGLISH_TOPIC_NAVIGATION)[chapter]);
 
 export const getNadiaNavigationItems = (
   curriculum: NadiaCurriculum,
   chapter: NadiaChapterNumber,
 ): NadiaNavigationItem[] => {
-  if (curriculum === "ar" && NADIA_ARABIC_TOPIC_NAVIGATION[chapter]) {
-    return NADIA_ARABIC_TOPIC_NAVIGATION[chapter]!;
+  const topicNavigation = curriculum === "ar"
+    ? NADIA_ARABIC_TOPIC_NAVIGATION[chapter]
+    : NADIA_ENGLISH_TOPIC_NAVIGATION[chapter];
+
+  if (topicNavigation) {
+    return topicNavigation;
   }
 
   return Array.from({ length: getNadiaLectureCount(curriculum, chapter) }, (_, index) => ({
