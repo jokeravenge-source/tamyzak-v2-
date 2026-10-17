@@ -34,7 +34,22 @@ describe("Nadia topic navigation", () => {
   });
 
   it("keeps other chapters lecture-based", () => {
-    expect(usesNadiaTopicNavigation("en", 1)).toBe(false);
+    expect(usesNadiaTopicNavigation("en", 3)).toBe(false);
     expect(getNadiaNavigationItems("ar", 3)).toHaveLength(34);
+  });
+
+  it("organizes the existing English Chapter 1 content by topic", () => {
+    const items = getNadiaNavigationItems("en", 1);
+    expect(usesNadiaTopicNavigation("en", 1)).toBe(true);
+    expect(items).toHaveLength(17);
+    expect(items[0]).toMatchObject({ lecture: 2, en: "Cells and Cell Theory" });
+    expect(items.at(-1)).toMatchObject({ lecture: 27, en: "Meiosis" });
+  });
+
+  it("uses the genetics topic map for English Chapter 5", () => {
+    const items = getNadiaNavigationItems("en", 5);
+    expect(usesNadiaTopicNavigation("en", 5)).toBe(true);
+    expect(items).toHaveLength(21);
+    expect(items.at(-1)?.en).toBe("Genetic Engineering and Its Applications");
   });
 });
