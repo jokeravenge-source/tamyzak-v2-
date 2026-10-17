@@ -30,6 +30,8 @@ import {
   NADIA_CHAPTERS,
   getNadiaLectureCount,
   getNadiaCurriculumLabel,
+  getNadiaNavigationItems,
+  usesNadiaTopicNavigation,
   type NadiaCurriculum,
   type NadiaChapterNumber,
 } from "@/data/nadiaTeacherContent";
@@ -246,35 +248,48 @@ function NadiaDirectoryContent({
 
   if (view === "lectures") {
     const chapter = NADIA_CHAPTERS.find((item) => item.number === selectedChapter) ?? NADIA_CHAPTERS[0];
-    const lectureCount = getNadiaLectureCount(curriculum, chapter.number);
+    const topicBased = usesNadiaTopicNavigation(curriculum, chapter.number);
+    const navigationItems = getNadiaNavigationItems(curriculum, chapter.number);
+    const listTitle = topicBased
+      ? (language === "ar" ? "مواضيع الفصل" : "Chapter Topics")
+      : text.lectures;
+    const listDescription = topicBased
+      ? (language === "ar"
+          ? `${navigationItems.length} موضوعاً مرتبة حسب محتوى الفصل.`
+          : `${navigationItems.length} topics organized by chapter content.`)
+      : text.listDescription(getNadiaLectureCount(curriculum, chapter.number));
     return (
       <>
         <header className="mb-7 text-center">
           <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300">
             <Video className="h-4 w-4" /> {text.curriculum}
           </span>
-          <h1 className="text-3xl font-black sm:text-4xl">{text.lectures}</h1>
+          <h1 className="text-3xl font-black sm:text-4xl">{listTitle}</h1>
           <p className="mt-2 font-bold text-foreground">
             {text.chapter} {chapter.number}: {language === "ar" ? chapter.ar : chapter.en}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">{text.listDescription(lectureCount)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{listDescription}</p>
         </header>
 
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={text.lectures}>
-          {Array.from({ length: lectureCount }, (_, index) => index + 1).map((lectureNumber) => (
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={listTitle}>
+          {navigationItems.map((item) => (
             <button
               type="button"
-              key={lectureNumber}
-              onClick={() => onSelectLecture(lectureNumber)}
-              aria-label={`${text.lecture} ${lectureNumber}`}
+              key={item.lecture}
+              onClick={() => onSelectLecture(item.lecture)}
+              aria-label={topicBased ? item[language] : `${text.lecture} ${item.lecture}`}
               className="group flex min-h-24 items-center gap-4 rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                 <PlayCircle className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-black text-foreground">{text.lecture} {lectureNumber}</span>
-                <span className="mt-1 block text-xs font-bold text-muted-foreground">{text.curriculum}</span>
+                <span className="block font-black text-foreground">{item[language]}</span>
+                <span className="mt-1 block text-xs font-bold text-muted-foreground">
+                  {topicBased
+                    ? (language === "ar" ? `الفصل ${chapter.number}` : `Chapter ${chapter.number}`)
+                    : text.curriculum}
+                </span>
               </span>
               <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
             </button>
