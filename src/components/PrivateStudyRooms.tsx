@@ -10,6 +10,8 @@ import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
+import { Button } from "@/components/ui/button";
+import { PINNED_STUDY_ROOMS } from "@/lib/pinnedStudyRooms";
 
 type Room = { id: string; code: string; name: string; owner_id: string; is_public: boolean; subject: string | null };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
@@ -80,7 +82,7 @@ export default function PrivateStudyRooms({
   language: "en" | "ar";
   children?: React.ReactNode;
   subject?: string | null;
-  onRoomMembershipChange?: (joined: boolean) => void;
+  onRoomMembershipChange?: (joined: boolean, room?: { subject: string | null; is_public: boolean; name: string }) => void;
   timerSeconds?: number;
   timerRunning?: boolean;
   timerDisplayRunning?: boolean;
@@ -254,12 +256,13 @@ export default function PrivateStudyRooms({
   }, [userId, room, loadPublicRooms]);
 
   useEffect(() => {
-    onRoomMembershipChange?.(!!room);
+    onRoomMembershipChange?.(!!room, room ?? undefined);
   }, [room, onRoomMembershipChange]);
 
   // Restore last room
   useEffect(() => {
     if (!userId) return;
+    if (new URLSearchParams(window.location.search).has("code")) return;
     const saved = localStorage.getItem(LS_KEY);
     if (!saved) return;
     (async () => {
@@ -570,13 +573,32 @@ export default function PrivateStudyRooms({
     loadRoom(room.id);
   };
 
+  const pinnedRooms = (
+    <section className="mb-5" aria-label={ar ? "الغرف المثبتة" : "Pinned rooms"}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+        <Crown className="h-4 w-4 text-primary" /> {ar ? "الغرف المثبتة" : "Pinned rooms"}
+      </h2>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {PINNED_STUDY_ROOMS.map((pinned) => (
+          <Button key={pinned.code} variant={room?.code === pinned.code ? "secondary" : "outline"}
+            disabled={busy || room?.code === pinned.code}
+            onClick={() => void joinByCode(pinned.code)}
+            className="h-auto min-h-14 justify-start gap-2 whitespace-normal rounded-lg px-3 py-3 text-start">
+            <Globe2 className="h-4 w-4 shrink-0 text-primary" />
+            <span className="min-w-0 break-words">{ar ? pinned.ar : pinned.en}</span>
+          </Button>
+        ))}
+      </div>
+    </section>
+  );
+
   if (!room) {
     return (
       <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
         <div className="flex items-center gap-2 mb-1 text-primary font-semibold">
           <DoorOpen className="w-4 h-4" /> <span>{L.title}</span>
         </div>
-        <p className="text-xs text-muted-foreground mb-4">{L.hint}</p>
+        {pinnedRooms}
         <div className="mb-5">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Globe2 className="h-4 w-4 text-primary" /> {L.publicRooms}
@@ -585,7 +607,7 @@ export default function PrivateStudyRooms({
             <p className="rounded-xl border border-dashed border-border px-4 py-3 text-center text-xs text-muted-foreground">{L.noPublicRooms}</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
-              {publicRooms.map((publicRoom) => (
+              {publicRooms.filter((r) => !PINNED_STUDY_ROOMS.some((p) => p.code === r.code)).map((publicRoom) => (
                 <button
                   key={publicRoom.id}
                   type="button"
@@ -633,6 +655,7 @@ export default function PrivateStudyRooms({
 
   return (
     <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
+      {pinnedRooms}
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <DoorOpen className="w-4 h-4 text-primary" />
         <span className="font-semibold">{room.name}</span>
@@ -658,6 +681,8 @@ export default function PrivateStudyRooms({
         className="w-full mb-3 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary flex items-center justify-center gap-1.5">
         <Link2 className="w-3.5 h-3.5" /> {L.share}
       </button>
+
+      {children && <div className="mb-5">{children}</div>}
 
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
         <Users className="w-3.5 h-3.5" /> {L.members}: {members.length}
@@ -826,7 +851,6 @@ export default function PrivateStudyRooms({
         </button>
       </div>
 
-      {children && <div className="mt-5 pt-5 border-t border-white/10">{children}</div>}
       <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
     </section>
   );
