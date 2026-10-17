@@ -1232,51 +1232,18 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </div>
           </header>
 
+          <PrivateStudyRooms language={language} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started} />
           <section className="mb-8">
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div><h2 className="text-xl font-extrabold">{language === "ar" ? "اختار المادة وابدأ" : "Choose a subject to begin"}</h2><p className="mt-1 text-sm text-muted-foreground">{language === "ar" ? "تگدر تغيّر الغرفة بعدين بدون ما تخسر وقتك." : "You can switch rooms later without losing your time."}</p></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {SUBJECTS.map((s) => {
-                const SIcon = s.Icon;
-                const tint = SUBJECT_TINTS[s.code];
-                return (
-                  <button key={s.code} onClick={() => setSubject(s.code)} className={`group min-h-32 rounded-2xl border p-4 text-start shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg ${tint.card}`}>
-                    <span className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl ${tint.icon}`}><SIcon className="h-5 w-5" /></span>
-                    <span className="flex items-center gap-2"><span className="min-w-0 flex-1 font-bold">{language === "ar" ? s.ar : s.en}</span><ChevronRight className={`h-4 w-4 shrink-0 opacity-50 transition-transform group-hover:translate-x-0.5 ${dir === "rtl" ? "rotate-180" : ""}`} /></span>
-                  </button>
-                );
-              })}
+            <h2 className="mb-3 text-sm font-semibold">{language === "ar" ? "جلسة فردية" : "Solo session"}</h2>
+            <div className="flex flex-wrap gap-2">
+              {SUBJECTS.map((s) => (
+                <Button key={s.code} variant="outline" onClick={() => setSubject(s.code)} className="gap-2 rounded-lg">
+                  <s.Icon className="h-4 w-4 text-primary" /> {language === "ar" ? s.ar : s.en}
+                </Button>
+              ))}
             </div>
           </section>
 
-          <div className="mb-8 grid gap-3 sm:grid-cols-3">
-            {[L.pointsLine1, L.pointsLine2, L.pointsLine3].map((line, i) => (
-              <div key={line} className="flex gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 text-sm"><span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-mono text-xs font-bold text-primary">{i + 1}</span><span className="leading-relaxed text-muted-foreground">{line}</span></div>
-            ))}
-          </div>
-
-        <PrivateStudyRooms language={language} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
-          <div className="text-sm font-semibold mb-1">
-            {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك" : "Start your study timer inside your room"}
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            {language === "ar"
-              ? "اختر المادة وستبقى الغرفة والدردشة ظاهرة مع المؤقت. الخيارات الإضافية موجودة داخل قائمة الجلسة."
-              : "Pick a subject — your room and chat stay visible with the timer. Extra options are inside the session menu."}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECTS.map((s) => (
-              <button
-                key={s.code}
-                onClick={() => setSubject(s.code)}
-                className="px-3 py-1.5 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs hover:bg-primary/20 transition-colors"
-              >
-                {language === "ar" ? s.ar : s.en}
-              </button>
-            ))}
-          </div>
-        </PrivateStudyRooms>
           <div className="mt-8"><SessionsHistory language={language} userId={userId} /></div>
         </div>
       </main>
