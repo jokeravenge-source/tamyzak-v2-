@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
@@ -26,6 +26,7 @@ import quranTrackAsset from "@/assets/music/quran.mp3.asset.json";
 import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
+import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
@@ -536,6 +537,12 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [pomodoro, setPomodoro] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [joinedStudyRoom, setJoinedStudyRoom] = useState(false);
+  const [joinedRoomName, setJoinedRoomName] = useState<string | null>(null);
+  const handleRoomMembershipChange = useCallback((joined: boolean, room?: { subject: string | null; is_public: boolean; name: string }) => {
+    setJoinedStudyRoom(joined);
+    setJoinedRoomName(joined ? room?.name ?? null : null);
+    if (joined && room) setSubject(roomSessionSubject(room.subject));
+  }, []);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [editingSaveTime, setEditingSaveTime] = useState(false);
@@ -1249,7 +1256,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             ))}
           </div>
 
-        <PrivateStudyRooms language={language} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
+        <PrivateStudyRooms language={language} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
           <div className="text-sm font-semibold mb-1">
             {language === "ar" ? "ابدأ مؤقت الدراسة وأنت داخل غرفتك" : "Start your study timer inside your room"}
           </div>
@@ -1276,9 +1283,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     );
   }
 
-  const subj = SUBJECTS.find((s) => s.code === subject)!;
+  const subj = SUBJECTS.find((s) => s.code === subject) ?? { code: "general", ar: "الدراسة", en: "Study", Icon: BookOpen };
   const ActiveSubjectIcon = subj.Icon;
-  const activeTint = SUBJECT_TINTS[subj.code];
+  const activeTint = SUBJECT_TINTS[subj.code] ?? { card: "border-primary/25 bg-primary/10", icon: "bg-primary/15 text-primary" };
   const nextHourProgress = ((seconds % 3600) / 3600) * 100;
   const focusRemaining = workSecondsRemaining(seconds, phaseStartRef.current, pomodoroWorkMin);
   const pomodoroRemaining = phase === "rest" ? restRemaining : focusRemaining;
@@ -1301,13 +1308,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         <header className={`mb-6 rounded-[2rem] border p-5 shadow-sm ${activeTint.card}`}>
           <div className="flex items-center gap-4">
             <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${activeTint.icon}`}><ActiveSubjectIcon className="h-6 w-6" /></span>
-            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{language === "ar" ? subj.ar : subj.en}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
+            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{joinedRoomName ?? (language === "ar" ? subj.ar : subj.en)}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
             {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${phase === "rest" ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${phase === "rest" ? "animate-pulse bg-sky-500" : running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{phase === "rest" ? L.restPhase : running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
           </div>
         </header>
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
-        <PrivateStudyRooms language={language} subject={subject} onRoomMembershipChange={setJoinedStudyRoom} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
+        <PrivateStudyRooms language={language} subject={subject === "general" ? null : subject} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
         <div className="space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
           <div className="py-5 text-center">
             <p className={`mb-2 text-xs font-bold uppercase tracking-[0.18em] ${phase === "rest" ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`}>{started ? (pomodoro ? (phase === "rest" ? L.restPhase : running ? L.workPhase : L.pause) : running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
@@ -1332,6 +1339,13 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               </>
             )}
           </div>
+
+          {!started && (
+            <label className="block">
+              <span className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Target className="h-4 w-4" /> {L.mission}</span>
+              <Input value={mission} onChange={(event) => setMission(event.target.value)} placeholder={L.missionPh} maxLength={200} />
+            </label>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <button
@@ -1391,11 +1405,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
           {sessionMenuOpen && (
             <div className="space-y-4 rounded-2xl border border-border/70 bg-background/45 p-4">
-              <label className="block">
-                <span className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Target className="h-4 w-4" /> {L.optionalTask}</span>
-                <Input value={mission} onChange={(event) => setMission(event.target.value)} placeholder={L.missionPh} disabled={started} maxLength={200} />
-              </label>
-
               <SessionTodos
                 language={language}
                 onPick={(text) => { if (!started) setMission(text.slice(0, 200)); }}
