@@ -75,7 +75,7 @@ describe("Our Teachers Nadia entry", () => {
     expect(screen.queryByRole("button", { name: "المحاضرة 35" })).not.toBeInTheDocument();
   });
 
-  it("shows lectures 1 through 25 for Arabic chapter 5", async () => {
+  it("shows Arabic chapter 5 as genetics topics", async () => {
     render(
       <TeacherDirectory
         language="ar"
@@ -88,10 +88,10 @@ describe("Our Teachers Nadia entry", () => {
     fireEvent.click(screen.getByRole("button", { name: /المحاضرات وبنك الأسئلة.*المنهج العربي/ }));
     fireEvent.click(screen.getByRole("button", { name: "الفصل 5: الوراثة" }));
 
-    expect(screen.getAllByRole("button", { name: /^المحاضرة \d+$/ })).toHaveLength(25);
-    expect(screen.getByRole("button", { name: "المحاضرة 25" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "المحاضرة 26" })).not.toBeInTheDocument();
-    expect(screen.getByText("25 محاضرة مرتبة للمنهج العربي.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "مواضيع الفصل" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "علم الوراثة وغريغور مندل" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "الهندسة الوراثية وتطبيقاتها" })).toBeEnabled();
+    expect(screen.getByText("21 موضوعاً مرتبة حسب محتوى الفصل.")).toBeInTheDocument();
   });
   it("opens the English curriculum independently of the Arabic interface, then switches back", async () => {
     render(<TeacherDirectory language="ar" onBack={vi.fn()} onSelect={vi.fn()} />);
