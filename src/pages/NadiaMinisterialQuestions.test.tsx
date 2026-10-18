@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import NadiaMinisterialQuestions from "./NadiaMinisterialQuestions";
 import {
@@ -24,6 +24,15 @@ describe("NadiaMinisterialQuestions", () => {
 
     expect(screen.getByRole("heading", { name: "أسئلة نادية النعيمي الوزارية" })).toBeInTheDocument();
     expect(screen.getByLabelText("كلمة المرور")).toBeInTheDocument();
+  });
+
+  it("unlocks with the configured password", async () => {
+    render(<NadiaMinisterialQuestions />);
+
+    fireEvent.change(screen.getByLabelText("كلمة المرور"), { target: { value: "nadiabio123" } });
+    fireEvent.click(screen.getByRole("button", { name: /دخول بنك الأسئلة/ }));
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "نادية النعيمي · الأحياء" })).toBeInTheDocument());
   });
 
   it("renders a normal question bank after access is granted", () => {
