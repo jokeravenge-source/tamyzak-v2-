@@ -59,6 +59,16 @@ beforeEach(() => {
 
 describe("Nadia teacher hub", () => {
   it.each([
+    ["ar", "المنهج العربي"],
+    ["en", "المنهج الإنجليزي"],
+  ])("opens the %s curriculum endpoint with lectures and MCQs available", (curriculum, label) => {
+    window.history.replaceState({}, "", `/teachers?nadia=1&curriculum=${curriculum}`);
+    render(<Teachers language="ar" onBack={vi.fn()} />);
+    expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /^الفصل \d:/ })).toHaveLength(5);
+  });
+
+  it.each([
     ["mcq", "مجموعات الأسئلة"],
     ["lectures", "لا توجد محاضرات بعد."],
   ])("opens the Arabic curriculum deep link for %s", async (section, expectedText) => {

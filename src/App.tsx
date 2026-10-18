@@ -181,10 +181,14 @@ const SpotifyAuthCallback = () => {
 
 const queryClient = new QueryClient();
 
-const normalizeNadiaArabicTeacherLink = () => {
+const normalizeNadiaTeacherLink = () => {
   if (typeof window === "undefined") return;
   const path = window.location.pathname.replace(/\/+$/, "");
-  if (path === "/nadia-arabic-mcqs") {
+  if (path === "/nadia-arabic") {
+    window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=ar");
+  } else if (path === "/nadia-english") {
+    window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=en");
+  } else if (path === "/nadia-arabic-mcqs") {
     window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=ar&section=mcq");
   } else if (path === "/nadia-arabic-lectures") {
     window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=ar&section=lectures");
@@ -207,7 +211,7 @@ const McqBankDeepLink = () => {
 };
 
 const App = () => {
-  normalizeNadiaArabicTeacherLink();
+  normalizeNadiaTeacherLink();
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-review") return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}><McqReviewDashboard /></Suspense></TooltipProvider></QueryClientProvider>;
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;
 
