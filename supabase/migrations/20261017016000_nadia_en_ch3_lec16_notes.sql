@@ -236,7 +236,8 @@ SELECT
 ---
 $lecture_notes$
     )
-  )
+  ),
+  true
 WHERE NOT EXISTS (
   SELECT 1
   FROM public.teacher_topic_videos
