@@ -239,8 +239,9 @@ const App = () => {
     );
   }
 
-  // Standalone password-protected ministerial question bank for Nadia's Biology material.
-  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/nadia-ministerial-questions") {
+  // Standalone password-protected ministerial questions dashboard for Nadia's Biology material.
+  const normalizedPath = typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : "";
+  if (normalizedPath === "/nadia-ministerial-questions" || normalizedPath === "/nadia-ministerial-dashboard") {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
