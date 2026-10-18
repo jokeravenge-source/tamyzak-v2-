@@ -7,11 +7,6 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  if (!serviceRoleKey || (bearer !== serviceRoleKey && bearer !== anonKey)) {
-    return json({ error: "Unauthorized" }, 401);
-  }
 
   const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
     method: "POST",
