@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import anziAsset from "@/assets/teachers/mohammed-anzi.jpg.asset.json";
-import biologyTheme from "@/assets/themes/biology.png";
+import nadiaPhoto from "@/assets/teachers/nadia-al-nuaimy.png";
 import { missionsData } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
@@ -125,7 +125,7 @@ const teachers: Teacher[] = [
     id: "nadia-al-nuaimy",
     nameAr: "نادية النعيمي",
     nameEn: "Nadia Al-Nuaimy",
-    photo: biologyTheme,
+    photo: nadiaPhoto,
     subject: "biology",
     chapterKey: "bio-1",
   },
@@ -924,10 +924,33 @@ function NadiaTeacherFlow({
   onExit: () => void;
 }) {
   const isRTL = language === "ar";
-  const [stage, setStage] = useState<NadiaStage>("overview");
-  const [selectedChapter, setSelectedChapter] = useState<NadiaChapterNumber | null>(null);
-  const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
-  const [curriculum, setCurriculum] = useState<NadiaCurriculum>("ar");
+  const deepLink = (() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("curriculum") && !params.has("section")) return null;
+    const curriculum: NadiaCurriculum = params.get("curriculum") === "en" ? "en" : "ar";
+    const chapterValue = Number(params.get("chapter"));
+    const chapter = Number.isInteger(chapterValue) && chapterValue >= 1 && chapterValue <= 5
+      ? chapterValue as NadiaChapterNumber
+      : null;
+    const lectureValue = Number(params.get("lecture"));
+    const lecture = chapter && Number.isInteger(lectureValue)
+      && getNadiaNavigationItems(curriculum, chapter).some((item) => item.lecture === lectureValue)
+      ? lectureValue
+      : null;
+    return {
+      curriculum,
+      chapter,
+      lecture,
+      stage: lecture ? "lecture" as NadiaStage : chapter ? "lectures" as NadiaStage : "chapters" as NadiaStage,
+      tab: params.get("section") === "mcq" ? "mcq" as const : "notes" as const,
+    };
+  })();
+  const [stage, setStage] = useState<NadiaStage>(deepLink?.stage ?? "overview");
+  const [selectedChapter, setSelectedChapter] = useState<NadiaChapterNumber | null>(deepLink?.chapter ?? null);
+  const [selectedLecture, setSelectedLecture] = useState<number | null>(deepLink?.lecture ?? null);
+  const [curriculum, setCurriculum] = useState<NadiaCurriculum>(deepLink?.curriculum ?? "ar");
+  const [initialWorkspaceTab, setInitialWorkspaceTab] = useState<"notes" | "mcq">(deepLink?.tab ?? "notes");
   const curriculumLabel = getNadiaCurriculumLabel(curriculum, language);
   const copy = {
     ar: {
@@ -1026,6 +1049,7 @@ function NadiaTeacherFlow({
             language={language}
             onSelect={(nextCurriculum) => {
               setCurriculum(nextCurriculum);
+              setInitialWorkspaceTab("notes");
               setSelectedChapter(null);
               setSelectedLecture(null);
               setStage("chapters");
@@ -1122,6 +1146,7 @@ function NadiaTeacherFlow({
           chapter={activeChapter.number}
           lecture={selectedLecture ?? 1}
           isAdmin={isAdmin}
+          initialTab={initialWorkspaceTab}
         />
       )}
     </motion.div>
@@ -1134,20 +1159,22 @@ export function NadiaLectureWorkspace({
   chapter,
   lecture,
   isAdmin,
+  initialTab = "notes",
 }: {
   language: AppLanguage;
   curriculum?: NadiaCurriculum;
   chapter: NadiaChapterNumber;
   lecture: number;
   isAdmin: boolean;
+  initialTab?: "notes" | "mcq";
 }) {
   const isRTL = language === "ar";
-  const [tab, setTab] = useState<"notes" | "mcq">("notes");
+  const [tab, setTab] = useState<"notes" | "mcq">(initialTab);
   const teacher: Teacher = {
     id: "nadia-al-nuaimy",
     nameAr: "نادية النعيمي",
     nameEn: "Nadia Al-Nuaimy",
-    photo: biologyTheme,
+    photo: nadiaPhoto,
     subject: "biology",
     chapterKey: `bio-${chapter}`,
   };

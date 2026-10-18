@@ -181,6 +181,16 @@ const SpotifyAuthCallback = () => {
 
 const queryClient = new QueryClient();
 
+const normalizeNadiaArabicTeacherLink = () => {
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname.replace(/\/+$/, "");
+  if (path === "/nadia-arabic-mcqs") {
+    window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=ar&section=mcq");
+  } else if (path === "/nadia-arabic-lectures") {
+    window.history.replaceState({}, "", "/teachers?nadia=1&curriculum=ar&section=lectures");
+  }
+};
+
 const McqBankDeepLink = () => {
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -197,6 +207,7 @@ const McqBankDeepLink = () => {
 };
 
 const App = () => {
+  normalizeNadiaArabicTeacherLink();
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-review") return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}><McqReviewDashboard /></Suspense></TooltipProvider></QueryClientProvider>;
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;
 

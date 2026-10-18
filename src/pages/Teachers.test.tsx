@@ -58,6 +58,16 @@ beforeEach(() => {
 });
 
 describe("Nadia teacher hub", () => {
+  it.each([
+    ["mcq", "مجموعات الأسئلة"],
+    ["lectures", "لا توجد محاضرات بعد."],
+  ])("opens the Arabic curriculum deep link for %s", async (section, expectedText) => {
+    window.history.replaceState({}, "", `/teachers?nadia=1&curriculum=ar&section=${section}&chapter=2&lecture=1`);
+    render(<Teachers language="ar" onBack={vi.fn()} />);
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
+    expect(screen.getAllByText("مقدمة الأنسجة").length).toBeGreaterThan(0);
+  });
+
   it("offers separate curricula before opening Arabic Chapter 1 topics", () => {
     window.history.replaceState({}, "", "/teachers?nadia=1");
     render(<Teachers language="ar" onBack={vi.fn()} />);
