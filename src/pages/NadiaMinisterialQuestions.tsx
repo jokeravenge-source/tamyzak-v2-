@@ -23,7 +23,7 @@ import {
 
 type DisplayLanguage = "ar" | "en" | "both";
 
-const PASSWORD_SHA256 = "fb93d02a829ef98b4ecb55224000c64b5093ae1a0f660ba01323f4c2dd18c6cc";
+const PASSWORD_SHA256 = "7d066f3488039ceeb05736a65270566d4c4df98bcf01dfd13ec1a1fc4926bda9";
 const PAGE_SIZE = 20;
 
 async function sha256(value: string): Promise<string> {
