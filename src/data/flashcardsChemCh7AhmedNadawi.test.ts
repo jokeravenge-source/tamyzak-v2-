@@ -2,12 +2,13 @@ import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ahmedNadawiChemCh7Cards, ahmedNadawiChemCh7Source, ahmedNadawiChemCh7Topics } from "./flashcardsChemCh7AhmedNadawi";
 import { ahmedNadawiChemCh7CardsAr } from "./flashcardsChemCh7AhmedNadawiAr";
 import { explicitTopics } from "../lib/flashcardTopics";
 import { uniqueFlashcards } from "../lib/uniqueFlashcards";
 
-const original = readFileSync(new URL("../../docs/flashcards/ahmed-al-nadawi/Ahmed_Al_Nadawi_CH7_Organic_Chemistry_Flashcards.txt", import.meta.url), "utf8");
+const original = readFileSync(join(process.cwd(), "docs/flashcards/ahmed-al-nadawi/Ahmed_Al_Nadawi_CH7_Organic_Chemistry_Flashcards.txt"), "utf8");
 const source = [...original.matchAll(/^CARD (\d+)(?: \| MINISTERIAL: (.+))?\nQ: (.+)\nA: (.+)$/gm)];
 const numbers = (text: string) => [...new Set(text.match(/\d+(?:\.\d+)?/g) ?? [])].sort();
 const formulae = (text: string) => (text.replace(/[()[\]]/g, "").match(/(?<![A-Za-z])[A-Z][A-Za-z0-9^.+-]*\d[A-Za-z0-9^.+-]*/g) ?? []).map((s) => s.replace(/[.,]+$/, ""));
@@ -72,12 +73,15 @@ describe("Ahmed Al-Nadawi Chemistry Chapter 7 Organic Chemistry supplied deck", 
   it("preserves the original source and its unverified question index without turning it into answered cards", () => {
     assert.equal(createHash("sha256").update(original).digest("hex"), ahmedNadawiChemCh7Source.sha256);
     assert.equal(ahmedNadawiChemCh7Source.chapter, 7);
-    assert.equal(ahmedNadawiChemCh7Source.pdfPages, 144);
+    assert.equal(ahmedNadawiChemCh7Source.sourcePdf, "ف7 عربي احمد النداوي.pdf");
+    assert.equal(ahmedNadawiChemCh7Source.pdfPages, 128);
+    assert.equal(ahmedNadawiChemCh7Source.sourcePdfSha256, "2ac5498100262de45ee0f90b318c48f9255612c6a8c2a68a3de41fa2da65faa6");
     const appendix = original.split("ADDITIONAL QUESTION INDEX — TEXT RECOVERABLE FROM THE FILE")[1];
     assert.equal((appendix.match(/^• /gm) ?? []).length, 214);
     assert.equal((appendix.match(/^PDF PAGE \d+:/gm) ?? []).length, 90);
     assert.match(appendix, /NOT a second set of verified answers/);
-    assert.match(ahmedNadawiChemCh7Source.sourceFidelityNote, /do not treat OCR-like text as verified equations/);
+    assert.match(ahmedNadawiChemCh7Source.sourceFidelityNote, /aligned with the uploaded Arabic Chapter 7 source/);
+    assert.match(ahmedNadawiChemCh7Source.sourceFidelityNote, /restarts its internal page numbering/);
     assert.equal(ahmedNadawiChemCh7Cards[116].q, "How can you distinguish ethylamine and ethane?");
   });
 });

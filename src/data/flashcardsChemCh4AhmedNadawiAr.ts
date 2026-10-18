@@ -1160,8 +1160,58 @@ if (translatedCards.length !== ahmedNadawiChemCh4Cards.length ||
   throw new Error("Ahmed Al-Nadawi CH4 Arabic flashcards do not match source IDs/order");
 }
 
-export const ahmedNadawiChemCh4CardsAr = translatedCards.map((card, index) => ({
-  ...ahmedNadawiChemCh4Cards[index],
-  q: card.q,
-  a: card.a,
-}));
+// The uploaded 120-page Arabic source ends with electrolysis, corrosion and the
+// Gibbs-energy relation. It does not contain the older battery/fuel-cell unit,
+// and the worked-practice cards were authored additions rather than source text.
+const excludedFromUploadedSource = new Set([
+  "CH4-181", "CH4-182", "CH4-183", "CH4-184", "CH4-185", "CH4-186",
+  "CH4-187", "CH4-188", "CH4-189", "CH4-190", "CH4-191",
+  ...Array.from({ length: 27 }, (_, index) => `CH4-P${String(index + 1).padStart(2, "0")}`),
+]);
+
+const sourceMatchedAnswers: Record<string, string> = {
+  "CH4-006": "IA = +1؛ IIA = +2؛ IIIA = +3.",
+  "CH4-010": "I في NaIO3 يساوي +5؛ وC في H2CO3 يساوي +4؛ وP في HPO4^2− يساوي +5؛ وCr في K2Cr2O7 يساوي +6؛ وMn في MnO4− يساوي +7؛ وفي BaO يكون Ba = +2 وO = −2؛ وفي F2 يساوي صفر؛ وفي KCl يكون K = +1 وCl = −1؛ وMg2+ = +2؛ وS في SO2 يساوي +4.",
+  "CH4-071": "Cd هو الكاثود وCr هو الأنود؛ E°cell = −0.40 − (−0.74) = +0.34 V.",
+  "CH4-088": "لا؛ Ni + Cu2+ → Ni2+ + Cu، وE°cell = 0.34 − (−0.24) = +0.58 V، لذا يكون التفاعل تلقائياً.",
+  "CH4-095": "E°cell = −0.80 V للفضة مع H+ وE°cell = −0.34 V للنحاس مع H+؛ لذا لا يذوب أيٌّ منهما تلقائياً وفق شروط المسألة.",
+  "CH4-116": "Q = 25 × 3600 = 90,000 C؛ وبالتقريب المعتمد n(e−) ≈ 0.9 mol وn(Mg) ≈ 0.45 mol؛ فتكون كتلة Mg ≈ 10.8 g وعدد الذرات ≈ 2.7 × 10^23 ذرة.",
+  "CH4-120": "n(O2) ≈ 0.002 mol؛ لذلك n(e−) ≈ 0.008 mol.",
+  "CH4-130": "تمر الشحنة الكهربائية نفسها في كل خلية موصولة على التوالي، بينما تختلف مولات المواد الناتجة باختلاف عدد الإلكترونات والكتلة المولية.",
+  "CH4-139": "n(Au) = 8/197 mol؛ وn(e−) ≈ 0.12 mol؛ ومن I = nF/t يكون I ≈ 6.43 A.",
+  "CH4-149": "E°cell = +0.93 V؛ ΔG° = −2 × 96500 × 0.93 = −179,490 J/mol؛ ln Keq = (2 × 0.93)/0.026 ≈ 71.54؛ Keq ≈ 1.17 × 10^31؛ وترميز الخلية: Pb | Pb2+ || Ag+ | Ag.",
+  "CH4-152": "E°cell = 1.61 − 0.77 = +0.84 V؛ n = 1؛ ΔG° = −81,060 J/mol؛ Keq ≈ 1.1 × 10^14.",
+  "CH4-156": "ΔG° = −nFE° = −2 × 96500 × 0.40 = −77,200 J/mol.",
+  "CH4-163": "E°cell = +0.76 V، وQ = 0.1/[H+]². بالتعويض: 0.73 = 0.76 − 0.013 ln(0.1/[H+]²)، لذلك [H+] ≈ 0.10 M.",
+  "CH4-164": "E°cell = (−0.74) − (−0.76) = +0.02 V؛ n = 6؛ Q = [Zn2+]³/[Cr3+]² = 10^−5؛ E ≈ 0.02 − (0.026/6) ln(10^−5) = 0.0699 V؛ ΔG ≈ −40.5 kJ/mol.",
+  "CH4-174": "E°cell = 0.94 V؛ 0.9992 = 0.94 − 0.013 ln[Sn2+]؛ لذا [Sn2+] ≈ 0.01 M.",
+  "CH4-175": "للتفاعل Cu2+ + 2e− → Cu: ‏E − E° = (0.026/2) ln[Cu2+]. وبما أن الانخفاض 0.0592 V، فإن [Cu2+] ≈ 0.01 M.",
+  "CH4-180": "E°cell = 0.74 V؛ Q = 2؛ E = 0.74 − 0.013 ln2 ≈ 0.732 V؛ ΔG ≈ −141,276 J/mol.",
+  "CH4-193": "E°cell = +0.11 V؛ Q = 0.01؛ Ecell = 0.11 − 0.013 ln0.01 ≈ 0.1699 V؛ ΔG ≈ −32,771 J/mol.",
+  "CH4-194": "E°cell = 2.23 V؛ Q = 2؛ E = 2.23 − 0.013 ln2 ≈ 2.221 V؛ ΔG ≈ −424,600 J/mol.",
+  "CH4-195": "E°cell = +0.02 V؛ n = 6؛ Q = (0.01)^3/(0.10)^2 = 10^−4؛ E ≈ 0.056 V؛ ΔG ≈ −32,424 J/mol.",
+  "CH4-200": "[H+] = 0.01 M؛ Q = 0.001/(0.01)^2 = 10؛ E = 0.25 − 0.013 ln10 ≈ 0.2201 V؛ ΔG ≈ −42.46 kJ/mol.",
+};
+
+const sourceMatchedPages: Record<string, string> = {
+  "CH4-180": "PDF 114",
+  "CH4-192": "PDF 103–104",
+  "CH4-193": "PDF 103–104",
+  "CH4-194": "PDF 104–105",
+  "CH4-195": "PDF 105",
+  "CH4-196": "PDF 105–106",
+  "CH4-197": "PDF 106–107",
+  "CH4-198": "PDF 107",
+  "CH4-199": "PDF 107",
+  "CH4-200": "PDF 109–110",
+  "CH4-201": "PDF 113–114",
+};
+
+export const ahmedNadawiChemCh4CardsAr = translatedCards
+  .map((card, index) => ({
+    ...ahmedNadawiChemCh4Cards[index],
+    q: card.q,
+    a: sourceMatchedAnswers[card.id] ?? card.a,
+    pages: sourceMatchedPages[card.id] ?? ahmedNadawiChemCh4Cards[index].pages,
+  }))
+  .filter((card) => !excludedFromUploadedSource.has(card.id));

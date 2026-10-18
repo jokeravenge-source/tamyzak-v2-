@@ -1,12 +1,13 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ahmedNadawiChemCh5Cards, ahmedNadawiChemCh5Source, ahmedNadawiChemCh5SourceChecklist, ahmedNadawiChemCh5Topics } from "./flashcardsChemCh5AhmedNadawi";
 import { ahmedNadawiChemCh5CardsAr } from "./flashcardsChemCh5AhmedNadawiAr";
 import { explicitTopics } from "../lib/flashcardTopics";
 import { uniqueFlashcards } from "../lib/uniqueFlashcards";
 
-const original = readFileSync(new URL("../../docs/flashcards/ahmed-al-nadawi/Chapter_Five_Coordination_Chemistry_Flashcards.txt", import.meta.url), "utf8");
+const original = readFileSync(join(process.cwd(), "docs/flashcards/ahmed-al-nadawi/Chapter_Five_Coordination_Chemistry_Flashcards.txt"), "utf8");
 const numbers = (text: string) => [...new Set(text.match(/\d+(?:\.\d+)?/g) ?? [])].sort();
 const formulae = (text: string) => [...new Set((text.match(/(?<![A-Za-z0-9])(?:[A-Z][a-z]?\d*)+(?:\^(?:\d+)?[+−-]|[+−-](?![A-Za-z]))?/g) ?? []).filter((s) => /\d|[+−-]/.test(s)))].sort();
 
@@ -26,8 +27,12 @@ describe("Ahmed Al-Nadawi Chemistry Chapter 5 supplied deck", () => {
       assert.equal(ar.topic, en.topic);
       assert.match(ar.q, /[\u0600-\u06ff]/u);
       assert.ok(ar.a.trim(), ar.id);
-      assert.deepEqual(numbers(`${ar.q} ${ar.a}`), numbers(`${en.q} ${en.a}`), ar.id);
-      assert.deepEqual(formulae(`${ar.q} ${ar.a}`), formulae(`${en.q} ${en.a}`), ar.id);
+      if (!new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
+        assert.deepEqual(numbers(`${ar.q} ${ar.a}`), numbers(`${en.q} ${en.a}`), ar.id);
+      }
+      if (!new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
+        assert.deepEqual(formulae(`${ar.q} ${ar.a}`), formulae(`${en.q} ${en.a}`), ar.id);
+      }
     }
   });
 
@@ -56,8 +61,16 @@ describe("Ahmed Al-Nadawi Chemistry Chapter 5 supplied deck", () => {
     assert.deepEqual(ahmedNadawiChemCh5SourceChecklist, expected);
     assert.equal(ahmedNadawiChemCh5Source.verifiedCompleteMinisterialTranscript, false);
     assert.ok(ahmedNadawiChemCh5Cards.find((c) => c.id === "CH5-144")?.a.includes("refer to chapter"));
-    assert.ok(ahmedNadawiChemCh5CardsAr.find((c) => c.id === "CH5-144")?.a.includes("يُرجع إلى مخطط"));
+    assert.ok(ahmedNadawiChemCh5CardsAr.find((c) => c.id === "CH5-144")?.a.includes("dsp2"));
     assert.ok(ahmedNadawiChemCh5Cards.find((c) => c.id === "CH5-149")?.a.includes("Check the distinct orbital"));
-    assert.ok(ahmedNadawiChemCh5CardsAr.find((c) => c.id === "CH5-149")?.a.includes("تُراجع الترتيبات"));
+    assert.ok(ahmedNadawiChemCh5CardsAr.find((c) => c.id === "CH5-149")?.q.includes("[Ni(OH)4]2−"));
+    assert.ok(ahmedNadawiChemCh5CardsAr.find((c) => c.id === "CH5-149")?.a.includes("إلكترونان غير مزدوجين"));
+  });
+
+  it("uses the uploaded source identity and removes editorial review notes", () => {
+    assert.equal(ahmedNadawiChemCh5Source.pdfPages, 130);
+    assert.equal(ahmedNadawiChemCh5Source.sha256, "ca43a75459fba3018e3eba47acf1c80573535e5c51431ef2e2b70504be9f16ae");
+    const studentText = ahmedNadawiChemCh5CardsAr.map((card) => `${card.q}\n${card.a}`).join("\n");
+    assert.doesNotMatch(studentText, /تُراجع|يُرجع إلى مخطط|المعروضة في الملف|مناقشة الكتاب/);
   });
 });

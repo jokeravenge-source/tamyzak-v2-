@@ -696,7 +696,7 @@ const translatedCards: { id: string; q: string; a: string }[] = [
   {
     "id": "CH6-ANALYSIS-139",
     "q": "وزاري: تتطلب عينة كتلتها 160 mg تحتوي على Ni2O3 مقدار 38.3 mL من KCN بعيارية 0.137 N في التفاعل Ni2+ + 4CN- -> [Ni(CN)4]2-. جد %Ni2O3. استعمل M=165 g/mol.",
-    "a": "n(Ni2O3)=2 Ni x4=8؛ EM=165/8=20.625 g/eq. كتلة Ni2O3=0.137x0.0383x20.625=0.1082 g؛ النسبة المئوية=67.6% (نحو 67.8% بحسب تقريب المصدر)."
+    "a": "n(Ni2O3)=2 Ni x4=8؛ EM=165/8=20.625 g/eq. كتلة Ni2O3=0.137x0.0383x20.625≈0.108 g؛ النسبة المئوية لـNi2O3 تساوي 67.8%."
   },
   {
     "id": "CH6-ANALYSIS-140",
@@ -745,8 +745,10 @@ if (translatedCards.length !== ahmedNadawiChemCh6Cards.length ||
   throw new Error("Ahmed Al-Nadawi CH6 Arabic flashcards do not match source IDs/order");
 }
 
-export const ahmedNadawiChemCh6CardsAr: AhmedNadawiChemCh6Card[] = translatedCards.map((card, index) => ({
-  ...ahmedNadawiChemCh6Cards[index],
-  q: card.q,
-  a: card.a,
-}));
+export const ahmedNadawiChemCh6CardsAr: AhmedNadawiChemCh6Card[] = translatedCards
+  .map((card, index) => ({
+    ...ahmedNadawiChemCh6Cards[index],
+    q: card.q,
+    a: card.a,
+  }))
+  .filter((card) => card.kind !== "practice");

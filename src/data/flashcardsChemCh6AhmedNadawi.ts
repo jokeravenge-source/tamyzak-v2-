@@ -15,6 +15,9 @@ export type AhmedNadawiChemCh6Card = {
 export const ahmedNadawiChemCh6Source = {
   "file": "Chapter_Six_Chemical_Analysis_Complete_Flashcards.txt",
   "uploadedFile": "Chapter_Six_Chemical_Analysis_Complete_Flashcards(1).txt",
+  "sourcePdf": "ملزمة فصل السادس للمنهج العربي.pdf",
+  "sourcePdfPages": 100,
+  "sourcePdfSha256": "58dc303035cd973e905cfdd3e80340521bf7ca3b12f9d59776d7d59401b6d918",
   "chapter": 6,
   "sha256": "f8e20dad20875f6c3163fd2995006ca369894a0a770e502b565e47f6c2ae7448",
   "cardCount": 147,

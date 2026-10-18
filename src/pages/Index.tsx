@@ -541,7 +541,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         key: `nadawi-ch4-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
         cards: chapterFourCards.filter(c => c.topic === t.key),
-      }));
+      })).filter(topic => topic.cards.length > 0);
     }
     if (isAhmedNadawiDeck && chapter === "5") {
       const chapterFiveCards = language === "ar" ? ahmedNadawiChemCh5CardsAr : ahmedNadawiChemCh5Cards;

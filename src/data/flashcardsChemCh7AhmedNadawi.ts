@@ -17,14 +17,15 @@ export const ahmedNadawiChemCh7Source = {
   "file": "Ahmed_Al_Nadawi_CH7_Organic_Chemistry_Flashcards.txt",
   "uploadedFile": "Ahmed_Al_Nadawi_CH7_Organic_Chemistry_Flashcards(1).txt",
   "chapter": 7,
-  "sourcePdf": "ف7 انكليزي احمد النداوي.pdf",
-  "pdfPages": 144,
+  "sourcePdf": "ف7 عربي احمد النداوي.pdf",
+  "pdfPages": 128,
+  "sourcePdfSha256": "2ac5498100262de45ee0f90b318c48f9255612c6a8c2a68a3de41fa2da65faa6",
   "sha256": "97f643349c966f83bbeed4b555130486c0f050e34d3af29664d15caa6a678e44",
   "cardCount": 117,
   "cardsWithMinisterialLabels": 15,
   "additionalQuestionIndexEntries": 214,
   "additionalQuestionIndexPages": 90,
-  "sourceFidelityNote": "Cards below are study conversions of the legible chapter material. Ministerial years are included only where clearly seen. The appended question/expression index preserves more source text, including partially garbled diagrams; do not treat OCR-like text as verified equations."
+  "sourceFidelityNote": "The 117-card deck is aligned with the uploaded Arabic Chapter 7 source. Chemical formulae, reaction conditions, answers and clearly printed ministerial labels are retained. The PDF restarts its internal page numbering between parts, so the deck keeps its established topic ranges instead of inventing replacement page references."
 } as const;
 
 export const ahmedNadawiChemCh7Topics = [

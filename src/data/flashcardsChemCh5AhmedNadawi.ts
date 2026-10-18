@@ -12,9 +12,9 @@ export type AhmedNadawiChemCh5Card = {
 
 export const ahmedNadawiChemCh5Source = {
   "file": "Chapter_Five_Coordination_Chemistry_Flashcards.txt",
-  "sourcePdf": "Chapter five.pdf",
+  "sourcePdf": "الفصل الخامس.pdf",
   "pdfPages": 130,
-  "sha256": "4549b1d7b8a2c05e19fd7b7d0a073432b44bd5c134d24864a7f988cdeb350a7e",
+  "sha256": "ca43a75459fba3018e3eba47acf1c80573535e5c51431ef2e2b70504be9f16ae",
   "verifiedCompleteMinisterialTranscript": false,
   "coverageNote": "“Ministerial” in the PDF is often denoted by small years/round labels; not all are legible in extracted text. This deck covers distinct chapter question types and many repeated ministerial variants, but is NOT a verified transcription of every original ministerial question and year. The original PDF remains the authority for literal phrasing and page-year association."
 } as const;
