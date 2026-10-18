@@ -22,7 +22,7 @@ import {
 import AdminTeachersTab from "@/components/AdminTeachersTab";
 import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import type { AppLanguage } from "@/components/LanguageGate";
-import biologyTheme from "@/assets/themes/biology.png";
+import nadiaPhoto from "@/assets/teachers/nadia-al-nuaimy.png";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +67,7 @@ const NADIA_TEACHER_ID = "nadia-al-nuaimy";
 const BUILT_IN_NADIA_PROFILE: TeacherProfile = {
   id: NADIA_TEACHER_ID,
   name: "نادية النعيمي",
-  background_image_url: biologyTheme,
+  background_image_url: nadiaPhoto,
   tools: [],
   flashcard_list_ids: [],
   sort_order: 10_000,
@@ -385,8 +385,11 @@ const TeacherDirectory = ({
   }, [refreshVersion]);
 
   const directoryTeachers = useMemo(() => {
-    if (teachers.some(isNadiaProfile)) return teachers;
-    return [...teachers, BUILT_IN_NADIA_PROFILE];
+    const profiles = teachers.map((teacher) => isNadiaProfile(teacher)
+      ? { ...teacher, background_image_url: nadiaPhoto }
+      : teacher);
+    if (profiles.some(isNadiaProfile)) return profiles;
+    return [...profiles, BUILT_IN_NADIA_PROFILE];
   }, [teachers]);
 
   const selected = directoryTeachers.find((teacher) => teacher.id === selectedId) ?? null;
