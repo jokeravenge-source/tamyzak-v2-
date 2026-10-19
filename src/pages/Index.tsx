@@ -75,6 +75,8 @@ import { flashcardsIslamicMeaningsAr } from "@/data/flashcardsIslamicMeaningsAr"
 import { flashcardsEngGrammar1 } from "@/data/flashcardsEngGrammar1";
 import { flashcardsEngGrammar2 } from "@/data/flashcardsEngGrammar2";
 import { flashcardsEngGrammar3 } from "@/data/flashcardsEngGrammar3";
+import { flashcardsEngGrammar5 } from "@/data/flashcardsEngGrammar5";
+import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
 import { flashcardsFrenchNegationAr } from "@/data/flashcardsFrenchNegationAr";
 import { flashcardsFrenchInterrogationAr } from "@/data/flashcardsFrenchInterrogationAr";
@@ -431,6 +433,26 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         };
       }
 
+      if (subject === "english" && engCat === "grammar" && chapter === "5") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar"
+            ? "الإنجليزية · القواعد · الوحدة 5 · محمد النداوي"
+            : "English · Grammar · Unit 5 · Mohammed Al-Nadawi",
+          cards: flashcardsEngGrammar5,
+        };
+      }
+
+      if (subject === "english" && engCat === "grammar" && chapter === "6") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar"
+            ? "الإنجليزية · القواعد · الوحدة 6 · محمد النداوي"
+            : "English · Grammar · Unit 6 · Mohammed Al-Nadawi",
+          cards: flashcardsEngGrammar6,
+        };
+      }
+
       if (subject === "french") {
         const frenchDecks: Record<string, { ar: string; en: string; cards: typeof flashcards }> = {
           "1": { ar: "الفرنسية · النفي", en: "French · Negation", cards: flashcardsFrenchNegationAr },
@@ -541,7 +563,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
         key: `nadawi-ch4-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
         cards: chapterFourCards.filter(c => c.topic === t.key),
-      })).filter(topic => topic.cards.length > 0);
+      }));
     }
     if (isAhmedNadawiDeck && chapter === "5") {
       const chapterFiveCards = language === "ar" ? ahmedNadawiChemCh5CardsAr : ahmedNadawiChemCh5Cards;
