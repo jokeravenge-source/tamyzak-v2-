@@ -1,6 +1,7 @@
 // Complete Arabic translation of all 154 supplied CH5 cards, matched by original ID.
 // Preserve scientific notation, Roman oxidation-state labels and source caveats.
 import { ahmedNadawiChemCh5Cards } from "./flashcardsChemCh5AhmedNadawi";
+import { chemCh5VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
   {
@@ -782,6 +783,6 @@ if (translatedCards.length !== ahmedNadawiChemCh5Cards.length ||
 
 export const ahmedNadawiChemCh5CardsAr = translatedCards.map((card, index) => ({
   ...ahmedNadawiChemCh5Cards[index],
-  q: card.q,
-  a: card.a,
+  q: chemCh5VerbalOverridesAr[card.id]?.q ?? card.q,
+  a: chemCh5VerbalOverridesAr[card.id]?.a ?? card.a,
 }));

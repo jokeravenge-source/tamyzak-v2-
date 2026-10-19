@@ -1,6 +1,7 @@
 // Full Arabic translation of every supplied CH7 question and answer.
 // Formulas, coefficients, catalysts, conditions and source year labels are retained.
 import { ahmedNadawiChemCh7Cards, type AhmedNadawiChemCh7Card } from "./flashcardsChemCh7AhmedNadawi";
+import { chemCh7VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
   {
@@ -597,6 +598,6 @@ if (translatedCards.length !== ahmedNadawiChemCh7Cards.length ||
 
 export const ahmedNadawiChemCh7CardsAr: AhmedNadawiChemCh7Card[] = translatedCards.map((card, index) => ({
   ...ahmedNadawiChemCh7Cards[index],
-  q: card.q,
-  a: card.a,
+  q: chemCh7VerbalOverridesAr[card.id]?.q ?? card.q,
+  a: chemCh7VerbalOverridesAr[card.id]?.a ?? card.a,
 }));

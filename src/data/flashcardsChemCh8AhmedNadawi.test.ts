@@ -2,12 +2,13 @@ import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ahmedNadawiChemCh8Cards, ahmedNadawiChemCh8Source, ahmedNadawiChemCh8Topics } from "./flashcardsChemCh8AhmedNadawi";
 import { ahmedNadawiChemCh8CardsAr } from "./flashcardsChemCh8AhmedNadawiAr";
 import { explicitTopics } from "../lib/flashcardTopics";
 import { uniqueFlashcards } from "../lib/uniqueFlashcards";
 
-const original = readFileSync(new URL("../../docs/flashcards/ahmed-al-nadawi/Ahmed_Al_Nadawi_CH8_Biochemistry_Flashcards.txt", import.meta.url), "utf8");
+const original = readFileSync(join(process.cwd(), "docs/flashcards/ahmed-al-nadawi/Ahmed_Al_Nadawi_CH8_Biochemistry_Flashcards.txt"), "utf8");
 const sourceHeadings = [...original.matchAll(/^Flashcard (\d+) — (.+)$/gm)];
 const sourceInlineAnswers = [...original.matchAll(/^Flashcard (\d+) — [^\n]+\n(?:\nMinisterial: [^\n]+\n)?\nAnswer: ([^\n]+)$/gm)];
 const numbers = (text: string) => [...new Set(text.match(/\d+(?:\.\d+)?/g) ?? [])].sort();

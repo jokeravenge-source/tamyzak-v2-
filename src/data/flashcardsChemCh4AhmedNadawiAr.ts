@@ -1,6 +1,7 @@
 // Complete Arabic translation of the supplied CH4 deck, matched by source ID.
 // Preserve every numerical value, chemical equation, exercise label and rounding note.
 import { ahmedNadawiChemCh4Cards } from "./flashcardsChemCh4AhmedNadawi";
+import { chemCh4VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
   {
@@ -1210,8 +1211,8 @@ const sourceMatchedPages: Record<string, string> = {
 export const ahmedNadawiChemCh4CardsAr = translatedCards
   .map((card, index) => ({
     ...ahmedNadawiChemCh4Cards[index],
-    q: card.q,
-    a: sourceMatchedAnswers[card.id] ?? card.a,
+    q: chemCh4VerbalOverridesAr[card.id]?.q ?? card.q,
+    a: chemCh4VerbalOverridesAr[card.id]?.a ?? sourceMatchedAnswers[card.id] ?? card.a,
     pages: sourceMatchedPages[card.id] ?? ahmedNadawiChemCh4Cards[index].pages,
   }))
   .filter((card) => !excludedFromUploadedSource.has(card.id));

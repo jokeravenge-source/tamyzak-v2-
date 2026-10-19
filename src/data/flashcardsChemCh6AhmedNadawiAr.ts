@@ -1,6 +1,7 @@
 // Complete Arabic translation of the Chemical Analysis deck, in original card order.
 // Preserve every numerical datum, formula, exam label and source rounding note.
 import { ahmedNadawiChemCh6Cards, type AhmedNadawiChemCh6Card } from "./flashcardsChemCh6AhmedNadawi";
+import { chemCh6VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
   {
@@ -748,7 +749,7 @@ if (translatedCards.length !== ahmedNadawiChemCh6Cards.length ||
 export const ahmedNadawiChemCh6CardsAr: AhmedNadawiChemCh6Card[] = translatedCards
   .map((card, index) => ({
     ...ahmedNadawiChemCh6Cards[index],
-    q: card.q,
-    a: card.a,
+    q: chemCh6VerbalOverridesAr[card.id]?.q ?? card.q,
+    a: chemCh6VerbalOverridesAr[card.id]?.a ?? card.a,
   }))
   .filter((card) => card.kind !== "practice");

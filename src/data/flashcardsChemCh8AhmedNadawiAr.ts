@@ -1,6 +1,7 @@
 // Full Arabic translation of every supplied CH8 question and answer.
 // Formulas, coefficients, equations, numerical data and source year labels are retained.
 import { ahmedNadawiChemCh8Cards, type AhmedNadawiChemCh8Card } from "./flashcardsChemCh8AhmedNadawi";
+import { chemCh8VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
   {
@@ -544,5 +545,10 @@ export const ahmedNadawiChemCh8CardsAr: AhmedNadawiChemCh8Card[] = translatedCar
   if (translated.id !== source.id) {
     throw new Error(`Ahmed Al-Nadawi CH8 Arabic card order mismatch at ${translated.id}`);
   }
-  return { ...source, q: translated.q, a: translated.a };
+  const override = chemCh8VerbalOverridesAr[translated.id];
+  return {
+    ...source,
+    q: override?.q ?? translated.q,
+    a: override?.a ?? translated.a,
+  };
 });
