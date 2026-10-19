@@ -414,9 +414,9 @@ const toSourceMinisterialWording = (question: string): string => {
 
 const toSourceAnswerWording = (answer: string): string =>
   answer
-    .replace(/ بحسب المصدر/g, "")
-    .replace(/ المذكورة في المصدر/g, "")
-    .replace(/ كما ورد في المصدر/g, "")
+    .replaceAll(" بحسب المصدر", "")
+    .replaceAll(" المذكورة في المصدر", "")
+    .replaceAll(" كما ورد في المصدر", "")
     .trim();
 
 export const flashcardsBioCh5NadiaAr: ChapterFiveCard[] = translatedChapterFiveCards.map((card) => {
