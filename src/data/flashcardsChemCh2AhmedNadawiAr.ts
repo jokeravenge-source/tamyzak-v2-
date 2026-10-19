@@ -11,6 +11,8 @@ import { chemAhmedCh2Ar276_305 } from "./chemAhmedCh2Ar276_305";
 import { chemAhmedCh2Ar306_345 } from "./chemAhmedCh2Ar306_345";
 import { chemAhmedCh2Ar346_385 } from "./chemAhmedCh2Ar346_385";
 import { chemAhmedCh2Ar386_429 } from "./chemAhmedCh2Ar386_429";
+import { chemAhmedCh2VerbalOverridesAr } from "./chemAhmedCh2VerbalOverridesAr";
+import { chemAhmedCh2VerbalCoreOverridesAr } from "./chemAhmedCh2VerbalCoreOverridesAr";
 
 const translatedCards = [
   ...chemAhmedCh2Ar001_055,
@@ -31,6 +33,6 @@ if (translatedCards.length !== ahmedNadawiChemCh2Cards.length ||
 
 export const ahmedNadawiChemCh2CardsAr = translatedCards.map((card, index) => ({
   ...ahmedNadawiChemCh2Cards[index],
-  q: card.q,
-  a: card.a,
+  q: chemAhmedCh2VerbalCoreOverridesAr[card.id]?.q ?? chemAhmedCh2VerbalOverridesAr[card.id]?.q ?? card.q,
+  a: chemAhmedCh2VerbalCoreOverridesAr[card.id]?.a ?? chemAhmedCh2VerbalOverridesAr[card.id]?.a ?? card.a,
 }));

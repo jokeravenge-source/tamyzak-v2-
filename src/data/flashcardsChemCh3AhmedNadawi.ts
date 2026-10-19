@@ -9,6 +9,7 @@ import { flashcardsChemCh3AhmedNadawi_241_300 } from "./flashcardsChemCh3AhmedNa
 import { flashcardsChemCh3AhmedNadawi_301_360 } from "./flashcardsChemCh3AhmedNadawi_301_360";
 import { flashcardsChemCh3AhmedNadawi_361_390 } from "./flashcardsChemCh3AhmedNadawi_361_390";
 import { flashcardsChemCh3AhmedNadawi_391_414 } from "./flashcardsChemCh3AhmedNadawi_391_414";
+import { chemAhmedCh3VerbalOverridesAr } from "./chemAhmedCh3VerbalOverridesAr";
 
 export type AhmedNadawiChemCh3Card = {
   id: string;
@@ -133,7 +134,11 @@ export const ahmedNadawiChemCh3Cards: AhmedNadawiChemCh3Card[] = rawAhmedNadawiC
     ...sourceWordingById[card.id],
     sourceNotes: undefined,
   }))
-  .filter((card) => !excludedSourceIds.has(card.id));
+  .filter((card) => !excludedSourceIds.has(card.id))
+  .map((card) => {
+    const override = card.kind === "وزاري نظري" ? chemAhmedCh3VerbalOverridesAr[card.id] : undefined;
+    return override ? { ...card, q: override.q ?? card.q, a: override.a } : card;
+  });
 
 export const ahmedNadawiChemCh3Topics = [
   {
