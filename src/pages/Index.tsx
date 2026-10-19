@@ -75,6 +75,7 @@ import { flashcardsIslamicMeaningsAr } from "@/data/flashcardsIslamicMeaningsAr"
 import { flashcardsEngGrammar1 } from "@/data/flashcardsEngGrammar1";
 import { flashcardsEngGrammar1Nadawi2027 } from "@/data/flashcardsEngGrammar1Nadawi2027";
 import { flashcardsEngGrammar2 } from "@/data/flashcardsEngGrammar2";
+import { flashcardsEngGrammar2Nadawi2027 } from "@/data/flashcardsEngGrammar2Nadawi2027";
 import { flashcardsEngGrammar3 } from "@/data/flashcardsEngGrammar3";
 import { flashcardsEngGrammar5 } from "@/data/flashcardsEngGrammar5";
 import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
@@ -423,8 +424,10 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       if (subject === "english" && engCat === "grammar" && chapter === "2") {
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
-          eyebrow: language === "ar" ? "الإنجليزية · القواعد · الوحدة 2" : "English · Grammar · Unit 2",
-          cards: flashcardsEngGrammar2,
+          eyebrow: language === "ar"
+            ? "الإنجليزية · القواعد · الوحدة 2 · محمد النداوي"
+            : "English · Grammar · Unit 2 · Mohammed Al-Nadawi",
+          cards: [...flashcardsEngGrammar2, ...flashcardsEngGrammar2Nadawi2027],
         };
       }
 
