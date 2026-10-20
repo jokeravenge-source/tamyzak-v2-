@@ -72,7 +72,7 @@ export const englishGrammarChapters = Array.from({ length: 8 }, (_, i) => ({
   title: `Unit ${i + 1}`,
   arTitle: `الوحدة ${i + 1}`,
   subtitle: "",
-  locked: i > 2 && i !== 4 && i !== 5 && i !== 6 && i !== 7,
+  locked: i > 2 && i !== 3 && i !== 4 && i !== 5 && i !== 6 && i !== 7,
 }));
 export const englishLiteratureChapters = [
   { n: 1, title: "Coming Soon", arTitle: "قريباً", subtitle: "", locked: true },
