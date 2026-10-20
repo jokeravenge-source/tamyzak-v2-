@@ -738,9 +738,16 @@ const StudentApp = () => {
     window.addEventListener("app:set-subject", handler as EventListener);
     return () => window.removeEventListener("app:set-subject", handler as EventListener);
   }, []);
-  const [englishCategory, setEnglishCategory] = useState<EnglishCategory | null>(
-    () => (typeof window !== "undefined" ? (localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null) : null)
-  );
+  const [englishCategory, setEnglishCategory] = useState<EnglishCategory | null>(() => {
+    if (typeof window === "undefined") return null;
+    const requestedCategory = new URLSearchParams(window.location.search).get("category");
+    const validCategories: EnglishCategory[] = ["grammar", "literature", "paragraphs", "verbs", "readingPractice"];
+    if (requestedCategory && validCategories.includes(requestedCategory as EnglishCategory)) {
+      localStorage.setItem(ENGLISH_CATEGORY_STORAGE_KEY, requestedCategory);
+      return requestedCategory as EnglishCategory;
+    }
+    return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
+  });
   type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
