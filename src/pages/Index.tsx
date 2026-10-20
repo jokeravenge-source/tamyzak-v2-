@@ -77,6 +77,7 @@ import { flashcardsEngGrammar1Nadawi2027 } from "@/data/flashcardsEngGrammar1Nad
 import { flashcardsEngGrammar2 } from "@/data/flashcardsEngGrammar2";
 import { flashcardsEngGrammar2Nadawi2027 } from "@/data/flashcardsEngGrammar2Nadawi2027";
 import { flashcardsEngGrammar3 } from "@/data/flashcardsEngGrammar3";
+import { flashcardsEngGrammar4 } from "@/data/flashcardsEngGrammar4";
 import { flashcardsEngGrammar5 } from "@/data/flashcardsEngGrammar5";
 import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
 import { flashcardsEngGrammar7 } from "@/data/flashcardsEngGrammar7";
@@ -438,6 +439,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
           eyebrow: language === "ar" ? "الإنجليزية · القواعد · الوحدة 3" : "English · Grammar · Unit 3",
           cards: flashcardsEngGrammar3,
+        };
+      }
+
+      if (subject === "english" && engCat === "grammar" && chapter === "4") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar"
+            ? "الإنجليزية · القواعد · الوحدة 4 · محمد النداوي"
+            : "English · Grammar · Unit 4 · Mohammed Al-Nadawi",
+          cards: flashcardsEngGrammar4,
         };
       }
 
