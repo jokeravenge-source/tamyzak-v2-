@@ -114,6 +114,7 @@ import { recordTopicPractice } from "@/lib/topicMastery";
 import { recordMistake } from "@/lib/mistakes";
 import { explicitTopics, type TopicGroup } from "@/lib/flashcardTopics";
 import { buildPresetGroups } from "@/lib/flashcardTopicPresets";
+import { englishGrammarTopicRanges } from "@/data/englishGrammarTopicRanges";
 import { useTodos } from "@/lib/todoTopicProgress";
 import {
   cardKey as srsCardKey,
@@ -573,6 +574,20 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   // multiple named source files. Falls back to keyword auto-detection
   // when no preset matches.
   const explicitGroups: TopicGroup[] | null = useMemo(() => {
+    const englishCategory = typeof window !== "undefined"
+      ? window.localStorage.getItem("app_english_category_v1")
+      : null;
+    if (
+      subject === "english" &&
+      englishGrammarTopicRanges[String(chapter)] &&
+      !(chapter === "1" && englishCategory === "paragraphs")
+    ) {
+      return englishGrammarTopicRanges[String(chapter)].map((topic) => ({
+        key: `english-unit-${chapter}-${topic.key}`,
+        label: language === "ar" ? topic.ar : topic.en,
+        cards: deck.cards.slice(topic.start - 1, topic.end),
+      }));
+    }
     if (isAhmedNadawiDeck && chapter === "1") {
       const translatedCards = language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards;
       return ahmedNadawiChemCh1Topics.map(t => ({
@@ -686,7 +701,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     return null;
-  }, [chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language]);
+  }, [chapter, deck.cards, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject]);
 
   // Topic grouping (per-deck, auto-detected).
   const topicResult = useMemo(
