@@ -80,6 +80,7 @@ import { flashcardsEngGrammar3 } from "@/data/flashcardsEngGrammar3";
 import { flashcardsEngGrammar5 } from "@/data/flashcardsEngGrammar5";
 import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
 import { flashcardsEngGrammar7 } from "@/data/flashcardsEngGrammar7";
+import { flashcardsEngGrammar8 } from "@/data/flashcardsEngGrammar8";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
 import { flashcardsFrenchNegationAr } from "@/data/flashcardsFrenchNegationAr";
 import { flashcardsFrenchInterrogationAr } from "@/data/flashcardsFrenchInterrogationAr";
@@ -467,6 +468,16 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             ? "الإنجليزية · القواعد · الوحدة 7 · محمد النداوي"
             : "English · Grammar · Unit 7 · Mohammed Al-Nadawi",
           cards: flashcardsEngGrammar7,
+        };
+      }
+
+      if (subject === "english" && engCat === "grammar" && chapter === "8") {
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar"
+            ? "الإنجليزية · القواعد · الوحدة 8 · محمد النداوي"
+            : "English · Grammar · Unit 8 · Mohammed Al-Nadawi",
+          cards: flashcardsEngGrammar8,
         };
       }
 
