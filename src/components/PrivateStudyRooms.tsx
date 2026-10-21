@@ -178,7 +178,7 @@ export default function PrivateStudyRooms({
       setDisplayName(prof?.display_name || u.email?.split("@")[0] || "Student");
       const { data: adm } = await supabase.rpc("has_role", { _user_id: u.id, _role: "admin" });
       setIsAdmin(!!adm);
-      const { data: canTake } = await supabase.rpc("can_take_study_room_ownership");
+      const { data: canTake } = await (supabase.rpc as any)("can_take_study_room_ownership");
       setCanTakeOwnership(!!canTake);
     })();
   }, []);
@@ -509,7 +509,7 @@ export default function PrivateStudyRooms({
   const takeOwnership = async () => {
     if (!room || !userId) return;
     if (!window.confirm(L.takeConfirm)) return;
-    const { error } = await supabase.rpc("take_study_room_ownership", { _room: room.id });
+    const { error } = await (supabase.rpc as any)("take_study_room_ownership", { _room: room.id });
     if (error) { toast.error(error.message); return; }
     toast.success(L.ownerChanged);
     loadRoom(room.id);
