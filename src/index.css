@@ -175,26 +175,17 @@ button, a, [role="button"] {
 /* Snappier image rendering */
 img { -webkit-user-drag: none; }
 
-/* Tamayzak's study home: cream paper, navy ink, and quiet blue cues. */
+/* Use Tamayzak's existing app theme tokens across the redesigned study home. */
 .tmz-home {
-  --tmz-canvas: #f6f3eb;
-  --tmz-surface: #ffffff;
-  --tmz-panel: #eeece5;
-  --tmz-ink: #163a73;
-  --tmz-muted: #5f6875;
-  --tmz-line: #dfddd6;
-  --tmz-blue: #477fb6;
-  background: var(--tmz-canvas);
+  --tmz-canvas: hsl(var(--background));
+  --tmz-surface: hsl(var(--card));
+  --tmz-panel: hsl(var(--secondary));
+  --tmz-ink: hsl(var(--foreground));
+  --tmz-muted: hsl(var(--muted-foreground));
+  --tmz-line: hsl(var(--border));
+  --tmz-blue: hsl(var(--primary));
+  background: var(--gradient-bg);
   color: var(--tmz-ink);
-}
-.dark .tmz-home {
-  --tmz-canvas: #101d32;
-  --tmz-surface: #172945;
-  --tmz-panel: #203653;
-  --tmz-ink: #f4f2ec;
-  --tmz-muted: #bdc8d8;
-  --tmz-line: #314560;
-  --tmz-blue: #a8cdf5;
 }
 .tmz-home :is(button, a, input):focus-visible {
   outline: 2px solid var(--tmz-blue);
