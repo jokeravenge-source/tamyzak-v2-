@@ -394,10 +394,10 @@ const RANK_CARD_THEMES = {
 } as const;
 
 const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
-  All: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
-  Review: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
-  Test: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
-  Organize: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
+  All: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
+  Review: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
+  Test: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
+  Organize: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
 };
 const DEFAULT_TOOL_CATEGORY_TINT = TOOL_CATEGORY_TINTS.All;
 const TOOL_CATEGORY_LABELS = {
@@ -1444,7 +1444,7 @@ const Basics = ({
               }}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-32 overflow-hidden rounded-2xl border border-[#163A73] bg-[#163A73] p-5 text-start text-white transition-colors hover:bg-[#1b477f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#163A73] focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
+              className="group relative min-h-32 overflow-hidden rounded-2xl border border-primary bg-primary p-5 text-start text-primary-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
             >
               <span className="relative flex items-center gap-4">
                 <BookOpen className="h-6 w-6 shrink-0 text-white/90" aria-hidden="true" />
