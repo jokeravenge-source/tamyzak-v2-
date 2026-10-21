@@ -445,7 +445,7 @@ export default function ParentFollow({ token }: { token: string }) {
           <div className="space-y-6">
             <Panel icon={ListChecks} title="Add to the student's To-Do list">
               <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void saveParentEntry("add_todo", { text: todoText, day: todoDay }); }}>
-                <Field label="Task"><input required maxLength={300} value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="What should the student complete?" className={PARENT_INPUT} /></Field>
+                <Field label="Task"><input aria-label="What should the student complete?" required maxLength={300} value={todoText} onChange={(event) => setTodoText(event.target.value)} placeholder="What should the student complete?" className={PARENT_INPUT} /></Field>
                 <Field label="Day (optional)">
                   <select value={todoDay} onChange={(event) => setTodoDay(event.target.value)} className={PARENT_INPUT}>
                     <option value="">Any day</option>
@@ -535,7 +535,7 @@ export default function ParentFollow({ token }: { token: string }) {
                             <button type="button" disabled={savingEntry} onClick={() => void saveParentEntry("delete_todo", { id: item.id })} className="h-9 rounded-lg bg-destructive px-2.5 text-[11px] font-bold text-destructive-foreground disabled:opacity-50">
                               {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
                             </button>
-                            <button type="button" disabled={savingEntry} onClick={() => setDeletingTodoId(null)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background"><X className="h-4 w-4" /></button>
+                            <button aria-label="Close / إغلاق" type="button" disabled={savingEntry} onClick={() => setDeletingTodoId(null)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background"><X className="h-4 w-4" /></button>
                           </div>
                         ) : (
                           <button

@@ -98,7 +98,7 @@ const WhoIsBest = ({ language, onBack, isAdmin }: { language: AppLanguage; onBac
           <div className="mb-4">
             {showCreate ? (
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <textarea value={newQ} onChange={(e) => setNewQ(e.target.value)} rows={2} placeholder={T(language, "اكتب السؤال...", "Write the question...")} className="w-full rounded-lg border border-border bg-background p-3 text-sm" />
+                <textarea aria-label={T(language, "اكتب السؤال...", "Write the question...")} value={newQ} onChange={(e) => setNewQ(e.target.value)} rows={2} placeholder={T(language, "اكتب السؤال...", "Write the question...")} className="w-full rounded-lg border border-border bg-background p-3 text-sm" />
                 <div className="flex gap-2">
                   <button onClick={createPoll} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-medium text-sm">{T(language, "نشر", "Post")}</button>
                   <button onClick={() => { setShowCreate(false); setNewQ(""); }} className="h-10 px-4 rounded-lg border border-border text-sm">{T(language, "إلغاء", "Cancel")}</button>
@@ -440,7 +440,7 @@ const PollDetail = ({ language, isAdmin, poll, onBack }: { language: AppLanguage
         <div className="mb-4">
             {showAdd ? (
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={T(language, "اسم الخيار", "Option label")} className="w-full h-11 rounded-lg border border-border bg-background px-3 text-sm" />
+                <input aria-label={T(language, "اسم الخيار", "Option label")} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={T(language, "اسم الخيار", "Option label")} className="w-full h-11 rounded-lg border border-border bg-background px-3 text-sm" />
                 <label className="flex items-center gap-2 h-11 px-3 rounded-lg border border-dashed border-border bg-background cursor-pointer hover:bg-secondary">
                   <ImagePlus className="h-4 w-4" />
                   <span className="text-sm truncate">{newFile ? newFile.name : T(language, "أضف صورة (اختياري)", "Add image (optional)")}</span>
@@ -488,7 +488,7 @@ const PollDetail = ({ language, isAdmin, poll, onBack }: { language: AppLanguage
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-base">{o.label}</h3>
                       {isAdmin && (
-                        <button onClick={() => deleteOption(o)} className="h-7 w-7 rounded-lg border border-border hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center">
+                        <button aria-label="Close / إغلاق" onClick={() => deleteOption(o)} className="h-7 w-7 rounded-lg border border-border hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       )}

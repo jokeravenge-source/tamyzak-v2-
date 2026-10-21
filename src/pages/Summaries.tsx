@@ -260,7 +260,7 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
-      <button onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
+      <button aria-label="Back / رجوع" onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
         <ArrowLeft className="w-5 h-5" />
       </button>
 
@@ -497,7 +497,7 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
                 {preview && (
                   <a href={preview.url} target="_blank" rel="noopener" className="text-xs text-muted-foreground hover:text-foreground">{t("Open in new tab", "فتح في تبويب جديد")}</a>
                 )}
-                <button onClick={() => setPreview(null)} className="w-8 h-8 rounded-lg hover:bg-background/40 flex items-center justify-center"><X className="w-4 h-4" /></button>
+                <button aria-label="Close / إغلاق" onClick={() => setPreview(null)} className="w-8 h-8 rounded-lg hover:bg-background/40 flex items-center justify-center"><X className="w-4 h-4" /></button>
               </div>
             </div>
             <div className="flex-1 bg-background/60">

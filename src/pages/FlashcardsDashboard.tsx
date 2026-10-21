@@ -62,7 +62,7 @@ export default function FlashcardsDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="p-6 w-full max-w-sm space-y-3">
           <h1 className="text-xl font-bold">Flashcards Dashboard</h1>
-          <Input type="password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)}
+          <Input aria-label="Password" type="password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && login()} />
           {err && <p className="text-sm text-destructive">{err}</p>}
           <Button className="w-full" disabled={busy || !pw} onClick={() => login()}>Enter</Button>
@@ -97,14 +97,14 @@ export default function FlashcardsDashboard() {
       <Card className="p-4 space-y-3">
         <p className="font-semibold">{form.id ? "Edit card" : "Add card"}</p>
         <div className="grid gap-2 md:grid-cols-3">
-          <Input placeholder="Subject (e.g. biology)" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
-          <Input placeholder="Chapter" value={form.chapter} onChange={(e) => setForm({ ...form, chapter: e.target.value })} />
+          <Input aria-label="Subject (e.g. biology)" placeholder="Subject (e.g. biology)" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+          <Input aria-label="Chapter" placeholder="Chapter" value={form.chapter} onChange={(e) => setForm({ ...form, chapter: e.target.value })} />
           <select className="border border-input rounded-md bg-background px-3" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
             <option value="ar">Arabic</option><option value="en">English</option>
           </select>
         </div>
-        <Textarea placeholder="Question" value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} />
-        <Textarea placeholder="Answer" value={form.answer} onChange={(e) => setForm({ ...form, answer: e.target.value })} />
+        <Textarea aria-label="Question" placeholder="Question" value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} />
+        <Textarea aria-label="Answer" placeholder="Answer" value={form.answer} onChange={(e) => setForm({ ...form, answer: e.target.value })} />
         <label className="flex items-center gap-2 text-sm"><Switch checked={form.approved} onCheckedChange={(v) => setForm({ ...form, approved: v })} /> Visible to students</label>
         {err && <p className="text-sm text-destructive">{err}</p>}
         <div className="flex gap-2">
@@ -115,9 +115,9 @@ export default function FlashcardsDashboard() {
 
       <Card className="p-4 space-y-3">
         <div className="grid gap-2 md:grid-cols-4">
-          <Input placeholder="Filter subject" value={filter.subject} onChange={(e) => setFilter({ ...filter, subject: e.target.value })} />
-          <Input placeholder="Filter chapter" value={filter.chapter} onChange={(e) => setFilter({ ...filter, chapter: e.target.value })} />
-          <Input placeholder="Search question" value={filter.search} onChange={(e) => setFilter({ ...filter, search: e.target.value })} />
+          <Input aria-label="Filter subject" placeholder="Filter subject" value={filter.subject} onChange={(e) => setFilter({ ...filter, subject: e.target.value })} />
+          <Input aria-label="Filter chapter" placeholder="Filter chapter" value={filter.chapter} onChange={(e) => setFilter({ ...filter, chapter: e.target.value })} />
+          <Input aria-label="Search question" placeholder="Search question" value={filter.search} onChange={(e) => setFilter({ ...filter, search: e.target.value })} />
           <label className="flex items-center gap-2 text-sm"><Switch checked={filter.pendingOnly} onCheckedChange={(v) => setFilter({ ...filter, pendingOnly: v })} /> Waiting only</label>
         </div>
         <div className="space-y-2">

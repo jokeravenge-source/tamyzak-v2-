@@ -105,9 +105,9 @@ export default function AdminMcqReview() {
               ? "Admin can approve or reject pending changes (owner account only). Sign-in required."
               : "Reviewer can propose add/delete requests. Sign in with your account to submit requests."}
           </p>
-          <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
+          <input aria-label="Email" type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full h-10 px-3 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-          <input type="password" required placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
+          <input aria-label="Password" type="password" required placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full h-10 px-3 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           <Button type="submit" disabled={busy} className="w-full">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
@@ -428,13 +428,13 @@ function EditQuestionForm({ initial, onSave, onCancel }: { initial: MCQ; onSave:
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-widest text-primary">Edit question</p>
-      <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Question"
+      <textarea aria-label="Question" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Question"
         className="w-full min-h-16 p-2 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {choices.map((c, i) => (
           <div key={i} className="flex items-center gap-2 text-sm">
             <input type="radio" checked={answer === i} onChange={() => setAnswer(i)} title="Correct answer" />
-            <input value={c} onChange={(e) => setChoices((cs) => cs.map((x, j) => (j === i ? e.target.value : x)))}
+            <input aria-label={`Choice ${i + 1}`} value={c} onChange={(e) => setChoices((cs) => cs.map((x, j) => (j === i ? e.target.value : x)))}
               placeholder={`Choice ${i + 1}`} className={inputCls} />
             {choices.length > 2 && (
               <button type="button" onClick={() => {
@@ -447,7 +447,7 @@ function EditQuestionForm({ initial, onSave, onCancel }: { initial: MCQ; onSave:
           </div>
         ))}
       </div>
-      <input value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explanation (optional)"
+      <input aria-label="Explanation (optional)" value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explanation (optional)"
         className="w-full h-9 px-2 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="flex justify-end gap-2">
         <Button onClick={() => setChoices((cs) => [...cs, ""])} variant="outline" size="sm" className="h-8 px-3 text-xs">
@@ -472,7 +472,7 @@ function AddForm({ onSubmit }: { onSubmit: (q: MCQ) => void }) {
   return (
     <div className="rounded-md border border-primary/40 bg-primary/10 p-3 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-widest text-primary">Add question (needs approval)</p>
-      <textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Question"
+      <textarea aria-label="Question" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Question"
         className="w-full min-h-16 p-2 rounded-md bg-background border border-input text-foreground placeholder:text-muted-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {choices.map((c, i) => (

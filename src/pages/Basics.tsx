@@ -30,6 +30,7 @@ import GiftMcqButton from "@/components/GiftMcqButton";
 import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
+import { normalizeStudySearch } from "@/lib/studySearch";
 import {
   DAILY_FLASHCARD_TARGET_KEY,
   DAILY_MCQ_TARGET_KEY,
@@ -525,6 +526,21 @@ const Basics = ({
 
   const [recentKeys, setRecentKeys] = useState<string[]>(() => getRecentTools());
   const hiddenStudyTools = useHiddenStudyTools();
+  const availableStudyTools = useMemo(() => {
+    const seen = new Set<string>();
+    return NAV_GROUPS.flatMap((group) => group.items).filter((item) => {
+      if (seen.has(item.key) || hiddenStudyTools.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    });
+  }, [hiddenStudyTools]);
+  const filteredStudyTools = useMemo(() => {
+    const query = normalizeStudySearch(toolQuery);
+    return availableStudyTools.filter((item) =>
+      (toolCategory === "All" || toolCategoryFor(item.key) === toolCategory)
+      && (!query || normalizeStudySearch([item.labelAr, item.labelEn, fc[item.key as keyof typeof fc]?.subtitle ?? ""].join(" ")).includes(query)),
+    );
+  }, [availableStudyTools, toolCategory, toolQuery, fc]);
 
   useEffect(() => {
     const sync = () => setRecentKeys(getRecentTools());
@@ -601,50 +617,6 @@ const Basics = ({
       window.removeEventListener("storage", sync);
     };
   }, []);
-
-  const DEFAULT_TARGET_ISO = "2026-06-13T07:00";
-  const [eventName, setEventName] = useState<string>(() => localStorage.getItem("custom_countdown_name_v1") || "");
-  const [eventDateISO, setEventDateISO] = useState<string>(() => localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
-  useEffect(() => {
-    const sync = () => {
-      setEventName(localStorage.getItem("custom_countdown_name_v1") || "");
-      setEventDateISO(localStorage.getItem("custom_countdown_date_v1") || DEFAULT_TARGET_ISO);
-    };
-    window.addEventListener("storage", sync);
-    window.addEventListener("app:countdown-changed", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("app:countdown-changed", sync);
-    };
-  }, []);
-  const TARGET = new Date(eventDateISO).getTime();
-  const [now, setNow] = useState<number>(() => Date.now());
-  const [showTimer, setShowTimer] = useState<boolean>(() => localStorage.getItem("countdown_hidden_v1") !== "1");
-  useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(i);
-  }, []);
-  const diff = Math.max(0, TARGET - now);
-  const cd = {
-    d: Math.floor(diff / 86400000),
-    h: Math.floor((diff % 86400000) / 3600000),
-    m: Math.floor((diff % 3600000) / 60000),
-    s: Math.floor((diff % 60000) / 1000),
-  };
-  const targetDate = new Date(eventDateISO);
-  const formattedTarget = isNaN(targetDate.getTime())
-    ? ""
-    : targetDate.toLocaleString(language === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const defaultEvtName = language === "ar" ? "موعد مهم" : "Important date";
-  const evtName = eventName.trim() || defaultEvtName;
-  const timerLabel = language === "ar" ? `${evtName} — ${formattedTarget}` : `${evtName} — ${formattedTarget}`;
-  const units = language === "ar"
-    ? { d: "يوم", h: "ساعة", m: "دقيقة", s: "ثانية" }
-    : { d: "Days", h: "Hours", m: "Min", s: "Sec" };
-  const dismissTimer = () => {
-    localStorage.setItem("countdown_hidden_v1", "1");
-    setShowTimer(false);
-  };
 
   const [username, setUsername] = useState<string>(() => localStorage.getItem("app_display_name_v1") || "");
   const [totalPoints, setTotalPoints] = useState<number>(0);
@@ -1298,20 +1270,7 @@ const Basics = ({
                 <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 {language === "ar" ? "رجوع" : "Back"}
               </button>
-              {(() => {
-                const seen = new Set<string>();
-                const count = NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
-                  if (hiddenStudyTools.has(it.key)) return false;
-                  if (seen.has(it.key)) return false;
-                  seen.add(it.key);
-                  return true;
-                }).length;
-                return (
-                  <p className="text-xs font-medium text-[var(--tmz-muted)]">
-                    {count} {language === "ar" ? "أداة" : "tools"}
-                  </p>
-                );
-              })()}
+              <p className="text-xs font-medium text-[var(--tmz-muted)]">{availableStudyTools.length} {language === "ar" ? "أداة" : "tools"}</p>
             </div>
             <header className="mb-6">
               <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
@@ -1346,19 +1305,19 @@ const Basics = ({
                 })}
               </div>
             </div>
+            <p className="mb-4 text-sm text-[var(--tmz-muted)]" role="status" aria-live="polite">
+              {isRTL ? `${filteredStudyTools.length} أداة تطابق اختيارك` : `${filteredStudyTools.length} tools match your selection`}
+            </p>
+            {filteredStudyTools.length === 0 && (
+              <div className="rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-8 text-center">
+                <p className="text-sm">{isRTL ? "ما لقينا أداة بهذا البحث. جرّب كلمة ثانية أو اعرض الكل." : "No tools match. Try another word or show all tools."}</p>
+                <button type="button" onClick={() => { setToolQuery(""); setToolCategory("All"); }} className="mt-4 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
+                  {isRTL ? "عرض كل الأدوات" : "Show all tools"}
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {(() => {
-                const seen = new Set<string>();
-                return NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
-                  const query = toolQuery.trim().toLocaleLowerCase();
-                  if (query && ![it.labelAr, it.labelEn, (fc as any)[it.key]?.subtitle ?? ""].join(" ").toLocaleLowerCase().includes(query)) return false;
-                  if (toolCategory !== "All" && toolCategoryFor(it.key) !== toolCategory) return false;
-                  if (hiddenStudyTools.has(it.key)) return false;
-                  if (seen.has(it.key)) return false;
-                  seen.add(it.key);
-                  return true;
-                });
-              })().map((it) => {
+              {filteredStudyTools.map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
@@ -1371,18 +1330,14 @@ const Basics = ({
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
                     className={`group relative flex min-h-[112px] items-start gap-3 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:border-[var(--tmz-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] ${isLocked ? "cursor-not-allowed opacity-60" : ""}`}
                   >
-                    {isPremiumTool(it.key) && (
-                      <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-[var(--tmz-line)] bg-[var(--tmz-panel)] px-2 py-1 text-[11px] font-medium text-[var(--tmz-ink)]">
-                        <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
-                      </span>
-                    )}
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--tmz-panel)] text-[var(--tmz-ink)]">
                       <Icon className="h-4 w-4" aria-hidden="true" />
                     </div>
                     <span className="min-w-0 flex-1 pe-5">
                       <span className="block text-sm font-semibold leading-6">{meta?.title ?? (language === "ar" ? it.labelAr : it.labelEn)}</span>
                       {meta?.subtitle && <span className="mt-1 block line-clamp-2 text-sm leading-5 text-[var(--tmz-muted)]">{meta.subtitle}</span>}
-                      <span className="mt-2 block text-xs text-[var(--tmz-muted)]">
+                      <span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--tmz-muted)]">
+                        {isPremiumTool(it.key) && <span className="inline-flex items-center gap-1 rounded-full border border-[var(--tmz-line)] px-2 py-1"><Crown className="h-3 w-3" aria-hidden="true" />{isRTL ? "مميّز" : "Premium"}</span>}
                         {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : premiumLocked ? (language === "ar" ? "افتح البريميوم" : "Unlock Premium") : (language === "ar" ? "افتح الأداة" : "Open tool")}
                       </span>
                     </span>
@@ -1447,10 +1402,10 @@ const Basics = ({
               className="group relative min-h-32 overflow-hidden rounded-2xl border border-primary bg-primary p-5 text-start text-primary-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
             >
               <span className="relative flex items-center gap-4">
-                <BookOpen className="h-6 w-6 shrink-0 text-white/90" aria-hidden="true" />
+                <BookOpen className="h-6 w-6 shrink-0 text-primary-foreground/90" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-semibold">{isRTL ? "ادرس اليوم" : "Study today"}</span>
-                  <span className="mt-1 block text-sm text-white/80">
+                  <span className="mt-1 block text-sm text-primary-foreground/80">
                     {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
                   </span>
                 </span>
@@ -1517,7 +1472,7 @@ const Basics = ({
 
             <motion.button
               type="button"
-              onClick={() => setShowAllTools(true)}
+              onClick={() => onNav("more")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
               className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"

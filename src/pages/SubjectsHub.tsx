@@ -201,6 +201,7 @@ const SubjectsHub = ({
         if (t.key === "ministerialBank") {
           sessionStorage.setItem("ministerial_subject_focus_v1", open);
         }
+        if (t.key === "mcqBank") sessionStorage.setItem("mcq_subject_focus_v1", open);
       } catch { /* ignore */ }
       window.dispatchEvent(new CustomEvent("app:set-subject", { detail: { subject: open } }));
     }
@@ -281,7 +282,7 @@ const SubjectsHub = ({
                 </div>
                 <p className="font-bold text-sm">{isRTL ? s.ar : s.en}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {s.tools.length} {isRTL ? "أداة" : "tools"}
+                  {s.tools.length + 1} {isRTL ? "أداة" : "tools"}
                 </p>
               </motion.button>
             );
@@ -307,7 +308,7 @@ const SubjectsHub = ({
                     {isRTL ? current.ar : current.en}
                   </h1>
                   <p className="text-muted-foreground text-sm">
-                    {current.tools.length} {isRTL ? "أدوات لهذه المادة" : "tools for this subject"}
+                    {current.tools.length + 1} {isRTL ? "أدوات لهذه المادة" : "tools for this subject"}
                   </p>
                 </div>
               </header>
@@ -319,8 +320,8 @@ const SubjectsHub = ({
                 {showSpecialistTools ? (isRTL ? "عرض الأساسيات فقط" : "Show essentials only") : (isRTL ? "عرض الأدوات الإضافية" : "Show extra tools")}
               </button>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {current.tools.filter((t) => showSpecialistTools || ["flashcards", "theoremVisualizer", "malazam", "ministerialBank"].includes(t.key)).sort((a, b) => {
-                  const order = ["flashcards", "malazam", "ministerialBank"];
+                {([{ key: "mcqBank", en: "MCQ Bank", ar: "بنك أسئلة MCQ", Icon: FileQuestion, descEn: "Practise questions from this subject.", descAr: "حل أسئلة الاختيار من متعدد لهذه المادة." } as Tool, ...current.tools]).filter((t) => showSpecialistTools || ["flashcards", "theoremVisualizer", "malazam", "ministerialBank", "mcqBank", "physicsSchemes", "biologySchemes"].includes(t.key)).sort((a, b) => {
+                  const order = ["flashcards", "mcqBank", "ministerialBank", "malazam", "biologySchemes", "physicsSchemes"];
                   return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
                 }).map((t) => {
                   const Icon = t.Icon;
@@ -334,7 +335,7 @@ const SubjectsHub = ({
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleToolClick(t)}
-                      disabled={!free && subscriptionLoading}
+                      disabled={hardLocked || (!free && subscriptionLoading)}
                       className={`group relative bg-background p-5 border rounded-2xl text-start transition-all ${
                         comingSoon
                           ? "border-border/60 hover:border-sky-400/60"
@@ -360,7 +361,8 @@ const SubjectsHub = ({
                       <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                         <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
                       </div>
-                      <h5 className="font-bold text-base mb-3">{isRTL ? t.ar : t.en}</h5>
+                      <h2 className="font-bold text-base mb-2">{isRTL ? t.ar : t.en}</h2>
+                      {(isRTL ? t.descAr : t.descEn) && <p className="mb-3 text-sm leading-6 text-muted-foreground">{isRTL ? t.descAr : t.descEn}</p>}
                       <span className={`inline-flex items-center gap-1 text-xs font-semibold ${comingSoon ? "text-sky-600" : locked ? "text-amber-600" : "text-primary"}`}>
                         {comingSoon ? (isRTL ? "معاينة" : "Preview") : hardLocked ? (isRTL ? "غير متاح حالياً" : "Unavailable") : locked ? (isRTL ? "ترقية للفتح" : "Upgrade to unlock") : (isRTL ? "افتح" : "Open")}
                         <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? "rotate-180" : ""}`} />

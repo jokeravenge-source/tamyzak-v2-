@@ -48,6 +48,16 @@ vi.mock("@/integrations/supabase/client", () => {
 });
 
 describe("Our Teachers Nadia entry", () => {
+  it("matches Arabic names without requiring the same spelling of ta marbuta", async () => {
+    render(<TeacherDirectory language="ar" onBack={vi.fn()} onSelect={vi.fn()} />);
+    await screen.findByRole("button", { name: /نادية النعيمي/ });
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "ناديه" } });
+    expect(screen.getByRole("button", { name: /نادية النعيمي/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /حيدر ديوان/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzz" } });
+    fireEvent.click(screen.getByRole("button", { name: "عرض كل المدرّسين" }));
+    expect(screen.getByRole("button", { name: /حيدر ديوان/ })).toBeInTheDocument();
+  });
   it("shows Nadia's Arabic chapter 3 by its 33 available topics", async () => {
     render(
       <TeacherDirectory

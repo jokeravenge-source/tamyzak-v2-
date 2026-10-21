@@ -225,7 +225,7 @@ const TodoList = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         </header>
 
         <form onSubmit={add} className="flex gap-2 mb-4">
-          <input
+          <input aria-label={text.placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={text.placeholder}

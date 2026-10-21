@@ -372,7 +372,7 @@ const TextToVideo = ({ language, onBack }: { language: AppLanguage; onBack: () =
                 ? "الصق أي نص (درس، مقالة، فقرة) وسنحوّله إلى فيديو شرح بأسلوب السبورة مع صوت عربي."
                 : "Paste any text and we'll turn it into a whiteboard explainer video with narration."}
             </p>
-            <textarea
+            <textarea aria-label={isAr ? "الصق النص هنا..." : "Paste your text here..."}
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={10}

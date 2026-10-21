@@ -17,12 +17,22 @@ vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 vi.mock("@/lib/points", () => ({ awardPoints: vi.fn(), showAward: vi.fn() }));
 vi.mock("@/lib/mistakes", () => ({ recordMistake: vi.fn() }));
 afterEach(cleanup);
-beforeEach(() => { mocks.rpc.mockResolvedValue({ data: [], error: null }); mocks.rows = []; });
+beforeEach(() => { sessionStorage.clear(); mocks.rpc.mockResolvedValue({ data: [], error: null }); mocks.rows = []; });
 function row(subject: string, chapter: number, chapter_title: string | null) {
   return { id: `${subject}-${chapter}`, subject, chapter, chapter_title, question: `Question for ${subject} ${chapter}`, choices: ["A", "B", "C", "D"], answer_index: 0, explanation: null };
 }
 
 describe("MCQ bank flashcard divisions", () => {
+  it("opens the subject selected in Subjects instead of asking for it twice", async () => {
+    mocks.rows = [row("physics", 1, "Capacitors")];
+    sessionStorage.setItem("mcq_subject_focus_v1", "physics");
+    const onBack = vi.fn();
+    render(<McqBank language="en" onBack={onBack} />);
+    expect(await screen.findByRole("button", { name: /Capacitors/ })).toBeInTheDocument();
+    expect(sessionStorage.getItem("mcq_subject_focus_v1")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Back/ }));
+    expect(onBack).toHaveBeenCalledOnce();
+  });
   it("shows matching chapter titles, disables empty chapters, and opens only that chapter", async () => {
     mocks.rows = [row("physics", 1, "Capacitors"), row("physics", 2, "Electromagnetic Induction")];
     render(<McqBank language="en" onBack={vi.fn()} />);

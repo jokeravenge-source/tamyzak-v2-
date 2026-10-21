@@ -233,7 +233,7 @@ export default function PsychAssistant({ language, onBack }: { language: AppLang
       </div>
 
       <div className="mt-3 flex items-end gap-2">
-        <textarea
+        <textarea aria-label={t.placeholder}
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}

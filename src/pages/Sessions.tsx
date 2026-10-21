@@ -1270,7 +1270,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative max-w-4xl mx-auto">
         <button onClick={onBack} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
-          <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "الرئيسية" : "Home"}
+          <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "رجوع" : "Back"}
         </button>
         <header className={`mb-6 rounded-[2rem] border p-5 shadow-sm ${activeTint.card}`}>
           <div className="flex items-center gap-4">
@@ -1398,7 +1398,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                     : language === "ar" ? `المقطع ${trackIdx + 1}/${TRACKS.length}` : `Track ${trackIdx + 1}/${TRACKS.length}`}
                 </span>
                 <Button size="sm" variant="secondary" onClick={toggleMusic} className="gap-2">{musicPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</Button>
-                <Button size="sm" variant="ghost" onClick={nextTrack} className="gap-2"><SkipForward className="h-4 w-4" /></Button>
+                <Button aria-label={language === "ar" ? "المقطع التالي" : "Next track"} size="sm" variant="ghost" onClick={nextTrack} className="gap-2"><SkipForward className="h-4 w-4" /></Button>
                 <div className="ms-auto flex items-center gap-2">
                   {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                   <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(event) => setVolume(parseFloat(event.target.value))} className="w-28" />

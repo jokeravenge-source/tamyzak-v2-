@@ -466,7 +466,7 @@ const IslamicSurahs = ({ language, onBack }: { language: AppLanguage; onBack: ()
           ) : (
             <div className="p-6 md:p-8 space-y-4" dir={language === "ar" ? "rtl" : "ltr"}>
               <p className="text-xs text-muted-foreground text-center">{t.ignoreDiacritics}</p>
-              <Textarea
+              <Textarea aria-label={t.placeholder}
                 value={writeInput}
                 onChange={(e) => setWriteInput(e.target.value)}
                 placeholder={t.placeholder}

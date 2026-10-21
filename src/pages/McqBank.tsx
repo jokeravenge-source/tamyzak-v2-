@@ -122,7 +122,12 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const [rows, setRows] = useState<Row[]>([]);
   const [topicAttempts, setTopicAttempts] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subject, setSubject] = useState<string | null>(topicTarget?.subject ?? personalizedTarget?.subject ?? null);
+  const [focusedSubject] = useState<string | null>(() => {
+    const focused = sessionStorage.getItem("mcq_subject_focus_v1");
+    return focused && SUBJECT_LABELS[focused] ? focused : null;
+  });
+  useEffect(() => { sessionStorage.removeItem("mcq_subject_focus_v1"); }, []);
+  const [subject, setSubject] = useState<string | null>(topicTarget?.subject ?? personalizedTarget?.subject ?? focusedSubject);
   const [chapter, setChapter] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -471,7 +476,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       <main className="relative min-h-screen overflow-hidden px-4 py-6 pb-28 md:py-10" dir={isAr ? "rtl" : "ltr"}>
         <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative mx-auto max-w-3xl">
-        {header(subjectLabel(subject, isAr), () => setSubject(null))}
+        {header(subjectLabel(subject, isAr), () => { if (focusedSubject) onBack(); else setSubject(null); })}
         <div className="mb-5 rounded-2xl border border-border/70 bg-card/70 p-5">
           <span className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Layers3 className="h-5 w-5" /></span>
           <h2 className="text-xl font-black">

@@ -701,7 +701,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
           transition={{ duration: 0.4 }}
           className="text-center mb-6"
         >
-          <div className="inline-flex items-center gap-2 text-3xl font-extrabold">
+          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold">
             <motion.span
               animate={{ rotate: [-12, 12, -12] }}
               transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
@@ -716,7 +716,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
               <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
             </span>
-          </div>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
         </motion.div>
 
@@ -779,7 +779,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
           <div className="space-y-4">
             <div className="rounded-2xl border bg-card p-4">
               <label className="text-sm font-medium">{t.code}</label>
-              <Input
+              <Input aria-label="123456"
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="123456"
@@ -855,7 +855,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
               <div className="text-sm text-muted-foreground mb-2">{t.shareCode}</div>
               <div className="flex items-center justify-center gap-3">
                 <div className="text-4xl font-mono font-bold tracking-widest">{code}</div>
-                <Button variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(code); toast.success(t.copied); }}>
+                <Button aria-label="Copy / نسخ" variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(code); toast.success(t.copied); }}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>

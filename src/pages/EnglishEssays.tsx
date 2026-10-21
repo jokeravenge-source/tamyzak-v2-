@@ -232,7 +232,7 @@ const EnglishEssays = ({ language, onBack }: { language: AppLanguage; onBack: ()
 
             <section className="mb-6">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t.essay}</h2>
-              <Textarea
+              <Textarea aria-label={t.essayPh}
                 dir="ltr"
                 value={essay}
                 onChange={(e) => setEssay(e.target.value)}

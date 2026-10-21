@@ -731,7 +731,7 @@ const OrganicEquations = ({
 
         <div className="relative mb-6">
           <Search className={`w-4 h-4 absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-3" : "left-3"} text-muted-foreground`} />
-          <input
+          <input aria-label={t.searchPh}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t.searchPh}

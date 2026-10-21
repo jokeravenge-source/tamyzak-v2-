@@ -249,7 +249,7 @@ const SubjectTutor = ({ language, onBack }: { language: AppLanguage; onBack: () 
             <div ref={endRef} />
           </div>
           <div className="border-t border-border p-3 flex items-end gap-2 bg-secondary/30">
-            <textarea
+            <textarea aria-label={L.placeholder}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}

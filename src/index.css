@@ -61,8 +61,10 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
 /* Ensure touch targets on mobile */
 @media (max-width: 768px) {
   button, [role="button"], a.button, .touch-target {
-    min-height: 40px;
+    min-height: 44px;
   }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  textarea, select { font-size: 16px; }
 }
 /* Custom-styled scrollbars (desktop) */
 @media (pointer: fine) {
@@ -90,25 +92,12 @@ button:active:not(:disabled), [role="button"]:active:not(:disabled) {
 
 /* ============ Global safe-area + UX polish ============ */
 :root {
-  /* Height of the fixed BottomGroupNav (two rows + padding) + device safe-area */
-  --nav-height: 116px;
+  /* Only reserve navigation space while the student navigation is mounted. */
+  --nav-height: 0px;
   --nav-safe: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
-/* Small phones: tighter nav padding */
-@media (max-width: 380px) {
-  :root { --nav-height: 108px; }
-}
-
-/* Tablets */
-@media (min-width: 768px) {
-  :root { --nav-height: 124px; }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  :root { --nav-height: 132px; }
-}
+:root.has-study-nav { --nav-height: 80px; }
 
 html {
   scroll-behavior: smooth;
@@ -126,11 +115,10 @@ body {
   padding-bottom: var(--nav-safe);
 }
 
-/* Every full-height page auto-reserves top notch + bottom nav space */
+/* The body reserves the bottom navigation once, rather than at every nested page. */
 main.min-h-screen,
 div.min-h-screen {
   padding-top: max(env(safe-area-inset-top), 0px);
-  padding-bottom: calc(var(--nav-safe) + 1rem);
 }
 
 /* Fixed / sticky bottom UI (toolbars, action bars) should clear the nav */
@@ -178,8 +166,8 @@ img { -webkit-user-drag: none; }
 /* Use Tamayzak's existing app theme tokens across the redesigned study home. */
 .tmz-home {
   --tmz-canvas: hsl(var(--background));
-  --tmz-surface: hsl(var(--card));
-  --tmz-panel: hsl(var(--secondary));
+  --tmz-surface: hsl(var(--secondary));
+  --tmz-panel: hsl(var(--muted));
   --tmz-ink: hsl(var(--foreground));
   --tmz-muted: hsl(var(--muted-foreground));
   --tmz-line: hsl(var(--border));

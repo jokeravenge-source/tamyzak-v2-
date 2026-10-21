@@ -152,7 +152,7 @@ const Essay = ({ language, onBack }: { language: AppLanguage; onBack: () => void
           <FileText className="w-9 h-9 text-primary" />
           <p className="font-medium text-sm truncate max-w-full">{file.name}</p>
           <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-          <button
+          <button aria-label="Remove file / إزالة الملف"
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClear(); }}
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-secondary/70 hover:bg-secondary flex items-center justify-center"
@@ -175,7 +175,7 @@ const Essay = ({ language, onBack }: { language: AppLanguage; onBack: () => void
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
-      <button onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
+      <button aria-label="Back / رجوع" onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
         <ArrowLeft className="w-5 h-5" />
       </button>
 

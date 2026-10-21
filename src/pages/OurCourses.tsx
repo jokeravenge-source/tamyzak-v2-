@@ -658,13 +658,13 @@ function UploadModal({
           <h3 className="text-lg font-bold">
             {isAr ? `رفع امتحان - ${course.titleAr}` : `Add exam - ${course.titleEn}`}
           </h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <label className="block text-xs font-semibold mb-1">{isAr ? "عنوان الامتحان" : "Exam title"}</label>
-        <input
+        <input aria-label={isAr ? "مثال: امتحان الفصل 1" : "e.g. Chapter 1 exam"}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
@@ -684,7 +684,7 @@ function UploadModal({
             ))}
           </select>
         )}
-        <input
+        <input aria-label={isAr ? "أو أضف فصلاً جديداً" : "Or add a new chapter"}
           value={newChapter}
           onChange={(e) => setNewChapter(e.target.value)}
           maxLength={80}
@@ -792,7 +792,7 @@ function ManageModal({
           <h3 className="text-lg font-bold">
             {isAr ? `امتحانات ${course.titleAr}` : `${course.titleEn} exams`}
           </h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -853,7 +853,7 @@ function PlaylistOnlyModal({
             <ArrowLeft className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
             {isAr ? "رجوع" : "Back"}
           </button>
-          <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -908,7 +908,7 @@ function PhysicsHub({
             <ArrowLeft className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
             {isAr ? "رجوع" : "Back"}
           </button>
-          <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -992,7 +992,7 @@ function PhysicsLecturesModal({
             <ArrowLeft className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
             {isAr ? "رجوع" : "Back"}
           </button>
-          <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1147,7 +1147,7 @@ function AddPlaylistModal({
             <Youtube className="w-5 h-5 text-[#ff0033]" />
             {isAr ? `إضافة محتوى - ${course.titleAr}` : `Add content - ${course.titleEn}`}
           </h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1165,7 +1165,7 @@ function AddPlaylistModal({
         </div>
 
         <label className="block text-xs font-semibold mb-1">{isAr ? "العنوان" : "Title"}</label>
-        <input
+        <input aria-label={isAr ? "مثال: محاضرات الفصل 1" : "e.g. Chapter 1 lectures"}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
@@ -1178,7 +1178,7 @@ function AddPlaylistModal({
             ? (isAr ? "رابط قائمة تشغيل يوتيوب" : "YouTube playlist URL")
             : (isAr ? "رابط محاضرة يوتيوب" : "YouTube video URL")}
         </label>
-        <input
+        <input aria-label={kind === "playlist" ? "https://youtube.com/playlist?list=PL..." : "https://youtu.be/xxxxxxxxxxx"}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder={kind === "playlist" ? "https://youtube.com/playlist?list=PL..." : "https://youtu.be/xxxxxxxxxxx"}
@@ -1421,7 +1421,7 @@ function CourseRunner({
             <ArrowLeft className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`} />
             {isAr ? "رجوع" : "Back"}
           </button>
-          <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <button aria-label="Close / إغلاق" onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1585,7 +1585,7 @@ function CourseRunner({
                   {studentImages.map((src, i) => (
                     <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
                       <img src={src} alt={`answer ${i + 1}`} className="w-full h-full object-cover" />
-                      <button
+                      <button aria-label="Delete / حذف"
                         onClick={() => setStudentImages((prev) => prev.filter((_, idx) => idx !== i))}
                         className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -1691,7 +1691,7 @@ function CourseRunner({
                     </label>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm">@</span>
-                      <input
+                      <input aria-label="ali_2007"
                         value={tgUsername}
                         onChange={(e) => setTgUsername(e.target.value)}
                         placeholder="ali_2007"

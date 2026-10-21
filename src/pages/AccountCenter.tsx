@@ -831,7 +831,7 @@ function CountdownSettings({ language }: { language: AppLanguage }) {
       <div className="space-y-3">
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">{isAr ? "اسم المناسبة" : "Event name"}</label>
-          <input
+          <input aria-label={isAr ? "اسم الموعد" : "Event name"}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -281,7 +281,7 @@ const ChallengeCard = ({
                 <button onClick={onPublish} className="h-9 px-3 rounded-lg border border-border bg-card/70 text-xs font-medium">
                   {c.status === "published" ? T(language, "إخفاء", "Unpublish") : T(language, "نشر", "Publish")}
                 </button>
-                <button onClick={onRemove} className="h-9 w-9 rounded-lg border border-border bg-card/70 inline-flex items-center justify-center text-destructive">
+                <button aria-label="Delete / حذف" onClick={onRemove} className="h-9 w-9 rounded-lg border border-border bg-card/70 inline-flex items-center justify-center text-destructive">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </>
@@ -502,10 +502,10 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
         </h1>
         {!drafts ? (
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <input value={title} onChange={(e) => setTitle(e.target.value)}
+            <input aria-label={T(language, "عنوان التحدي", "Challenge title")} value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder={T(language, "عنوان التحدي", "Challenge title")}
               className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm" />
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+            <textarea aria-label={T(language, "وصف / متطلبات (اختياري)", "Description / requirements (optional)")} value={description} onChange={(e) => setDescription(e.target.value)}
               placeholder={T(language, "وصف / متطلبات (اختياري)", "Description / requirements (optional)")}
               className="w-full min-h-20 p-3 rounded-lg border border-border bg-background text-sm" />
 
@@ -661,7 +661,7 @@ const AdminCreate = ({ language, onDone }: { language: AppLanguage; onDone: () =
               <div key={i} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-medium">{i + 1}. {d.question}</p>
-                  <button onClick={() => setDrafts(drafts.filter((_, j) => j !== i))} className="text-destructive shrink-0">
+                  <button aria-label="Delete / حذف" onClick={() => setDrafts(drafts.filter((_, j) => j !== i))} className="text-destructive shrink-0">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

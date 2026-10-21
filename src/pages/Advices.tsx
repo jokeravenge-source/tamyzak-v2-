@@ -142,8 +142,8 @@ const Advices = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
 
         {creating && (
           <div className="rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-5 mb-6 space-y-3">
-            <Input placeholder={L.topicTitle} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} maxLength={140} />
-            <Textarea placeholder={L.topicBody} value={newBody} onChange={(e) => setNewBody(e.target.value)} maxLength={2000} />
+            <Input aria-label={L.topicTitle} placeholder={L.topicTitle} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} maxLength={140} />
+            <Textarea aria-label={L.topicBody} placeholder={L.topicBody} value={newBody} onChange={(e) => setNewBody(e.target.value)} maxLength={2000} />
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" onClick={() => setCreating(false)}>{L.cancel}</Button>
               <Button onClick={createTopic} disabled={!newTitle.trim()}>{L.post}</Button>
@@ -155,7 +155,7 @@ const Advices = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur p-4">
             <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-card p-6 space-y-4">
               <h2 className="text-lg font-semibold">{L.namePrompt}</h2>
-              <Input placeholder={L.nameLabel} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} maxLength={40} autoFocus />
+              <Input aria-label={L.nameLabel} placeholder={L.nameLabel} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} maxLength={40} autoFocus />
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setAskName(false)}>{L.cancel}</Button>
                 <Button onClick={saveName} disabled={!nameDraft.trim()}>{L.save}</Button>
@@ -204,14 +204,14 @@ const Advices = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
                       </div>
                     ))}
                     <div className="flex gap-2 pt-2">
-                      <Input
+                      <Input aria-label={L.writeComment}
                         placeholder={L.writeComment}
                         value={commentText[tp.id] || ""}
                         onChange={(e) => setCommentText((p) => ({ ...p, [tp.id]: e.target.value }))}
                         onFocus={() => ensureName(() => {})}
                         maxLength={1000}
                       />
-                      <Button onClick={() => ensureName(() => sendComment(tp.id))} disabled={!(commentText[tp.id] || "").trim()}>
+                      <Button aria-label="Send / إرسال" onClick={() => ensureName(() => sendComment(tp.id))} disabled={!(commentText[tp.id] || "").trim()}>
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>

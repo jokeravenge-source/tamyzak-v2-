@@ -262,7 +262,7 @@ const TypeMode = ({
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">
               {isRTL ? "المعاكس بالفرنسية" : "Antonyme"}
             </label>
-            <input
+            <input aria-label={isRTL ? "اكتب هنا..." : "Type here..."}
               autoFocus
               value={input}
               onChange={(e) => setInput(e.target.value)}

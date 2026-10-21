@@ -254,7 +254,7 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
                     <span className="text-xs font-bold text-muted-foreground">{question.type === "title" ? text.titleQuestion : `${text.question} ${index + 1}`}</span>
                   </div>
                   <p dir="ltr" className="text-left text-base font-bold leading-7 sm:text-lg">{question.prompt}</p>
-                  <textarea
+                  <textarea aria-label={text.answerPlaceholder}
                     dir="ltr"
                     rows={2}
                     value={answers[index] ?? ""}

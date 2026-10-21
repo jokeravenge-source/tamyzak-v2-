@@ -401,7 +401,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
         {/* Input panel */}
         <Panel icon={Youtube} title={t.title}>
           <div className="space-y-3">
-            <Input
+            <Input aria-label={t.placeholder}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder={t.placeholder}

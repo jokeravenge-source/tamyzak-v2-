@@ -36,6 +36,13 @@ type Row = {
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
   const [tab, setTab] = useState<Tab>("pending");
+  const sectionLabels: Record<Tab, string> = {
+    pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
+    notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
+    aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
+    credits: "Credits", points: "Points", announcements: "Announcements", mistakes: "Common Mistakes",
+    teachers: "Our Teachers", whoIsBest: "Who Is Best",
+  };
   // Owner gate: only this email sees every tab. Other admins are moderators
   // and only see acceptance/review-related tabs (summaries pending, flashcards
   // approvals, username requests, AI files uploads).
@@ -766,7 +773,13 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
       </header>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="flex gap-2 border-b border-white/10 mb-6 overflow-x-auto no-scrollbar">
+        <label className="mb-5 block max-w-md">
+          <span className="mb-2 block text-sm font-semibold">Jump to section / انتقل للقسم</span>
+          <select value={tab} onChange={(event) => setTab(event.target.value as Tab)} className="min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-base text-foreground">
+            {(Object.keys(sectionLabels) as Tab[]).filter(canSee).map((section) => <option key={section} value={section}>{sectionLabels[section]}</option>)}
+          </select>
+        </label>
+        <div className="mb-6 hidden flex-wrap gap-2 border-b border-border xl:flex" role="group" aria-label="Dashboard sections">
           {canSee("pending") && (
             <button onClick={() => setTab("pending")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "pending" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Clock className="w-4 h-4 inline mr-1.5" />Summaries — Pending
@@ -896,14 +909,14 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                 <select value={fcForm.subject} onChange={(e) => setFcForm({ ...fcForm, subject: e.target.value })} className="h-10 px-3 rounded-lg bg-background border border-white/10 text-sm">
                   {["physics","chemistry","biology","english","french","arabic"].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <input value={fcForm.chapter} onChange={(e) => setFcForm({ ...fcForm, chapter: e.target.value })} placeholder="Chapter (e.g. 1)" className="h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
+                <input aria-label="Chapter (e.g. 1)" value={fcForm.chapter} onChange={(e) => setFcForm({ ...fcForm, chapter: e.target.value })} placeholder="Chapter (e.g. 1)" className="h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
                 <select value={fcForm.language} onChange={(e) => setFcForm({ ...fcForm, language: e.target.value })} className="h-10 px-3 rounded-lg bg-background border border-white/10 text-sm">
                   <option value="en">English</option>
                   <option value="ar">Arabic</option>
                 </select>
               </div>
-              <textarea value={fcForm.question} onChange={(e) => setFcForm({ ...fcForm, question: e.target.value })} placeholder="Question" rows={2} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
-              <textarea value={fcForm.answer} onChange={(e) => setFcForm({ ...fcForm, answer: e.target.value })} placeholder="Answer" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
+              <textarea aria-label="Question" value={fcForm.question} onChange={(e) => setFcForm({ ...fcForm, question: e.target.value })} placeholder="Question" rows={2} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
+              <textarea aria-label="Answer" value={fcForm.answer} onChange={(e) => setFcForm({ ...fcForm, answer: e.target.value })} placeholder="Answer" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
               <div className="flex flex-wrap gap-2">
                 <button onClick={addFc} className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
                   <Plus className="w-4 h-4" /> Add flashcard
@@ -999,9 +1012,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <div className="space-y-6">
             <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur space-y-3">
               <h3 className="font-semibold flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Send notification to everyone</h3>
-              <input value={notifForm.title} onChange={(e) => setNotifForm({ ...notifForm, title: e.target.value })} placeholder="Title" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
-              <textarea value={notifForm.body} onChange={(e) => setNotifForm({ ...notifForm, body: e.target.value })} placeholder="Message (optional)" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
-              <input value={notifForm.link} onChange={(e) => setNotifForm({ ...notifForm, link: e.target.value })} placeholder="Link (optional, https://...)" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
+              <input aria-label="Title" value={notifForm.title} onChange={(e) => setNotifForm({ ...notifForm, title: e.target.value })} placeholder="Title" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
+              <textarea aria-label="Message (optional)" value={notifForm.body} onChange={(e) => setNotifForm({ ...notifForm, body: e.target.value })} placeholder="Message (optional)" rows={3} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
+              <input aria-label="Link (optional, https://...)" value={notifForm.link} onChange={(e) => setNotifForm({ ...notifForm, link: e.target.value })} placeholder="Link (optional, https://...)" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
               <label className="inline-flex items-center gap-2 px-3 h-10 rounded-lg border border-white/10 bg-background text-sm cursor-pointer hover:border-primary/40">
                 <Upload className="w-4 h-4" />
                 <span>{notifForm.file ? notifForm.file.name : "Choose image (optional)"}</span>
@@ -1073,7 +1086,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                       {editingNotifId === n.id && (
                         <div className="mt-3 rounded-xl border border-primary/25 bg-background/70 p-3">
                           <label className="mb-1.5 block text-xs font-semibold">Edit destination link</label>
-                          <input
+                          <input aria-label="https://... (leave empty to remove the button)"
                             value={editingNotifLink}
                             onChange={(event) => setEditingNotifLink(event.target.value)}
                             placeholder="https://... (leave empty to remove the button)"
@@ -1107,9 +1120,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <div className="space-y-6">
             <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur space-y-3">
               <h3 className="font-semibold flex items-center gap-2"><Newspaper className="w-4 h-4 text-primary" /> Post news</h3>
-              <input value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} placeholder="Title" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
-              <textarea value={newsForm.description} onChange={(e) => setNewsForm({ ...newsForm, description: e.target.value })} placeholder="Description" rows={4} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
-              <input value={newsForm.link} onChange={(e) => setNewsForm({ ...newsForm, link: e.target.value })} placeholder="Link (optional, https://...)" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
+              <input aria-label="Title" value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} placeholder="Title" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
+              <textarea aria-label="Description" value={newsForm.description} onChange={(e) => setNewsForm({ ...newsForm, description: e.target.value })} placeholder="Description" rows={4} className="w-full px-3 py-2 rounded-lg bg-background border border-white/10 text-sm" />
+              <input aria-label="Link (optional, https://...)" value={newsForm.link} onChange={(e) => setNewsForm({ ...newsForm, link: e.target.value })} placeholder="Link (optional, https://...)" className="w-full h-10 px-3 rounded-lg bg-background border border-white/10 text-sm" />
               <label className="inline-flex items-center gap-2 px-3 h-10 rounded-lg border border-white/10 bg-background text-sm cursor-pointer hover:border-primary/40">
                 <Upload className="w-4 h-4" />
                 <span>{newsForm.file ? newsForm.file.name : "Choose image (optional)"}</span>
@@ -1151,7 +1164,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
             <div className="rounded-2xl p-5 border border-white/10 bg-secondary/40 backdrop-blur space-y-3">
               <h3 className="font-semibold flex items-center gap-2"><UsersIcon className="w-4 h-4 text-primary" /> Search users by name</h3>
               <div className="flex gap-2">
-                <input
+                <input aria-label="Type a display name..."
                   value={userQuery}
                   onChange={(e) => setUserQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") searchUsers(); }}
@@ -1368,7 +1381,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
                   ))}
                 </select>
                 <div className="flex items-center gap-1">
-                  <input
+                  <input aria-label="new chapter id (e.g. ch9)"
                     value={aiChapterInput}
                     onChange={(e) => setAiChapterInput(e.target.value)}
                     placeholder="new chapter id (e.g. ch9)"

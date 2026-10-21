@@ -286,7 +286,7 @@ export default function NadiaFlashcardsDashboard() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-              <input
+              <input aria-label="ابحث في السؤال أو الجواب بالعربية أو الإنكليزية..."
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="ابحث في السؤال أو الجواب بالعربية أو الإنكليزية..."

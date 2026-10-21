@@ -431,7 +431,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
                   </div>
                 </div>
 
-                <Textarea
+                <Textarea aria-label={t.typeAnswers}
                   value={studentText}
                   onChange={(e) => setStudentText(e.target.value)}
                   placeholder={t.typeAnswers}
@@ -565,7 +565,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
                           <label className="block text-xs font-semibold mb-1">{t.tgUsernameLabel}</label>
                           <div className="flex items-center gap-2">
                             <span className="text-muted-foreground text-sm">@</span>
-                            <input
+                            <input aria-label={t.tgUsernamePh}
                               value={tgUsername}
                               onChange={(e) => setTgUsername(e.target.value)}
                               placeholder={t.tgUsernamePh}
@@ -577,7 +577,7 @@ const ExamGenerator = ({ language, onBack }: { language: AppLanguage; onBack: ()
                         </div>
                         <div>
                           <label className="block text-xs font-semibold mb-1">{t.reasonLabel}</label>
-                          <Textarea
+                          <Textarea aria-label={t.reasonPh}
                             value={humanReason}
                             onChange={(e) => setHumanReason(e.target.value)}
                             placeholder={t.reasonPh}

@@ -516,7 +516,7 @@ function SessionView(props: {
           {phase === "listening" && <>
             <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>
             <div className="mt-4 rounded-[24px] border border-white/15 bg-slate-950/35 p-3 text-right shadow-inner shadow-slate-950/30 focus-within:border-cyan-300/50 focus-within:bg-slate-950/50">
-              <textarea
+              <textarea aria-label="اكتب تلخيصك هنا بأسلوبك..."
                 dir="rtl"
                 rows={5}
                 maxLength={5000}

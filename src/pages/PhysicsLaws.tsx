@@ -139,7 +139,7 @@ const PhysicsLawsInner = ({ language, onBack }: { language: AppLanguage; onBack:
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
-      <button onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
+      <button aria-label="Back / رجوع" onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
         <ArrowLeft className="w-5 h-5" />
       </button>
 
@@ -156,7 +156,7 @@ const PhysicsLawsInner = ({ language, onBack }: { language: AppLanguage; onBack:
         <div className="space-y-4 animate-fade-up">
           <div className="relative">
             <BookOpen className="absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" style={{ [rtl ? "right" : "left"]: "1rem" }} />
-            <Input
+            <Input aria-label={t.search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.search}

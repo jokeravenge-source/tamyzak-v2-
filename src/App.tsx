@@ -117,6 +117,7 @@ const ToolsIndex = lazy(() => import("./pages/ToolsIndex"));
 import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
 import { readWeeklyLearningProfile } from "@/lib/weeklyLearning";
 import { RETURN_TO_PROGRESS_KEY, TOPIC_PRACTICE_TARGET_KEY } from "@/lib/topicPracticeQuiz";
+import { useStudyBackHistory } from "@/hooks/useStudyBackHistory";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 const ParentFollow = lazy(() => import("./pages/ParentFollow"));
@@ -814,7 +815,24 @@ const StudentApp = () => {
     setAdminPreviewDay(null);
   };
 
+  const sectionHistory = useStudyBackHistory({ menu: menuChoice, subject, category: englishCategory }, (previous) => {
+    setMenuChoice(previous.menu);
+    setSubject(previous.subject);
+    setEnglishCategory(previous.category);
+    if (previous.menu) localStorage.setItem(MENU_STORAGE_KEY, previous.menu);
+    else localStorage.removeItem(MENU_STORAGE_KEY);
+    if (previous.subject) localStorage.setItem(SUBJECT_STORAGE_KEY, previous.subject);
+    else localStorage.removeItem(SUBJECT_STORAGE_KEY);
+    if (previous.category) localStorage.setItem(ENGLISH_CATEGORY_STORAGE_KEY, previous.category);
+    else localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
+  });
+  useEffect(() => {
+    if (!authed) return;
+    const next = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (next === "ar" || next === "en") setLanguage(next);
+  }, [authed]);
   const resetLanguage = () => {
+    sectionHistory.clear();
     setSubject(null);
     setMenuChoice(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
@@ -826,6 +844,7 @@ const StudentApp = () => {
     setEnglishCategory(null);
   };
   const resetMenu = () => {
+    if (sectionHistory.goBack()) return;
     setSubject(null);
     setMenuChoice(null);
     localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
@@ -906,8 +925,9 @@ const StudentApp = () => {
     window.addEventListener("app:open-personalized-practice", openPersonalized);
     return () => window.removeEventListener("app:open-personalized-practice", openPersonalized);
   }, []);
-  const backToBasics = () => chooseMenu("basics");
+  const backToBasics = resetMenu;
   const leaveMinisterialBank = () => {
+    if (sectionHistory.goBack()) return;
     if (!isNadiaMinisterialRoute) {
       backToBasics();
       return;
@@ -976,6 +996,7 @@ const StudentApp = () => {
         />
       )}
       </Suspense>
+      {authed && <a href="#tmz-current-screen" className="sr-only fixed start-4 top-4 z-[200] rounded-lg bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only">{language === "ar" ? "انتقل للمحتوى" : "Skip to content"}</a>}
       <PageTransition
         routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${channelVerified ? "ch" : "noch"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
@@ -1098,7 +1119,7 @@ const StudentApp = () => {
       ) : menuChoice === "biologySchemes" ? (
         <BiologySchemes language={language} onBack={backToBasics} />
       ) : menuChoice === "physicsSchemes" ? (
-        <PhysicsSchemes language={language} onBack={() => chooseMenu("subjectsHub")} />
+        <PhysicsSchemes language={language} onBack={resetMenu} />
       ) : menuChoice === "todo" ? (
         <TodoList language={language} onBack={backToBasics} />
       ) : menuChoice === "news" ? (
@@ -1108,7 +1129,8 @@ const StudentApp = () => {
           const returnTarget = practiceReturnTarget;
           setPracticeReturnTarget(null);
           if (returnTarget === "basics") sessionStorage.setItem(RETURN_TO_PROGRESS_KEY, "1");
-          chooseMenu(returnTarget ?? "basics");
+          if (returnTarget) chooseMenu(returnTarget);
+          else resetMenu();
         }} />
       ) : menuChoice === "mistakes" ? (
         <MyMistakes language={language} onBack={backToBasics} />
@@ -1133,9 +1155,9 @@ const StudentApp = () => {
       ) : menuChoice === "englishIsqat" ? (
         <EnglishIsqat language={language} onBack={backToBasics} />
       ) : menuChoice === "englishVerbForms" ? (
-        <EnglishVerbForms language={language} onBack={() => chooseMenu("subjectsHub")} />
+        <EnglishVerbForms language={language} onBack={resetMenu} />
       ) : menuChoice === "englishReadingPractice" ? (
-        <EnglishReadingPractice language={language} onBack={() => chooseMenu("subjectsHub")} />
+        <EnglishReadingPractice language={language} onBack={resetMenu} />
       ) : menuChoice === "report" ? (
         <DailyReport language={language} onBack={resetMenu} onNav={chooseMenu} />
       ) : menuChoice === "notes" ? (
@@ -1147,7 +1169,7 @@ const StudentApp = () => {
       ) : menuChoice === "organicEquations" ? (
         <OrganicEquations language={language} onBack={resetMenu} />
       ) : menuChoice === "chemicalEquations" ? (
-        <ChemicalEquations language={language} onBack={() => chooseMenu("more")} />
+        <ChemicalEquations language={language} onBack={resetMenu} />
       ) : menuChoice === "liveBattle" ? (
         <LiveBattle language={language} onBack={resetMenu} />
       ) : menuChoice === "subjectsHub" ? (
@@ -1163,7 +1185,7 @@ const StudentApp = () => {
       ) : menuChoice === "physicsProblemSolver" ? (
         <PhysicsProblemSolver language={language} onBack={resetMenu} />
       ) : menuChoice === "problemGenerator" ? (
-        <ProblemGenerator language={language} onBack={resetMenu} onNav={(c) => setMenuChoice(c as MenuChoice)} />
+        <ProblemGenerator language={language} onBack={resetMenu} onNav={(c) => chooseMenu(c as MenuChoice)} />
       ) : menuChoice === "frenchSynonyms" ? (
         <FrenchSynonyms language={language} onBack={resetMenu} />
       ) : menuChoice === "frenchAntonyms" ? (

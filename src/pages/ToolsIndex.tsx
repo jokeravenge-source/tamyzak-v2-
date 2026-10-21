@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import { PUBLIC_TOOLS } from "@/data/publicTools";
 import { applyTheme, getInitialTheme } from "@/components/ThemePicker";
+import { normalizeStudySearch } from "@/lib/studySearch";
 
 const SITE_URL = "https://tamyazak.site";
 const GROUPS = [
@@ -29,10 +30,10 @@ const ToolsIndex = () => {
   }, []);
 
   const filteredTools = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("ar");
+    const normalized = normalizeStudySearch(query);
     return PUBLIC_TOOLS.filter((tool) => {
       const matchesGroup = activeGroup === "all" || groupFor(tool.slug) === activeGroup;
-      const matchesQuery = !normalized || `${tool.title} ${tool.metaDescription}`.toLocaleLowerCase("ar").includes(normalized);
+      const matchesQuery = !normalized || normalizeStudySearch(`${tool.title} ${tool.metaDescription}`).includes(normalized);
       return matchesGroup && matchesQuery;
     });
   }, [activeGroup, query]);
@@ -110,13 +111,14 @@ const ToolsIndex = () => {
           })}
         </div>
 
+        <p className="mb-4 text-sm text-muted-foreground" role="status" aria-live="polite">{filteredTools.length} أداة</p>
         {filteredTools.length ? (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTools.map((t) => (
             <li key={t.slug}>
               <a
                 href={`/tools/${t.slug}`}
-                className="group block h-full rounded-2xl border border-border/70 bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="group block h-full rounded-2xl border border-border/70 bg-secondary p-5 text-secondary-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <h2 className="text-base font-bold leading-relaxed text-foreground">{t.title}</h2>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
@@ -128,9 +130,10 @@ const ToolsIndex = () => {
           ))}
           </ul>
         ) : (
-          <p className="rounded-2xl bg-muted/60 px-5 py-8 text-center text-sm text-muted-foreground" role="status">
-            ما لقينا أدوات تطابق بحثك. جرّب كلمة ثانية.
-          </p>
+          <div className="rounded-2xl bg-muted/60 px-5 py-8 text-center text-sm">
+            <p className="text-muted-foreground">ما لقينا أدوات تطابق بحثك. جرّب كلمة ثانية.</p>
+            <button type="button" onClick={() => { setQuery(""); setActiveGroup("all"); }} className="mt-4 rounded-full bg-primary px-5 py-3 font-semibold text-primary-foreground">عرض كل الأدوات</button>
+          </div>
         )}
 
         <footer className="mt-10 border-t border-border pt-6 text-sm text-muted-foreground">

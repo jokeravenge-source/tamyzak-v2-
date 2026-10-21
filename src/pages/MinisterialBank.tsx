@@ -833,7 +833,7 @@ type AnswerCheckResult = {
                   </div>
                 </div>
 
-                <Textarea
+                <Textarea aria-label={t.typeAnswers}
                   value={studentText}
                   onChange={(e) => setStudentText(e.target.value)}
                   placeholder={t.typeAnswers}
@@ -1076,7 +1076,7 @@ type AnswerCheckResult = {
               </div>
               <div>
                 <label className="block text-sm text-muted-foreground mb-2">{t.yourAnswer}</label>
-                <Textarea
+                <Textarea aria-label={t.typeAnswer}
                   value={answers[qIndex] ?? ""}
                   onChange={(e) => setAnswers((a) => ({ ...a, [qIndex]: e.target.value }))}
                   placeholder={t.typeAnswer}

@@ -11,9 +11,9 @@ import {
   Lock,
   Mail,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 
 type AuthMode = "signin" | "signup";
 
@@ -24,6 +24,27 @@ type AuthProps = {
   /** Which tab to show first when the page opens. Defaults to "signin". */
   initialMode?: AuthMode;
 };
+
+const AUTH_COPY = {
+  ar: {
+    signin: "تسجيل الدخول", signup: "إنشاء حساب", welcome: "أهلاً بعودتك", start: "ابدأ دراستك",
+    signinDescription: "سجّل دخولك حتى تتابع دراستك من آخر مرة.", signupDescription: "احفظ تقدمك وابدأ خطتك الدراسية بحساب واحد.",
+    email: "بريد Gmail", password: "كلمة المرور", forgot: "نسيت كلمة المرور؟", sending: "جارٍ الإرسال…",
+    passwordHint: "6 أحرف على الأقل", show: "إظهار كلمة المرور", hide: "إخفاء كلمة المرور", alternative: "أو استخدم بريد Gmail",
+    progress: "حسابك يحفظ نقاطك وأيام التزامك وتقدمك الدراسي.", submit: "إنشاء حسابي", privacy: "تابع تقدمك من أي جهاز بحسابك.",
+    invalidEmail: "اكتب بريداً صحيحاً ينتهي بـ gmail.com@", created: "تم إنشاء الحساب. افتح بريدك لتأكيده.", ready: "حسابك جاهز",
+    failed: "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.", resetSent: "أرسلنا رابط تغيير كلمة المرور إلى بريدك.", resetFailed: "تعذر إرسال الرابط. جرّب مرة ثانية.",
+  },
+  en: {
+    signin: "Sign in", signup: "Create account", welcome: "Welcome back", start: "Start studying smarter",
+    signinDescription: "Sign in to continue where you stopped.", signupDescription: "Create your account and build your personal study plan.",
+    email: "Gmail address", password: "Password", forgot: "Forgot password?", sending: "Sending…",
+    passwordHint: "At least 6 characters", show: "Show password", hide: "Hide password", alternative: "or use Gmail",
+    progress: "Your account keeps your points, streak and study progress synced.", submit: "Create my account", privacy: "Continue your study progress on any device.",
+    invalidEmail: "Please enter a valid Gmail address ending with @gmail.com", created: "Account created. Check your email to confirm it.", ready: "Your account is ready",
+    failed: "Could not sign in. Check your email and password.", resetSent: "Password reset link sent. Check your email.", resetFailed: "Could not send the reset link. Please try again.",
+  },
+} as const;
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 48 48" aria-hidden="true">
@@ -49,6 +70,13 @@ const getReturnUrl = () => {
 };
 
 export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) => {
+  const [language, setLanguage] = useState<AppLanguage>(() => localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "ar");
+  const text = AUTH_COPY[language];
+  const [authError, setAuthError] = useState("");
+  const changeLanguage = (next: AppLanguage) => {
+    setLanguage(next);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+  };
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,6 +86,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
+    setAuthError("");
     setPassword("");
     setShowPassword(false);
   };
@@ -65,8 +94,8 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
   const normalizedGmail = () => email.trim().toLowerCase();
 
   const hasValidGmail = (value: string) => {
-    if (value.endsWith("@gmail.com")) return true;
-    toast.error("Please enter a Gmail address ending with @gmail.com");
+    if (/^[^\s@]+@gmail\.com$/i.test(value)) return true;
+    setAuthError(text.invalidEmail);
     return false;
   };
 
@@ -75,6 +104,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
     const normalizedEmail = normalizedGmail();
     if (!hasValidGmail(normalizedEmail)) return;
 
+    setAuthError("");
     setLoading(true);
     try {
       if (mode === "signup") {
@@ -87,11 +117,11 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
         void trackEvent("signup", { source: getSignupSource() });
         if (!data.session) {
-          toast.success("Account created. Check your email to confirm it.");
+          toast.success(text.created);
           switchMode("signin");
           return;
         }
-        toast.success("Your account is ready");
+        toast.success(text.ready);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
@@ -102,7 +132,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
       onAuthed();
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Authentication failed");
+      setAuthError(error instanceof Error ? error.message : text.failed);
     } finally {
       setLoading(false);
     }
@@ -118,9 +148,9 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success("Password reset link sent. Check your email.");
+      toast.success(text.resetSent);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Could not send the reset link");
+      setAuthError(error instanceof Error ? error.message : text.resetFailed);
     } finally {
       setResetting(false);
     }
@@ -166,26 +196,26 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
   const isSignin = mode === "signin";
 
   return (
-    <main className="relative flex min-h-[100dvh] items-center justify-center overflow-x-hidden bg-background px-4 py-8 sm:px-6 sm:py-12">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -start-24 -top-24 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-32 -end-20 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-      </div>
-
-      <section className="relative z-10 w-full max-w-[460px] animate-fade-up">
+    <main dir={language === "ar" ? "rtl" : "ltr"} className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-12">
+      <section className="w-full max-w-[460px]">
+        <div className="mb-6 flex justify-end gap-1" role="group" aria-label="Language / اللغة">
+          {(["ar", "en"] as const).map((next) => (
+            <button key={next} type="button" onClick={() => changeLanguage(next)} aria-pressed={language === next}
+              className={`min-h-11 rounded-lg px-3 text-sm ${language === next ? "bg-secondary font-semibold text-secondary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              {next === "ar" ? "العربية" : "English"}
+            </button>
+          ))}
+        </div>
         <header className="mb-6 flex flex-col items-center text-center sm:mb-8">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_35px_hsl(var(--primary)/0.25)]">
-            <Sparkles className="h-6 w-6" />
-          </div>
+          <img src="/app-icon-192.png" alt="" className="mb-3 h-14 w-14 rounded-2xl" />
           <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-primary">Tamayzak</p>
           <p className="mt-1 text-sm text-muted-foreground">Your study space · مساحتك للدراسة</p>
         </header>
 
-        <div className="relative overflow-hidden rounded-[30px] border border-border/80 bg-card/90 p-5 shadow-[0_24px_70px_-28px_hsl(var(--foreground)/0.28)] backdrop-blur-xl sm:p-7">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-background p-5 sm:p-7">
           <div className="pointer-events-none absolute end-0 top-0 h-20 w-20 bg-primary/10 [clip-path:polygon(100%_0,0_0,100%_100%)]" />
 
-          <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border/70 bg-muted/60 p-1" role="tablist" aria-label="Authentication mode">
+          <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border/70 bg-muted/60 p-1" role="tablist" aria-label={language === "ar" ? "الدخول أو إنشاء حساب" : "Authentication mode"}>
             {(["signin", "signup"] as const).map((item) => {
               const active = mode === item;
               return (
@@ -201,7 +231,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {item === "signin" ? "Sign in" : "Create account"}
+                  {item === "signin" ? text.signin : text.signup}
                 </button>
               );
             })}
@@ -209,12 +239,10 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
           <div className="relative mb-6 mt-7">
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-              {isSignin ? "Welcome back" : "Start studying smarter"}
+              {isSignin ? text.welcome : text.start}
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {isSignin
-                ? "Sign in to continue where you stopped."
-                : "Create your account and build your personal study plan."}
+              {isSignin ? text.signinDescription : text.signupDescription}
             </p>
           </div>
 
@@ -241,14 +269,15 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
           <div className="my-6 flex items-center gap-3" aria-hidden="true">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">or use Gmail</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{text.alternative}</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <form onSubmit={handleEmail} className="space-y-4" noValidate>
+          <form onSubmit={handleEmail} className="space-y-4" noValidate aria-busy={loading}>
+            {authError && <p id="auth-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">{authError}</p>}
             <div>
               <label htmlFor="auth-email" className="mb-2 block text-sm font-bold text-foreground">
-                Gmail address
+                {text.email}
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -256,12 +285,15 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
                   id="auth-email"
                   type="email"
                   inputMode="email"
+                  dir="ltr"
+                  aria-invalid={authError === text.invalidEmail || undefined}
+                  aria-describedby={authError ? "auth-error" : undefined}
                   autoComplete="email"
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@gmail.com"
-                  className="h-12 w-full rounded-2xl border border-border bg-background/80 ps-11 pe-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  className="h-12 w-full rounded-2xl border border-border bg-background/80 ps-11 pe-4 text-base text-foreground outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
                 />
               </div>
             </div>
@@ -269,7 +301,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
             <div>
               <div className="mb-2 flex items-center justify-between gap-3">
                 <label htmlFor="auth-password" className="text-sm font-bold text-foreground">
-                  Password
+                  {text.password}
                 </label>
                 {isSignin && (
                   <button
@@ -278,7 +310,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
                     disabled={resetting}
                     className="text-xs font-semibold text-primary hover:underline disabled:opacity-60"
                   >
-                    {resetting ? "Sending…" : "Forgot password?"}
+                    {resetting ? text.sending : text.forgot}
                   </button>
                 )}
               </div>
@@ -292,14 +324,14 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
                   minLength={6}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="At least 6 characters"
-                  className="h-12 w-full rounded-2xl border border-border bg-background/80 ps-11 pe-12 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  placeholder={isSignin ? text.password : text.passwordHint}
+                  className="h-12 w-full rounded-2xl border border-border bg-background/80 ps-11 pe-12 text-base text-foreground outline-none transition placeholder:text-muted-foreground/65 focus:border-primary focus:ring-4 focus:ring-primary/10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((shown) => !shown)}
                   className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? text.hide : text.show}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -309,7 +341,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
             {!isSignin && (
               <div className="flex items-start gap-2 rounded-2xl bg-primary/10 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                Your account keeps your points, streak and study progress synced.
+                {text.progress}
               </div>
             )}
 
@@ -319,11 +351,11 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
               className="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-extrabold text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.22)] transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
             >
               {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /><span>{isSignin ? text.signin : text.submit}…</span></>
               ) : (
                 <>
-                  {isSignin ? "Sign in" : "Create my account"}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  {isSignin ? text.signin : text.submit}
+                  <ArrowRight className={`h-4 w-4 ${language === "ar" ? "rotate-180" : ""}`} />
                 </>
               )}
             </button>
@@ -331,7 +363,7 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
 
           <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            <span>Your account details are securely protected.</span>
+            <span>{text.privacy}</span>
           </div>
         </div>
 

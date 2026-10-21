@@ -41,7 +41,7 @@ export const AdminLogin = ({ onAuthed, onBack }: { onAuthed: () => void; onBack:
     <main className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-      <button
+      <button aria-label="Back / رجوع"
         onClick={onBack}
         className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
       >
@@ -57,11 +57,11 @@ export const AdminLogin = ({ onAuthed, onBack }: { onAuthed: () => void; onBack:
         <form onSubmit={handleSubmit} className="space-y-3" noValidate>
           <div className="relative">
             <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin email" className="w-full h-11 pl-10 pr-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm" />
+            <input aria-label="admin email" type="text" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin email" className="w-full h-11 pl-10 pr-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm" />
           </div>
           <div className="relative">
             <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password" className="w-full h-11 pl-10 pr-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm" />
+            <input aria-label="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password" className="w-full h-11 pl-10 pr-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm" />
           </div>
           <button type="submit" disabled={loading} className="group w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-sm font-semibold disabled:opacity-60">
             {loading ? "Signing in…" : "Enter dashboard"}

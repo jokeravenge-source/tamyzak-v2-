@@ -252,7 +252,7 @@ const PoemsChecker = ({ language, onBack }: { language: AppLanguage; onBack: () 
           )}
         </div>
 
-        <Textarea
+        <Textarea aria-label={t.placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t.placeholder}

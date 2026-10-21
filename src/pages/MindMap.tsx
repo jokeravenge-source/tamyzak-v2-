@@ -317,14 +317,14 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            <h1 className="inline-flex items-center gap-1.5 text-base font-semibold text-foreground">
               <Sparkles className="w-3 h-3 text-primary" /> {t.title}
-            </div>
+            </h1>
             <p className="text-sm text-muted-foreground truncate">{t.subtitle}</p>
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-3 flex flex-col md:flex-row gap-2">
-          <input
+          <input aria-label={t.placeholder}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !loading) generate(); }}

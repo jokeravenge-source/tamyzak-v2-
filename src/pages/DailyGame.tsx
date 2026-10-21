@@ -94,7 +94,7 @@ function WrittenGame({
         {q.q}
       </div>
 
-      <textarea
+      <textarea aria-label={t.yourAnswer}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={t.yourAnswer}

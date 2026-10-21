@@ -64,7 +64,7 @@ const JoinTamayzak = ({ language, onBack }: { language: AppLanguage; onBack: () 
           <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">{isAr ? "الاسم الكامل" : "Full name"}</label>
-              <input
+              <input aria-label={isAr ? "اكتب اسمك الكامل" : "Your full name"}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 maxLength={120}
@@ -74,7 +74,7 @@ const JoinTamayzak = ({ language, onBack }: { language: AppLanguage; onBack: () 
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">{isAr ? "معرّف تيليجرام" : "Telegram username"}</label>
-              <input
+              <input aria-label={isAr ? "معرّف تيليجرام" : "Telegram username"}
                 value={telegram}
                 onChange={(e) => setTelegram(e.target.value)}
                 maxLength={60}
@@ -87,7 +87,11 @@ const JoinTamayzak = ({ language, onBack }: { language: AppLanguage; onBack: () 
               <label className="block text-sm font-medium mb-1.5">
                 {isAr ? "السيرة الذاتية" : "Your CV"}
               </label>
-              <textarea
+              <textarea aria-label={
+                  isAr
+                    ? "اكتب سيرتك الذاتية: خبرتك، المواد التي تدرّسها، إنجازاتك..."
+                    : "Write your CV: experience, subjects you teach, achievements..."
+                }
                 value={cv}
                 onChange={(e) => setCv(e.target.value)}
                 maxLength={4000}

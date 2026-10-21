@@ -1340,7 +1340,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               <h2 className="text-xl font-bold gradient-text">
                 {language === "ar" ? "أرسل بطاقة جديدة" : "Submit a flashcard"}
               </h2>
-              <button type="button" onClick={() => setShowSubmit(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+              <button aria-label="Close / إغلاق" type="button" onClick={() => setShowSubmit(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
             <p className="text-xs text-muted-foreground">
               {language === "ar"

@@ -234,7 +234,7 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
         <form onSubmit={onSubmit} className="flex gap-2 mb-6">
           <div className="flex-1 relative">
             <SearchIcon className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-3" : "left-3"} w-4 h-4 text-muted-foreground`} />
-            <input
+            <input aria-label={isRTL ? "ألصق رابط فيديو أو قائمة تشغيل..." : "Paste a YouTube video or playlist URL..."}
               type="text"
               value={input}
               onChange={(e) => { setInput(e.target.value); if (error) setError(null); }}
@@ -260,13 +260,13 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
                   {isRTL ? "إضافة مدرس" : "Add a teacher"}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <input
+                  <input aria-label={isRTL ? "اسم المدرس" : "Teacher name"}
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder={isRTL ? "اسم المدرس" : "Teacher name"}
                     className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:border-primary"
                   />
-                  <input
+                  <input aria-label={isRTL ? "رابط قائمة التشغيل" : "Playlist URL"}
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
                     placeholder={isRTL ? "رابط قائمة التشغيل" : "Playlist URL"}

@@ -234,7 +234,7 @@ export default function NadiaMinisterialQuestions() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في الأسئلة أو الأجوبة..." className="h-12 w-full rounded-xl border border-slate-200 bg-white pr-12 pl-4 text-sm outline-none transition focus:border-[#89B7E8] focus:ring-4 focus:ring-[#89B7E8]/15" />
+              <input aria-label="ابحث في الأسئلة أو الأجوبة..." value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في الأسئلة أو الأجوبة..." className="h-12 w-full rounded-xl border border-slate-200 bg-white pr-12 pl-4 text-sm outline-none transition focus:border-[#89B7E8] focus:ring-4 focus:ring-[#89B7E8]/15" />
             </div>
             <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1" aria-label="لغة العرض">
               <Languages className="mx-2 size-4 text-slate-400" />

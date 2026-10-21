@@ -258,7 +258,7 @@ const HadithChecker = ({ language, onBack }: { language: AppLanguage; onBack: ()
           </div>
         </div>
 
-        <Textarea
+        <Textarea aria-label={t.placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t.placeholder}

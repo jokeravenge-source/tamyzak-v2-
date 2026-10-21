@@ -24,6 +24,7 @@ import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
 import type { AppLanguage } from "@/components/LanguageGate";
 import nadiaPhoto from "@/assets/teachers/nadia-al-nuaimy.png";
 import type { MainMenuChoice } from "@/pages/MainMenu";
+import { normalizeStudySearch } from "@/lib/studySearch";
 import { NadiaLectureWorkspace } from "@/pages/Teachers";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -113,7 +114,7 @@ const copy = {
   ar: {
     title: "مدرسونا",
     description: "اختَر المدرّس حتى تشوف الأدوات والمحتوى الخاص بيه.",
-    back: "العودة للرئيسية",
+    back: "رجوع",
     backToTeachers: "العودة للمدرسين",
     backToTeacherContent: "العودة لمحتوى الأستاذة",
     backToChapters: "العودة للفصول",
@@ -133,7 +134,7 @@ const copy = {
   en: {
     title: "Our Teachers",
     description: "Choose a teacher to see their selected tools and learning content.",
-    back: "Back to home",
+    back: "Back",
     backToTeachers: "Back to teachers",
     backToTeacherContent: "Back to teacher content",
     backToChapters: "Back to chapters",
@@ -333,6 +334,7 @@ const TeacherDirectory = ({
   const isRTL = language === "ar";
   const text = copy[language];
   const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
+  const [teacherQuery, setTeacherQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -393,6 +395,7 @@ const TeacherDirectory = ({
   }, [teachers]);
 
   const selected = directoryTeachers.find((teacher) => teacher.id === selectedId) ?? null;
+  const matchingTeachers = directoryTeachers.filter((teacher) => normalizeStudySearch(teacher.name).includes(normalizeStudySearch(teacherQuery)));
   const selectedIsNadia = selected ? isNadiaProfile(selected) : false;
   const selectedTools = useMemo(() => {
     if (!selected) return [];
@@ -611,18 +614,22 @@ const TeacherDirectory = ({
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">{text.description}</p>
             </header>
 
+            <label className="mb-5 block">
+              <span className="mb-2 block text-sm font-semibold">{isRTL ? "ابحث عن مدرّسك" : "Find your teacher"}</span>
+              <input type="search" value={teacherQuery} onChange={(event) => setTeacherQuery(event.target.value)} placeholder={isRTL ? "اسم المدرّس…" : "Teacher name…"} className="min-h-11 w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary" />
+            </label>
             {loading ? (
-              <div className="flex min-h-52 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              <div className="flex min-h-40 items-center justify-center gap-3" role="status"><Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" /><span className="text-sm text-muted-foreground">{isRTL ? "جارٍ تحميل المدرّسين…" : "Loading teachers…"}</span></div>
             ) : (
               <>
                 {error && (
-                  <div className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-center text-sm text-red-600 dark:text-red-300">{text.loadError}</div>
+                  <div role="alert" className="mb-5 rounded-2xl border border-destructive/30 p-4 text-sm"><p>{text.loadError}</p><button type="button" onClick={() => setRefreshVersion((version) => version + 1)} className="mt-2 rounded-lg bg-secondary px-4 py-2 font-semibold text-secondary-foreground">{isRTL ? "إعادة المحاولة" : "Try again"}</button></div>
                 )}
-                {directoryTeachers.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{text.empty}</div>
+                {matchingTeachers.length === 0 ? (
+                  <div role="status" className="rounded-2xl border border-border bg-secondary p-8 text-center text-secondary-foreground"><p>{teacherQuery ? (isRTL ? "ما لقينا مدرّس بهذا الاسم." : "No teacher matches that name.") : text.empty}</p>{teacherQuery && <button type="button" onClick={() => setTeacherQuery("")} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">{isRTL ? "عرض كل المدرّسين" : "Show all teachers"}</button>}</div>
                 ) : (
                   <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {directoryTeachers.map((teacher) => (
+                    {matchingTeachers.map((teacher) => (
                       <button
                         type="button"
                         key={teacher.id}

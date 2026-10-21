@@ -213,7 +213,7 @@ const BlockRow = ({
               </span>
             </span>
           </button>
-          <input
+          <input aria-label={language === "ar" ? "اسم اللوحة" : "Canvas name"}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             placeholder={language === "ar" ? "اسم اللوحة" : "Canvas name"}
@@ -226,7 +226,7 @@ const BlockRow = ({
       <div className="my-2">
         <div className="flex items-center gap-2 mb-1.5 px-1">
           <Palette className="w-3.5 h-3.5 text-primary shrink-0" />
-          <input
+          <input aria-label={language === "ar" ? "اسم اللوحة" : "Canvas name"}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             placeholder={language === "ar" ? "اسم اللوحة" : "Canvas name"}
@@ -272,7 +272,7 @@ const BlockRow = ({
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <input
+        <input aria-label={language === "ar" ? "وصف الصورة (اختياري)" : "Caption (optional)"}
           value={block.text}
           onChange={(e) => onChange(e.target.value)}
           placeholder={language === "ar" ? "وصف الصورة (اختياري)" : "Caption (optional)"}
@@ -1289,7 +1289,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
               <div className="p-3">
                 <div className="relative">
                   <Search className={`w-3.5 h-3.5 absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-2.5" : "left-2.5"} text-muted-foreground`} />
-                  <input
+                  <input aria-label={t.search}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={t.search}
@@ -1447,6 +1447,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
 
       {/* Main */}
       <main className="relative z-10 flex-1 min-w-0 flex flex-col">
+        <h1 className="sr-only">{active?.title || t.title}</h1>
         {/* Top bar */}
         <div className="sticky top-0 z-30 backdrop-blur-2xl bg-background/75 border-b border-border/50 h-14 flex items-center px-3 sm:px-5 gap-2">
           {!sidebarOpen && (
@@ -1704,7 +1705,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
               </div>
 
               {/* Title */}
-              <input
+              <input aria-label={t.titlePlaceholder}
                 value={active.title}
                 onChange={(e) => updateNote(active.id, { title: e.target.value })}
                 placeholder={t.titlePlaceholder}
@@ -1801,7 +1802,7 @@ const Notes = ({ language, onBack }: { language: AppLanguage; onBack: () => void
                   </p>
                 </div>
               </div>
-              <textarea
+              <textarea aria-label={language === "ar" ? "اكتب الموضوع أو الصق نصّاً…" : "Enter a topic or paste text…"}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 disabled={aiLoading}

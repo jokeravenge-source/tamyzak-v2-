@@ -40,6 +40,8 @@ const BottomGroupNav = ({
 
   useEffect(() => {
     setPortalRoot(document.body);
+    document.documentElement.classList.add("has-study-nav");
+    return () => document.documentElement.classList.remove("has-study-nav");
   }, []);
 
   const isItemActive = (key: PrimaryNavItem["key"]) => {
