@@ -66,7 +66,7 @@ export const LanguageGate = ({ onSelect }: { onSelect: (language: AppLanguage) =
                   <h2 className="mt-2 text-xl font-semibold">{option.title}</h2>
                   <p className="mt-1 text-sm leading-6 text-[var(--tmz-muted)]">{option.subtitle}</p>
                 </div>
-                <span className="mt-5 inline-flex min-h-11 items-center justify-between gap-3 rounded-full bg-[#163A73] px-4 text-sm font-medium text-white transition-colors group-hover:bg-[#1b477f]">
+                <span className="mt-5 inline-flex min-h-11 items-center justify-between gap-3 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors group-hover:opacity-90">
                   {option.action}
                   <DirectionArrow className="h-4 w-4" aria-hidden="true" />
                 </span>
