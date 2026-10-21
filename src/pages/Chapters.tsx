@@ -16,6 +16,7 @@ import CrossfadeSubjectTheme from "@/components/CrossfadeSubjectTheme";
 import SeoHead from "@/components/SeoHead";
 import haydarDiwanImage from "@/assets/teachers/haydar-diwan-flashcards.png";
 import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
+import ahmedCh3EnglishInfo from "@/data/flashcardsChemCh3AhmedNadawiEn.info.json";
 
 
 
@@ -75,7 +76,9 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
         .filter((chapter) => chapter.n === 3)
         .map((chapter) => ({ ...chapter, title: "Ionic Equilibrium", arTitle: "الاتزان الأيوني", locked: false }))
     : subject === "chemistry" && chemistryTeacher === "ahmed-al-nadawi"
-      ? chapters.map((chapter) => chapter.n === 4
+      ? chapters.map((chapter) => chapter.n === 3 && language === "en"
+          ? { ...chapter, subtitle: `${ahmedCh3EnglishInfo.cardCount} text flashcards · ${ahmedCh3EnglishInfo.topicCount} topics · Questions and complete working` }
+          : chapter.n === 4
           ? { ...chapter, title: "Electrochemistry", arTitle: "الكيمياء الكهربائية", subtitle: language === "ar" ? "230 بطاقة · أسئلة وملاحظات وتطبيقات محلولة" : "230 cards · Questions, notes and worked practice" }
           : chapter.n === 5
             ? { ...chapter, title: "Coordination Chemistry", arTitle: "الكيمياء التناسقية", subtitle: language === "ar" ? "154 بطاقة · المفاهيم والمسائل والتسمية" : "154 cards · Concepts, calculations and nomenclature" }

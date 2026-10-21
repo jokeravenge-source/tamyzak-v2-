@@ -43,6 +43,8 @@ import { ahmedNadawiChemCh1CardsAr, ahmedNadawiChemCh1TopicsAr } from "@/data/fl
 import { ahmedNadawiChemCh2Cards, ahmedNadawiChemCh2Topics } from "@/data/flashcardsChemCh2AhmedNadawi";
 import { ahmedNadawiChemCh2CardsAr } from "@/data/flashcardsChemCh2AhmedNadawiAr";
 import { ahmedNadawiChemCh3Cards, ahmedNadawiChemCh3Topics } from "@/data/flashcardsChemCh3AhmedNadawi";
+import { ahmedNadawiChemCh3CardsEn, ahmedNadawiChemCh3TopicsEn } from "@/data/flashcardsChemCh3AhmedNadawiEn";
+import { TextStudyFlashcard } from "@/components/TextStudyFlashcard";
 import { ahmedNadawiChemCh4Cards, ahmedNadawiChemCh4Topics } from "@/data/flashcardsChemCh4AhmedNadawi";
 import { ahmedNadawiChemCh4CardsAr } from "@/data/flashcardsChemCh4AhmedNadawiAr";
 import { ahmedNadawiChemCh5Cards, ahmedNadawiChemCh5Topics } from "@/data/flashcardsChemCh5AhmedNadawi";
@@ -227,7 +229,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
           eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
           cards: chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards)
             : chapter === "2" ? (language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards)
-            : chapter === "3" ? ahmedNadawiChemCh3Cards
+            : chapter === "3" ? (language === "ar" ? ahmedNadawiChemCh3Cards : ahmedNadawiChemCh3CardsEn)
             : chapter === "4" ? (language === "ar" ? ahmedNadawiChemCh4CardsAr : ahmedNadawiChemCh4Cards)
             : chapter === "5" ? (language === "ar" ? ahmedNadawiChemCh5CardsAr : ahmedNadawiChemCh5Cards)
             : chapter === "6" ? (language === "ar" ? ahmedNadawiChemCh6CardsAr : ahmedNadawiChemCh6Cards)
@@ -605,10 +607,12 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "3") {
-      return ahmedNadawiChemCh3Topics.map(t => ({
+      const topicList = language === "en" ? ahmedNadawiChemCh3TopicsEn : ahmedNadawiChemCh3Topics;
+      const chapterCards = language === "en" ? ahmedNadawiChemCh3CardsEn : ahmedNadawiChemCh3Cards;
+      return topicList.map(t => ({
         key: `nadawi-ch3-${t.key}`,
         label: t.title,
-        cards: ahmedNadawiChemCh3Cards.filter(c => c.topic === t.key),
+        cards: chapterCards.filter(c => c.topic === t.key),
       }));
     }
     if (isAhmedNadawiDeck && chapter === "4") {
@@ -780,7 +784,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? "nadia-al-nuaimi"
     : isWijdanChemistryDeck
       ? "wijdan"
-      : "default";
+      : isAhmedNadawiDeck
+        ? `ahmed-al-nadawi:${language}`
+        : "default";
   const progressKey = `flashcard-progress:${subject}:${chapter}:${deckProgressScope}:${savedView ? "saved" : topicKey}`;
   const readSavedIndex = (max: number) => {
     try {
@@ -937,6 +943,9 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   });
 
   const card = cards[index];
+  const textStudyCard = isAhmedNadawiDeck && chapter === "3" && language === "en" && card
+    ? ahmedNadawiChemCh3CardsEn.find(item => item.q === card.q && item.a === card.a)
+    : undefined;
   useEffect(() => {
     if (card && !showRating && !showDifficultPicker) seenCards.current.set(keyOf(card), card);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1182,7 +1191,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       >
         {card ? (
           <>
-            <Flashcard
+            {textStudyCard ? <TextStudyFlashcard
+              question={textStudyCard.q}
+              answerBlocks={textStudyCard.answerBlocks}
+              index={index}
+              total={cards.length}
+              onRate={savedView ? undefined : handleRate}
+              intervalHints={intervalHints}
+            /> : <Flashcard
               question={card.q}
               answer={card.a}
               index={index}
@@ -1191,8 +1207,8 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               language={language}
               onRate={savedView ? undefined : handleRate}
               intervalHints={intervalHints}
-              comfortableScrolling={isNadiaBiologyDeck}
-            />
+              comfortableScrolling={isNadiaBiologyDeck || isAhmedNadawiDeck}
+            />}
             {subject === "math" && chapter === "1" && (
               <a
                 href="https://t.me/math_05_a/932"

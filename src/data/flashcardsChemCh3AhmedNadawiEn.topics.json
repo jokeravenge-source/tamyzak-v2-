@@ -1,0 +1,62 @@
+[
+  {
+    "key": "01",
+    "title": "Aqueous Solutions & Electrolytes",
+    "titleAr": "المحاليل المائية والإلكتروليتات"
+  },
+  {
+    "key": "02",
+    "title": "Ionic Equilibrium & Brønsted–Lowry Theory",
+    "titleAr": "الاتزان الأيوني ونظرية برونستد–لوري"
+  },
+  {
+    "key": "03",
+    "title": "pH & Strong Acids and Bases",
+    "titleAr": "الأس الهيدروجيني والحوامض والقواعد القوية"
+  },
+  {
+    "key": "04",
+    "title": "Dilution & Changes in pH",
+    "titleAr": "التخفيف والتغير في الأس الهيدروجيني"
+  },
+  {
+    "key": "05",
+    "title": "Weak Acids & Ionization",
+    "titleAr": "الحوامض الضعيفة والتأين"
+  },
+  {
+    "key": "06",
+    "title": "Weak Bases & Ionization",
+    "titleAr": "القواعد الضعيفة والتأين"
+  },
+  {
+    "key": "07",
+    "title": "Salts & Hydrolysis",
+    "titleAr": "الأملاح والتحلل المائي"
+  },
+  {
+    "key": "08",
+    "title": "The Common Ion Effect",
+    "titleAr": "تأثير الأيون المشترك"
+  },
+  {
+    "key": "09",
+    "title": "Buffer Solutions",
+    "titleAr": "المحاليل المنظمة"
+  },
+  {
+    "key": "10",
+    "title": "Solubility & Solubility Product",
+    "titleAr": "الذوبانية وحاصل الإذابة"
+  },
+  {
+    "key": "11",
+    "title": "pH & Precipitation",
+    "titleAr": "تأثير الأس الهيدروجيني والترسيب"
+  },
+  {
+    "key": "12",
+    "title": "Chapter Questions & Reference Tables",
+    "titleAr": "أسئلة الفصل والجداول"
+  }
+]

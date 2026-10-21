@@ -19,6 +19,8 @@ import { ahmedNadawiChemCh1CardsAr, ahmedNadawiChemCh1TopicsAr } from "@/data/fl
 import { ahmedNadawiChemCh2Cards, ahmedNadawiChemCh2Topics } from "@/data/flashcardsChemCh2AhmedNadawi";
 import { ahmedNadawiChemCh2CardsAr } from "@/data/flashcardsChemCh2AhmedNadawiAr";
 import { ahmedNadawiChemCh3Cards, ahmedNadawiChemCh3Topics } from "@/data/flashcardsChemCh3AhmedNadawi";
+import { ahmedNadawiChemCh3CardsEn, ahmedNadawiChemCh3TopicsEn } from "@/data/flashcardsChemCh3AhmedNadawiEn";
+import { TextStudyContent, type StudyTextBlock } from "@/components/TextStudyContent";
 import { ahmedNadawiChemCh4Cards, ahmedNadawiChemCh4Topics } from "@/data/flashcardsChemCh4AhmedNadawi";
 import { ahmedNadawiChemCh4CardsAr } from "@/data/flashcardsChemCh4AhmedNadawiAr";
 import { ahmedNadawiChemCh5Cards, ahmedNadawiChemCh5Topics } from "@/data/flashcardsChemCh5AhmedNadawi";
@@ -33,6 +35,7 @@ import { ahmedNadawiChemCh8CardsAr } from "@/data/flashcardsChemCh8AhmedNadawiAr
 type Language = "ar" | "en";
 type AccessState = "checking" | "signed-out" | "denied" | "allowed";
 type RawCard = {
+  answerBlocks?: StudyTextBlock[];
   id?: string;
   q: string;
   a: string;
@@ -52,6 +55,7 @@ type DeckDefinition = {
   en: readonly RawCard[] | null;
   ar: readonly RawCard[];
   topics: readonly Topic[];
+  topicsEn?: readonly Topic[];
   topicAr?: Record<string, string>;
 };
 type ReviewCard = RawCard & {
@@ -88,9 +92,10 @@ const decks: DeckDefinition[] = [
     chapter: 3,
     title: "Ionic Equilibrium",
     titleAr: "الاتزان الأيوني",
-    en: null,
+    en: ahmedNadawiChemCh3CardsEn,
     ar: ahmedNadawiChemCh3Cards as RawCard[],
     topics: ahmedNadawiChemCh3Topics as readonly Topic[],
+    topicsEn: ahmedNadawiChemCh3TopicsEn,
   },
   {
     chapter: 4,
@@ -138,7 +143,7 @@ const REVIEWER_EMAILS = new Set(["majs11@gmail.com", "dania28hanna@gmail.com"]);
 const PAGE_SIZE = 50;
 
 function topicLabel(deck: DeckDefinition, key: string, language: Language) {
-  const topic = deck.topics.find((item) => item.key === key);
+  const topic = (language === "en" ? deck.topicsEn ?? deck.topics : deck.topics).find((item) => item.key === key);
   if (!topic) return key ? `Topic ${key}` : "General";
   if (language === "ar") return deck.topicAr?.[key] ?? topic.titleAr ?? topic.title;
   return topic.title;
@@ -244,7 +249,7 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
   }), [language]);
 
   const selectedDeck = chapter === "all" ? null : decks.find((deck) => String(deck.chapter) === chapter) ?? null;
-  const topicOptions = selectedDeck?.topics ?? [];
+  const topicOptions = selectedDeck ? (language === "en" ? selectedDeck.topicsEn ?? selectedDeck.topics : selectedDeck.topics) : [];
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered = useMemo(() => allCards.filter((card) => {
     if (chapter !== "all" && card.chapter !== Number(chapter)) return false;
@@ -351,7 +356,7 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
                 <span className="ml-auto font-mono text-muted-foreground">{card.reviewId}</span>
               </div>
               <h2 className="whitespace-pre-wrap text-base font-black leading-7 md:text-lg">{card.q}</h2>
-              {showAnswers && <div className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-sm leading-7 text-foreground/85 md:text-base">{card.a}</div>}
+              {showAnswers && <div className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-sm leading-7 text-foreground/85 md:text-base">{card.answerBlocks ? <TextStudyContent blocks={card.answerBlocks} /> : card.a}</div>}
               {(card.pages || card.sourceNotes) && (
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
                   {card.pages && <span>Pages: {card.pages}</span>}
