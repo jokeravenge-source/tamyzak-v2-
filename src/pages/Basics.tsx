@@ -394,44 +394,26 @@ const RANK_CARD_THEMES = {
 } as const;
 
 const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
-  All: {
-    active: "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20",
-    idle: "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
-  },
-  Subjects: {
-    active: "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-500/20",
-    idle: "border-blue-400/40 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:text-blue-300",
-  },
-  Study: {
-    active: "border-violet-600 bg-violet-600 text-white shadow-lg shadow-violet-500/20",
-    idle: "border-violet-400/40 bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 dark:text-violet-300",
-  },
-  Progress: {
-    active: "border-amber-500 bg-amber-500 text-white shadow-lg shadow-amber-500/20",
-    idle: "border-amber-400/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300",
-  },
-  Community: {
-    active: "border-cyan-600 bg-cyan-600 text-white shadow-lg shadow-cyan-500/20",
-    idle: "border-cyan-400/40 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300",
-  },
-  Play: {
-    active: "border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-500/20",
-    idle: "border-rose-400/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300",
-  },
-  "Our Teachers": {
-    active: "border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-500/20",
-    idle: "border-indigo-400/40 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-300",
-  },
-  Account: {
-    active: "border-slate-700 bg-slate-700 text-white shadow-lg shadow-slate-500/20",
-    idle: "border-slate-400/40 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 dark:text-slate-300",
-  },
+  All: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
+  Review: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
+  Test: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
+  Organize: { active: "border-[#163A73] bg-[#163A73] text-white", idle: "border-border bg-background text-foreground hover:bg-muted" },
 };
-
-const DEFAULT_TOOL_CATEGORY_TINT = {
-  active: "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20",
-  idle: "border-border bg-secondary/70 text-foreground hover:bg-secondary",
+const DEFAULT_TOOL_CATEGORY_TINT = TOOL_CATEGORY_TINTS.All;
+const TOOL_CATEGORY_LABELS = {
+  ar: { All: "الكل", Review: "مراجعة", Test: "اختبر نفسك", Organize: "تنظيم" },
+  en: { All: "All tools", Review: "Review", Test: "Test yourself", Organize: "Organize" },
+} as const;
+const TOOL_CATEGORY_KEYS: Record<"Review" | "Test" | "Organize", Set<string>> = {
+  Review: new Set(["flashcards", "malazam", "summaries", "adminNotes", "ministerialBank", "mistakes", "notes", "mindmap", "videoNotes", "podcastTutor", "youtube"]),
+  Test: new Set(["mcq", "mcqBank", "essay", "liveBattle", "dailyGame", "challenge", "biologyDrawings", "biologySchemes", "physicsSchemes", "physicsQuickMcq", "physicsProblemSolver", "problemGenerator", "chemicalEquations", "organicEquations", "examGenerator"]),
+  Organize: new Set(["subjectsHub", "ourCourses", "teachers", "ourTeachers", "report", "sessions", "missions", "todo", "leaderboard", "news", "advices", "whoIsBest", "account", "premium", "more", "joinTamayzak", "unlocks", "textToVideo", "canvas", "islamicSurahs", "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat", "englishVerbForms", "englishReadingPractice", "frenchSynonyms", "frenchAntonyms", "psych", "companion", "subjectTutor", "physicsLaws", "physicsActivities", "chemistryExperiments"]),
 };
+function toolCategoryFor(key: string): "Review" | "Test" | "Organize" {
+  if (TOOL_CATEGORY_KEYS.Review.has(key)) return "Review";
+  if (TOOL_CATEGORY_KEYS.Test.has(key)) return "Test";
+  return "Organize";
+}
 
 const FEATURED_COPY = {
   en: {
@@ -699,7 +681,6 @@ const Basics = ({
   }, []);
   const leaderboardRank = rankFor(totalPoints);
   const currentRank = leaderboardRank.key;
-  const rankCardTheme = RANK_CARD_THEMES[currentRank];
   const rankLabel = leaderboardRank.label[language];
   const rankIndex = RANKS.findIndex((rank) => rank.key === currentRank);
   const nextRank = rankIndex >= 0 ? RANKS[rankIndex + 1] : undefined;
@@ -802,14 +783,6 @@ const Basics = ({
   const currentGroup = NAV_GROUPS.find((g) => g.titleEn === activeGroup) ?? NAV_GROUPS[0];
 
   const sidebarTitle = { en: "Sections", ar: "الأقسام" }[language];
-  const welcome = {
-    en: { hi: "Welcome back", sub: "Pick up exactly where you left off." },
-    ar: { hi: "أهلاً بعودتك", sub: "تابع من حيث توقفت." },
-  }[language];
-  const cta = {
-    en: { primary: "Start studying", secondary: "View missions" },
-    ar: { primary: "ابدأ الدراسة", secondary: "اطلع على المهمات" },
-  }[language];
   const recCopy = {
     en: { tag: "Recommended next step", title: motivationalPhrase, body: "Open your flashcards deck and review what you scheduled today.", resume: "Resume studying", view: "View summary", progress: "Progress" },
     ar: { tag: "خطوتك التالية المقترحة", title: motivationalPhrase, body: "افتح بطاقاتك وراجع ما خططت له اليوم.", resume: "استئناف الدراسة", view: "عرض الملخص", progress: "التقدم" },
@@ -1269,35 +1242,30 @@ const Basics = ({
   }
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="tmz-home min-h-screen w-full text-[var(--tmz-ink)]" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
-      <div className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
-        <div className="max-w-5xl mx-auto px-5 md:px-10 h-14 flex items-center justify-between">
+      <div className="sticky top-0 z-40 border-b border-[var(--tmz-line)] bg-[var(--tmz-canvas)]">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <p className="text-base font-bold text-primary leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>tamayzak</p>
+            <img src="/app-icon-192.png" alt="" className="h-8 w-8 rounded-xl" />
+            <p className="text-sm font-semibold leading-tight text-[var(--tmz-ink)]">{language === "ar" ? "تميّزك" : "Tamayzak"}</p>
             <button
               onClick={() => onNav("report")}
               aria-label={language === "ar" ? "خطتي اليوم" : "Today's plan"}
               title={language === "ar" ? "خطتك اليوم — اضغط لعرض الخطة" : "Today's plan — tap to open"}
-              className="relative inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/15 transition-colors"
+              className="relative ms-2 inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--tmz-line)] bg-[var(--tmz-surface)] px-2.5 text-xs font-medium text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)]"
             >
-              <Target className="w-3.5 h-3.5" />
-              <span>{pendingTodos}</span>
-              <span className="hidden sm:inline opacity-80">{language === "ar" ? "لليوم" : "today"}</span>
-              {pendingTodos > 0 && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
-              )}
+              <Target className="h-3.5 w-3.5" />
+              <span>{language === "ar" ? "خطة اليوم" : "Today's plan"}</span>
+              {pendingTodos > 0 && <span className="tabular-nums text-[var(--tmz-muted)]">{pendingTodos}</span>}
             </button>
           </div>
           <button
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className="inline-flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-background text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-w-[10rem] sm:min-w-[16rem]"
+            className="inline-flex h-9 min-w-[9rem] items-center gap-2 rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] px-3 text-xs text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] sm:min-w-[16rem]"
           >
-            <Search className="w-3.5 h-3.5 text-primary" />
+            <Search className="h-3.5 w-3.5 text-[var(--tmz-muted)]" />
             <span className="flex-1 text-start truncate">
               {language === "ar" ? "ابحث عن أداة..." : "Search tools..."}
             </span>
@@ -1307,7 +1275,7 @@ const Basics = ({
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className="ms-2 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="ms-2 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)]"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -1315,22 +1283,17 @@ const Basics = ({
       </div>
 
       {/* Content */}
-      <main className="px-3 sm:px-5 md:px-10 py-4 sm:py-8 md:py-12 pb-48">
-        <h1 className="sr-only">{language === "ar" ? "أدوات الدراسة" : "Study tools"}</h1>
+      <main className="px-4 py-6 pb-48 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <AnimatePresence mode="wait">
         {showAllTools ? (
-          <motion.div
+          <div
             key="all-tools-screen"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="max-w-5xl mx-auto"
+            className="mx-auto max-w-6xl"
           >
             <div className="flex items-center justify-between mb-8">
               <button
                 onClick={() => { setShowAllTools(false); onNav("basics"); }}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-background text-sm font-medium hover:bg-secondary transition-colors"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--tmz-line)] bg-[var(--tmz-surface)] px-4 py-2 text-sm font-medium text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)]"
               >
                 <ArrowLeft className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 {language === "ar" ? "رجوع" : "Back"}
@@ -1344,16 +1307,16 @@ const Basics = ({
                   return true;
                 }).length;
                 return (
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <p className="text-xs font-medium text-[var(--tmz-muted)]">
                     {count} {language === "ar" ? "أداة" : "tools"}
                   </p>
                 );
               })()}
             </div>
-            <header className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            <header className="mb-6">
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
                 {language === "ar" ? "كل أدوات الدراسة" : "All study tools"}
-              </h2>
+              </h1>
               <p className="text-muted-foreground mt-1 text-sm md:text-base">
                 {language === "ar" ? "كل ما تحتاجه للدراسة في مكان واحد." : "Everything you need to study, in one place."}
               </p>
@@ -1363,38 +1326,33 @@ const Basics = ({
                 <span className="mb-2 block text-sm font-semibold">{isRTL ? "شنو تريد تدرس؟" : "Find a study tool"}</span>
                 <input value={toolQuery} onChange={(event) => setToolQuery(event.target.value)}
                   type="search" placeholder={isRTL ? "ابحث بالاسم أو الاستخدام…" : "Search by name or purpose…"}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
+                  className="w-full rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] px-4 py-3 text-[var(--tmz-ink)] placeholder:text-[var(--tmz-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)]" />
               </label>
               <div className="flex flex-wrap gap-2" aria-label={isRTL ? "تصنيفات الأدوات" : "Tool categories"}>
-                {[{ titleEn: "All", titleAr: "الكل" }, ...NAV_GROUPS].map((group) => {
-                  const active = toolCategory === group.titleEn;
-                  const tint = TOOL_CATEGORY_TINTS[group.titleEn] ?? DEFAULT_TOOL_CATEGORY_TINT;
+                {(["All", "Review", "Test", "Organize"] as const).map((category) => {
+                  const active = toolCategory === category;
+                  const tint = TOOL_CATEGORY_TINTS[category] ?? DEFAULT_TOOL_CATEGORY_TINT;
                   return (
                     <button
-                      key={group.titleEn}
+                      key={category}
                       type="button"
                       aria-pressed={active}
-                      onClick={() => setToolCategory(group.titleEn)}
-                      className={`min-h-11 rounded-full border px-4 py-2 text-sm font-black transition-all hover:-translate-y-0.5 ${active ? tint.active : tint.idle}`}
+                      onClick={() => setToolCategory(category)}
+                      className={`min-h-10 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${active ? tint.active : tint.idle}`}
                     >
-                      {isRTL ? group.titleAr : group.titleEn}
+                      {TOOL_CATEGORY_LABELS[language][category]}
                     </button>
                   );
                 })}
               </div>
-              <p className="text-sm text-muted-foreground">{isRTL ? "ما لكيت الأداة؟ جرّب كلمة ثانية أو اختَر «الكل»." : "No matching tool? Try another word or choose All."}</p>
             </div>
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(() => {
                 const seen = new Set<string>();
-                return NAV_GROUPS.filter((g) => toolCategory === "All" || g.titleEn === toolCategory).flatMap((g) => g.items).filter((it) => {
+                return NAV_GROUPS.flatMap((g) => g.items).filter((it) => {
                   const query = toolQuery.trim().toLocaleLowerCase();
                   if (query && ![it.labelAr, it.labelEn, (fc as any)[it.key]?.subtitle ?? ""].join(" ").toLocaleLowerCase().includes(query)) return false;
+                  if (toolCategory !== "All" && toolCategoryFor(it.key) !== toolCategory) return false;
                   if (hiddenStudyTools.has(it.key)) return false;
                   if (seen.has(it.key)) return false;
                   seen.add(it.key);
@@ -1403,77 +1361,55 @@ const Basics = ({
               })().map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
-                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 const premiumLocked = isPremiumTool(it.key) && !isPremium;
                 const displayLocked = isLocked || premiumLocked;
                 return (
-                  <motion.button
+                  <button
                     key={it.key}
-                    variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                    whileHover={isLocked ? undefined : { y: -5 }}
-                    whileTap={isLocked ? undefined : { scale: 0.98 }}
                     disabled={isLocked || (isPremiumTool(it.key) && subscriptionLoading)}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group relative isolate min-h-[190px] overflow-hidden border-2 p-5 text-start shadow-[0_18px_42px_-30px_currentColor] backdrop-blur-xl transition-all ${isLocked ? "cursor-not-allowed opacity-60" : "hover:shadow-[0_24px_50px_-26px_currentColor]"} ${tint.card}`}
-                    style={{ clipPath: "polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px))" }}
+                    className={`group relative flex min-h-[112px] items-start gap-3 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:border-[var(--tmz-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] ${isLocked ? "cursor-not-allowed opacity-60" : ""}`}
                   >
-                    <span aria-hidden className={`absolute -end-10 -top-10 h-32 w-32 rounded-full opacity-30 blur-2xl transition-transform duration-500 group-hover:scale-125 ${tint.icon}`} />
-                    <span aria-hidden className="pointer-events-none absolute inset-[4px] border border-white/20" style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px))" }} />
-                    <span aria-hidden className="absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
                     {isPremiumTool(it.key) && (
-                      <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-1 text-[9px] font-black text-amber-700 backdrop-blur-md dark:text-amber-300">
+                      <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full border border-[var(--tmz-line)] bg-[var(--tmz-panel)] px-2 py-1 text-[11px] font-medium text-[var(--tmz-ink)]">
                         <Crown className="h-2.5 w-2.5" /> {language === "ar" ? "مميّز" : "Premium"}
                       </span>
                     )}
-                    <div className={`relative mb-4 grid h-12 w-12 place-items-center rounded-[1rem] ring-1 ring-white/25 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${tint.icon}`}>
-                      <Icon className="h-5 w-5" />
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--tmz-panel)] text-[var(--tmz-ink)]">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
                     </div>
-                    <h3 className="relative pe-7 text-base font-black text-foreground">
-                      {meta?.title ?? (language === "ar" ? it.labelAr : it.labelEn)}
-                    </h3>
-                    {meta?.subtitle && (
-                      <p className="relative mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{meta.subtitle}</p>
-                    )}
-                    <span className="relative mt-5 flex items-center justify-between gap-3">
-                      <span className="text-xs font-bold text-foreground/70">
+                    <span className="min-w-0 flex-1 pe-5">
+                      <span className="block text-sm font-semibold leading-6">{meta?.title ?? (language === "ar" ? it.labelAr : it.labelEn)}</span>
+                      {meta?.subtitle && <span className="mt-1 block line-clamp-2 text-sm leading-5 text-[var(--tmz-muted)]">{meta.subtitle}</span>}
+                      <span className="mt-2 block text-xs text-[var(--tmz-muted)]">
                         {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : premiumLocked ? (language === "ar" ? "افتح البريميوم" : "Unlock Premium") : (language === "ar" ? "افتح الأداة" : "Open tool")}
                       </span>
-                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-transform group-hover:scale-110 ${tint.icon}`}>
-                        {displayLocked ? <Lock className="h-3.5 w-3.5" /> : <ArrowRight className={`h-3.5 w-3.5 ${isRTL ? "rotate-180" : ""}`} />}
-                      </span>
                     </span>
-                  </motion.button>
+                    <span className="absolute end-4 top-4 text-[var(--tmz-muted)]" aria-hidden="true">
+                      {displayLocked ? <Lock className="h-4 w-4" /> : <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />}
+                    </span>
+                  </button>
                 );
               })}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         ) : (
         <motion.div
           key="dashboard"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
           className="relative text-foreground"
-          style={{ fontFamily: "'Plus Jakarta Sans', 'Cairo', sans-serif" }}
+          style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
-        <div className="mx-auto max-w-5xl">
-          <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/15 via-card to-sky-500/10 p-6 shadow-[0_24px_70px_-48px_hsl(var(--primary)/0.6)] sm:p-8">
-            <span aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full border-[30px] border-primary/10" />
-            <div className="relative max-w-2xl">
-              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/65 px-3 py-1 text-xs font-bold text-primary backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5" />
-                {isRTL ? "تميزك · خطوتك الجاية" : "Tamayzak · your next step"}
-              </span>
-              <h2 className="text-2xl font-black tracking-tight sm:text-4xl">
-                {isRTL ? "شنو تريد تسوي هسه؟" : "What do you want to do now?"}
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-                {isRTL
-                  ? "اختَر خطوة وحدة وابدأ. باقي الأدوات تبقى مرتبة بمكان واحد."
-                  : "Choose one step and begin. Everything else stays organised in one place."}
-              </p>
-            </div>
+        <div className="mx-auto max-w-6xl">
+          <header className="mb-6 border-b border-[var(--tmz-line)] pb-5">
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {isRTL ? "خطوتك الدراسية" : "Your next study step"}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--tmz-muted)]">
+              {recommendationTopic
+                ? (isRTL ? `ابدأ بمراجعة ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}` : `Start with ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}`)
+                : (isRTL ? "ابدأ بمراجعة اليوم، أو اختَر مادة من فصولك." : "Start today's review, or choose a subject and chapter.")}
+            </p>
           </header>
 
           <NewFeatureAnnouncement language={language} />
@@ -1482,8 +1418,7 @@ const Basics = ({
             id="progress-details-trigger"
             type="button"
             onClick={() => openDetail("progress")}
-            className="group mb-6 flex w-full items-center gap-4 rounded-[1.75rem] border border-primary/20 p-4 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
-            style={{ background: rankCardTheme.background, color: rankCardTheme.ink }}
+            className="group mb-6 flex w-full items-center gap-4 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
           >
             <RankStone rank={currentRank} size={64} fillProgress={stoneFill} glow={currentRank === "royal" || currentRank === "diamond"} className="shrink-0" />
             <span className="min-w-0 flex-1">
@@ -1509,18 +1444,17 @@ const Basics = ({
               }}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-blue-400/35 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-5 text-start text-white shadow-[0_22px_45px_-26px_rgba(37,99,235,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-32 overflow-hidden rounded-2xl border border-[#163A73] bg-[#163A73] p-5 text-start text-white transition-colors hover:bg-[#1b477f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#163A73] focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
             >
-              <span aria-hidden="true" className="absolute -end-12 -top-12 h-36 w-36 rounded-full border-[24px] border-white/10" />
-              <span className="relative grid h-12 w-12 place-items-center rounded-2xl bg-white/20 shadow-sm backdrop-blur">
-                <BookOpen className="h-6 w-6" />
-              </span>
-              <span className="relative mt-5 block text-xl font-black">{isRTL ? "ادرس اليوم" : "Study today"}</span>
-              <span className="relative mt-1 block pe-12 text-sm text-white/80">
-                {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
-              </span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-white text-blue-600 transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
+              <span className="relative flex items-center gap-4">
+                <BookOpen className="h-6 w-6 shrink-0 text-white/90" aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-lg font-semibold">{isRTL ? "ادرس اليوم" : "Study today"}</span>
+                  <span className="mt-1 block text-sm text-white/80">
+                    {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
+                  </span>
+                </span>
+                <ArrowRight className={`h-5 w-5 shrink-0 ${isRTL ? "rotate-180" : ""}`} aria-hidden="true" />
               </span>
             </motion.button>
 
@@ -1529,16 +1463,11 @@ const Basics = ({
               onClick={() => navigate("subjectsHub")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-emerald-400/35 bg-gradient-to-br from-emerald-500/20 via-card to-teal-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
-                <Layers className="h-6 w-6" />
-              </span>
-              <span className="mt-5 block text-xl font-black">{isRTL ? "اختَر مادة" : "Choose a subject"}</span>
-              <span className="mt-1 block pe-12 text-sm text-muted-foreground">{isRTL ? "شوف فصول المادة وأدواتها" : "Open its chapters and study tools"}</span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-emerald-500 text-white transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-              </span>
+              <Layers className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="mt-3 block text-base font-semibold">{isRTL ? "اختَر مادة" : "Choose a subject"}</span>
+              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "شوف فصول المادة وأدواتها" : "Open its chapters and study tools"}</span>
             </motion.button>
 
             <motion.button
@@ -1546,16 +1475,11 @@ const Basics = ({
               onClick={() => navigate("ourCourses")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-sky-400/40 bg-gradient-to-br from-sky-500/20 via-card to-cyan-400/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-500/15 text-sky-700 dark:text-sky-300">
-                <GraduationCap className="h-6 w-6" />
-              </span>
-              <span className="mt-5 block text-xl font-black">{isRTL ? "دوراتنا" : "Our Courses"}</span>
-              <span className="mt-1 block pe-12 text-sm text-muted-foreground">{isRTL ? "تصفّح الدورات المتاحة وابدأ الدراسة" : "Browse available courses and start learning"}</span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-sky-600 text-white transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-              </span>
+              <GraduationCap className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="mt-3 block text-base font-semibold">{isRTL ? "دوراتنا" : "Our Courses"}</span>
+              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "تصفّح الدورات المتاحة وابدأ الدراسة" : "Browse available courses and start learning"}</span>
             </motion.button>
 
             <motion.button
@@ -1563,22 +1487,17 @@ const Basics = ({
               onClick={() => onNav("mistakes")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-amber-400/35 bg-gradient-to-br from-amber-500/20 via-card to-orange-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-300">
-                <AlertTriangle className="h-6 w-6" />
-              </span>
-              <span className="mt-5 flex items-center gap-2 text-xl font-black">
+              <AlertTriangle className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="mt-3 flex items-center gap-2 text-base font-semibold">
                 {isRTL ? "مراجعة اليوم" : "Daily review"}
-                {dueMistakes > 0 && <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-slate-950">{dueMistakes}</span>}
+                {dueMistakes > 0 && <span className="rounded-full bg-[var(--tmz-panel)] px-2 py-0.5 text-xs font-medium tabular-nums">{dueMistakes}</span>}
               </span>
-              <span className="mt-1 block pe-12 text-sm text-muted-foreground">
+              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">
                 {dueMistakes > 0
                   ? (isRTL ? "راجع الأخطاء والبطاقات المستحقة اليوم" : "Review due mistakes and flashcards")
                   : (isRTL ? "راجع بطاقاتك المستحقة أو تدرب على أخطائك" : "Practice due flashcards or revisit mistakes")}
-              </span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-amber-500 text-slate-950 transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
             </motion.button>
 
@@ -1587,17 +1506,12 @@ const Basics = ({
               onClick={() => window.dispatchEvent(new CustomEvent("app:open-weakness-check-in"))}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-rose-400/35 bg-gradient-to-br from-rose-500/20 via-card to-violet-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-300">
-                <Target className="h-6 w-6" />
-              </span>
-              <span className="mt-5 block text-xl font-black">{isRTL ? "نقاط ضعفي" : "My weak areas"}</span>
-              <span className="mt-1 block pe-12 text-sm text-muted-foreground">
+              <Target className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="mt-3 block text-base font-semibold">{isRTL ? "نقاط ضعفي" : "My weak areas"}</span>
+              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">
                 {isRTL ? "حدد المواد والفصول اللي تحتاج تقويها" : "Identify the subjects and chapters you need to strengthen"}
-              </span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-rose-600 text-white transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
               </span>
             </motion.button>
 
@@ -1606,32 +1520,27 @@ const Basics = ({
               onClick={() => setShowAllTools(true)}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-44 overflow-hidden rounded-[1.75rem] border border-violet-400/35 bg-gradient-to-br from-violet-500/20 via-card to-fuchsia-500/10 p-5 text-start shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:p-6"
+              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-300">
-                <Search className="h-6 w-6" />
-              </span>
-              <span className="mt-5 block text-xl font-black">{isRTL ? "كل الأدوات" : "All tools"}</span>
-              <span className="mt-1 block pe-12 text-sm text-muted-foreground">{isRTL ? "ابحث عن أي أداة بمكان واحد" : "Find every tool in one organised screen"}</span>
-              <span className="absolute bottom-5 end-5 grid h-9 w-9 place-items-center rounded-full bg-violet-600 text-white transition-transform group-hover:scale-110">
-                <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
-              </span>
+              <Search className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="mt-3 block text-base font-semibold">{isRTL ? "كل الأدوات" : "All tools"}</span>
+              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "ابحث عن أي أداة بمكان واحد" : "Find every tool in one organised screen"}</span>
             </motion.button>
           </section>
 
           <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />
-          <section className="mt-6 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-border/70 bg-card/70 p-3 shadow-sm sm:gap-4 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
-            <div className="rounded-2xl bg-primary/10 p-3 text-center">
-              <p className="text-xl font-black text-primary sm:text-2xl">{streakDays ?? "—"}</p>
-              <p className="mt-1 text-[10px] font-bold text-muted-foreground sm:text-xs">{isRTL ? "أيام متواصلة" : "day streak"}</p>
+          <section className="mt-6 grid grid-cols-3 divide-x divide-x-reverse divide-[var(--tmz-line)] rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-3 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
+            <div className="px-2 text-center">
+              <p className="text-xl font-normal tabular-nums text-[var(--tmz-ink)] sm:text-2xl">{streakDays ?? "—"}</p>
+              <p className="mt-1 text-xs text-[var(--tmz-muted)]">{isRTL ? "أيام متواصلة" : "day streak"}</p>
             </div>
-            <div className="rounded-2xl bg-amber-500/10 p-3 text-center">
-              <p className="text-xl font-black text-amber-600 dark:text-amber-300 sm:text-2xl">{totalPoints}</p>
-              <p className="mt-1 text-[10px] font-bold text-muted-foreground sm:text-xs">{isRTL ? "نقطة" : "points"}</p>
+            <div className="px-2 text-center">
+              <p className="text-xl font-normal tabular-nums text-[var(--tmz-ink)] sm:text-2xl">{totalPoints}</p>
+              <p className="mt-1 text-xs text-[var(--tmz-muted)]">{isRTL ? "نقطة" : "points"}</p>
             </div>
-            <div className="rounded-2xl bg-emerald-500/10 p-3 text-center">
-              <p className="text-xl font-black text-emerald-600 dark:text-emerald-300 sm:text-2xl">{pendingTodos}</p>
-              <p className="mt-1 text-[10px] font-bold text-muted-foreground sm:text-xs">{isRTL ? "مهام اليوم" : "tasks today"}</p>
+            <div className="px-2 text-center">
+              <p className="text-xl font-normal tabular-nums text-[var(--tmz-ink)] sm:text-2xl">{pendingTodos}</p>
+              <p className="mt-1 text-xs text-[var(--tmz-muted)]">{isRTL ? "مهام اليوم" : "tasks today"}</p>
             </div>
           </section>
         </div>
