@@ -104,6 +104,7 @@ export default function PrivateStudyRooms({
   const roomTimers = useStudyTimerPresence();
   const [now, setNow] = useState(Date.now());
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canTakeOwnership, setCanTakeOwnership] = useState(false);
   const [bans, setBans] = useState<{ user_id: string; display_name: string | null }[]>([]);
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [openProfile, setOpenProfile] = useState<string | null>(null);
@@ -125,7 +126,7 @@ export default function PrivateStudyRooms({
         deleted: "تم حذف الرسالة", roomView: "قاعة الدراسة",
         makeOwner: "تعيين كصاحب الغرفة", ownerChanged: "تم نقل ملكية الغرفة",
         transferConfirm: "هل تريد جعل هذا الطالب صاحب الغرفة؟", noTimer: "لا يوجد مؤقّت",
-        takeOwner: "استلام الملكية (مشرف)", takeConfirm: "هل تريد استلام ملكية هذه الغرفة؟",
+        takeOwner: "استلام ملكية الغرفة", takeConfirm: "هل تريد استلام ملكية هذه الغرفة؟",
         bannedList: "المحظورون", unban: "رفع الحظر", unbanned: "تم رفع الحظر", noBans: "لا يوجد محظورون",
         showMore: "عرض المزيد", showLess: "عرض أقل", publicRooms: "الغرف العامة",
         publicRoom: "عامة", privateRoom: "خاصة", visibility: "نوع الغرفة",
@@ -146,7 +147,7 @@ export default function PrivateStudyRooms({
         deleted: "Message deleted", roomView: "Study hall",
         makeOwner: "Make owner", ownerChanged: "Room ownership transferred",
         transferConfirm: "Make this student the room owner?", noTimer: "No timer",
-        takeOwner: "Take ownership (admin)", takeConfirm: "Take ownership of this room?",
+        takeOwner: "Take room ownership", takeConfirm: "Take ownership of this room?",
         bannedList: "Banned members", unban: "Unban", unbanned: "Member unbanned", noBans: "No banned members",
         showMore: "Show more", showLess: "Show less", publicRooms: "Public rooms",
         publicRoom: "Public", privateRoom: "Private", visibility: "Room type",
@@ -177,6 +178,8 @@ export default function PrivateStudyRooms({
       setDisplayName(prof?.display_name || u.email?.split("@")[0] || "Student");
       const { data: adm } = await supabase.rpc("has_role", { _user_id: u.id, _role: "admin" });
       setIsAdmin(!!adm);
+      const { data: canTake } = await supabase.rpc("can_take_study_room_ownership");
+      setCanTakeOwnership(!!canTake);
     })();
   }, []);
 
@@ -506,8 +509,7 @@ export default function PrivateStudyRooms({
   const takeOwnership = async () => {
     if (!room || !userId) return;
     if (!window.confirm(L.takeConfirm)) return;
-    const { error } = await supabase.from("study_rooms")
-      .update({ owner_id: userId }).eq("id", room.id);
+    const { error } = await supabase.rpc("take_study_room_ownership", { _room: room.id });
     if (error) { toast.error(error.message); return; }
     toast.success(L.ownerChanged);
     loadRoom(room.id);
@@ -669,7 +671,7 @@ export default function PrivateStudyRooms({
         </button>
       </div>
 
-      {isAdmin && room.owner_id !== userId && (
+      {(isAdmin || canTakeOwnership) && room.owner_id !== userId && (
         <button onClick={takeOwnership}
           className="w-full mb-3 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-medium text-primary flex items-center justify-center gap-1.5">
           <Crown className="w-3.5 h-3.5" /> {L.takeOwner}
