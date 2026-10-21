@@ -1,25 +1,29 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { Bot, Home, LayoutGrid, UserRound, UsersRound } from "lucide-react";
+import { Bot, Home, LayoutGrid, UserRound, UsersRound, Zap } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type PrimaryNavItem = {
-  key: MainMenuChoice | "guide";
+  key: MainMenuChoice | "guide" | "tesla";
   labelAr: string;
   labelEn: string;
   Icon: ComponentType<{ className?: string }>;
+  href?: string;
 };
 
-// Keep the persistent navigation intentionally small. Everything beyond these
-// five destinations lives in "All tools", so students always know where to go.
+const TESLA_INSTAGRAM_URL = "https://www.instagram.com/tesl_astore/?utm_source=ig_web_button_share_sheet";
+
+// Keep the persistent study destinations small. Tesla is a clearly labeled
+// external destination so it does not compete with the active app section.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
   { key: "guide", labelAr: "المرشد", labelEn: "Guide", Icon: Bot },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
   { key: "more", labelAr: "كل الأدوات", labelEn: "All tools", Icon: LayoutGrid },
+  { key: "tesla", labelAr: "تيسلا", labelEn: "Tesla", Icon: Zap, href: TESLA_INSTAGRAM_URL },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
 ];
 
@@ -45,7 +49,7 @@ const BottomGroupNav = ({
   }, []);
 
   const isItemActive = (key: PrimaryNavItem["key"]) => {
-    if (key === "guide") return false;
+    if (key === "guide" || key === "tesla") return false;
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
       return Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
@@ -58,6 +62,7 @@ const BottomGroupNav = ({
       onGuide();
       return;
     }
+    if (key === "tesla") return;
     onSelect(key);
   };
 
@@ -78,23 +83,19 @@ const BottomGroupNav = ({
         aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
       >
         <LayoutGroup id="primary-bottom-navigation">
-          <div className="grid grid-cols-5 gap-1">
-            {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon }) => {
+          <div className="grid grid-cols-6 gap-1">
+            {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon, href }) => {
               const selected = isItemActive(key);
-              return (
-                <motion.button
-                  key={key}
-                  type="button"
-                  whileTap={{ scale: 0.94 }}
-                  onClick={() => selectItem(key)}
-                  aria-current={selected ? "page" : undefined}
-                  aria-label={isRtl ? labelAr : labelEn}
-                  className={`relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold transition-colors ${
-                      selected
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                  }`}
-                >
+              const label = isRtl ? labelAr : labelEn;
+              const itemClassName = `relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                selected
+                  ? "text-primary-foreground"
+                  : key === "tesla"
+                    ? "text-primary hover:bg-primary/10 hover:text-primary"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`;
+              const itemContent = (
+                <>
                   {selected && (
                     <motion.span
                       layoutId="primary-bottom-navigation-active"
@@ -103,9 +104,37 @@ const BottomGroupNav = ({
                     />
                   )}
                   <Icon className="relative z-10 h-[18px] w-[18px]" />
-                  <span className="relative z-10 max-w-full truncate">
-                    {isRtl ? labelAr : labelEn}
-                  </span>
+                  <span className="relative z-10 max-w-full truncate">{label}</span>
+                </>
+              );
+
+              if (href) {
+                return (
+                  <motion.a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileTap={{ scale: 0.94 }}
+                    aria-label={`${label} · Instagram`}
+                    className={itemClassName}
+                  >
+                    {itemContent}
+                  </motion.a>
+                );
+              }
+
+              return (
+                <motion.button
+                  key={key}
+                  type="button"
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => selectItem(key)}
+                  aria-current={selected ? "page" : undefined}
+                  aria-label={label}
+                  className={itemClassName}
+                >
+                  {itemContent}
                 </motion.button>
               );
             })}
