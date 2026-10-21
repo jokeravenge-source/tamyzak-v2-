@@ -76,4 +76,17 @@ describe("Ahmed Al-Nadawi — Chemistry Chapter 1 Arabic source match", () => {
       a: "نحو +28.48 kJ/mol.",
     });
   });
+
+  it("keeps the key Chapter 1 definitions complete against the Arabic handout", () => {
+    expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0001")?.a).toContain(
+      "أكبر قدر ممكن من الطاقة الحرارية الناتجة عن احتراق الوقود",
+    );
+    expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0018")?.a).toContain(
+      "قد تكون حقيقية أو تخيلية",
+    );
+    expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0037")).toMatchObject({
+      q: "عرّف درجة الحرارة، واذكر رمزها.",
+      a: "هي مقياس للطاقة الحرارية، ويرمز لها بالحرف T.",
+    });
+  });
 });
