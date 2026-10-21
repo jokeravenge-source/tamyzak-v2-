@@ -1,4 +1,6 @@
 import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
+import { applyTheme, getInitialTheme } from "@/components/ThemePicker";
 import SeoHead from "@/components/SeoHead";
 import { PUBLIC_TOOLS, getPublicTool } from "@/data/publicTools";
 
@@ -34,6 +36,10 @@ const getAppHref = (slug: string) => {
 };
 
 const ToolLanding = ({ slug }: { slug: string }) => {
+  useEffect(() => {
+    applyTheme(getInitialTheme());
+  }, []);
+
   const tool = getPublicTool(slug);
   if (!tool) return null;
 
@@ -94,7 +100,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
           <p className="mt-4 leading-relaxed text-muted-foreground">{tool.intro}</p>
           <a
             href={appHref}
-            className="mt-6 inline-flex h-11 items-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="mt-6 inline-flex h-11 items-center rounded-full bg-primary px-6 font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {tool.cta}
           </a>
@@ -111,9 +117,9 @@ const ToolLanding = ({ slug }: { slug: string }) => {
           <h2 className="mb-4 text-xl font-bold">أسئلة شائعة</h2>
           <div className="space-y-4">
             {tool.faq.map((f) => (
-              <article key={f.q} className="rounded-2xl border border-slate-300 bg-slate-100 p-4 text-slate-950 shadow-sm">
-                <h3 className="text-base font-bold leading-relaxed text-slate-950">{f.q}</h3>
-                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-700">{f.a}</p>
+            <article key={f.q} className="rounded-2xl border border-border/70 bg-muted/50 p-5 text-foreground">
+              <h3 className="text-base font-bold leading-relaxed">{f.q}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
               </article>
             ))}
           </div>
@@ -126,7 +132,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
               <li key={t.slug}>
                 <a
                   href={`/tools/${t.slug}`}
-                  className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  className="inline-block rounded-full bg-muted px-4 py-2 font-semibold text-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   {t.title}
                 </a>
@@ -135,7 +141,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
             <li>
               <a
                 href="/tools"
-                className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                className="inline-block rounded-full bg-muted px-4 py-2 font-semibold text-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 كل الأدوات
               </a>
@@ -143,7 +149,7 @@ const ToolLanding = ({ slug }: { slug: string }) => {
             <li>
               <a
                 href="/ministerial-questions"
-                className="inline-block rounded-full border border-slate-300 bg-slate-100 px-4 py-2 font-semibold text-slate-900 shadow-sm transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                className="inline-block rounded-full bg-muted px-4 py-2 font-semibold text-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 الأسئلة الوزارية مع الأجوبة
               </a>

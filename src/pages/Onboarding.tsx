@@ -13,14 +13,12 @@ import {
 } from "@/lib/onboarding";
 import { pushTodos } from "@/lib/todosSync";
 import {
-  logOnboardingStepViewed, logOnboardingStepCompleted,
-  logContentUnitCompleted, logFirstFeatureTouch,
+  logOnboardingStepViewed, logOnboardingStepCompleted, logFirstFeatureTouch,
 } from "@/lib/userEvents";
 import type { ChapterMeta } from "@/data/subjectChapters";
 
 const CHANNEL_URL = "https://t.me/Tamayuzak";
-const STEP_NAMES = ["subject_picker", "diagnostic", "results", "streak_hook", "dashboard_ready"];
-/** MCQ diagnostic (step 2) is disabled until the new MCQ bank lands. */
+const STEP_NAMES = ["subject_picker", "topic_self_report", "results", "streak_hook", "dashboard_ready"];
 const STEP_DISPLAY: Record<number, number> = { 1: 1, 3: 2, 4: 3, 5: 4 };
 const TOTAL_STEPS = 4;
 
@@ -34,9 +32,9 @@ const T = {
     step: "الخطوة", of: "من",
     s1Tag: "لنبدأ", s1Title: "أي مادة تريد أن تتقنها أولاً؟", s1Sub: "اختر مادة، ثم من 1 إلى 3 مواضيع تشعر أنها نقاط ضعفك.",
     pickTopics: "اختر نقاط ضعفك (1-3)", continue: "متابعة", back: "رجوع",
-    s2Tag: "اختبار سريع", s2Title: "خمسة أسئلة فقط", s2Sub: "لنعرف أين أنت بالضبط.",
-    s3Tag: "النتيجة", s3Title: "هذه خريطتك", strong: "نقاط قوتك", weak: "تحتاج مراجعة",
-    deckReady: "جهّزنا لك مجموعة بطاقات", deckReadyBody: "بطاقة مراجعة متباعدة عن أضعف موضوع لديك، جاهزة الآن.",
+    s2Tag: "خطة المراجعة", s2Title: "هذه المواضيع التي اخترتها", s2Sub: "سنرتب لك مراجعة وبطاقات للموضوع الذي اخترته أولاً.",
+    s3Tag: "خطة المراجعة", s3Title: "مواضيعك للمراجعة", weak: "اخترته للمراجعة",
+    deckReady: "جهّزنا لك مجموعة بطاقات", deckReadyBody: "بطاقات مراجعة للموضوع الذي اخترته أولاً.",
     startStudying: "ابدأ الدراسة", later: "لاحقاً",
     s4Tag: "استمر", s4Title: "حافظ على سلسلتك", s4Body: "ارجع غداً لتحافظ على سلسلتك وتكسب 10 نقاط إضافية كل يوم.",
     streak: "سلسلتك الحالية", points: "نقاطك", days: "يوم",
@@ -49,9 +47,9 @@ const T = {
     step: "Step", of: "of",
     s1Tag: "Let's start", s1Title: "Which subject do you want to master first?", s1Sub: "Pick a subject, then 1–3 topics you feel weakest in.",
     pickTopics: "Pick your weak areas (1-3)", continue: "Continue", back: "Back",
-    s2Tag: "Quick check", s2Title: "Just five questions", s2Sub: "So we know exactly where you stand.",
-    s3Tag: "Results", s3Title: "Here is your map", strong: "Your strengths", weak: "Needs review",
-    deckReady: "A flashcard deck is ready", deckReadyBody: "Spaced-repetition cards for your weakest topic, due right now.",
+    s2Tag: "Review plan", s2Title: "Topics you selected", s2Sub: "We’ll prepare review cards for the first topic you selected.",
+    s3Tag: "Review plan", s3Title: "Your review topics", weak: "Selected for review",
+    deckReady: "A flashcard deck is ready", deckReadyBody: "Review cards for the first topic you selected.",
     startStudying: "Start studying", later: "Later",
     s4Tag: "Keep going", s4Title: "Protect your streak", s4Body: "Come back tomorrow to keep your streak and earn 10 extra points every day.",
     streak: "Current streak", points: "Your points", days: "days",
@@ -76,7 +74,6 @@ export default function Onboarding({
   const [step, setStep] = useState(1);
   const [subject, setSubject] = useState<OnboardingSubject | null>(null);
   const [topics, setTopics] = useState<number[]>([]);
-  const answers: boolean[] = [];
   const [deckCount, setDeckCount] = useState(0);
   const [stats, setStats] = useState<{ streak: number; points: number }>({ streak: 0, points: 0 });
   const [tgOptIn, setTgOptIn] = useState(false);
@@ -88,14 +85,14 @@ export default function Onboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  /* Without the diagnostic, the first picked weak topic is treated as weakest. */
-  const weakestTopic = useMemo(() => topics[0] ?? 1, [topics]);
+  // Until a real diagnostic is available, use the first self-selected topic as the study recommendation.
+  const recommendedTopic = useMemo(() => topics[0] ?? 1, [topics]);
 
-  const weakestMeta = topicList.find((c) => c.n === weakestTopic) ?? topicList[0];
+  const recommendedMeta = topicList.find((c) => c.n === recommendedTopic) ?? topicList[0];
 
   /* ---------- step transitions ---------- */
 
-  const startDiagnostic = () => {
+  const continueToPlan = () => {
     if (!subject || topics.length === 0) return;
     logOnboardingStepCompleted(1, STEP_NAMES[0], { subject, topics });
     setStep(3);
@@ -103,15 +100,15 @@ export default function Onboarding({
 
   /* auto-generate the deck as soon as the results screen opens */
   useEffect(() => {
-    if (step !== 3 || !subject || !weakestMeta) return;
+    if (step !== 3 || !subject || !recommendedMeta) return;
     let cancelled = false;
     (async () => {
-      const n = await seedWeakTopicDeck({ subject, chapter: weakestMeta.n, language: lang });
+      const n = await seedWeakTopicDeck({ subject, chapter: recommendedMeta.n, language: lang });
       if (!cancelled) setDeckCount(n);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, subject, weakestMeta?.n]);
+  }, [step, subject, recommendedMeta?.n]);
 
   /* points + streak for the hook screen */
   useEffect(() => {
@@ -131,10 +128,7 @@ export default function Onboarding({
   }, [step]);
 
   const goResultsNext = (startStudying: boolean) => {
-    logOnboardingStepCompleted(3, STEP_NAMES[2], { subject, weakest: weakestTopic, deck_cards: deckCount });
-    logContentUnitCompleted("onboarding_diagnostic", subject ?? undefined, {
-      score: answers.filter(Boolean).length, total: answers.length,
-    });
+    logOnboardingStepCompleted(3, STEP_NAMES[2], { subject, selected_topics: topics, recommended_topic: recommendedTopic, deck_cards: deckCount });
     if (startStudying) {
       logFirstFeatureTouch("flashcards");
       finish(true);
@@ -150,26 +144,26 @@ export default function Onboarding({
 
   /* suggested todos when the dashboard screen opens */
   useEffect(() => {
-    if (step !== 5 || !subject || !weakestMeta) return;
-    const items = addSuggestedTodos({ subject, topic: weakestMeta, language: lang });
+    if (step !== 5 || !subject || !recommendedMeta) return;
+    const items = addSuggestedTodos({ subject, topic: recommendedMeta, language: lang });
     void pushTodos(items);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const finish = (startStudying: boolean) => {
-    if (!subject || !weakestMeta) return;
+    if (!subject || !recommendedMeta) return;
     saveOnboarding({
       completed: true,
       subject,
       topics,
-      weakestTopic: weakestMeta.n,
-      score: answers.filter(Boolean).length,
-      total: answers.length,
+      weakestTopic: recommendedMeta.n,
+      score: 0,
+      total: 0,
       telegramOptIn: tgOptIn,
       completedAt: new Date().toISOString(),
     });
     logOnboardingStepCompleted(5, STEP_NAMES[4], { subject, start_studying: startStudying });
-    onFinish({ subject, chapter: weakestMeta.n, startStudying });
+    onFinish({ subject, chapter: recommendedMeta.n, startStudying });
   };
 
   const Next = isRTL ? ArrowLeft : ArrowRight;
@@ -247,7 +241,7 @@ export default function Onboarding({
 
               <button
                 disabled={!subject || topics.length === 0}
-                onClick={startDiagnostic}
+                onClick={continueToPlan}
                 className="mt-7 w-full min-h-[52px] rounded-2xl bg-primary text-primary-foreground font-bold disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {t.continue} <Next className="w-4 h-4" />
@@ -267,18 +261,13 @@ export default function Onboarding({
               <div className="mt-5 space-y-3">
                 {topics.map((n) => {
                   const meta = topicList.find((c) => c.n === n);
-                  const strong = false;
-                  const pct = 100;
                   return (
                     <div key={n} className="rounded-2xl border border-border bg-card p-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-sm font-semibold text-foreground">{meta ? topicLabel(meta, lang) : n}</span>
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${strong ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600"}`}>
+                        <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground">
                           {t.weak}
                         </span>
-                      </div>
-                      <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={`h-full rounded-full ${strong ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -289,7 +278,7 @@ export default function Onboarding({
                 <Layers className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-foreground">
-                    {t.deckReady}{weakestMeta ? ` — ${topicLabel(weakestMeta, lang)}` : ""} {deckCount ? `(${deckCount})` : ""}
+                    {t.deckReady}{recommendedMeta ? ` — ${topicLabel(recommendedMeta, lang)}` : ""} {deckCount ? `(${deckCount})` : ""}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{t.deckReadyBody}</p>
                 </div>
@@ -360,7 +349,7 @@ export default function Onboarding({
               <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full border border-primary/20">{t.s5Tag}</span>
               <h2 className="mt-3 text-xl font-bold text-foreground">{t.s5Title}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {t.s5Body} {subjectLabelFor(subject!, lang)}{weakestMeta ? ` — ${topicLabel(weakestMeta, lang)}` : ""}.
+                {t.s5Body} {subjectLabelFor(subject!, lang)}{recommendedMeta ? ` — ${topicLabel(recommendedMeta, lang)}` : ""}.
               </p>
               <div className="mt-5 rounded-2xl border border-border bg-card p-4 flex items-start gap-3">
                 <ListChecks className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />

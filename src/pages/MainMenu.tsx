@@ -1,16 +1,15 @@
-import { Layers, GraduationCap, BookMarked, FileText, HelpCircle, Headphones, ArrowRight, Sparkles, Lock, Compass, LineChart, Search, Youtube, StickyNote, Trophy } from "lucide-react";
+import { Layers, GraduationCap, BookMarked, FileText, HelpCircle, Headphones, ArrowRight, Lock, Compass, LineChart, Search, Youtube, StickyNote, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { type AppLanguage } from "@/components/LanguageGate";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import StreakTree from "@/components/StreakTree";
-import CountdownTimer from "@/components/CountdownTimer";
 
 
 const copy = {
   en: {
     badge: "Welcome",
-    title: "Your Study Hub",
+    title: "Study tools",
     description: "Pick what you want to do today. More tools are on the way.",
     soon: "Coming soon",
     hi: "Hi",
@@ -35,7 +34,7 @@ const copy = {
   },
   ar: {
     badge: "أهلاً بك",
-    title: "منصة الدراسة",
+    title: "الأدوات الدراسية",
     description: "اختر ما تريد البدء به اليوم. المزيد من الأدوات قريباً.",
     soon: "قريباً",
     hi: "أهلاً",
@@ -107,15 +106,13 @@ const MainMenu = ({
   const openSearch = () => window.dispatchEvent(new Event("app:open-search"));
 
   return (
-    <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
+    <main className="min-h-screen px-4 py-8 sm:px-6 md:py-12" dir={language === "ar" ? "rtl" : "ltr"}>
 
       <div className="absolute top-6 inset-x-6 z-20 flex justify-center">
         <button
           onClick={openSearch}
           aria-label={language === "ar" ? "بحث" : "Search"}
-          className="w-full max-w-md inline-flex items-center gap-2 h-11 px-4 rounded-full border border-white/10 bg-secondary/60 backdrop-blur text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-300"
+          className="w-full max-w-md inline-flex items-center gap-2 h-11 px-4 rounded-full border border-border bg-card text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Search className="w-4 h-4 text-primary" />
           <span className="flex-1 text-start">
@@ -125,17 +122,12 @@ const MainMenu = ({
         </button>
       </div>
 
-      <CountdownTimer target="2026-08-07T00:00:00" language={language} />
-
-      <header className="text-center max-w-3xl mx-auto mt-8 z-10 relative animate-fade-up">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{text.badge}</span>
-        </div>
-        <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">{text.title}</h1>
-        <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">{text.description}</p>
+      <header className="relative z-10 mx-auto mt-16 max-w-6xl animate-fade-up text-start">
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">{text.badge} · Tamayzak</p>
+        <h1 className="text-3xl font-bold leading-tight text-foreground">{text.title}</h1>
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground">{text.description}</p>
         {username && (
-          <p className="mt-3 text-sm text-primary font-medium">{text.hi}, {username} 👋</p>
+          <p className="mt-3 text-sm font-medium text-muted-foreground">{text.hi}, {username}</p>
         )}
       </header>
 
@@ -143,7 +135,7 @@ const MainMenu = ({
         initial="hidden"
         animate="show"
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-        className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative"
+        className="relative z-10 mx-auto mt-7 grid max-w-6xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         {items.map((it) => {
           const Icon = it.Icon;
@@ -152,49 +144,31 @@ const MainMenu = ({
             <motion.button
               key={it.key}
               variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } }}
-              whileHover={available ? { y: -6 } : undefined}
-              whileTap={available ? { scale: 0.97 } : undefined}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              whileTap={available ? { scale: 0.99 } : undefined}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={() => available && onSelect(it.key as MainMenuChoice)}
               disabled={it.locked}
-              className={`group relative text-left rounded-3xl p-6 h-44 border backdrop-blur overflow-hidden
+              className={`group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-2xl border p-5 text-start transition-colors
                 ${available
-                  ? it.key === "report"
-                    ? "border-primary bg-primary/5 hover:-translate-y-2 hover:border-primary cursor-pointer shadow-lg hover:shadow-[var(--shadow-glow)]"
-                    : "border-primary/40 bg-secondary/40 hover:-translate-y-2 hover:border-primary cursor-pointer shadow-lg hover:shadow-[var(--shadow-glow)]"
-                  : "border-white/5 bg-secondary/20 opacity-60 cursor-not-allowed"}`}
+                  ? "border-border bg-card hover:bg-muted/50 cursor-pointer"
+                  : "border-border/60 bg-muted/30 opacity-60 cursor-not-allowed"}`}
             >
-              {available && (
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }}
-                />
-              )}
-
-              <div className="relative z-10 flex items-start justify-between">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${it.key === "report" ? "bg-primary" : available ? "bg-primary/15" : "bg-muted/20"}`}>
-                  <Icon className={`w-6 h-6 ${it.key === "report" ? "text-primary-foreground" : available ? "text-primary" : "text-muted-foreground/60"}`} />
-                </div>
+              <div className="relative z-10 flex items-center justify-between">
+                <Icon aria-hidden="true" className={`h-5 w-5 ${available ? "text-muted-foreground" : "text-muted-foreground/60"}`} />
                 {it.locked ? (
                   <Lock className="w-4 h-4 text-muted-foreground/60" />
                 ) : (
-                  <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 )}
               </div>
 
-              <div className="relative z-10 mt-6">
-                <h3 className={`text-2xl font-semibold mb-1 ${available ? "text-foreground" : "text-muted-foreground"}`}>
+              <div className="relative z-10 mt-5">
+                <h3 className={`mb-1 text-lg font-semibold ${available ? "text-foreground" : "text-muted-foreground"}`}>
                   {it.title}
                 </h3>
                 <p className="text-sm text-muted-foreground">{it.locked ? text.soon : it.subtitle}</p>
               </div>
 
-              {available && (
-                <div
-                  className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700"
-                  style={{ background: "var(--gradient-primary)" }}
-                />
-              )}
             </motion.button>
           );
         })}

@@ -36,9 +36,9 @@ export function subjectLabelFor(subject: OnboardingSubject, language: "ar" | "en
 export type OnboardingProfile = {
   completed: boolean;
   subject: OnboardingSubject;
-  topics: number[];        // chapter numbers picked as weak areas
-  weakestTopic: number;    // chapter number with the lowest diagnostic score
-  score: number;           // correct answers
+  topics: number[];        // chapter numbers self-selected for review
+  weakestTopic: number;    // first selected chapter used as the study recommendation
+  score: number;           // remains 0 until a diagnostic exists
   total: number;
   telegramOptIn: boolean;
   completedAt: string;
