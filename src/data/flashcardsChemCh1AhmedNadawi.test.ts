@@ -79,7 +79,7 @@ describe("Ahmed Al-Nadawi — Chemistry Chapter 1 Arabic source match", () => {
 
   it("keeps the key Chapter 1 definitions complete against the Arabic handout", () => {
     expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0001")?.a).toContain(
-      "أكبر قدر ممكن من الطاقة الحرارية الناتجة عن احتراق الوقود",
+      "أكبر قدر ممكن من الطاقة الحرارية الناتجة من احتراق الوقود",
     );
     expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0018")?.a).toContain(
       "قد تكون حقيقية أو تخيلية",
