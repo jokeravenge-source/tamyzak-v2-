@@ -89,14 +89,14 @@ const BottomGroupNav = ({
                   aria-label={isRtl ? labelAr : labelEn}
                   className={`relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold transition-colors ${
                       selected
-                      ? "bg-muted text-foreground"
+                      ? "text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   }`}
                 >
                   {selected && (
                     <motion.span
                       layoutId="primary-bottom-navigation-active"
-                      className="absolute inset-0 rounded-xl bg-muted"
+                      className="absolute inset-0 rounded-xl bg-primary"
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
