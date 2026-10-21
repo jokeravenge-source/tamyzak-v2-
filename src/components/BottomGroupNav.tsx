@@ -72,10 +72,7 @@ const BottomGroupNav = ({
       dir={isRtl ? "rtl" : "ltr"}
     >
       <motion.nav
-        initial={{ y: 60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-auto w-full max-w-xl rounded-2xl border border-border/80 bg-background/90 p-1.5 shadow-[0_18px_50px_-12px_hsl(var(--primary)/0.25)] backdrop-blur-xl"
+        className="pointer-events-auto w-full max-w-xl rounded-2xl border border-border bg-background p-1.5"
         aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
       >
         <LayoutGroup id="primary-bottom-navigation">
@@ -91,15 +88,15 @@ const BottomGroupNav = ({
                   aria-current={selected ? "page" : undefined}
                   aria-label={isRtl ? labelAr : labelEn}
                   className={`relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold transition-colors ${
-                    selected
-                      ? "text-primary-foreground"
+                      selected
+                      ? "bg-muted text-foreground"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   }`}
                 >
                   {selected && (
                     <motion.span
                       layoutId="primary-bottom-navigation-active"
-                      className="absolute inset-0 rounded-xl bg-primary shadow-[0_8px_22px_hsl(var(--primary)/0.3)]"
+                      className="absolute inset-0 rounded-xl bg-muted"
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
