@@ -3465,7 +3465,6 @@ export type Database = {
         }[]
       }
       cleanup_inactive_study_room_members: { Args: never; Returns: number }
-      can_take_study_room_ownership: { Args: never; Returns: boolean }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       get_due_mcq_bank_reviews: {
         Args: never
@@ -3494,7 +3493,6 @@ export type Database = {
       is_course_teacher: { Args: { _course: string }; Returns: boolean }
       is_study_room_member: { Args: { _room: string }; Returns: boolean }
       is_study_room_owner: { Args: { _room: string }; Returns: boolean }
-      take_study_room_ownership: { Args: { _room: string }; Returns: undefined }
       list_subject_chapters: {
         Args: { _subject: string }
         Returns: {
