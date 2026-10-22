@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu, UsersRound, PlaneTakeoff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import PrivateStudyRooms from "@/components/PrivateStudyRooms";
 import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
+import { TripApp } from "@/features/trip/TripApp";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 import {
   matchingPomodoroPreset,
@@ -524,6 +525,7 @@ const T = {
 const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
+  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | null>(null);
   const [subject, setSubject] = useState<string | null>(null);
   const [mission, setMission] = useState("");
   const [seconds, setSeconds] = useState(0);
@@ -1214,13 +1216,98 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     workMinutes: pomodoroWorkMin, restRemaining,
   });
 
+  if (entryMode === null) {
+    const choices = language === "ar"
+      ? {
+          eyebrow: "الجلسات الدراسية",
+          title: "شلون تريد تدرس اليوم؟",
+          description: "اختار طريقتك وابدأ مباشرة. تگدر تدخل غرفة ويا الطلاب أو تحول وقت الدراسة إلى رحلة جوية.",
+          roomsTitle: "الانضمام للغرف",
+          roomsDescription: "ادرس ويا طلاب آخرين، شارك المؤقت، واختار جلستك الفردية إذا تحب.",
+          roomsAction: "استعرض الغرف",
+          flightTitle: "الدراسة أثناء الطيران",
+          flightDescription: "اختار دولة، احصل على تذكرة، وواصل دراستك إلى أن توصل للوجهة.",
+          flightAction: "ابدأ رحلة دراسية",
+          back: "رجوع",
+        }
+      : {
+          eyebrow: "Study sessions",
+          title: "How do you want to study today?",
+          description: "Choose a path and start right away. Join other students in a room or turn your study time into a flight.",
+          roomsTitle: "Join study rooms",
+          roomsDescription: "Study with other students, share the timer, or start a solo subject session.",
+          roomsAction: "Browse rooms",
+          flightTitle: "Study while flying",
+          flightDescription: "Choose a country, get a ticket, and keep studying until you reach your destination.",
+          flightAction: "Start a study trip",
+          back: "Back",
+        };
+
+    return (
+      <main className="relative min-h-screen overflow-hidden px-4 py-6 md:py-12" dir={dir}>
+        <div aria-hidden="true" className="pointer-events-none absolute -end-24 -top-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -start-24 h-80 w-80 rounded-full bg-cyan-400/15 blur-3xl" />
+        <div className="relative mx-auto max-w-5xl">
+          <button onClick={onBack} aria-label={choices.back} className="mb-6 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/85 px-3 text-sm font-semibold text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {choices.back}
+          </button>
+
+          <header className="mx-auto mb-8 max-w-3xl text-center md:mb-11">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> {choices.eyebrow}
+            </span>
+            <h1 className="text-3xl font-black tracking-tight text-foreground md:text-5xl">{choices.title}</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">{choices.description}</p>
+          </header>
+
+          <section aria-label={choices.title} className="grid gap-4 md:grid-cols-2 md:gap-6">
+            <button onClick={() => setEntryMode("rooms")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-border/80 bg-card p-6 text-start shadow-[0_22px_70px_-44px_rgba(0,0,0,0.65)] transition-[border-color,box-shadow] hover:border-primary/45 hover:shadow-[0_26px_80px_-40px_hsl(var(--primary)/0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-8">
+              <div aria-hidden="true" className="absolute -end-12 -top-12 h-40 w-40 rounded-full bg-primary/10" />
+              <span className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                <UsersRound className="h-8 w-8" />
+              </span>
+              <h2 className="relative mt-8 text-2xl font-black md:text-3xl">{choices.roomsTitle}</h2>
+              <p className="relative mt-3 max-w-md text-sm leading-7 text-muted-foreground">{choices.roomsDescription}</p>
+              <span className="relative mt-8 inline-flex items-center gap-2 text-sm font-black text-primary">
+                {choices.roomsAction}<ChevronRight className={`h-4 w-4 transition-transform ${dir === "rtl" ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+              </span>
+            </button>
+
+            <button onClick={() => setEntryMode("flight")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-sky-300/70 bg-gradient-to-br from-sky-50 via-card to-cyan-100/70 p-6 text-start shadow-[0_22px_70px_-44px_rgba(14,116,144,0.7)] transition-[border-color,box-shadow] hover:border-sky-400 hover:shadow-[0_26px_80px_-40px_rgba(14,116,144,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:from-sky-950/50 dark:to-cyan-950/35 md:p-8">
+              <div aria-hidden="true" className="absolute -end-10 -top-10 h-44 w-44 rounded-full border-[28px] border-sky-400/15" />
+              <span className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+                <PlaneTakeoff className="h-8 w-8" />
+              </span>
+              <h2 className="relative mt-8 text-2xl font-black md:text-3xl">{choices.flightTitle}</h2>
+              <p className="relative mt-3 max-w-md text-sm leading-7 text-muted-foreground">{choices.flightDescription}</p>
+              <span className="relative mt-8 inline-flex items-center gap-2 text-sm font-black text-sky-700 dark:text-sky-300">
+                {choices.flightAction}<ChevronRight className={`h-4 w-4 transition-transform ${dir === "rtl" ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+              </span>
+            </button>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (entryMode === "flight") {
+    return (
+      <TripApp
+        studentId={userId ?? "local-student"}
+        language={language}
+        onExit={() => setEntryMode(null)}
+        onBackToStudying={() => setEntryMode(null)}
+      />
+    );
+  }
+
   if (!subject) {
     return (
     <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
         <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute top-[36rem] -start-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-5xl">
-          <button onClick={onBack} aria-label={language === "ar" ? "رجوع" : "Back"} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
+          <button onClick={() => setEntryMode(null)} aria-label={language === "ar" ? "رجوع" : "Back"} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
             <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "رجوع" : "Back"}
           </button>
           <header className="relative mb-6 overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-br from-primary/15 via-card to-cyan-500/10 p-6 shadow-[0_24px_70px_-38px_hsl(var(--primary)/0.55)] md:p-9">

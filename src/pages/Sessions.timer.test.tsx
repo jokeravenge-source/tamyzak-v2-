@@ -47,6 +47,9 @@ describe("the session's one visible timer", () => {
   it("renders one Arabic focus timer, passes that value to both rooms, and keeps real study seconds", async () => {
     const { container } = render(<Sessions language="ar" onBack={vi.fn()} />);
     await act(async () => {});
+    expect(screen.getByRole("heading", { name: "شلون تريد تدرس اليوم؟" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /الانضمام للغرف/ }));
+    await act(async () => {});
     const mainClock = container.querySelector(".text-5xl")!;
     expect(mainClock.textContent).toBe("00:49:40");
     expect(mainClock.getAttribute("dir")).toBe("ltr");
