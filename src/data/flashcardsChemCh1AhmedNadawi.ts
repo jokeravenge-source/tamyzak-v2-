@@ -84,7 +84,7 @@ export const ahmedNadawiChemCh1Topics = [
 export const ahmedNadawiChemCh1Cards = [
   {
     "q": "Define thermodynamics.",
-    "a": "The branch of science that studies energy and its transformations.",
+    "a": "is the branch of science which studies energy and its transformation. For example, it studies the transformation of heat energy from combustion of fuel into mechanical energy which runs the engines.",
     "topic": "01"
   },
   {
@@ -129,7 +129,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Give examples of kinetic energy.",
-    "a": "Moving molecules, water, cars, aircraft and other moving bodies.",
+    "a": "It is the energy which molecules, moving water, cars, planes, missiles and others have due to their movement",
     "topic": "01"
   },
   {
@@ -199,7 +199,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Give an example of an open system.",
-    "a": "Boiling water in an open metal container.",
+    "a": "boiling water in a metal container",
     "topic": "01"
   },
   {
@@ -219,7 +219,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Give an example of an isolated system.",
-    "a": "An ideal thermos.",
+    "a": "a thermos.",
     "topic": "01"
   },
   {
@@ -254,7 +254,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Define heat (q).",
-    "a": "Energy transferred between objects at different temperatures.",
+    "a": "is one of the common energy types in our daily lives. We show heat with (q). Heat is the energy change between two objects with different degrees of temperature.",
     "topic": "02"
   },
   {
@@ -298,8 +298,8 @@ export const ahmedNadawiChemCh1Cards = [
     "topic": "02"
   },
   {
-    "q": "Define specific heat capacity (c).",
-    "a": "Heat needed to raise the temperature of 1 gram of a substance by 1°C.",
+    "q": "Define Specific Heat (ς).",
+    "a": "is the amount of heat necessary to raise temperature of 1 gram of any substance by 1° centigrade. Its unit is (J/g.c°)",
     "topic": "02"
   },
   {
@@ -464,7 +464,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Give a source example of an exothermic reaction.",
-    "a": "C(s) + O₂(g) → CO₂(g), ΔH ≈ −394 kJ/mol.",
+    "a": "C(s) + O₂(g) → CO₂(g)    ΔHr = -394.5 KJ/mol",
     "topic": "03"
   },
   {
@@ -554,7 +554,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Define a calorimeter.",
-    "a": "An instrument used to measure heat absorbed or released in a reaction, under the conditions described in the chapter.",
+    "a": "is an instrument used to measure the reaction heat which is absorbed or released under constant pressure.",
     "topic": "04"
   },
   {
@@ -564,7 +564,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "What surrounds the reaction compartment?",
-    "a": "A well-insulated vessel containing a known mass of water.",
+    "a": "The reaction container is put in a well isolated container which contains a known mass of water.",
     "topic": "04"
   },
   {
@@ -574,7 +574,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "How does a calorimeter detect exothermic reaction heat?",
-    "a": "The released heat raises the temperature of the water and calorimeter.",
+    "a": "As the released heat increases the temperature of water and calorimeter, and if the heat capacity and content of calorimeter is known, heat can be measured through increase in temperature.",
     "topic": "04"
   },
   {
@@ -704,7 +704,7 @@ export const ahmedNadawiChemCh1Cards = [
   },
   {
     "q": "Why is ΔH°f zero for an element in its most stable standard state?",
-    "a": "Formation of the element from itself causes no net enthalpy change.",
+    "a": "This is because no noticable thermal change occurs when the free element is formed",
     "topic": "05"
   },
   {
@@ -898,8 +898,8 @@ export const ahmedNadawiChemCh1Cards = [
     "topic": "06"
   },
   {
-    "q": "Why are condensation and crystallization exothermic?",
-    "a": "Molecules move to lower-enthalpy phases and release heat.",
+    "q": "Define enthalpy of condensation and enthalpy of crystallization.",
+    "a": "Enthalpy of condensation: the releasing heat necessary to transform 1 mole of any substance from the gas state to liquid state of matter shown by ΔH (cond). Enthalpy of Crystallization: the releasing heat necessary to transform 1 mole of liquid substance to solid substance shown by ΔH (cryst).",
     "topic": "06"
   },
   {
