@@ -1,3 +1,5 @@
+import { ahmedNadawiChemCh5VerbatimOverrides } from "./flashcardsChemCh5AhmedNadawiVerbatim";
+
 // Ahmed Al-Nadawi Chemistry CH5 — all 154 supplied cards across six source topics.
 // Source: docs/flashcards/ahmed-al-nadawi/Chapter_Five_Coordination_Chemistry_Flashcards.txt.
 // Keep consolidated question/answer wording and the source's incomplete-answer caveats.
@@ -11,10 +13,12 @@ export type AhmedNadawiChemCh5Card = {
 };
 
 export const ahmedNadawiChemCh5Source = {
-  "file": "Chapter_Five_Coordination_Chemistry_Flashcards.txt",
-  "sourcePdf": "الفصل الخامس.pdf",
+  "file": "Chapter five.pdf",
+  "sourcePdf": "Chapter five.pdf",
   "pdfPages": 130,
-  "sha256": "ca43a75459fba3018e3eba47acf1c80573535e5c51431ef2e2b70504be9f16ae",
+  "sha256": "804a45eddceb90880a8a49dae365f3fc79da876e999a6b99a58c2a286651fa7a",
+  "verbatimVerbalCards": true,
+  "problemsPreserved": true,
   "verifiedCompleteMinisterialTranscript": false,
   "coverageNote": "“Ministerial” in the PDF is often denoted by small years/round labels; not all are legible in extracted text. This deck covers distinct chapter question types and many repeated ministerial variants, but is NOT a verified transcription of every original ministerial question and year. The original PDF remains the authority for literal phrasing and page-year association."
 } as const;
@@ -453,7 +457,7 @@ export const ahmedNadawiChemCh5Topics = [
   }
 ] as const;
 
-export const ahmedNadawiChemCh5Cards: AhmedNadawiChemCh5Card[] = [
+const ahmedNadawiChemCh5CardsBase: AhmedNadawiChemCh5Card[] = [
   {
     "id": "CH5-001",
     "q": "Define coordination chemistry",
@@ -1379,3 +1383,9 @@ export const ahmedNadawiChemCh5Cards: AhmedNadawiChemCh5Card[] = [
     "topic": "06"
   }
 ];
+
+export const ahmedNadawiChemCh5Cards: AhmedNadawiChemCh5Card[] =
+  ahmedNadawiChemCh5CardsBase.map((card) => {
+    const verbatim = ahmedNadawiChemCh5VerbatimOverrides[card.id];
+    return verbatim ? { ...card, q: verbatim.q, a: verbatim.a } : card;
+  });
