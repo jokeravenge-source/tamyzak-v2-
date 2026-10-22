@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
+import { useAhmedFlashcardOverrides } from "@/hooks/useAhmedFlashcardOverrides";
+import { applyAhmedFlashcardOverrides } from "@/lib/ahmedFlashcardOverrides";
+import type { StudyTextBlock } from "@/components/TextStudyContent";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, RotateCcw, Bookmark, BookmarkCheck, Star, ExternalLink, Ellipsis } from "lucide-react";
@@ -169,6 +172,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     ? sessionStorage.getItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY)
     : null;
   const isAhmedNadawiDeck = subject === "chemistry" && chemistryFlashcardTeacher === "ahmed-al-nadawi";
+  const ahmedOverrides = useAhmedFlashcardOverrides();
   const isWijdanChemistryDeck = subject === "chemistry"
     && chapter === "3"
     && chemistryFlashcardTeacher === "wijdan";
@@ -216,24 +220,25 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     return () => { active = false; };
   }, [subject, chapter, language]);
 
-  const loading = false;
+  const loading = isAhmedNadawiDeck && ahmedOverrides.isPending;
   const useRemote = false;
 
   const deck = useMemo(
     () => {
       // Ahmed Al-Nadawi: dedicated source-matched decks in both languages.
       if (isAhmedNadawiDeck) {
-        return {
-          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
-          eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
-          cards: chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards)
+        const sourceCards = chapter === "1" ? (language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards)
             : chapter === "2" ? (language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards)
             : chapter === "3" ? (language === "ar" ? ahmedNadawiChemCh3Cards : ahmedNadawiChemCh3CardsEn)
             : chapter === "4" ? (language === "ar" ? ahmedNadawiChemCh4CardsAr : ahmedNadawiChemCh4Cards)
             : chapter === "5" ? (language === "ar" ? ahmedNadawiChemCh5CardsAr : ahmedNadawiChemCh5Cards)
             : chapter === "6" ? (language === "ar" ? ahmedNadawiChemCh6CardsAr : ahmedNadawiChemCh6Cards)
             : chapter === "7" ? (language === "ar" ? ahmedNadawiChemCh7CardsAr : ahmedNadawiChemCh7Cards)
-            : chapter === "8" ? (language === "ar" ? ahmedNadawiChemCh8CardsAr : ahmedNadawiChemCh8Cards) : [],
+            : chapter === "8" ? (language === "ar" ? ahmedNadawiChemCh8CardsAr : ahmedNadawiChemCh8Cards) : [];
+        return {
+          title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
+          eyebrow: language === "ar" ? `الكيمياء · الفصل ${chapter} · أحمد النداوي` : `Chemistry · Chapter ${chapter} · Ahmed Al-Nadawi`,
+          cards: applyAhmedFlashcardOverrides(sourceCards as readonly { id?: string; q: string; a: string; topic?: string; answerBlocks?: StudyTextBlock[] }[], Number(chapter), language, ahmedOverrides.data ?? []),
         };
       }
       if (subject === "biology" && chapter === "1") {
@@ -568,7 +573,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       return baseDeck;
     },
-    [baseDeck, chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject]
+    [baseDeck, chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject, ahmedOverrides.data]
   );
   const text = copy[language];
   // Explicit, source-derived topic groups for decks that are built from
@@ -590,7 +595,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "1") {
-      const translatedCards = language === "ar" ? ahmedNadawiChemCh1CardsAr : ahmedNadawiChemCh1Cards;
+      const translatedCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh1Topics.map(t => ({
         key: `nadawi-${t.key}`,
         label: language === "ar" ? ahmedNadawiChemCh1TopicsAr[t.key] : t.title,
@@ -598,7 +603,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "2") {
-      const chapterTwoCards = language === "ar" ? ahmedNadawiChemCh2CardsAr : ahmedNadawiChemCh2Cards;
+      const chapterTwoCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh2Topics.map(t => ({
         key: `nadawi-ch2-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
@@ -607,7 +612,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     }
     if (isAhmedNadawiDeck && chapter === "3") {
       const topicList = language === "en" ? ahmedNadawiChemCh3TopicsEn : ahmedNadawiChemCh3Topics;
-      const chapterCards = language === "en" ? ahmedNadawiChemCh3CardsEn : ahmedNadawiChemCh3Cards;
+      const chapterCards = deck.cards as { q: string; a: string; topic?: string }[];
       return topicList.map(t => ({
         key: `nadawi-ch3-${t.key}`,
         label: t.title,
@@ -615,7 +620,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "4") {
-      const chapterFourCards = language === "ar" ? ahmedNadawiChemCh4CardsAr : ahmedNadawiChemCh4Cards;
+      const chapterFourCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh4Topics.map(t => ({
         key: `nadawi-ch4-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
@@ -623,7 +628,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "5") {
-      const chapterFiveCards = language === "ar" ? ahmedNadawiChemCh5CardsAr : ahmedNadawiChemCh5Cards;
+      const chapterFiveCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh5Topics.map(t => ({
         key: `nadawi-ch5-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
@@ -631,7 +636,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "6") {
-      const chapterSixCards = language === "ar" ? ahmedNadawiChemCh6CardsAr : ahmedNadawiChemCh6Cards;
+      const chapterSixCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh6Topics.map(t => ({
         key: `nadawi-ch6-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
@@ -639,7 +644,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "7") {
-      const chapterSevenCards = language === "ar" ? ahmedNadawiChemCh7CardsAr : ahmedNadawiChemCh7Cards;
+      const chapterSevenCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh7Topics.map(t => ({
         key: `nadawi-ch7-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
@@ -647,7 +652,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }));
     }
     if (isAhmedNadawiDeck && chapter === "8") {
-      const chapterEightCards = language === "ar" ? ahmedNadawiChemCh8CardsAr : ahmedNadawiChemCh8Cards;
+      const chapterEightCards = deck.cards as { q: string; a: string; topic?: string }[];
       return ahmedNadawiChemCh8Topics.map(t => ({
         key: `nadawi-ch8-${t.key}`,
         label: language === "ar" ? t.titleAr : t.title,
