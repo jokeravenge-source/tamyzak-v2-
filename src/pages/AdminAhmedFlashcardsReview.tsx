@@ -11,7 +11,16 @@ import {
   Printer,
   Search,
   ShieldAlert,
+  Pencil,
+  Trash2,
+  Save,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAhmedFlashcardOverrides, ahmedOverridesKey } from "@/hooks/useAhmedFlashcardOverrides";
+import { ahmedCardId, applyAhmedFlashcardOverrides } from "@/lib/ahmedFlashcardOverrides";
 import AdminLogin from "./AdminLogin";
 import { supabase } from "@/integrations/supabase/client";
 import { ahmedNadawiChemCh1Cards, ahmedNadawiChemCh1Topics } from "@/data/flashcardsChemCh1AhmedNadawi";
@@ -230,13 +239,48 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
   const [ministerialOnly, setMinisterialOnly] = useState(false);
   const [showAnswers, setShowAnswers] = useState(true);
   const [page, setPage] = useState(1);
+  const overrides = useAhmedFlashcardOverrides();
+  const queryClient = useQueryClient();
+  const [canManage, setCanManage] = useState(false);
+  const [editing, setEditing] = useState<ReviewCard | null>(null);
+  const [removing, setRemoving] = useState<ReviewCard | null>(null);
+  const [draft, setDraft] = useState({ question: "", answer: "" });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [mutationError, setMutationError] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: allowed } = await supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" });
+      setCanManage(allowed === true);
+    });
+  }, []);
+
+  const persist = async (card: ReviewCard, deleted: boolean) => {
+    if (!canManage || saving) return;
+    setSaving(true); setMutationError(""); setMessage("");
+    try {
+      const { error } = await supabase.from("ahmed_flashcard_overrides").upsert({
+        chapter: card.chapter, language: card.fallbackArabic ? "ar" : language, card_id: card.reviewId,
+        question: deleted ? card.q : draft.question.trim(), answer: deleted ? card.a : draft.answer.trim(), deleted,
+      }, { onConflict: "chapter,language,card_id" });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ahmedOverridesKey });
+      setEditing(null); setRemoving(null);
+      setMessage(deleted ? "Flashcard removed." : "Changes saved.");
+    } catch {
+      setMutationError("Could not save changes. Please try again.");
+    } finally { setSaving(false); }
+  };
 
   const allCards = useMemo<ReviewCard[]>(() => decks.flatMap((deck) => {
     const fallbackArabic = language === "en" && deck.en === null;
     const selected = language === "ar" || !deck.en ? deck.ar : deck.en;
-    return selected.map((card, index) => ({
+    const reviewCards = selected.map((card, index) => ({
       ...card,
-      reviewId: card.id ?? `CH${deck.chapter}-${String(index + 1).padStart(3, "0")}`,
+      id: ahmedCardId(card, deck.chapter, index),
+      reviewId: ahmedCardId(card, deck.chapter, index),
       chapter: deck.chapter,
       chapterTitle: deck.title,
       chapterTitleAr: deck.titleAr,
@@ -246,7 +290,8 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
       displayYears: cardYears(card),
       fallbackArabic,
     }));
-  }), [language]);
+    return applyAhmedFlashcardOverrides(reviewCards, deck.chapter, fallbackArabic ? "ar" : language, overrides.data ?? []);
+  }), [language, overrides.data]);
 
   const selectedDeck = chapter === "all" ? null : decks.find((deck) => String(deck.chapter) === chapter) ?? null;
   const topicOptions = selectedDeck ? (language === "en" ? selectedDeck.topicsEn ?? selectedDeck.topics : selectedDeck.topics) : [];
@@ -266,7 +311,7 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const totalCards = decks.reduce((sum, deck) => sum + deck.ar.length, 0);
+  const totalCards = allCards.length;
   const ministerialCount = allCards.filter((card) => card.ministerial).length;
   const studentUrl = chapter === "all"
     ? `/flashcards/ahmed-al-nadawi?lang=${language}`
@@ -329,7 +374,7 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
           </label>
           <select value={topic} onChange={(event) => setTopic(event.target.value)} disabled={!selectedDeck} className="h-11 rounded-lg border border-input bg-card px-3 text-sm disabled:opacity-50">
             <option value="all">All topics</option>
-            {topicOptions.map((item) => <option key={item.key} value={item.key}>{item.key} · {topicLabel(selectedDeck!, item.key, language)}</option>)}
+            {topicOptions.map((item) => <option key={item.key} value={item.key}>{item.key} · {selectedDeck ? topicLabel(selectedDeck, item.key, language) : item.title}</option>)}
           </select>
           <button onClick={() => setLanguage(language === "ar" ? "en" : "ar")} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-input bg-card px-4 text-sm font-bold hover:bg-secondary">
             <Languages className="h-4 w-4" /> {language === "ar" ? "العربية" : "English"}
@@ -345,6 +390,8 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
           {language === "en" && (chapter === "all" || chapter === "3") && <p className="rounded-full bg-amber-500/10 px-3 py-1 text-amber-600">CH3 is shown in its Arabic source language.</p>}
         </div>
 
+        {message && <p role="status" className="mb-4 text-sm text-primary">{message}</p>}
+        {overrides.isError && <p role="alert" className="mb-4 text-sm text-destructive">Could not load saved changes. <Button variant="link" onClick={() => overrides.refetch()}>Retry</Button></p>}
         <section className="space-y-3">
           {visible.map((card) => (
             <article key={`${card.chapter}-${card.reviewId}`} className="break-inside-avoid rounded-xl border border-border bg-card p-4 shadow-sm md:p-5 print:border-gray-300 print:shadow-none" dir="auto">
@@ -354,6 +401,10 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
                 {card.ministerial && <span className="rounded bg-amber-500/15 px-2 py-1 font-bold text-amber-600">وزاري · Ministerial</span>}
                 {card.displayYears.map((year) => <span key={year} className="rounded border border-border px-2 py-1">{year}</span>)}
                 <span className="ml-auto font-mono text-muted-foreground">{card.reviewId}</span>
+                {canManage && <div className="flex gap-1 print:hidden">
+                  <Button variant="outline" size="icon" title="Edit flashcard" aria-label={`Edit ${card.reviewId}`} disabled={overrides.isPending || overrides.isError} onClick={() => { setEditing(card); setDraft({ question: card.q, answer: card.a }); setMutationError(""); }}><Pencil /></Button>
+                  <Button variant="destructive" size="icon" title="Remove flashcard" aria-label={`Remove ${card.reviewId}`} disabled={overrides.isPending || overrides.isError} onClick={() => { setRemoving(card); setMutationError(""); }}><Trash2 /></Button>
+                </div>}
               </div>
               <h2 className="whitespace-pre-wrap text-base font-black leading-7 md:text-lg">{card.q}</h2>
               {showAnswers && <div className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-sm leading-7 text-foreground/85 md:text-base">{card.answerBlocks ? <TextStudyContent blocks={card.answerBlocks} /> : card.a}</div>}
@@ -377,6 +428,23 @@ function ReviewDashboard({ reviewerEmail, onSignOut }: { reviewerEmail: string; 
             <button disabled={safePage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold disabled:opacity-40">Next <ChevronRight className="h-4 w-4" /></button>
           </nav>
         )}
+        <Dialog open={Boolean(editing)} onOpenChange={(open) => { if (!open && !saving) setEditing(null); }}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader><DialogTitle>Edit flashcard</DialogTitle><DialogDescription>{editing?.reviewId} · {language === "ar" ? "العربية" : "English"}</DialogDescription></DialogHeader>
+            <label className="space-y-2 text-sm font-medium">Question<Textarea aria-label="Question" dir="auto" value={draft.question} maxLength={12000} onChange={(event) => setDraft({ ...draft, question: event.target.value })} className="min-h-32" /></label>
+            <label className="space-y-2 text-sm font-medium">Answer<Textarea aria-label="Answer" dir="auto" value={draft.answer} maxLength={30000} onChange={(event) => setDraft({ ...draft, answer: event.target.value })} className="min-h-48" /></label>
+            {mutationError && <p role="alert" className="text-sm text-destructive">{mutationError}</p>}
+            <DialogFooter><Button variant="outline" disabled={saving} onClick={() => setEditing(null)}>Cancel</Button><Button disabled={saving || !draft.question.trim() || !draft.answer.trim()} onClick={() => editing && persist(editing, false)}>{saving ? <Loader2 className="animate-spin" /> : <Save />}Save changes</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={Boolean(removing)} onOpenChange={(open) => { if (!open && !saving) setRemoving(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Remove flashcard?</DialogTitle><DialogDescription>This removes {removing?.reviewId} from the {language === "ar" ? "Arabic" : "English"} student deck. The other language is unchanged.</DialogDescription></DialogHeader>
+            <p dir="auto" className="max-h-40 overflow-auto whitespace-pre-wrap text-sm">{removing?.q}</p>
+            {mutationError && <p role="alert" className="text-sm text-destructive">{mutationError}</p>}
+            <DialogFooter><Button variant="outline" disabled={saving} onClick={() => setRemoving(null)}>Cancel</Button><Button variant="destructive" disabled={saving} onClick={() => removing && persist(removing, true)}>{saving ? <Loader2 className="animate-spin" /> : <Trash2 />}Remove flashcard</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   );
