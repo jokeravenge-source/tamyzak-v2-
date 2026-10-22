@@ -44,7 +44,6 @@ import { ahmedNadawiChemCh2Cards, ahmedNadawiChemCh2Topics } from "@/data/flashc
 import { ahmedNadawiChemCh2CardsAr } from "@/data/flashcardsChemCh2AhmedNadawiAr";
 import { ahmedNadawiChemCh3Cards, ahmedNadawiChemCh3Topics } from "@/data/flashcardsChemCh3AhmedNadawi";
 import { ahmedNadawiChemCh3CardsEn, ahmedNadawiChemCh3TopicsEn } from "@/data/flashcardsChemCh3AhmedNadawiEn";
-import { TextStudyFlashcard } from "@/components/TextStudyFlashcard";
 import { ahmedNadawiChemCh4Cards, ahmedNadawiChemCh4Topics } from "@/data/flashcardsChemCh4AhmedNadawi";
 import { ahmedNadawiChemCh4CardsAr } from "@/data/flashcardsChemCh4AhmedNadawiAr";
 import { ahmedNadawiChemCh5Cards, ahmedNadawiChemCh5Topics } from "@/data/flashcardsChemCh5AhmedNadawi";
@@ -1191,16 +1190,10 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       >
         {card ? (
           <>
-            {textStudyCard ? <TextStudyFlashcard
-              question={textStudyCard.q}
-              answerBlocks={textStudyCard.answerBlocks}
-              index={index}
-              total={cards.length}
-              onRate={savedView ? undefined : handleRate}
-              intervalHints={intervalHints}
-            /> : <Flashcard
+            <Flashcard
               question={card.q}
               answer={card.a}
+              answerBlocks={textStudyCard?.answerBlocks}
               index={index}
               total={cards.length}
               direction={direction}
@@ -1208,7 +1201,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
               onRate={savedView ? undefined : handleRate}
               intervalHints={intervalHints}
               comfortableScrolling={isNadiaBiologyDeck || isAhmedNadawiDeck}
-            />}
+            />
             {subject === "math" && chapter === "1" && (
               <a
                 href="https://t.me/math_05_a/932"
