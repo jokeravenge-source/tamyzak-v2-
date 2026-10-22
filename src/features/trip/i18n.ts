@@ -53,6 +53,16 @@ const en = {
   atStationMsg: "Your plane is waiting. The clock is paused — come back whenever you're ready.",
   continueTrip: "CONTINUE THE TRIP",
   onBreak: "ON BREAK",
+  visaCollection: "VISA COLLECTION",
+  visaCollectionSubtitle: "Every completed study flight earns a visa.",
+  noVisas: "No visas yet. Complete your first flight to earn one!",
+  visaTitle: "STUDY VISA",
+  visaIssuedTo: "ISSUED TO",
+  visaFrom: "ORIGIN",
+  visaDestination: "DESTINATION",
+  visaIssued: "ISSUED",
+  visaNumber: "VISA NO.",
+  visaGranted: "STUDY\nVISA\nGRANTED",
 };
 export type Dict = typeof en;
 
@@ -109,6 +119,16 @@ const ar: Dict = {
   atStationMsg: "طائرتك بانتظارك. الوقت متوقف — عُد متى ما كنت مستعداً.",
   continueTrip: "واصل الرحلة",
   onBreak: "في استراحة",
+  visaCollection: "مجموعة الفيزا",
+  visaCollectionSubtitle: "كل رحلة دراسية مكتملة تمنحك فيزا جديدة.",
+  noVisas: "ما عندك فيزا بعد. أكمل أول رحلة حتى تحصل عليها!",
+  visaTitle: "فيزا دراسية",
+  visaIssuedTo: "صادرة إلى",
+  visaFrom: "نقطة الانطلاق",
+  visaDestination: "الوجهة",
+  visaIssued: "تاريخ الإصدار",
+  visaNumber: "رقم الفيزا",
+  visaGranted: "تم منح\nالفيزا\nالدراسية",
 };
 
 export const DICTS: Record<Lang, Dict> = { en, ar };

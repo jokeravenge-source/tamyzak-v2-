@@ -1294,6 +1294,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     return (
       <TripApp
         studentId={userId ?? "local-student"}
+        studentName={displayName || (language === "ar" ? "طالب تميزك" : "Tamayzak Student")}
         language={language}
         onExit={() => setEntryMode(null)}
         onBackToStudying={() => setEntryMode(null)}

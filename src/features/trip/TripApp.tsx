@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane } from "lucide-react";
+import { ArrowLeft, Plane, Stamp } from "lucide-react";
 import { BoardingPass } from "./BoardingPass";
 import { TRIP_INTRO_MS, TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
 import { COUNTRIES, getCountry, searchCountries, type Country } from "./countries";
@@ -7,8 +7,9 @@ import { formatDuration, formatKm } from "./geo";
 import { Globe } from "./Globe";
 import { DICTS, type Lang } from "./i18n";
 import { createLocalRepository, journeyState, planTrip, type Journey, type JourneyRepository } from "./journeys";
+import { StudyVisa } from "./StudyVisa";
 
-type Phase = "home" | "select" | "preview" | "launching" | "ticket" | "arrived";
+type Phase = "home" | "select" | "preview" | "launching" | "ticket" | "arrived" | "visas";
 
 export interface TripAppProps {
   /** The authenticated student's id from the host app. */
@@ -21,6 +22,8 @@ export interface TripAppProps {
   onExit?: () => void;
   /** Follow the host application\'s active language. */
   language?: Lang;
+  /** Student name printed on earned visas. */
+  studentName?: string;
 }
 
 function useNow(active: boolean) {
@@ -40,7 +43,7 @@ const btn = "trip-shadow inline-flex min-h-12 items-center justify-center gap-2 
 const btnPrimary = `${btn} bg-trip-sun text-trip-ink hover:brightness-105`;
 const btnSecondary = `${btn} bg-trip-cloud text-trip-ink`;
 
-export function TripApp({ studentId = "local-student", repository, onBackToStudying, onExit, language }: TripAppProps) {
+export function TripApp({ studentId = "local-student", repository, onBackToStudying, onExit, language, studentName }: TripAppProps) {
   const [lang, setLang] = useState<Lang>(language ?? "en");
   const t = DICTS[lang];
   const repoRef = useRef<JourneyRepository | null>(repository ?? null);
@@ -87,6 +90,8 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
 
   const viewing = journeys?.find((j) => j.id === viewingId) ?? null;
   const activeJourney = journeys?.find((j) => j.status === "in_flight" && (j.pausedAt != null || now < j.arrivalAt)) ?? null;
+  const completedJourneys = journeys?.filter((j) => journeyState(j, now).arrived) ?? [];
+  const visaStudentName = studentName?.trim() || (lang === "ar" ? "طالب تميزك" : "Tamayzak Student");
 
   // Arrival: the moment timestamps say so, resolve once.
   useEffect(() => {
@@ -214,15 +219,39 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         <p className="mt-2 font-display text-2xl font-bold">{t.welcome} {c ? `${c.flag} ${cname(c)}` : viewing.destCountryName}!</p>
         <p className="font-bold">{viewing.destCity}</p>
         <p className="mt-2">{t.arrivedMsg}</p>
-        <dl className="trip-shadow mt-4 grid w-full max-w-sm grid-cols-2 gap-2 rounded-2xl border-[3px] bg-trip-cream p-4 text-start">
-          <div><dt className="text-xs font-extrabold text-muted-foreground">{t.distance}</dt><dd className="font-display text-lg font-bold">{formatKm(viewing.distanceKm)} km</dd></div>
-          <div><dt className="text-xs font-extrabold text-muted-foreground">{t.total}</dt><dd className="font-display text-lg font-bold">{formatDuration(viewing.durationSec, lang)}</dd></div>
-        </dl>
+        <div className="mt-6 w-full max-w-xl">
+          <StudyVisa journey={viewing} studentName={visaStudentName} lang={lang} t={t} />
+        </div>
         <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
+          <button className={btnSecondary} onClick={() => setPhase("visas")}><Stamp className="h-5 w-5" aria-hidden /> {t.visaCollection}</button>
           <button className={btnPrimary} onClick={() => { setSelected(null); setQuery(""); setPhase("select"); }}>{t.another}</button>
           <button className={btnSecondary} onClick={() => (onBackToStudying ? onBackToStudying() : goHome())}>{t.backStudy}</button>
         </div>
       </div>
+    );
+  } else if (phase === "visas") {
+    body = (
+      <section className="flex flex-col gap-5" aria-labelledby="visa-collection-title">
+        <div className="text-center">
+          <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl border-[3px] border-trip-ink bg-trip-sun trip-shadow-sm">
+            <Stamp className="h-7 w-7" aria-hidden />
+          </span>
+          <h1 id="visa-collection-title" className="mt-5 font-display text-4xl font-black">{t.visaCollection}</h1>
+          <p className="mt-2 font-semibold text-trip-ink/65">{t.visaCollectionSubtitle}</p>
+        </div>
+        {completedJourneys.length > 0 ? (
+          <div className="grid gap-6">
+            {completedJourneys.map((journey) => (
+              <StudyVisa key={journey.id} journey={journey} studentName={visaStudentName} lang={lang} t={t} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border-[3px] border-dashed border-trip-ink bg-trip-cream p-8 text-center">
+            <Plane className="mx-auto h-10 w-10 text-trip-sky-deep" aria-hidden />
+            <p className="mt-3 font-display text-xl font-bold">{t.noVisas}</p>
+          </div>
+        )}
+      </section>
     );
   } else if (phase === "preview" && selCountry) {
     body = (
@@ -304,6 +333,12 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           ) : (
             <button className={`${btnPrimary} mt-5 w-full max-w-xs`} onClick={() => setPhase("select")}>{t.start}</button>
           )}
+          <button className={`${btnSecondary} mt-3 w-full max-w-xs`} onClick={() => setPhase("visas")}>
+            <Stamp className="h-5 w-5" aria-hidden /> {t.visaCollection}
+            {completedJourneys.length > 0 && (
+              <span className="rounded-full bg-trip-sky-deep px-2 py-0.5 text-xs text-white">{completedJourneys.length}</span>
+            )}
+          </button>
           <div className="mt-4 w-full max-w-xs">
             <label className="sr-only" htmlFor="trip-home-search">{t.searchLabel}</label>
             <input id="trip-home-search" type="search" placeholder={t.search} value={query}
