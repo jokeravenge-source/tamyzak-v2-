@@ -1,5 +1,6 @@
 import { ArrowLeft, CheckCircle2, Link2, Loader2, RefreshCw, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { invokeTelegramStart } from "@/lib/telegramStart";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "./LanguageGate";
@@ -60,7 +61,7 @@ export default function NadiaTelegramGate({ language, onVerified }: NadiaTelegra
 
   const prepareTelegramLink = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-start");
+      const { data, error } = await invokeTelegramStart();
       if (error) throw error;
       setConnectLink(data?.deepLink ?? null);
     } catch {

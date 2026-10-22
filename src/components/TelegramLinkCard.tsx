@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeTelegramStart } from "@/lib/telegramStart";
 import { Send, Loader2, CheckCircle2, RefreshCw, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -48,7 +49,8 @@ export function TelegramLinkCard({ language }: { language: AppLanguage }) {
 
   const load = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-start");
+      const { data, error, signedOut } = await invokeTelegramStart();
+      if (signedOut) return;
       if (error) throw error;
       setVerified(!!data?.verified);
       setUsername(data?.telegramUsername ?? null);
@@ -65,7 +67,7 @@ export function TelegramLinkCard({ language }: { language: AppLanguage }) {
   const act = async (action: "relink" | "disconnect") => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-start", { body: { action } });
+      const { data, error } = await invokeTelegramStart({ action });
       if (error) throw error;
       setVerified(false);
       setUsername(null);
