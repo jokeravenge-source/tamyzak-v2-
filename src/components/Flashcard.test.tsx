@@ -44,22 +44,19 @@ describe("Flashcard long-form reading", () => {
 
 
 describe("Ahmed CH3 in the shared flashcard viewer", () => {
-  it("retains source working, flip navigation, ratings, and audio controls", () => {
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+  it("shows one direct question and its matching plain-text answer", () => {
     const source = ahmedNadawiChemCh3CardsEn.find(card => card.id === "AN-CH3-EN-015")!;
     const onRate = vi.fn();
     const props = {
-      question: source.q, answer: source.a, answerBlocks: source.answerBlocks,
+      question: source.q, answer: source.a,
       index: 0, total: ahmedNadawiChemCh3CardsEn.length,
       direction: "right" as const, comfortableScrolling: true, onRate,
       intervalHints: { good: "1 day" },
     };
     const { container, rerender } = render(<Flashcard {...props} />);
-    for (const block of source.answerBlocks) {
-      if (block.type === "text") expect(container.textContent).toContain(block.text);
-      else for (const run of block.runs) expect(container.textContent).toContain(run.t);
-    }
-    expect(container.querySelector(".flashcard-reading-scroll .space-y-4")).toBeInTheDocument();
+    expect(screen.getByText((_, element) => element?.tagName === "P" && element.textContent === source.q)).toBeInTheDocument();
+    expect(screen.getByText((_, element) => element?.tagName === "P" && element.textContent === source.a)).toBeInTheDocument();
+    expect(container.querySelector(".flashcard-reading-scroll .space-y-4")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Record your voice" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Hear the answer" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Good/ })).toBeNull();

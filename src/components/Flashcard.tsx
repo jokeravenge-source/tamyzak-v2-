@@ -3,13 +3,10 @@ import { useRef } from "react";
 import { ChevronDown, Mic, Square, Play, Volume2, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { SrsRating } from "@/lib/srs";
-import { TextStudyContent, type StudyTextBlock } from "./TextStudyContent";
 
 interface FlashcardProps {
   question: string;
   answer: string;
-  /** Preserves source calculation layout inside the standard answer face. */
-  answerBlocks?: StudyTextBlock[];
   index: number;
   total: number;
   direction: "left" | "right";
@@ -22,7 +19,7 @@ interface FlashcardProps {
   comfortableScrolling?: boolean;
 }
 
-export const Flashcard = ({ question, answer, answerBlocks, index, total, direction, language = "en", onRate, intervalHints, comfortableScrolling = false }: FlashcardProps) => {
+export const Flashcard = ({ question, answer, index, total, direction, language = "en", onRate, intervalHints, comfortableScrolling = false }: FlashcardProps) => {
   const [flipped, setFlipped] = useState(false);
   const labels = language === "ar"
     ? { question: "السؤال", answer: "الإجابة", reveal: "اضغط لإظهار الإجابة", back: "اضغط لرؤية السؤال", scroll: "مرّر داخل البطاقة لقراءة المزيد", record: "سجل صوتك", stop: "إيقاف التسجيل", play: "تشغيل تسجيلك", listen: "استمع للإجابة", stopAudio: "إيقاف الصوت", micError: "تعذّر الوصول إلى المايكروفون" }
@@ -254,15 +251,9 @@ export const Flashcard = ({ question, answer, answerBlocks, index, total, direct
                 ? "flashcard-reading-scroll flex h-full touch-pan-y items-start justify-center overflow-y-auto overscroll-contain px-2 py-5 pb-11"
                 : "flex h-full items-center justify-center px-2"}
             >
-            {answerBlocks?.length ? (
-              <div className="w-full min-w-0">
-                <TextStudyContent blocks={answerBlocks} />
-              </div>
-            ) : (
-              <p className={`whitespace-pre-line text-center font-semibold ${comfortableScrolling ? "text-lg leading-8 sm:text-xl sm:leading-9 md:text-2xl" : "text-xl leading-relaxed sm:text-2xl md:text-3xl"}`}>
-                {answer}
-              </p>
-            )}
+            <p className={`whitespace-pre-line text-center font-semibold ${comfortableScrolling ? "text-lg leading-8 sm:text-xl sm:leading-9 md:text-2xl" : "text-xl leading-relaxed sm:text-2xl md:text-3xl"}`}>
+              {answer}
+            </p>
             </div>
             {comfortableScrolling && answerOverflow && !answerAtEnd && (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center bg-gradient-to-t from-black/25 via-black/10 to-transparent pb-1 pt-8 text-[10px] font-semibold tracking-normal text-white/90">

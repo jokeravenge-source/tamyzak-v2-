@@ -947,9 +947,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   });
 
   const card = cards[index];
-  const textStudyCard = isAhmedNadawiDeck && chapter === "3" && language === "en" && card
-    ? ahmedNadawiChemCh3CardsEn.find(item => item.q === card.q && item.a === card.a)
-    : undefined;
   useEffect(() => {
     if (card && !showRating && !showDifficultPicker) seenCards.current.set(keyOf(card), card);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1198,7 +1195,6 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             <Flashcard
               question={card.q}
               answer={card.a}
-              answerBlocks={textStudyCard?.answerBlocks}
               index={index}
               total={cards.length}
               direction={direction}
