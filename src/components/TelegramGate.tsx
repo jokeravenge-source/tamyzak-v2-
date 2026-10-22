@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeTelegramStart } from "@/lib/telegramStart";
 import { Loader2, Send, RefreshCw, CheckCircle2 } from "lucide-react";
 import type { AppLanguage } from "./LanguageGate";
 
@@ -46,7 +47,8 @@ export default function TelegramGate({ language, onVerified }: Props) {
   useEffect(() => {
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("telegram-start");
+        const { data, error, signedOut } = await invokeTelegramStart();
+        if (signedOut) { setError(t.notLinked); return; }
         if (error) throw error;
         if (data?.verified) {
           onVerified();
