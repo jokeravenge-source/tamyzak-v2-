@@ -1,6 +1,6 @@
 // Complete Arabic translation of the supplied CH4 deck, matched by source ID.
 // Preserve every numerical value, chemical equation, exercise label and rounding note.
-import { ahmedNadawiChemCh4Cards } from "./flashcardsChemCh4AhmedNadawi";
+import { ahmedNadawiChemCh4Cards } from "./flashcardsChemCh4AhmedNadawiLegacy";
 import { chemCh4VerbalOverridesAr } from "./chemAhmedCh4to8VerbalOverridesAr";
 
 const translatedCards: { id: string; q: string; a: string }[] = [
