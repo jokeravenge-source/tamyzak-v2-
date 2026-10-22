@@ -30,6 +30,7 @@ import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { TripApp } from "@/features/trip/TripApp";
+import { createCloudRepository } from "@/features/trip/cloudRepository";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 import {
   matchingPomodoroPreset,
@@ -1294,6 +1295,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     return (
       <TripApp
         studentId={userId ?? "local-student"}
+        repository={userId ? createCloudRepository() : undefined}
         studentName={displayName || (language === "ar" ? "طالب تميزك" : "Tamayzak Student")}
         language={language}
         onExit={() => setEntryMode(null)}
