@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ahmedNadawiChemCh1Topics } from "./flashcardsChemCh1AhmedNadawi";
+import { ahmedNadawiChemCh1Cards, ahmedNadawiChemCh1Topics } from "./flashcardsChemCh1AhmedNadawi";
 import {
   ahmedNadawiChemCh1CardsAr,
   ahmedNadawiChemCh1ExcludedSourceIds,
@@ -87,6 +87,28 @@ describe("Ahmed Al-Nadawi — Chemistry Chapter 1 Arabic source match", () => {
     expect(ahmedNadawiChemCh1CardsAr.find(({ id }) => id === "CH1-0037")).toMatchObject({
       q: "عرّف درجة الحرارة، واذكر رمزها.",
       a: "هي مقياس للطاقة الحرارية، ويرمز لها بالحرف T.",
+    });
+  });
+});
+
+describe("Ahmed Al-Nadawi — Chemistry Chapter 1 distinguished curriculum wording", () => {
+  it("keeps the reviewed verbal answers complete instead of shortened summaries", () => {
+    expect(ahmedNadawiChemCh1Cards[0].a).toBe(
+      "is the branch of science which studies energy and its transformation. For example, it studies the transformation of heat energy from combustion of fuel into mechanical energy which runs the engines.",
+    );
+    expect(ahmedNadawiChemCh1Cards[34].a).toBe(
+      "is one of the common energy types in our daily lives. We show heat with (q). Heat is the energy change between two objects with different degrees of temperature.",
+    );
+    expect(ahmedNadawiChemCh1Cards[43]).toMatchObject({
+      q: "Define Specific Heat (ς).",
+      a: "is the amount of heat necessary to raise temperature of 1 gram of any substance by 1° centigrade. Its unit is (J/g.c°)",
+    });
+    expect(ahmedNadawiChemCh1Cards[94].a).toBe(
+      "is an instrument used to measure the reaction heat which is absorbed or released under constant pressure.",
+    );
+    expect(ahmedNadawiChemCh1Cards[163]).toMatchObject({
+      q: "Define enthalpy of condensation and enthalpy of crystallization.",
+      a: "Enthalpy of condensation: the releasing heat necessary to transform 1 mole of any substance from the gas state to liquid state of matter shown by ΔH (cond). Enthalpy of Crystallization: the releasing heat necessary to transform 1 mole of liquid substance to solid substance shown by ΔH (cryst).",
     });
   });
 });
