@@ -195,6 +195,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ahmed_flashcard_overrides: {
+        Row: {
+          answer: string | null
+          card_id: string
+          chapter: number
+          deleted: boolean
+          language: string
+          question: string | null
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          card_id: string
+          chapter: number
+          deleted?: boolean
+          language: string
+          question?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          card_id?: string
+          chapter?: number
+          deleted?: boolean
+          language?: string
+          question?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bank_problems: {
         Row: {
           chapter: number
