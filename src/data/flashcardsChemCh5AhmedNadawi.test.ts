@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ahmedNadawiChemCh5Cards, ahmedNadawiChemCh5Source, ahmedNadawiChemCh5SourceChecklist, ahmedNadawiChemCh5Topics } from "./flashcardsChemCh5AhmedNadawi";
 import { ahmedNadawiChemCh5CardsAr } from "./flashcardsChemCh5AhmedNadawiAr";
+import { ahmedNadawiChemCh5VerbatimOverrides } from "./flashcardsChemCh5AhmedNadawiVerbatim";
 import { explicitTopics } from "../lib/flashcardTopics";
 import { uniqueFlashcards } from "../lib/uniqueFlashcards";
 
@@ -12,11 +13,26 @@ const numbers = (text: string) => [...new Set(text.match(/\d+(?:\.\d+)?/g) ?? []
 const formulae = (text: string) => [...new Set((text.match(/(?<![A-Za-z0-9])(?:[A-Z][a-z]?\d*)+(?:\^(?:\d+)?[+−-]|[+−-](?![A-Za-z]))?/g) ?? []).filter((s) => /\d|[+−-]/.test(s)))].sort();
 
 describe("Ahmed Al-Nadawi Chemistry Chapter 5 supplied deck", () => {
-  it("preserves every supplied question and answer in original order", () => {
+  it("keeps all 154 cards in their original order and preserves every problem card", () => {
     const expected = [...original.matchAll(/^CARD (\d+)\nQ: (.+)\nA: (.+)$/gm)].map((m) => ({ id: `CH5-${m[1]}`, q: m[2], a: m[3] }));
     assert.equal(expected.length, 154);
-    assert.deepEqual(ahmedNadawiChemCh5Cards.map(({ id, q, a }) => ({ id, q, a })), expected);
     assert.deepEqual(ahmedNadawiChemCh5Cards.map((c) => c.id), Array.from({ length: 154 }, (_, i) => `CH5-${String(i + 1).padStart(3, "0")}`));
+    for (const expectedCard of expected) {
+      if (ahmedNadawiChemCh5VerbatimOverrides[expectedCard.id]) continue;
+      const actual = ahmedNadawiChemCh5Cards.find((card) => card.id === expectedCard.id);
+      assert.deepEqual(actual && { id: actual.id, q: actual.q, a: actual.a }, expectedCard);
+    }
+  });
+
+  it("uses the literal PDF transcription for every corrected memorisation card", () => {
+    assert.ok(Object.keys(ahmedNadawiChemCh5VerbatimOverrides).length >= 40);
+    for (const [id, literal] of Object.entries(ahmedNadawiChemCh5VerbatimOverrides)) {
+      const actual = ahmedNadawiChemCh5Cards.find((card) => card.id === id);
+      assert.ok(actual, id);
+      assert.equal(actual.q, literal.q, `${id} question`);
+      assert.equal(actual.a, literal.a, `${id} answer`);
+      assert.ok(literal.page >= 1 && literal.page <= 130, `${id} page`);
+    }
   });
 
   it("provides every card in Arabic with identical numerical data, formulae and topics", () => {
@@ -27,10 +43,10 @@ describe("Ahmed Al-Nadawi Chemistry Chapter 5 supplied deck", () => {
       assert.equal(ar.topic, en.topic);
       assert.match(ar.q, /[\u0600-\u06ff]/u);
       assert.ok(ar.a.trim(), ar.id);
-      if (!new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
+      if (!ahmedNadawiChemCh5VerbatimOverrides[ar.id] && !new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
         assert.deepEqual(numbers(`${ar.q} ${ar.a}`), numbers(`${en.q} ${en.a}`), ar.id);
       }
-      if (!new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
+      if (!ahmedNadawiChemCh5VerbatimOverrides[ar.id] && !new Set(["CH5-144", "CH5-149"]).has(ar.id)) {
         assert.deepEqual(formulae(`${ar.q} ${ar.a}`), formulae(`${en.q} ${en.a}`), ar.id);
       }
     }
@@ -69,7 +85,9 @@ describe("Ahmed Al-Nadawi Chemistry Chapter 5 supplied deck", () => {
 
   it("uses the uploaded source identity and removes editorial review notes", () => {
     assert.equal(ahmedNadawiChemCh5Source.pdfPages, 130);
-    assert.equal(ahmedNadawiChemCh5Source.sha256, "ca43a75459fba3018e3eba47acf1c80573535e5c51431ef2e2b70504be9f16ae");
+    assert.equal(ahmedNadawiChemCh5Source.sha256, "804a45eddceb90880a8a49dae365f3fc79da876e999a6b99a58c2a286651fa7a");
+    assert.equal(ahmedNadawiChemCh5Source.verbatimVerbalCards, true);
+    assert.equal(ahmedNadawiChemCh5Source.problemsPreserved, true);
     const studentText = ahmedNadawiChemCh5CardsAr.map((card) => `${card.q}\n${card.a}`).join("\n");
     assert.doesNotMatch(studentText, /تُراجع|يُرجع إلى مخطط|المعروضة في الملف|مناقشة الكتاب/);
   });
