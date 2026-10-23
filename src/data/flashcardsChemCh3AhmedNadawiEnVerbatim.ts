@@ -99,4 +99,85 @@ export const ahmedNadawiChemCh3VerbatimOverrides: Record<string, AhmedNadawiChem
     a: "PH = ½ (PKw - PKb – log [salt])⇒ PH = ½ (14 – 4.74 – log 5 × 10⁻¹)\nPH = ½ (14 – 4.74 + 1 – 0.7) ⇒ PH = 9.56/2 = 4.78⇒∴POH = 14 – 4.78 ⇒ POH = 9.22\n∴ الجواب الصحيح هو (ب)",
     page: "167–168",
   },
+  "AN-CH3-EN-011": {
+    q: "Table 3-1 Shows most important Strong acids",
+    a: "MEMORIZE IT\nSulfuric acid\nH₂SO₄ —H₂O→ 2H⁺ + SO₄⁻²\nChromic acid\nH₂CrO₄ —H₂O→ 2H⁺ + CrO₄⁻²\nPerchloric acid\nHClO₄ —H₂O→ H⁺ + ClO₄⁻\nNitric Acid\nHNO₃ —H₂O→ H⁺ + NO₃⁻\nHydrochloric acid\nHCl —H₂O→ H⁺ + Cl⁻\nHydrobromic acid\nHBr —H₂O→ H⁺ + Br⁻\nHydroiodic acid\nHI —H₂O→ H⁺ + I⁻",
+    page: 5,
+  },
+  "AN-CH3-EN-013": {
+    q: "Table 3-2 Shows most important Strong Bases",
+    a: "MEMORIZE IT\nPotassium hydroxide\nKOH —H₂O→ K⁺ + OH⁻\nSodium hydroxide\nNaOH —H₂O→ Na⁺ + OH⁻\nRubidium hydroxide\nRbOH —H₂O→ Rb⁺ + OH⁻\nCalcium hydroxide\nCa(OH)₂ —H₂O→ Ca⁺² + 2OH⁻\nBarium hydroxide\nBa(OH)₂ —H₂O→ Ba⁺² + 2OH⁻",
+    page: 6,
+  },
+  "AN-CH3-EN-088": {
+    q: "Monoprotic Acid",
+    a: "MEMORIZE IT\n1. Hydrofluoric acid\nHF ⇌ H⁺ + F⁻\n2. Hydrocyanic acid\nHCN ⇌ H⁺ + CN⁻\n3. Nitrous acid\nHNO₂ ⇌ H⁺ + NO₂⁻\n4. Acetic acid\nCH₃COOH ⇌ H⁺ + CH₃COO⁻\n5. Formic acid\nHCOOH ⇌ H⁺ + HCOO⁻\n6. Benzoic acid\nC₆H₅COOH ⇌ H⁺ + C₆H₅COO⁻\n7. Carbonic acid\nH₂CO₃ ⇌ H⁺ + HCO₃⁻\n8. Phenol\nC₆H₅OH ⇌ H⁺ + C₆H₅O⁻",
+    page: 27,
+  },
+  "AN-CH3-EN-090": {
+    q: "Ka = degree of ionization × [H⁺]",
+    a: "Ka = degree of ionization × [H⁺]",
+    page: 29,
+  },
+  "AN-CH3-EN-132": {
+    q: "Write H₂SO₃ Acid Ionization equation , Which step has the biggest ionization constant and why ?",
+    a: "H₂SO₃ ⇌ H⁺ + HSO₃⁻ Ka₁\nHSO₃⁻ ⇌ H⁺ + SO₃⁻² Ka₂\nKa₁ > Ka₂\nThe reason for that is the electrostatic attraction power is strong between different charged ions. So the negative charged substances have a low capability of losing positive proton",
+    page: 44,
+  },
+  "AN-CH3-EN-133": {
+    q: "Write H₃PO₄ Acid Ionization equation , Which step has the biggest ionization constant and why ?",
+    a: "H₃PO₄₍ₐq₎ + H₂O₍L₎ ⇌ H₃O⁺₍ₐq₎ + H₂PO₄⁻₍ₐq₎ Ka₁\nH₂PO₄⁻₍ₐq₎ + H₂O₍L₎ ⇌ H₃O⁺₍ₐq₎ + HPO₄⁻²₍ₐq₎ Ka₂\nHPO₄⁻²₍ₐq₎ + H₂O₍L₎ ⇌ H₃O⁺₍ₐq₎ + PO₄⁻³₍ₐq₎ Ka₃\nKa₁ > Ka₂ > Ka₃\nThe reason for that is the electrostatic attraction power is strong between different charged ions. So the negative charged substances have a low capability of losing positive proton",
+    page: 44,
+  },
+  "AN-CH3-EN-134": {
+    q: "Monoprotic Acid",
+    a: "This is an acid which produces only a single proton from each of its molecules. This acid can be either strong or weak. Shortly, each of its molecules contains only a single proton which can react.",
+    page: 44,
+  },
+  "AN-CH3-EN-166": {
+    q: "When a salt formed from a strong acid and a weak base dissolves in water , the resulting solution is always acidic , the reason is ------",
+    a: "Answer : The reason is that the positive ion (which belongs to weak base) interacts with water in order to form H⁺ion\nNH₄⁺ + H₂O ⇌ NH₃ + H₃O⁺\n(1) Kₕ = Kw/Kb\n(2) [H⁺] = √(Kw × [salt]/Kb)\n(3) PH = 1/2 (PKw – PKb – log [C])\nThere is a converse relation between the aqueous-solution constant of the acidic salt and the decomposition constant of the weak base from which the salt is derived",
+    page: 55,
+  },
+  "AN-CH3-EN-176": {
+    q: "Justify :- When a salt formed from a strong base and a weak acid dissolves in water , the resulting solution is always basic",
+    a: "An example of basic salt is CH₃COONa because CH₃COONa (the salt formed from NaOH strong base and CH₃COOH weak acid ) ionized completely when dissolved in water as below:\nCH₃COONa₍s₎ —H₂O→ Na⁺₍ₐq₎ + CH₃COO⁻₍ₐq₎\nCH₃COO⁻ + H₂O ⇌ CH₃COOH + OH⁻\nThe acetate ion represents the conjugate base of weak acid CH₃COOH .therefore, these acetate ions interact with H⁺ ions in order to form CH₃COOH As a result, the amount of H⁺ ions in the solution decreases. H₂O molecules ionize to compensate the decrease.Thus the amount of OH⁻ ions increases and the solution becomes basic",
+    page: 61,
+  },
+  "AN-CH3-EN-177": {
+    q: "Justify :- PH of distilled water does not change when dissolving NaCl in it.",
+    a: "An example of a neutral salt is NaCl , because NaCl (the salt formed from NaOH Strong base and HCl Strong acid)salt decomposes (dissolves) to its ions.Besides, water molecular also ionize ,\nNaCl₍s₎ —H₂O→ Na⁺₍ₐq₎ + Cl⁻₍ₐq₎\nH₂O₍L₎ ⇌ H⁺₍ₐq₎ + OH⁻₍ₐq₎\nthe aqueous solution of this salt includes 4 types of ions.there are H⁺ , OH⁻,Cl⁻ ,Na⁺ Na⁺ is a conjugated weak acid and it does not react with water at a significant level.Also the negative ion of salt Cl⁻ is a conjugated weak base and it does not react with water at a significant level as a result, it can be said that the aqueous solutions of salts formed from strong bases and strong acids are neutral because neither ions (positive or negative ) have the capability to react with water and disrupt the equilibrium between H⁺ and OH⁻",
+    page: "61–62",
+  },
+  "AN-CH3-EN-178": {
+    q: "Justify :- aqueous solutions of the strong acid and strong bases salts are neutral",
+    a: "An example of a neutral salt is NaCl , because NaCl (the salt formed from NaOH Strong base and HCl Strong acid)salt decomposes (dissolves) to its ions.Besides, water molecular also ionize ,\nNaCl₍s₎ —H₂O→ Na⁺₍ₐq₎ + Cl⁻₍ₐq₎\nH₂O₍L₎ ⇌ H⁺₍ₐq₎ + OH⁻₍ₐq₎\nthe aqueous solution of this salt includes 4 types of ions.there are H⁺ , OH⁻,Cl⁻ ,Na⁺ Na⁺ is a conjugated weak acid and it does not react with water at a significant level.Also the negative ion of salt Cl⁻ is a conjugated weak base and it does not react with water at a significant level as a result, it can be said that the aqueous solutions of salts formed from strong bases and strong acids are neutral because neither ions (positive or negative ) have the capability to react with water and disrupt the equilibrium between H⁺ and OH⁻",
+    page: "61–62",
+  },
+  "AN-CH3-EN-180": {
+    q: "Justify :- The aqueous-solutions of the weak base and strong acids salts have acidic features.",
+    a: "An example of an acidic salt is NH₄Cl , because NH₄Cl (the salt formed from NH₃ weak base and HCl strong acid ) decomposes completely when dissolved in water as below:\nNH₄Cl₍s₎ —H₂O→ NH₄⁺₍ₐq₎ + Cl⁻₍ₐq₎\nH₂O₍L₎ ⇌ OH⁻₍ₐq₎ + H⁺₍ₐq₎\nIn order to define the hydrolysis of ammonium ions:the total of equation above can be expressed with a single equation:\nNH₄⁺₍ₐq₎ + H₂O ⇌ NH₃ + H₃O⁺\nAmmonium ion (the conjugate acid of weak base NH₃ .reacts with OH⁻ to produce non-ionized NH₃ and H₂O molecules.This reaction consumes OH⁻ ions in the medium,therefore to compensate this decrease and establish a new equilibrium,H₂O molecules ionize .As a result, the amount of H⁺ increases and the solution becomes acidic",
+    page: 62,
+  },
+  "AN-CH3-EN-195": {
+    q: "When dealing with dilute aqueous salt solutions, they must be classified into several categories. List them?",
+    a: "Salts of strong base-strong acid ( Neutral salt) for example : Sodium Chloride NaCl\nSalts of strong base – weak acid ( Basic Salt ) for example : CH₃COONa ( Sodium acetate )\nSalts of weak base-strong acid ( Acidic Salt ) for example : NH₄Cl – Ammonium Chloride",
+    page: 65,
+  },
+  "AN-CH3-EN-358": {
+    q: "What is the effect of PH on solubility",
+    a: "Zn(OH)₂ ⇌ Zn⁺² + 2OH⁻\nThe solubility of many substances depend on [H⁺] ion in solution. For example when an acid [H⁺] is added to a solution saturated of Zn(OH)₂, its solubility increase due to interaction of H⁺ with OH⁻ yielding water and thus ionizes more.\nZn(OH)₂ ⇌ Zn⁺² + 2OH⁻\nHCl → Cl⁻ + H⁺\nWhile when a base is added to the solution, the solubility (s) decreases as a result of the common ion effect that leads to increase the rate of backward reaction so the solubility decrease and the precipitation increase\nZn(OH)₂ ⇌ Zn⁺² + 2OH⁻\nNaOH → Na⁺ + OH⁻",
+    page: 140,
+  },
+  "AN-CH3-EN-361": {
+    q: "What is the solvolysis ? and what is the effect of temperature on solubility ?",
+    a: "Solvolysis means a substance dissociates homogenously by interacting with a suitable solvent ,\nIn order to dissolve a substance in a solution, the solute needs to gain the energy to break the bonds between the molecules. The substance obtains this energy through hydration. At the end, the difference between absorbed and released energy defines the temperature of the solution.\nPractically, the solubility of slightly soluble substances increases with temperature. But this increase changes from substance to substance.",
+    page: 140,
+  },
+  "AN-CH3-EN-434": {
+    q: "Why does the solubility of Mg(OH)₂ increase when an acid is added to its saturated aqueous solution?",
+    a: "The solubility of many substances depend on [H⁺] ion in solution. For example, when an acid [H⁺] is added to a solution saturated of Mg(OH)₂ , its solubility increases due to interaction of H⁺ with OH⁻ yielding water and thus ionizes more.",
+    page: "132, 163–164",
+  },
+
 };
