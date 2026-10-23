@@ -20,6 +20,27 @@ const groupFor = (slug: string) => {
   return "subjects";
 };
 
+const GROUP_STYLES = {
+  study: {
+    label: "مراجعة وحفظ",
+    card: "border-violet-300/70 bg-gradient-to-br from-violet-100/80 via-background to-indigo-100/70 hover:border-violet-400 dark:border-violet-700/60 dark:from-violet-950/55 dark:to-indigo-950/45 dark:hover:border-violet-500",
+    badge: "bg-violet-600 text-white",
+    action: "text-violet-700 dark:text-violet-300",
+  },
+  organize: {
+    label: "تنظيم الدراسة",
+    card: "border-teal-300/70 bg-gradient-to-br from-teal-100/80 via-background to-emerald-100/70 hover:border-teal-400 dark:border-teal-700/60 dark:from-teal-950/55 dark:to-emerald-950/45 dark:hover:border-teal-500",
+    badge: "bg-teal-600 text-white",
+    action: "text-teal-700 dark:text-teal-300",
+  },
+  subjects: {
+    label: "مواد وأدوات",
+    card: "border-sky-300/70 bg-gradient-to-br from-sky-100/80 via-background to-cyan-100/70 hover:border-sky-400 dark:border-sky-700/60 dark:from-sky-950/55 dark:to-cyan-950/45 dark:hover:border-sky-500",
+    badge: "bg-sky-600 text-white",
+    action: "text-sky-700 dark:text-sky-300",
+  },
+} as const;
+
 /** Public hub listing every Tamayzak study tool — crawlable, no auth. */
 const ToolsIndex = () => {
   const [query, setQuery] = useState("");
@@ -114,20 +135,23 @@ const ToolsIndex = () => {
         <p className="mb-4 text-sm text-muted-foreground" role="status" aria-live="polite">{filteredTools.length} أداة</p>
         {filteredTools.length ? (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredTools.map((t) => (
-            <li key={t.slug}>
+          {filteredTools.map((t) => {
+            const group = groupFor(t.slug) as keyof typeof GROUP_STYLES;
+            const style = GROUP_STYLES[group];
+            return <li key={t.slug}>
               <a
                 href={`/tools/${t.slug}`}
-                className="group block h-full rounded-2xl border border-border/70 bg-secondary p-5 text-secondary-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className={`group block h-full rounded-2xl border p-5 text-secondary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${style.card}`}
               >
+                <span className={`mb-4 inline-flex rounded-full px-3 py-1 text-xs font-bold ${style.badge}`}>{style.label}</span>
                 <h2 className="text-base font-bold leading-relaxed text-foreground">{t.title}</h2>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                   {t.metaDescription}
                 </p>
-                <span className="mt-4 inline-block text-sm font-semibold text-primary">استكشف الأداة ←</span>
+                <span className={`mt-4 inline-block text-sm font-bold ${style.action}`}>استكشف الأداة ←</span>
               </a>
-            </li>
-          ))}
+            </li>;
+          })}
           </ul>
         ) : (
           <div className="rounded-2xl bg-muted/60 px-5 py-8 text-center text-sm">

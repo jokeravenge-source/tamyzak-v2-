@@ -1320,6 +1320,7 @@ const Basics = ({
               {filteredStudyTools.map((it) => {
                 const Icon = it.Icon;
                 const meta = (fc as any)[it.key];
+                const tint = HOME_TOOL_TINTS[it.key] ?? DEFAULT_HOME_TINT;
                 const isLocked = TEMP_LOCKED_TOOLS.has(it.key);
                 const premiumLocked = isPremiumTool(it.key) && !isPremium;
                 const displayLocked = isLocked || premiumLocked;
@@ -1328,9 +1329,9 @@ const Basics = ({
                     key={it.key}
                     disabled={isLocked || (isPremiumTool(it.key) && subscriptionLoading)}
                     onClick={() => { setShowAllTools(false); navigate(it.key); }}
-                    className={`group relative flex min-h-[112px] items-start gap-3 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:border-[var(--tmz-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] ${isLocked ? "cursor-not-allowed opacity-60" : ""}`}
+                    className={`group relative flex min-h-[112px] items-start gap-3 overflow-hidden rounded-2xl border p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] ${tint.card} ${isLocked ? "cursor-not-allowed opacity-60" : ""}`}
                   >
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--tmz-panel)] text-[var(--tmz-ink)]">
+                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-sm transition-transform group-hover:scale-105 ${tint.icon}`}>
                       <Icon className="h-4 w-4" aria-hidden="true" />
                     </div>
                     <span className="min-w-0 flex-1 pe-5">
@@ -1341,7 +1342,7 @@ const Basics = ({
                         {isLocked ? (language === "ar" ? "مغلق مؤقتاً" : "Temporarily locked") : premiumLocked ? (language === "ar" ? "افتح البريميوم" : "Unlock Premium") : (language === "ar" ? "افتح الأداة" : "Open tool")}
                       </span>
                     </span>
-                    <span className="absolute end-4 top-4 text-[var(--tmz-muted)]" aria-hidden="true">
+                    <span className="absolute end-4 top-4 rounded-full bg-background/70 p-1.5 text-[var(--tmz-muted)] shadow-sm backdrop-blur-sm" aria-hidden="true">
                       {displayLocked ? <Lock className="h-4 w-4" /> : <ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />}
                     </span>
                   </button>
@@ -1373,7 +1374,7 @@ const Basics = ({
             id="progress-details-trigger"
             type="button"
             onClick={() => openDetail("progress")}
-            className="group mb-6 flex w-full items-center gap-4 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+            className="group mb-6 flex w-full items-center gap-4 rounded-2xl border border-blue-400/30 bg-gradient-to-br from-blue-500/15 via-sky-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
           >
             <RankStone rank={currentRank} size={64} fillProgress={stoneFill} glow={currentRank === "royal" || currentRank === "diamond"} className="shrink-0" />
             <span className="min-w-0 flex-1">
@@ -1399,7 +1400,7 @@ const Basics = ({
               }}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-32 overflow-hidden rounded-2xl border border-primary bg-primary p-5 text-start text-primary-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
+              className="group relative min-h-32 overflow-hidden rounded-2xl border border-primary bg-gradient-to-br from-primary via-primary to-blue-500 p-5 text-start text-primary-foreground shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.85)] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
             >
               <span className="relative flex items-center gap-4">
                 <BookOpen className="h-6 w-6 shrink-0 text-primary-foreground/90" aria-hidden="true" />
@@ -1418,9 +1419,9 @@ const Basics = ({
               onClick={() => navigate("subjectsHub")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+              className="group relative min-h-28 overflow-hidden rounded-2xl border border-sky-400/35 bg-gradient-to-br from-sky-500/20 via-blue-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 sm:p-5"
             >
-              <Layers className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-sky-600 text-white shadow-sm"><Layers className="h-5 w-5" aria-hidden="true" /></span>
               <span className="mt-3 block text-base font-semibold">{isRTL ? "اختَر مادة" : "Choose a subject"}</span>
               <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "شوف فصول المادة وأدواتها" : "Open its chapters and study tools"}</span>
             </motion.button>
@@ -1430,9 +1431,9 @@ const Basics = ({
               onClick={() => navigate("ourCourses")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+              className="group relative min-h-28 overflow-hidden rounded-2xl border border-violet-400/35 bg-gradient-to-br from-violet-500/20 via-indigo-500/10 to-fuchsia-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:p-5"
             >
-              <GraduationCap className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-600 text-white shadow-sm"><GraduationCap className="h-5 w-5" aria-hidden="true" /></span>
               <span className="mt-3 block text-base font-semibold">{isRTL ? "دوراتنا" : "Our Courses"}</span>
               <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "تصفّح الدورات المتاحة وابدأ الدراسة" : "Browse available courses and start learning"}</span>
             </motion.button>
@@ -1442,9 +1443,9 @@ const Basics = ({
               onClick={() => onNav("mistakes")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+              className="group relative min-h-28 overflow-hidden rounded-2xl border border-amber-400/35 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:p-5"
             >
-              <AlertTriangle className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-slate-950 shadow-sm"><AlertTriangle className="h-5 w-5" aria-hidden="true" /></span>
               <span className="mt-3 flex items-center gap-2 text-base font-semibold">
                 {isRTL ? "مراجعة اليوم" : "Daily review"}
                 {dueMistakes > 0 && <span className="rounded-full bg-[var(--tmz-panel)] px-2 py-0.5 text-xs font-medium tabular-nums">{dueMistakes}</span>}
@@ -1461,9 +1462,9 @@ const Basics = ({
               onClick={() => window.dispatchEvent(new CustomEvent("app:open-weakness-check-in"))}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+              className="group relative min-h-28 overflow-hidden rounded-2xl border border-rose-400/35 bg-gradient-to-br from-rose-500/20 via-pink-500/10 to-orange-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 sm:p-5"
             >
-              <Target className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-white shadow-sm"><Target className="h-5 w-5" aria-hidden="true" /></span>
               <span className="mt-3 block text-base font-semibold">{isRTL ? "نقاط ضعفي" : "My weak areas"}</span>
               <span className="mt-1 block text-sm text-[var(--tmz-muted)]">
                 {isRTL ? "حدد المواد والفصول اللي تحتاج تقويها" : "Identify the subjects and chapters you need to strengthen"}
@@ -1475,9 +1476,9 @@ const Basics = ({
               onClick={() => onNav("more")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-4 text-start text-[var(--tmz-ink)] transition-colors hover:bg-[var(--tmz-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
+              className="group relative min-h-28 overflow-hidden rounded-2xl border border-teal-400/35 bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:p-5"
             >
-              <Search className="h-5 w-5 text-[var(--tmz-muted)]" aria-hidden="true" />
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-600 text-white shadow-sm"><Search className="h-5 w-5" aria-hidden="true" /></span>
               <span className="mt-3 block text-base font-semibold">{isRTL ? "كل الأدوات" : "All tools"}</span>
               <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "ابحث عن أي أداة بمكان واحد" : "Find every tool in one organised screen"}</span>
             </motion.button>
