@@ -1,9 +1,9 @@
 name: Chapter 3 verbal audit export
 
 on:
-  push:
-    paths:
-      - ".github/workflows/ch3-verbal-audit-export.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 permissions:
   contents: read
