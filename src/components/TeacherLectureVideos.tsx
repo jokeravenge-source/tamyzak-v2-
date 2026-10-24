@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { getCuratedTeacherLectureNote } from "@/data/teacherLectureNotes";
+import { getNadiaArabicLectureNoteSourceKeys } from "@/data/nadiaLectureNoteSources";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -30,6 +31,12 @@ type PrettyBlock = {
   text: string;
 };
 type PrettyImage = { prompt: string; dataUrl: string };
+
+const usesArabicExplanationEnglishCurriculum = (
+  teacherId: string,
+  contentLanguage: AppLanguage,
+) => contentLanguage === "en"
+  && (teacherId === "nadia-al-nuaimy" || teacherId.startsWith("mohammed-anzi"));
 
 const L = {
   en: {
@@ -193,13 +200,19 @@ export default function TeacherLectureVideos({
   const T = L[language];
   const isRTL = language === "ar";
   const usesArabicEnglishCurriculumStyle =
-    contentLanguage === "en" && teacherId.startsWith("mohammed-anzi");
+    usesArabicExplanationEnglishCurriculum(teacherId, contentLanguage);
   const [videos, setVideos] = useState<LectureVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [openVideo, setOpenVideo] = useState<LectureVideo | null>(null);
   const curatedNote = useMemo(
     () => getCuratedTeacherLectureNote(teacherId, topicKey),
+    [teacherId, topicKey],
+  );
+  const arabicFallbackTopicKeys = useMemo(
+    () => teacherId === "nadia-al-nuaimy"
+      ? getNadiaArabicLectureNoteSourceKeys(topicKey)
+      : [],
     [teacherId, topicKey],
   );
 
@@ -226,11 +239,54 @@ export default function TeacherLectureVideos({
         approved: true,
         created_at: curatedNote.createdAt,
       }] : [];
-      setVideos([...curatedVideo, ...savedVideos]);
+      const hasEnglishNotes = [...curatedVideo, ...savedVideos].some((video) =>
+        Array.isArray(video.notes_parts)
+        && video.notes_parts.some((part) => typeof part?.notes === "string" && part.notes.trim().length > 0),
+      );
+
+      let arabicFallbackVideo: LectureVideo[] = [];
+      if (!hasEnglishNotes && arabicFallbackTopicKeys.length > 0) {
+        const { data: sourceRows, error: sourceError } = await supabase
+          .from("teacher_topic_videos")
+          .select("*")
+          .eq("teacher_id", teacherId)
+          .in("topic_key", arabicFallbackTopicKeys)
+          .eq("approved", true);
+
+        if (sourceError) {
+          toast.error(sourceError.message);
+        } else {
+          const orderedSources = ((sourceRows ?? []) as unknown as LectureVideo[])
+            .sort((a, b) =>
+              arabicFallbackTopicKeys.indexOf(a.topic_key)
+              - arabicFallbackTopicKeys.indexOf(b.topic_key),
+            );
+          const fallbackParts = orderedSources.flatMap((source) => source.notes_parts ?? []);
+
+          if (fallbackParts.some((part) => typeof part?.notes === "string" && part.notes.trim().length > 0)) {
+            arabicFallbackVideo = [{
+              id: `arabic-fallback:${teacherId}:${topicKey}`,
+              teacher_id: teacherId,
+              topic_key: topicKey,
+              youtube_url: "",
+              video_id: null,
+              title: contentLanguage === "en"
+                ? "Lecture notes — Arabic curriculum source"
+                : "ملاحظات المحاضرة — من محتوى المنهج العربي",
+              transcript: null,
+              notes_parts: fallbackParts,
+              approved: true,
+              created_at: orderedSources[0]?.created_at ?? new Date(0).toISOString(),
+            }];
+          }
+        }
+      }
+
+      setVideos([...curatedVideo, ...savedVideos, ...arabicFallbackVideo]);
     }
     setLoading(false);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey, curatedNote]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey, curatedNote, arabicFallbackTopicKeys]);
 
   const remove = async (id: string) => {
     if (!confirm(T.confirmDelete)) return;
@@ -312,7 +368,10 @@ export default function TeacherLectureVideos({
                       <Youtube className="w-3.5 h-3.5 text-red-500" /> {T.watch}
                     </a>
                   )}
-                  {isAdmin && !v.id.startsWith("curated:") && (
+                  {isAdmin
+                    && !v.id.startsWith("curated:")
+                    && !v.id.startsWith("arabic-fallback:")
+                    && (
                     <button
                       onClick={() => remove(v.id)}
                       className="ms-auto h-8 w-8 grid place-items-center rounded-lg border border-border text-destructive hover:bg-destructive/10"
@@ -373,7 +432,7 @@ function AdminAddVideo({
           language: contentLanguage,
           mode: "notes",
           adminGeneration: true,
-          notesStyle: contentLanguage === "en" && teacherId.startsWith("mohammed-anzi")
+          notesStyle: usesArabicExplanationEnglishCurriculum(teacherId, contentLanguage)
             ? "arabic-explanation-english-curriculum"
             : "default",
         },
