@@ -85,6 +85,13 @@
       "when": 1792687775602,
       "tag": "0011_trip_journeys",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792838009091,
+      "tag": "0012_study_room_ownership_by_user_id",
+      "breakpoints": true
     }
   ]
 }
