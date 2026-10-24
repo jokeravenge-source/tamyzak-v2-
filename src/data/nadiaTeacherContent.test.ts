@@ -55,10 +55,10 @@ describe("Nadia topic navigation", () => {
   it("organizes the existing English Chapter 1 content by topic", () => {
     const items = getNadiaNavigationItems("en", 1);
     expect(usesNadiaTopicNavigation("en", 1)).toBe(true);
-    expect(items).toHaveLength(27);
-    expect(items[0]).toMatchObject({ lecture: 1, en: "Introduction to Cells and Cell Theory" });
+    expect(items).toHaveLength(28);
+    expect(items[0]).toMatchObject({ lecture: 1, en: "Introduction to the Cell" });
     expect(items.find((item) => item.lecture === 7)?.en).toBe("Golgi Apparatus");
-    expect(items.at(-1)).toMatchObject({ lecture: 27, en: "Meiosis" });
+    expect(items.at(-1)).toMatchObject({ lecture: 28, en: "Mitosis: Metaphase and Anaphase" });
   });
 
   it("matches English Chapter 5 to the 21 translated Arabic topics", () => {
