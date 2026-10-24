@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, Eye, EyeOff, FlaskConical, Info, Lightbulb, Search, X } from "lucide-react";
+import { useMemo, useState, type DragEvent } from "react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, FlaskConical, GripVertical, Info, Lightbulb, Move, RotateCcw, Search, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { chemicalEquations, chemicalEquationTopics, type ChemicalEquation, type ChemicalEquationTopic } from "@/data/chemicalEquations";
 import { filterChemicalEquations } from "@/lib/chemicalEquationSearch";
@@ -11,9 +11,12 @@ const COPY = {
     back: "Back", equations: "equations", topics: "topics", local: "No AI credits needed",
     search: "Search equations", placeholder: "Search a topic, reaction, or formula, e.g. H2O or zinc",
     clearSearch: "Clear search", filter: "Filter by topic", all: "All topics",
-    practice: "Practice recall", reading: "Show all equations", hint: "Memory hint",
-    note: "Study note", show: "Show equation", hide: "Hide equation",
-    recall: "Try writing this equation from memory, then reveal it to check.",
+    practice: "Build equations", reading: "Study list", hint: "Memory hint",
+    note: "Study note", reactants: "Reactants", products: "Products",
+    speciesBank: "Equation pieces", buildHelp: "Drag each piece to the correct side. On touch screens, tap a piece and then tap its destination.",
+    selected: "Selected", tapDestination: "Now choose Reactants or Products.", returnPiece: "Return piece to the bank",
+    check: "Check equation", resetBuild: "Reset", correct: "Perfect — the equation is correct.",
+    incorrect: "Not quite. Move the highlighted pieces and check again.", incomplete: "Place every piece before checking.",
     results: "equations shown", noResults: "No matching equations",
     noResultsHint: "Try another formula or topic, or reset the filters.", reset: "Reset filters",
     source: "Based on the 19 entries you supplied. The two repeated occurrences are not listed again; the doubled zinc equation is kept as its own learning example.",
@@ -26,9 +29,12 @@ const COPY = {
     back: "رجوع", equations: "معادلة", topics: "مواضيع", local: "بدون استهلاك رصيد الذكاء الاصطناعي",
     search: "البحث عن معادلة", placeholder: "ابحث بالموضوع أو التفاعل أو الصيغة، مثل H2O أو الخارصين",
     clearSearch: "مسح البحث", filter: "تصفية حسب الموضوع", all: "كل المواضيع",
-    practice: "اختبر حفظك", reading: "إظهار كل المعادلات", hint: "تلميح للحفظ",
-    note: "ملاحظة دراسية", show: "إظهار المعادلة", hide: "إخفاء المعادلة",
-    recall: "جرّب تكتب المعادلة من ذاكرتك، وبعدين أظهرها حتى تتأكد.",
+    practice: "ركّب المعادلات", reading: "عرض قائمة الدراسة", hint: "تلميح للحفظ",
+    note: "ملاحظة دراسية", reactants: "المتفاعلات", products: "النواتج",
+    speciesBank: "أجزاء المعادلة", buildHelp: "اسحب كل مادة إلى الجهة الصحيحة. بالموبايل، اضغط على المادة ثم اضغط على مكانها.",
+    selected: "تم الاختيار", tapDestination: "هسه اختار المتفاعلات أو النواتج.", returnPiece: "إرجاع المادة إلى القائمة",
+    check: "تحقق من المعادلة", resetBuild: "إعادة المحاولة", correct: "ممتاز — المعادلة صحيحة.",
+    incorrect: "مو كلها صحيحة. انقل المواد المحددة وحاول مرة ثانية.", incomplete: "وزّع كل المواد قبل التحقق.",
     results: "معادلة معروضة", noResults: "ما لكينا معادلة مطابقة",
     noResultsHint: "جرّب صيغة أو موضوعاً آخر، أو أعد ضبط البحث والتصفية.", reset: "إعادة ضبط التصفية",
     source: "المحتوى مبني على المعادلات الـ19 التي أرسلتها. لم نكرر موضعي الانصهار وأكسدة الخارصين؛ وأبقينا المعادلة المضاعفة مثالاً مستقلاً للتعلّم.",
@@ -37,12 +43,136 @@ const COPY = {
   },
 } as const;
 
-function EquationCard({ equation, language, visible, onToggle }: {
-  equation: ChemicalEquation; language: AppLanguage; visible: boolean; onToggle: () => void;
+type EquationSide = "reactants" | "products";
+type EquationPiece = { id: string; label: string; answer: EquationSide };
+
+function parseEquation(formula: string): { pieces: EquationPiece[]; arrow: "→" | "⇌" } {
+  const arrow = formula.includes("⇌") ? "⇌" : "→";
+  const [reactants = "", products = ""] = formula.split(arrow);
+  const makePieces = (side: string, answer: EquationSide) => side.trim().split(/\s+\+\s+/).filter(Boolean)
+    .map((label, index) => ({ id: `${answer}-${index}`, label, answer }));
+  const left = makePieces(reactants, "reactants");
+  const right = makePieces(products, "products");
+  return { pieces: [...right, ...left].sort((a, b) => a.label.localeCompare(b.label)), arrow };
+}
+
+function EquationBuilder({ equation, language }: { equation: ChemicalEquation; language: AppLanguage }) {
+  const text = COPY[language];
+  const { pieces, arrow } = useMemo(() => parseEquation(equation.formula), [equation.formula]);
+  const [placements, setPlacements] = useState<Record<string, EquationSide | null>>(() =>
+    Object.fromEntries(pieces.map((piece) => [piece.id, null])),
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [checked, setChecked] = useState(false);
+  const allPlaced = pieces.every((piece) => placements[piece.id]);
+  const isCorrect = allPlaced && pieces.every((piece) => placements[piece.id] === piece.answer);
+
+  function placePiece(id: string, side: EquationSide | null) {
+    setPlacements((previous) => ({ ...previous, [id]: side }));
+    setSelectedId(null);
+    setChecked(false);
+  }
+
+  function placeSelected(side: EquationSide) {
+    if (selectedId) placePiece(selectedId, side);
+  }
+
+  function handleDrop(event: DragEvent<HTMLElement>, side: EquationSide) {
+    event.preventDefault();
+    const id = event.dataTransfer.getData("text/plain") || draggedId;
+    if (id && pieces.some((piece) => piece.id === id)) placePiece(id, side);
+    setDraggedId(null);
+  }
+
+  function reset() {
+    setPlacements(Object.fromEntries(pieces.map((piece) => [piece.id, null])));
+    setSelectedId(null);
+    setDraggedId(null);
+    setChecked(false);
+  }
+
+  const renderPiece = (piece: EquationPiece, inBank: boolean) => {
+    const wrong = checked && placements[piece.id] !== piece.answer;
+    const selected = selectedId === piece.id;
+    return (
+      <button key={piece.id} type="button" draggable
+        onDragStart={(event) => { event.dataTransfer.setData("text/plain", piece.id); setDraggedId(piece.id); }}
+        onDragEnd={() => setDraggedId(null)}
+        onClick={(event) => { event.stopPropagation(); inBank ? setSelectedId(selected ? null : piece.id) : placePiece(piece.id, null); }}
+        aria-pressed={inBank ? selected : undefined}
+        aria-label={inBank ? piece.label : `${piece.label} · ${text.returnPiece}`}
+        className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 font-mono text-sm font-semibold text-foreground shadow-sm transition-[transform,background-color,border-color,box-shadow] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chemistry ${wrong ? "border-destructive bg-destructive/10" : selected ? "border-chemistry bg-chemistry/20 shadow-md" : "border-chemistry/30 bg-card hover:border-chemistry/60 hover:bg-chemistry/10"}`}>
+        <GripVertical aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        <bdi dir="ltr">{piece.label}</bdi>
+      </button>
+    );
+  };
+
+  const renderZone = (side: EquationSide) => {
+    const zonePieces = pieces.filter((piece) => placements[piece.id] === side);
+    const labelId = `equation-${equation.id}-${side}`;
+    return (
+      <section aria-labelledby={labelId} onClick={() => placeSelected(side)}
+        onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, side)}
+        className={`min-h-28 rounded-2xl border border-dashed p-3 transition-[background-color,border-color,box-shadow] ${selectedId || draggedId ? "border-chemistry bg-chemistry/10 shadow-inner" : "border-chemistry/35 bg-background/55"}`}>
+        <button id={labelId} type="button" onClick={(event) => { event.stopPropagation(); placeSelected(side); }}
+          className="mb-3 min-h-8 rounded-lg px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-chemistry/10 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chemistry">
+          {text[side]}
+        </button>
+        <div className="flex min-h-12 flex-wrap content-start gap-2">
+          {zonePieces.map((piece) => renderPiece(piece, false))}
+        </div>
+      </section>
+    );
+  };
+
+  return (
+    <div className="my-5 min-w-0 rounded-2xl border border-chemistry/20 bg-chemistry/5 p-4">
+      <div className="mb-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+        <Move aria-hidden="true" className="mt-1 size-4 shrink-0 text-chemistry" />
+        <p>{text.buildHelp}</p>
+      </div>
+      <div className="rounded-xl border border-border/70 bg-card/75 p-3">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{text.speciesBank}</p>
+        <div className="flex min-h-12 flex-wrap gap-2">
+          {pieces.filter((piece) => !placements[piece.id]).map((piece) => renderPiece(piece, true))}
+        </div>
+        {selectedId && <p className="mt-3 text-xs font-medium text-foreground" aria-live="polite">{text.selected}: <bdi dir="ltr" className="font-mono">{pieces.find((piece) => piece.id === selectedId)?.label}</bdi>. {text.tapDestination}</p>}
+      </div>
+      <div className="mt-4 grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr]">
+        {renderZone("reactants")}
+        <div aria-hidden="true" className="flex items-center justify-center font-mono text-2xl font-bold text-chemistry">{arrow}</div>
+        {renderZone("products")}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button type="button" disabled={!allPlaced} onClick={() => setChecked(true)}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-chemistry px-4 py-2 text-sm font-bold text-white shadow-sm transition-[transform,box-shadow,opacity] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chemistry disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0">
+          <Check aria-hidden="true" className="size-4" />{text.check}
+        </button>
+        <button type="button" onClick={reset}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chemistry">
+          <RotateCcw aria-hidden="true" className="size-4" />{text.resetBuild}
+        </button>
+      </div>
+      <p aria-live="polite" className={`mt-3 min-h-6 text-sm font-semibold ${checked ? (isCorrect ? "text-emerald-700 dark:text-emerald-300" : "text-destructive") : "text-muted-foreground"}`}>
+        {checked ? (isCorrect ? text.correct : text.incorrect) : (!allPlaced && selectedId ? text.tapDestination : "")}
+      </p>
+      {checked && isCorrect && equation.value && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-chemistry/15 pt-3">
+          <bdi dir="ltr" className="font-mono text-sm font-semibold text-foreground">{equation.value.text}</bdi>
+          <span className="text-xs text-muted-foreground">{text[equation.value.kind]}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EquationCard({ equation, language, practice }: {
+  equation: ChemicalEquation; language: AppLanguage; practice: boolean;
 }) {
   const text = COPY[language];
   const titleId = `chemical-equation-${equation.id}`;
-  const formulaId = `${titleId}-formula`;
   return (
     <article aria-labelledby={titleId} className="clip-facet-lg min-w-0 border border-chemistry/25 bg-card/80 p-5 backdrop-blur-xl sm:p-6">
       <div className="flex items-start gap-3">
@@ -54,9 +184,8 @@ function EquationCard({ equation, language, visible, onToggle }: {
           <h3 id={titleId} className="text-lg font-bold leading-relaxed text-foreground">{equation.title[language]}</h3>
         </div>
       </div>
-      <div id={formulaId} className="my-5 min-w-0 rounded-xl border border-chemistry/15 bg-chemistry/5 p-4">
-        {visible ? (
-          <>
+      {practice ? <EquationBuilder equation={equation} language={language} /> : (
+        <div className="my-5 min-w-0 rounded-xl border border-chemistry/15 bg-chemistry/5 p-4">
             <div dir="ltr" role="region" aria-label={`${equation.title[language]} · ${text.equations}`} tabIndex={0}
               className="overflow-x-auto rounded-md text-start outline-none focus-visible:ring-2 focus-visible:ring-chemistry">
               <p className="w-max min-w-full whitespace-nowrap font-mono text-base font-semibold leading-loose text-foreground sm:text-lg">{equation.formula}</p>
@@ -67,13 +196,8 @@ function EquationCard({ equation, language, visible, onToggle }: {
                 <span className="text-xs text-muted-foreground">{text[equation.value.kind]}</span>
               </div>
             )}
-          </>
-        ) : (
-          <p className="flex min-h-10 items-center gap-2 text-sm leading-relaxed text-muted-foreground">
-            <EyeOff aria-hidden="true" className="size-4 shrink-0" />{text.recall}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
       <div className="flex items-start gap-2.5 rounded-xl bg-secondary/70 p-3.5">
         <Lightbulb aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-foreground" />
         <div>
@@ -91,11 +215,6 @@ function EquationCard({ equation, language, visible, onToggle }: {
           )}
         </details>
       )}
-      <button type="button" onClick={onToggle} aria-expanded={visible} aria-controls={formulaId}
-        className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-chemistry/25 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-chemistry/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chemistry">
-        {visible ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-        {visible ? text.hide : text.show}
-      </button>
     </article>
   );
 }
@@ -104,7 +223,6 @@ export default function ChemicalEquations({ language, onBack }: { language: AppL
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState<ChemicalEquationTopic | "all">("all");
   const [practice, setPractice] = useState(false);
-  const [toggled, setToggled] = useState<Set<number>>(() => new Set());
   const text = COPY[language];
   const isArabic = language === "ar";
   const BackArrow = isArabic ? ArrowRight : ArrowLeft;
@@ -112,14 +230,6 @@ export default function ChemicalEquations({ language, onBack }: { language: AppL
   const groups = chemicalEquationTopics.map((item) => ({
     ...item, equations: results.filter((equation) => equation.topic === item.id),
   })).filter((item) => item.equations.length > 0);
-
-  function toggleEquation(id: number) {
-    setToggled((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
 
   return (
     <main dir={isArabic ? "rtl" : "ltr"} lang={language} className={`min-h-screen px-4 py-6 text-start sm:px-6 sm:py-10 ${isArabic ? "font-body-ar" : ""}`}>
@@ -160,9 +270,9 @@ export default function ChemicalEquations({ language, onBack }: { language: AppL
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
             <p aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">{results.length} / {chemicalEquations.length} {text.results}</p>
-            <button type="button" aria-pressed={practice} onClick={() => { setPractice(!practice); setToggled(new Set()); }}
+            <button type="button" aria-pressed={practice} onClick={() => setPractice(!practice)}
               className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-chemistry/30 bg-chemistry/10 px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-chemistry/20 focus-visible:outline-chemistry">
-              {practice ? <Eye aria-hidden="true" className="size-4" /> : <EyeOff aria-hidden="true" className="size-4" />}
+              {practice ? <BookOpen aria-hidden="true" className="size-4" /> : <Move aria-hidden="true" className="size-4" />}
               {practice ? text.reading : text.practice}
             </button>
           </div>
@@ -175,8 +285,7 @@ export default function ChemicalEquations({ language, onBack }: { language: AppL
               <span className="rounded-lg bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">{group.equations.length}</span>
             </div>
             <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-              {group.equations.map((equation) => <EquationCard key={equation.id} equation={equation} language={language}
-                visible={practice ? toggled.has(equation.id) : !toggled.has(equation.id)} onToggle={() => toggleEquation(equation.id)} />)}
+              {group.equations.map((equation) => <EquationCard key={equation.id} equation={equation} language={language} practice={practice} />)}
             </div>
           </section>
         )) : (
