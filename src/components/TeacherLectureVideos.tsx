@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Youtube, Plus, Loader2, Sparkles, CheckCircle2, Trash2, X,
+  Youtube, Plus, Loader2, Sparkles, CheckCircle2, Trash2, X, Play,
   BookOpen, Download, ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,7 @@ const L = {
     generating: "Generating notes…",
     preview: "Preview & approve",
     approve: "Approve & publish",
+    publishVideoOnly: "Publish video only",
     saving: "Saving…",
     discard: "Discard",
     noVideos: "No lectures yet.",
@@ -75,6 +76,7 @@ const L = {
     generating: "جاري توليد الملاحظات…",
     preview: "معاينة واعتماد",
     approve: "اعتماد ونشر",
+    publishVideoOnly: "نشر الفيديو فقط",
     saving: "جاري الحفظ…",
     discard: "إلغاء",
     noVideos: "لا توجد محاضرات بعد.",
@@ -205,6 +207,7 @@ export default function TeacherLectureVideos({
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [openVideo, setOpenVideo] = useState<LectureVideo | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<LectureVideo | null>(null);
   const curatedNote = useMemo(
     () => getCuratedTeacherLectureNote(teacherId, topicKey),
     [teacherId, topicKey],
@@ -293,6 +296,7 @@ export default function TeacherLectureVideos({
     const { error } = await supabase.from("teacher_topic_videos").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setVideos((v) => v.filter((x) => x.id !== id));
+    if (playingVideo?.id === id) setPlayingVideo(null);
   };
 
   return (
@@ -319,6 +323,36 @@ export default function TeacherLectureVideos({
         />
       )}
 
+      {playingVideo?.video_id && (
+        <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+          <div className="flex items-center gap-3 border-b border-border px-3 py-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-red-500/10 text-red-500">
+              <Youtube className="h-4 w-4" />
+            </span>
+            <p className="min-w-0 flex-1 truncate text-sm font-bold">{playingVideo.title || T.videos}</p>
+            <button
+              type="button"
+              onClick={() => setPlayingVideo(null)}
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+              aria-label={T.close}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="aspect-video bg-black">
+            <iframe
+              key={playingVideo.video_id}
+              src={`https://www.youtube-nocookie.com/embed/${playingVideo.video_id}?autoplay=1&rel=0&modestbranding=1`}
+              title={playingVideo.title || T.videos}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              className="h-full w-full"
+            />
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="p-6 text-center text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline" /></div>
       ) : videos.length === 0 ? (
@@ -329,12 +363,19 @@ export default function TeacherLectureVideos({
             <li key={v.id} className="rounded-2xl border border-border bg-card overflow-hidden">
               <div className="relative aspect-video bg-black">
                 {v.video_id ? (
-                  <img
-                    src={`https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`}
-                    alt={v.title || ""}
-                    className="w-full h-full object-cover opacity-90"
-                    loading="lazy"
-                  />
+                  <button type="button" onClick={() => setPlayingVideo(v)} className="group/video relative block h-full w-full">
+                    <img
+                      src={`https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`}
+                      alt={v.title || ""}
+                      className="h-full w-full object-cover opacity-90"
+                      loading="lazy"
+                    />
+                    <span className="absolute inset-0 grid place-items-center bg-black/10 transition group-hover/video:bg-black/30">
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-red-600 text-white shadow-xl">
+                        <Play className="h-5 w-5 fill-current" />
+                      </span>
+                    </span>
+                  </button>
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 px-5 text-center text-white">
                     <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur">
@@ -354,19 +395,22 @@ export default function TeacherLectureVideos({
               <div className="p-3">
                 <p className="font-semibold text-sm truncate">{v.title || v.youtube_url}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <button
-                    onClick={() => setOpenVideo(v)}
-                    className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" /> {T.openNotes}
-                  </button>
+                  {v.notes_parts?.some((part) => part.notes?.trim()) && (
+                    <button
+                      onClick={() => setOpenVideo(v)}
+                      className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" /> {T.openNotes}
+                    </button>
+                  )}
                   {v.youtube_url && (
-                    <a
-                      href={v.youtube_url} target="_blank" rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setPlayingVideo(v)}
                       className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-border text-xs hover:bg-secondary"
                     >
                       <Youtube className="w-3.5 h-3.5 text-red-500" /> {T.watch}
-                    </a>
+                    </button>
                   )}
                   {isAdmin
                     && !v.id.startsWith("curated:")
@@ -448,6 +492,37 @@ function AdminAddVideo({
     } finally { setBusy("idle"); }
   };
 
+  const publishVideoOnly = async () => {
+    const vid = extractYouTubeId(url);
+    if (!vid) return toast.error(T.badUrl);
+    setBusy("save");
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("teacher_topic_videos")
+        .insert({
+          teacher_id: teacherId,
+          topic_key: topicKey,
+          youtube_url: url.trim(),
+          video_id: vid,
+          title: title.trim() || (language === "ar" ? "محاضرة YouTube" : "YouTube lecture"),
+          transcript: null,
+          notes_parts: [],
+          approved: true,
+          created_by: u.user?.id,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      toast.success(T.saved);
+      onSaved(data as unknown as LectureVideo);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setBusy("idle");
+    }
+  };
+
   const approve = async () => {
     if (!parts) return;
     const vid = extractYouTubeId(url);
@@ -499,8 +574,16 @@ function AdminAddVideo({
         </label>
 
         {!parts ? (
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={onCancel} className="h-10 px-4 rounded-lg border border-border text-sm hover:bg-secondary">{T.discard}</button>
+            <button
+              onClick={publishVideoOnly}
+              disabled={!url || busy !== "idle"}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border border-primary/40 bg-primary/10 text-primary text-sm font-semibold disabled:opacity-50"
+            >
+              {busy === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Youtube className="w-4 h-4" />}
+              {busy === "save" ? T.saving : T.publishVideoOnly}
+            </button>
             <button
               onClick={generate}
               disabled={!url || busy !== "idle"}
