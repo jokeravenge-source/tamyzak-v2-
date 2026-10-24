@@ -5,7 +5,7 @@
  * than a simple lecture-number substitution.
  */
 const NADIA_ENGLISH_TO_ARABIC_LECTURES: Record<number, Record<number, number[]>> = {
-  1: Object.fromEntries(Array.from({ length: 27 }, (_, index) => [index + 1, [index + 1]])),
+  1: Object.fromEntries(Array.from({ length: 28 }, (_, index) => [index + 1, [index + 1]])),
   2: {
     1: [2],
     2: [3, 4],
