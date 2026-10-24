@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Youtube, Play, Search as SearchIcon, X, ListVideo, Loader2, Users2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Youtube, Play, Search as SearchIcon, X, ListVideo, Loader2, Users2, Plus, Trash2, Upload, Video } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,14 @@ type Recent = { id: string; title: string; url: string; added: number };
 type PlaylistVideo = { id: string; title: string; author: string; thumbnail: string; published: string };
 type PlaylistData = { playlistId: string; title: string; videos: PlaylistVideo[] };
 type TeacherRow = { id: string; name: string; playlist_id: string; playlist_url: string | null };
+type PublishedLecture = {
+  id: string;
+  title: string;
+  subject: string | null;
+  youtube_url: string;
+  video_id: string;
+  created_at: string;
+};
 
 function extractPlaylistId(input: string): string | null {
   const s = input.trim();
@@ -64,6 +72,13 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lectures, setLectures] = useState<PublishedLecture[]>([]);
+  const [lecturesLoading, setLecturesLoading] = useState(false);
+  const [showLectureForm, setShowLectureForm] = useState(false);
+  const [lectureTitle, setLectureTitle] = useState("");
+  const [lectureSubject, setLectureSubject] = useState("");
+  const [lectureUrl, setLectureUrl] = useState("");
+  const [lectureSaving, setLectureSaving] = useState(false);
   const [recents, setRecents] = useState<Recent[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
   });
@@ -124,9 +139,69 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
     setTeachersLoading(false);
   }, []);
 
+  const loadLectures = useCallback(async () => {
+    setLecturesLoading(true);
+    const { data, error: loadError } = await supabase
+      .from("player_lectures")
+      .select("id,title,subject,youtube_url,video_id,created_at")
+      .eq("published", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (loadError) {
+      setError(isRTL ? "تعذّر تحميل المحاضرات" : "Couldn't load the lectures.");
+    } else {
+      setLectures((data as PublishedLecture[]) ?? []);
+    }
+    setLecturesLoading(false);
+  }, [isRTL]);
+
   useEffect(() => {
-    if (tab === "tamayzak") loadTeachers();
-  }, [tab, loadTeachers]);
+    if (tab === "tamayzak") {
+      loadTeachers();
+      loadLectures();
+    }
+  }, [tab, loadTeachers, loadLectures]);
+
+  const addLecture = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const id = extractId(lectureUrl);
+    if (!lectureTitle.trim() || !id) {
+      setError(isRTL ? "أدخل عنوان المحاضرة ورابط YouTube صالح" : "Enter a lecture title and a valid YouTube link.");
+      return;
+    }
+
+    setLectureSaving(true);
+    const { error: saveError } = await supabase.from("player_lectures").insert({
+      title: lectureTitle.trim(),
+      subject: lectureSubject.trim() || null,
+      youtube_url: `https://youtu.be/${id}`,
+      video_id: id,
+      published: true,
+    });
+    setLectureSaving(false);
+
+    if (saveError) {
+      setError(isRTL ? "تعذّر نشر المحاضرة" : "Couldn't publish the lecture.");
+      return;
+    }
+
+    setLectureTitle("");
+    setLectureSubject("");
+    setLectureUrl("");
+    setShowLectureForm(false);
+    setError(null);
+    loadLectures();
+  };
+
+  const removeLecture = async (id: string) => {
+    const { error: removeError } = await supabase.from("player_lectures").delete().eq("id", id);
+    if (removeError) {
+      setError(isRTL ? "تعذّر حذف المحاضرة" : "Couldn't delete the lecture.");
+      return;
+    }
+    loadLectures();
+  };
 
   const addTeacher = async () => {
     const pl = extractPlaylistId(newUrl);
@@ -161,6 +236,13 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
     setActiveTeacher(t);
     setVideoId(null);
     loadPlaylist(t.playlist_id);
+  };
+
+  const openPublishedLecture = (lecture: PublishedLecture) => {
+    setActiveTeacher(null);
+    setPlaylistId(null);
+    setPlaylist(null);
+    play(lecture.video_id, lecture.title, lecture.youtube_url);
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -254,6 +336,129 @@ const YoutubePlayer = ({ language, onBack, isAdmin = false }: { language: AppLan
 
         {tab === "tamayzak" && (
           <section className="mb-6">
+            {isAdmin && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => { setShowLectureForm((open) => !open); setError(null); }}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 sm:w-auto"
+                >
+                  {showLectureForm ? <X className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                  {showLectureForm
+                    ? (isRTL ? "إلغاء" : "Cancel")
+                    : (isRTL ? "رفع محاضرة YouTube" : "Upload a YouTube lecture")}
+                </button>
+
+                {showLectureForm && (
+                  <form onSubmit={addLecture} className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Video className="h-5 w-5 text-primary" />
+                      <div>
+                        <h2 className="text-sm font-bold">{isRTL ? "نشر محاضرة للطلاب" : "Publish a lecture for students"}</h2>
+                        <p className="text-xs text-muted-foreground">{isRTL ? "ستظهر المحاضرة مباشرة داخل مشغّل تميّزك." : "The lecture will appear directly in the Tamayzak player."}</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <input
+                        required
+                        value={lectureTitle}
+                        onChange={(e) => setLectureTitle(e.target.value)}
+                        placeholder={isRTL ? "عنوان المحاضرة" : "Lecture title"}
+                        aria-label={isRTL ? "عنوان المحاضرة" : "Lecture title"}
+                        className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      />
+                      <input
+                        value={lectureSubject}
+                        onChange={(e) => setLectureSubject(e.target.value)}
+                        placeholder={isRTL ? "المادة (اختياري)" : "Subject (optional)"}
+                        aria-label={isRTL ? "المادة" : "Subject"}
+                        className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      />
+                      <input
+                        required
+                        dir="ltr"
+                        type="url"
+                        value={lectureUrl}
+                        onChange={(e) => setLectureUrl(e.target.value)}
+                        placeholder="https://youtube.com/watch?v=..."
+                        aria-label={isRTL ? "رابط YouTube" : "YouTube URL"}
+                        className="h-11 rounded-xl border border-border bg-background px-3 text-left text-sm outline-none focus:border-primary sm:col-span-2"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={lectureSaving}
+                      className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50 sm:w-auto"
+                    >
+                      {lectureSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {lectureSaving ? (isRTL ? "جارٍ النشر..." : "Publishing...") : (isRTL ? "نشر للطلاب" : "Publish to students")}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+
+            <div className="mb-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Video className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {isRTL ? "محاضرات تميّزك" : "Tamayzak lectures"}
+                </h2>
+                {!lecturesLoading && <span className="text-xs text-muted-foreground">· {lectures.length}</span>}
+              </div>
+
+              {lecturesLoading ? (
+                <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {isRTL ? "جارٍ تحميل المحاضرات..." : "Loading lectures..."}
+                </div>
+              ) : lectures.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  {isRTL ? "لم تُنشر محاضرات بعد." : "No lectures have been published yet."}
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {lectures.map((lecture) => (
+                    <article key={lecture.id} className="group relative overflow-hidden rounded-2xl border border-border bg-secondary/30 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md">
+                      <button
+                        type="button"
+                        onClick={() => openPublishedLecture(lecture)}
+                        className="block w-full text-start"
+                      >
+                        <div className="relative aspect-video bg-black">
+                          <img
+                            src={`https://i.ytimg.com/vi/${lecture.video_id}/hqdefault.jpg`}
+                            alt=""
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute inset-0 grid place-items-center bg-black/15 transition group-hover:bg-black/30">
+                            <span className="grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                              <Play className="h-5 w-5 fill-current" />
+                            </span>
+                          </span>
+                        </div>
+                        <div className="p-3">
+                          {lecture.subject && <p className="mb-1 text-xs font-semibold text-primary">{lecture.subject}</p>}
+                          <h3 className="line-clamp-2 text-sm font-bold leading-6">{lecture.title}</h3>
+                        </div>
+                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => removeLecture(lecture.id)}
+                          aria-label={isRTL ? "حذف المحاضرة" : "Delete lecture"}
+                          className="absolute end-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-muted-foreground shadow backdrop-blur transition hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {isAdmin && (
               <div className="rounded-xl border border-border bg-secondary/30 p-3 mb-4 space-y-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
