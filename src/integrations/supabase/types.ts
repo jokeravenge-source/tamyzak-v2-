@@ -3489,6 +3489,7 @@ export type Database = {
         Args: { _points: number; _ref_id?: string; _source: string }
         Returns: string
       }
+      can_take_study_room_ownership: { Args: never; Returns: boolean }
       can_use_premium_tools: { Args: never; Returns: boolean }
       check_edge_rate_limit: {
         Args: {
@@ -3597,6 +3598,7 @@ export type Database = {
         Returns: undefined
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      take_study_room_ownership: { Args: { _room: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
