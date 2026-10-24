@@ -1975,45 +1975,6 @@ export type Database = {
         }
         Relationships: []
       }
-      player_lectures: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          published: boolean
-          sort_order: number
-          subject: string | null
-          title: string
-          updated_at: string
-          video_id: string
-          youtube_url: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          published?: boolean
-          sort_order?: number
-          subject?: string | null
-          title: string
-          updated_at?: string
-          video_id: string
-          youtube_url: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          published?: boolean
-          sort_order?: number
-          subject?: string | null
-          title?: string
-          updated_at?: string
-          video_id?: string
-          youtube_url?: string
-        }
-        Relationships: []
-      }
       player_teachers: {
         Row: {
           created_at: string
