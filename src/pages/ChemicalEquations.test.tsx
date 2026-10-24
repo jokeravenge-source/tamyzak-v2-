@@ -45,21 +45,32 @@ describe("Chemical Equation tool", () => {
     expect(screen.getAllByRole("article")).toHaveLength(19);
     expect(screen.getByRole("searchbox")).toHaveValue("");
   });
-  it("hides and reveals formulae and values independently in recall mode", () => {
+  it("hides the formula and lets students build it from draggable, touch-friendly pieces", () => {
     render(<ChemicalEquations language="en" onBack={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Practice recall" }));
+    fireEvent.click(screen.getByRole("button", { name: "Build equations" }));
     expect(screen.queryByText(chemicalEquations[0].formula)).not.toBeInTheDocument();
     expect(screen.queryByText("ΔH = −286 kJ/mol")).not.toBeInTheDocument();
     expect(screen.getAllByText("Memory hint")).toHaveLength(19);
     const first = screen.getAllByRole("article")[0];
     const second = screen.getAllByRole("article")[1];
-    fireEvent.click(within(first).getByRole("button", { name: "Show equation" }));
-    expect(within(first).getByText(chemicalEquations[0].formula)).toBeInTheDocument();
+    expect(within(first).getByRole("button", { name: "Check equation" })).toBeDisabled();
+    expect(within(first).getByRole("button", { name: "H₂(g)" })).toHaveAttribute("draggable", "true");
+
+    fireEvent.click(within(first).getByRole("button", { name: "H₂(g)" }));
+    fireEvent.click(within(first).getByRole("button", { name: "Reactants" }));
+    fireEvent.click(within(first).getByRole("button", { name: "½ O₂(g)" }));
+    fireEvent.click(within(first).getByRole("button", { name: "Reactants" }));
+    fireEvent.click(within(first).getByRole("button", { name: "H₂O(l)" }));
+    fireEvent.click(within(first).getByRole("button", { name: "Products" }));
+
+    expect(within(first).getByRole("button", { name: "Check equation" })).toBeEnabled();
+    fireEvent.click(within(first).getByRole("button", { name: "Check equation" }));
+    expect(within(first).getByText("Perfect — the equation is correct.")).toBeInTheDocument();
     expect(within(first).getByText("ΔH = −286 kJ/mol")).toBeInTheDocument();
     expect(within(second).queryByText(chemicalEquations[1].formula)).not.toBeInTheDocument();
-    fireEvent.click(within(first).getByRole("button", { name: "Hide equation" }));
-    expect(within(first).queryByText(chemicalEquations[0].formula)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Show all equations" }));
+    fireEvent.click(within(first).getByRole("button", { name: "Reset" }));
+    expect(within(first).getByRole("button", { name: "Check equation" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Study list" }));
     expect(screen.getAllByRole("region", { name: / · equations$/ })).toHaveLength(19);
   });
   it("keeps the important phase clarification expanded by default", () => {
