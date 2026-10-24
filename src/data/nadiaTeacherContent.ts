@@ -158,7 +158,7 @@ const NADIA_ENGLISH_TOPIC_NAVIGATION: Partial<Record<NadiaChapterNumber, NadiaNa
   1: [
     { lecture: 1, ar: "مقدمة في الخلية والنظرية الخلوية", en: "Introduction to Cells and Cell Theory" },
     { lecture: 2, ar: "حجم الخلية والخلايا بدائية النواة", en: "Cell Size and Prokaryotic Cells" },
-    { lecture: 3, ar: "الخلايا بدائية النواة", en: "Prokaryotic Cells" },
+    { lecture: 3, ar: "الخلايا حقيقية النواة", en: "Eukaryotic Cells" },
     { lecture: 4, ar: "تركيب الخلية البكتيرية", en: "Bacterial Cell Structure" },
     { lecture: 5, ar: "الخلايا حقيقية النواة", en: "Eukaryotic Cells" },
     { lecture: 6, ar: "السايتوبلازم والشبكة البلازمية الداخلية", en: "Cytoplasm and Endoplasmic Reticulum" },
