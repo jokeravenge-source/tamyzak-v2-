@@ -25,6 +25,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       const query = {
         select: vi.fn(() => query),
         eq: vi.fn((column: string, value: string) => { filters[column] = value; return query; }),
+        in: vi.fn(() => query),
         order: vi.fn(async () => {
           backend.reads.push({ table, filters: { ...filters } });
           const rows = table === "teacher_topic_videos" ? backend.videos : backend.mcqs;
@@ -136,7 +137,14 @@ describe("Nadia teacher hub", () => {
     await waitFor(() => expect(backend.writes).toContainEqual(expect.objectContaining({
       table: "teacher_topic_videos", row: expect.objectContaining({ topic_key: `nadia-${curriculum}-ch1-lec2-study` }),
     })));
-    expect(backend.invoke).toHaveBeenCalledWith("video-notes", expect.objectContaining({ body: expect.objectContaining({ language: curriculum }) }));
+    expect(backend.invoke).toHaveBeenCalledWith("video-notes", expect.objectContaining({
+      body: expect.objectContaining({
+        language: curriculum,
+        notesStyle: curriculum === "en"
+          ? "arabic-explanation-english-curriculum"
+          : "default",
+      }),
+    }));
   });
 
   it.each(["ar", "en"] as const)("generates and saves %s MCQs in their own curriculum", async (curriculum) => {
