@@ -4,6 +4,7 @@ import {
   Eye,
   FlaskConical,
   Lightbulb,
+  Power,
   RotateCcw,
   Sparkles,
   XCircle,
@@ -37,12 +38,12 @@ const copy = {
   ar: {
     eyebrow: "نشاط بصري تفاعلي",
     title: "بيّن بوضوح أنواع الأطياف",
-    subtitle: "غيّر مصدر الضوء والغاز وزاوية الموشور، ثم راقب الطيف المتكوّن على الشاشة واستنتج نوعه.",
+    subtitle: "شغّل المصدر، وغيّر مادته وزاوية الموشور، ثم راقب كيف تتبدّل بصمة الطيف على الشاشة.",
     source: "1. اختر مصدر الضوء",
     continuous: "مصباح اعتيادي",
     emission: "أنبوب غاز متوهّج",
     absorption: "مصباح يمر عبر غاز بارد",
-    gas: "2. اختر الغاز",
+    material: "2. اختر مادة المصدر",
     hydrogen: "الهيدروجين",
     sodium: "الصوديوم",
     mercury: "الزئبق",
@@ -50,11 +51,18 @@ const copy = {
     angleHint: "حرّك المؤشر لتغيير مقدار انتشار الضوء على الشاشة.",
     reset: "إعادة التجربة",
     apparatus: "مسار التجربة",
+    powerOn: "المصدر يعمل",
+    powerOff: "المصدر متوقف",
+    turnOn: "تشغيل المصدر",
+    turnOff: "إطفاء المصدر",
     sourceLabel: "المصدر",
     slit: "الشق",
     prism: "الموشور",
     screen: "الشاشة",
     result: "المشاهدة",
+    offName: "التجربة متوقفة",
+    offResult: "شغّل المصدر لمشاهدة الضوء بعد مروره في الموشور وظهور طيف المادة على الشاشة.",
+    screenOff: "لا يوجد ضوء",
     continuousResult: "شريط متصل من الألوان، من البنفسجي إلى الأحمر، من دون فجوات.",
     emissionResult: "خطوط مضيئة منفصلة على خلفية معتمة؛ مواقعها تميّز الغاز المستخدم.",
     absorptionResult: "طيف متصل تتخلله خطوط معتمة عند الأطوال الموجية التي امتصها الغاز.",
@@ -73,12 +81,12 @@ const copy = {
   en: {
     eyebrow: "Interactive optics activity",
     title: "Explore the Types of Spectra",
-    subtitle: "Change the light source, gas, and prism angle. Observe the spectrum on the screen and identify its type.",
+    subtitle: "Turn on the source, change its material and the prism angle, then watch the spectral fingerprint change on the screen.",
     source: "1. Choose the light source",
     continuous: "Ordinary lamp",
     emission: "Glowing gas tube",
     absorption: "Lamp through cool gas",
-    gas: "2. Choose the gas",
+    material: "2. Choose the source material",
     hydrogen: "Hydrogen",
     sodium: "Sodium",
     mercury: "Mercury",
@@ -86,11 +94,18 @@ const copy = {
     angleHint: "Move the slider to change how widely the light spreads on the screen.",
     reset: "Reset experiment",
     apparatus: "Experiment path",
+    powerOn: "Source on",
+    powerOff: "Source off",
+    turnOn: "Turn source on",
+    turnOff: "Turn source off",
     sourceLabel: "Source",
     slit: "Slit",
     prism: "Prism",
     screen: "Screen",
     result: "Observation",
+    offName: "Experiment paused",
+    offResult: "Turn on the source to send light through the prism and reveal the material's spectrum on the screen.",
+    screenOff: "No light",
     continuousResult: "An unbroken band of color from violet to red, with no gaps.",
     emissionResult: "Separate bright lines on a dark background; their positions identify the gas.",
     absorptionResult: "A continuous spectrum crossed by dark lines at wavelengths absorbed by the gas.",
@@ -111,23 +126,44 @@ const copy = {
 const modes: SpectrumMode[] = ["continuous", "emission", "absorption"];
 const gases: Gas[] = ["hydrogen", "sodium", "mercury"];
 
-const SpectrumDisplay = ({ mode, gas }: { mode: SpectrumMode; gas: Gas }) => {
+const SpectrumDisplay = ({
+  mode,
+  gas,
+  isOn,
+  offLabel,
+  screenLabel,
+}: {
+  mode: SpectrumMode;
+  gas: Gas;
+  isOn: boolean;
+  offLabel: string;
+  screenLabel: string;
+}) => {
   const lines = spectrumLines[gas];
   const isContinuous = mode !== "emission";
 
   return (
     <div
-      className={`relative h-28 overflow-hidden rounded-xl border border-white/15 shadow-[inset_0_0_24px_rgba(255,255,255,.08)] sm:h-36 ${
-        isContinuous
+      className={`relative h-28 overflow-hidden rounded-xl border transition-all duration-500 sm:h-36 ${
+        isOn
+          ? "border-white/15 shadow-[inset_0_0_24px_rgba(255,255,255,.08),0_0_24px_rgba(56,189,248,.08)]"
+          : "border-slate-700/60 shadow-[inset_0_0_24px_rgba(0,0,0,.55)]"
+      } ${
+        isOn && isContinuous
           ? "bg-[linear-gradient(90deg,#5316a8_0%,#3348d9_15%,#00a8f3_31%,#10b866_48%,#f0de28_64%,#f79a1d_78%,#e92727_100%)]"
           : "bg-[#02050c]"
       }`}
-      aria-label="Spectrum screen"
+      aria-live="polite"
+      aria-label={isOn ? screenLabel : offLabel}
+      data-testid="spectrum-screen"
+      data-material={gas}
+      data-powered={isOn ? "on" : "off"}
     >
-      {mode !== "continuous" &&
+      {isOn && mode !== "continuous" &&
         lines.map((line, index) => (
           <span
             key={`${gas}-${index}`}
+            data-testid="spectrum-line"
             className={`absolute inset-y-0 ${mode === "emission" ? "opacity-100 shadow-[0_0_12px_currentColor]" : "bg-slate-950/90"}`}
             style={{
               left: `${line.position}%`,
@@ -137,7 +173,13 @@ const SpectrumDisplay = ({ mode, gas }: { mode: SpectrumMode; gas: Gas }) => {
             }}
           />
         ))}
-      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_15%,rgba(255,255,255,.18)_40%,transparent_58%)]" />
+      {isOn ? (
+        <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_15%,rgba(255,255,255,.18)_40%,transparent_58%)]" />
+      ) : (
+        <span className="absolute inset-0 grid place-items-center text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
+          {offLabel}
+        </span>
+      )}
     </div>
   );
 };
@@ -147,12 +189,13 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
   const t = copy[language];
   const [mode, setMode] = useState<SpectrumMode>("emission");
   const [gas, setGas] = useState<Gas>("hydrogen");
+  const [isOn, setIsOn] = useState(true);
   const [angle, setAngle] = useState(38);
   const [answer, setAnswer] = useState<SpectrumMode | null>(null);
   const [feedback, setFeedback] = useState<"idle" | "empty" | "correct" | "wrong">("idle");
 
-  const modeName = t[`${mode}Name`];
-  const observation = t[`${mode}Result`];
+  const modeName = isOn ? t[`${mode}Name`] : t.offName;
+  const observation = isOn ? t[`${mode}Result`] : t.offResult;
   const spread = useMemo(() => 46 + (angle - 20) * 0.9, [angle]);
 
   const chooseMode = (nextMode: SpectrumMode) => {
@@ -164,6 +207,7 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
   const reset = () => {
     setMode("emission");
     setGas("hydrogen");
+    setIsOn(true);
     setAngle(38);
     setAnswer(null);
     setFeedback("idle");
@@ -203,31 +247,51 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
                 <Eye className="size-5 text-sky-400" aria-hidden="true" />
                 {t.apparatus}
               </h3>
-              <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1 text-xs font-bold text-sky-300">{angle}°</span>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1 text-xs font-bold text-sky-300">{angle}°</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOn((current) => !current);
+                    setAnswer(null);
+                    setFeedback("idle");
+                  }}
+                  aria-pressed={isOn}
+                  aria-label={isOn ? t.turnOff : t.turnOn}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
+                    isOn
+                      ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300 shadow-[0_0_20px_rgba(52,211,153,.12)]"
+                      : "border-slate-600 bg-slate-800 text-slate-300 hover:border-sky-400/50"
+                  }`}
+                >
+                  <Power className="size-4" aria-hidden="true" />
+                  <span>{isOn ? t.powerOn : t.powerOff}</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-[64px_1fr_70px] items-center gap-2 sm:grid-cols-[92px_1fr_110px] sm:gap-4">
               <div className="flex flex-col items-center gap-2 text-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl border border-amber-300/30 bg-amber-300/10 sm:size-16">
+                <div className={`flex size-14 items-center justify-center rounded-2xl border transition-all duration-300 sm:size-16 ${isOn ? "border-amber-300/30 bg-amber-300/10 shadow-[0_0_22px_rgba(253,224,71,.08)]" : "border-slate-700 bg-slate-900"}`}>
                   {mode === "continuous" || mode === "absorption" ? (
-                    <Lightbulb className="size-7 text-amber-300" aria-hidden="true" />
+                    <Lightbulb className={`size-7 transition-colors ${isOn ? "text-amber-300" : "text-slate-600"}`} aria-hidden="true" />
                   ) : (
-                    <FlaskConical className="size-7 text-cyan-300" aria-hidden="true" />
+                    <FlaskConical className={`size-7 transition-colors ${isOn ? "text-cyan-300" : "text-slate-600"}`} aria-hidden="true" />
                   )}
                 </div>
-                <span className="text-[11px] font-bold text-slate-300">{t.sourceLabel}</span>
+                <span className={`text-[11px] font-bold ${isOn ? "text-slate-300" : "text-slate-600"}`}>{t.sourceLabel}</span>
               </div>
 
               <div className="relative h-44 min-w-0 overflow-hidden sm:h-52">
                 <div className="absolute inset-y-0 start-0 w-3 rounded bg-slate-200/90" aria-label={t.slit} />
-                <div className="absolute start-3 top-1/2 h-1 w-[38%] -translate-y-1/2 bg-amber-200 shadow-[0_0_12px_#fde68a] motion-safe:animate-pulse" />
+                <div className={`absolute start-3 top-1/2 h-1 w-[38%] -translate-y-1/2 bg-amber-200 shadow-[0_0_12px_#fde68a] transition-opacity duration-300 ${isOn ? "opacity-100 motion-safe:animate-pulse" : "opacity-0"}`} />
                 <div
                   className="absolute start-[39%] top-1/2 size-20 -translate-y-1/2 border border-cyan-100/70 bg-cyan-200/15 shadow-[inset_0_0_18px_rgba(125,211,252,.25)] transition-transform sm:size-24"
                   style={{ clipPath: "polygon(50% 0,100% 100%,0 100%)", transform: `translateY(-50%) rotate(${angle - 38}deg)` }}
                   aria-label={t.prism}
                 />
                 <div
-                  className="absolute end-0 top-1/2 h-24 w-[43%] -translate-y-1/2 origin-left opacity-80 transition-all duration-300"
+                  className={`absolute end-0 top-1/2 h-24 w-[43%] -translate-y-1/2 origin-left transition-all duration-300 ${isOn ? "opacity-80" : "opacity-0"}`}
                   style={{
                     width: `${Math.min(52, spread)}%`,
                     clipPath: "polygon(0 47%,100% 0,100% 100%,0 53%)",
@@ -237,8 +301,8 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
               </div>
 
               <div>
-                <SpectrumDisplay mode={mode} gas={gas} />
-                <p className="mt-2 text-center text-[11px] font-bold text-slate-300">{t.screen}</p>
+                <SpectrumDisplay mode={mode} gas={gas} isOn={isOn} offLabel={t.screenOff} screenLabel={`${t.screen}: ${t[`${mode}Name`]}`} />
+                <p className={`mt-2 text-center text-[11px] font-bold ${isOn ? "text-slate-300" : "text-slate-600"}`}>{t.screen}</p>
               </div>
             </div>
           </div>
@@ -280,17 +344,21 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
           </fieldset>
 
           <fieldset className={mode === "continuous" ? "opacity-45" : ""} disabled={mode === "continuous"}>
-            <legend className="mb-3 text-sm font-black text-foreground">{t.gas}</legend>
+            <legend className="mb-3 text-sm font-black text-foreground">{t.material}</legend>
             <div className="grid grid-cols-3 gap-2">
               {gases.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  onClick={() => setGas(item)}
+                  onClick={() => {
+                    setGas(item);
+                    setAnswer(null);
+                    setFeedback("idle");
+                  }}
                   aria-pressed={gas === item}
-                  className={`min-h-11 rounded-xl border px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${
+                  className={`relative min-h-11 overflow-hidden rounded-xl border px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${
                     gas === item && mode !== "continuous"
-                      ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-700 dark:text-cyan-300"
+                      ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-700 shadow-[inset_0_-3px_0_rgba(34,211,238,.55)] dark:text-cyan-300"
                       : "border-border bg-background text-muted-foreground hover:border-physics/40"
                   }`}
                 >
@@ -324,11 +392,12 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
                 <button
                   key={item}
                   type="button"
+                  disabled={!isOn}
                   onClick={() => {
                     setAnswer(item);
                     setFeedback("idle");
                   }}
-                  className={`min-h-10 rounded-lg border px-3 text-start text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${answer === item ? "border-physics bg-physics/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-physics/40"}`}
+                  className={`min-h-10 rounded-lg border px-3 text-start text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:cursor-not-allowed disabled:opacity-40 ${answer === item ? "border-physics bg-physics/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-physics/40"}`}
                 >
                   {t[`${item}Name`]}
                 </button>
@@ -337,7 +406,8 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
             <button
               type="button"
               onClick={() => setFeedback(answer === null ? "empty" : answer === mode ? "correct" : "wrong")}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-foreground px-4 text-sm font-extrabold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics"
+              disabled={!isOn}
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-foreground px-4 text-sm font-extrabold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t.check}
             </button>
