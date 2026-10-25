@@ -9,6 +9,7 @@ import SelfInductionActivity from "@/components/physics/SelfInductionActivity";
 import SpectrumTypesActivity from "@/components/physics/SpectrumTypesActivity";
 import PhotoelectricEffectActivity from "@/components/physics/PhotoelectricEffectActivity";
 import PolarizationActivity from "@/components/physics/PolarizationActivity";
+import LightWavePolarizationActivity from "@/components/physics/LightWavePolarizationActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -430,7 +431,7 @@ const PhysicsActivities = ({
         </header>
 
         <Tabs defaultValue="dielectric" className="w-full">
-          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-3 lg:grid-cols-6">
+          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-3 xl:grid-cols-7">
             <TabsTrigger value="dielectric">
               {isRTL ? "المكثف والعازل" : "Capacitor & Dielectric"}
             </TabsTrigger>
@@ -448,6 +449,9 @@ const PhysicsActivities = ({
             </TabsTrigger>
             <TabsTrigger value="polarization">
               {isRTL ? "ف5 · الاستقطاب" : "Ch5 · Polarization"}
+            </TabsTrigger>
+            <TabsTrigger value="light-wave-polarization">
+              {isRTL ? "ف5 · موجات الضوء" : "Ch5 · Light Waves"}
             </TabsTrigger>
           </TabsList>
 
@@ -563,6 +567,10 @@ const PhysicsActivities = ({
 
           <TabsContent value="polarization">
             <PolarizationActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="light-wave-polarization">
+            <LightWavePolarizationActivity language={language} />
           </TabsContent>
         </Tabs>
       </div>
