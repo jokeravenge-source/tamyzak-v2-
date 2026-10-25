@@ -5,12 +5,14 @@ import {
   Eye,
   Layers3,
   RotateCcw,
+  RotateCw,
   SlidersHorizontal,
   XCircle,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 type Stage = "single" | "double";
+type ActiveSheet = "first" | "second";
 
 const copy = {
   ar: {
@@ -23,7 +25,14 @@ const copy = {
     first: "الشريحة المستقطِبة",
     second: "الشريحة المُحلِّلة",
     eye: "العين",
+    eyeLit: "العين تستقبل ضوءًا مستقطبًا",
+    eyeDark: "لا يصل ضوء إلى العين",
     axis: "محور النفاذ",
+    tapHint: "اضغط على أي شريحة لتحديدها وتدويرها بسهولة",
+    selectedSheet: "الشريحة المحددة",
+    rotateSelected: "دوّر الشريحة المحددة",
+    decreaseAngle: "أنقص الزاوية 15 درجة",
+    increaseAngle: "زد الزاوية 15 درجة",
     stage: "مرحلة التجربة",
     single: "شريحة واحدة",
     double: "شريحتان",
@@ -60,7 +69,14 @@ const copy = {
     first: "Polarizing sheet",
     second: "Analyzer sheet",
     eye: "Eye",
+    eyeLit: "The eye receives polarized light",
+    eyeDark: "No light reaches the eye",
     axis: "Transmission axis",
+    tapHint: "Click a sheet to select it, then rotate it with the easy controls",
+    selectedSheet: "Selected sheet",
+    rotateSelected: "Rotate the selected sheet",
+    decreaseAngle: "Decrease angle by 15 degrees",
+    increaseAngle: "Increase angle by 15 degrees",
     stage: "Experiment stage",
     single: "One sheet",
     double: "Two sheets",
@@ -95,14 +111,46 @@ const PolarizingSheet = ({
   label,
   axisLabel,
   gradientId,
+  active,
+  selectLabel,
+  onSelect,
 }: {
   x: number;
   angle: number;
   label: string;
   axisLabel: string;
   gradientId: string;
+  active: boolean;
+  selectLabel: string;
+  onSelect: () => void;
 }) => (
-  <g>
+  <g
+    role="button"
+    tabIndex={0}
+    aria-label={selectLabel}
+    aria-pressed={active}
+    onClick={onSelect}
+    onKeyDown={(event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelect();
+      }
+    }}
+    className="cursor-pointer outline-none"
+  >
+    {active && (
+      <ellipse
+        cx={x}
+        cy="142"
+        rx="43"
+        ry="94"
+        fill="none"
+        stroke="#fef08a"
+        strokeWidth="3"
+        strokeDasharray="8 7"
+        className="motion-safe:animate-pulse"
+      />
+    )}
     <ellipse cx={x} cy="142" rx="32" ry="82" fill={`url(#${gradientId})`} stroke="#7dd3fc" strokeWidth="5" />
     <ellipse cx={x} cy="142" rx="24" ry="70" fill="#020617" opacity=".55" />
     <g transform={`rotate(${angle} ${x} 142)`}>
@@ -121,6 +169,7 @@ const LightWavePolarizationActivity = ({ language }: { language: AppLanguage }) 
   const [stage, setStage] = useState<Stage>("double");
   const [firstAngle, setFirstAngle] = useState(0);
   const [secondAngle, setSecondAngle] = useState(55);
+  const [activeSheet, setActiveSheet] = useState<ActiveSheet>("second");
   const [feedback, setFeedback] = useState<"idle" | "correct" | "wrong">("idle");
 
   const rawDifference = Math.abs(firstAngle - secondAngle) % 180;
@@ -137,6 +186,17 @@ const LightWavePolarizationActivity = ({ language }: { language: AppLanguage }) 
         ? t.crossedText
         : t.partialText;
   const stateLabel = stage === "single" ? t.polarized : isParallel ? t.parallel : isCrossed ? t.crossed : t.partial;
+  const selectedAngle = activeSheet === "first" ? firstAngle : secondAngle;
+  const selectedLabel = activeSheet === "first" ? t.first : t.second;
+  const eyeGlowStrength = stage === "single" ? 1 : transmission;
+  const eyeIsGlowing = eyeGlowStrength > 0.04;
+
+  const changeSelectedAngle = (nextAngle: number) => {
+    const safeAngle = Math.max(0, Math.min(180, nextAngle));
+    if (activeSheet === "first") setFirstAngle(safeAngle);
+    else setSecondAngle(safeAngle);
+    setFeedback("idle");
+  };
 
   const wavePath = useMemo(() => {
     const points: string[] = [];
@@ -151,6 +211,7 @@ const LightWavePolarizationActivity = ({ language }: { language: AppLanguage }) 
     setStage("double");
     setFirstAngle(0);
     setSecondAngle(55);
+    setActiveSheet("second");
     setFeedback("idle");
   };
 
@@ -197,21 +258,94 @@ const LightWavePolarizationActivity = ({ language }: { language: AppLanguage }) 
               <text x="15" y="232" fill="#cbd5e1" fontSize="13">{t.source}</text>
               <text x="18" y="252" fill="#94a3b8" fontSize="11">{t.unpolarized}</text>
 
-              <PolarizingSheet x={225} angle={firstAngle} label={t.first} axisLabel={t.axis} gradientId={`sheet-${id}`} />
+              <PolarizingSheet
+                x={225}
+                angle={firstAngle}
+                label={t.first}
+                axisLabel={t.axis}
+                gradientId={`sheet-${id}`}
+                active={activeSheet === "first"}
+                selectLabel={`${t.rotateSelected}: ${t.first}`}
+                onSelect={() => setActiveSheet("first")}
+              />
               <polyline points="260,142 275,116 290,168 305,116 320,168 335,116 350,168 365,142" fill="none" stroke="#7dd3fc" strokeWidth="4" strokeLinejoin="round" opacity=".9" />
 
               {stage === "double" ? (
-                <PolarizingSheet x={455} angle={secondAngle} label={t.second} axisLabel={t.axis} gradientId={`sheet-${id}`} />
+                <PolarizingSheet
+                  x={455}
+                  angle={secondAngle}
+                  label={t.second}
+                  axisLabel={t.axis}
+                  gradientId={`sheet-${id}`}
+                  active={activeSheet === "second"}
+                  selectLabel={`${t.rotateSelected}: ${t.second}`}
+                  onSelect={() => setActiveSheet("second")}
+                />
               ) : (
                 <g opacity=".28"><ellipse cx="455" cy="142" rx="32" ry="82" fill="none" stroke="#64748b" strokeWidth="3" strokeDasharray="7 8" /><text x="455" y="246" textAnchor="middle" fill="#94a3b8" fontSize="13">{t.second}</text></g>
               )}
 
               <polyline points={wavePath} fill="none" stroke="#f8fafc" strokeWidth={2 + transmission * 3} opacity={Math.max(.04, transmission)} filter={`url(#glow-${id})`} />
-              <path d="M684 111c25 0 43 15 55 31-12 16-30 31-55 31-25 0-43-15-55-31 12-16 30-31 55-31Z" fill="#e2e8f0" opacity=".9" />
-              <circle cx="684" cy="142" r="16" fill="#0f172a" />
-              <circle cx="684" cy="142" r={3 + transmission * 8} fill="#7dd3fc" opacity={Math.max(.12, transmission)} filter={`url(#glow-${id})`} />
+              <g data-testid="polarized-eye" data-glowing={eyeIsGlowing ? "true" : "false"}>
+                <circle
+                  cx="684"
+                  cy="142"
+                  r={32 + eyeGlowStrength * 18}
+                  fill="#22d3ee"
+                  opacity={eyeIsGlowing ? 0.1 + eyeGlowStrength * 0.3 : 0}
+                  filter={`url(#glow-${id})`}
+                  className={eyeIsGlowing ? "motion-safe:animate-pulse" : undefined}
+                />
+                <path d="M684 111c25 0 43 15 55 31-12 16-30 31-55 31-25 0-43-15-55-31 12-16 30-31 55-31Z" fill={eyeIsGlowing ? "#ecfeff" : "#94a3b8"} opacity={eyeIsGlowing ? ".98" : ".55"} />
+                <circle cx="684" cy="142" r="16" fill="#0f172a" />
+                <circle cx="684" cy="142" r={3 + eyeGlowStrength * 9} fill="#67e8f9" opacity={eyeIsGlowing ? 1 : .18} filter={eyeIsGlowing ? `url(#glow-${id})` : undefined} />
+              </g>
               <text x="671" y="205" fill="#cbd5e1" fontSize="13">{t.eye}</text>
             </svg>
+
+            <div className="mt-2 rounded-2xl border border-cyan-300/15 bg-slate-900/85 p-3 sm:p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-300">{t.selectedSheet}</p>
+                  <p className="mt-1 text-sm font-black text-white">{selectedLabel} · <span className="font-mono text-cyan-300">{selectedAngle}°</span></p>
+                  <p className="mt-1 text-[11px] text-slate-400">{t.tapHint}</p>
+                </div>
+                <div className="grid grid-cols-[48px_minmax(120px,1fr)_48px] items-center gap-2 sm:min-w-[310px]">
+                  <button
+                    type="button"
+                    onClick={() => changeSelectedAngle(selectedAngle - 15)}
+                    aria-label={t.decreaseAngle}
+                    className="grid min-h-12 place-items-center rounded-xl border border-slate-700 bg-slate-950 text-cyan-300 transition hover:border-cyan-300/60 hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  >
+                    <RotateCcw className="size-5" aria-hidden="true" />
+                  </button>
+                  <label className="block">
+                    <span className="sr-only">{t.rotateSelected}</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="180"
+                      value={selectedAngle}
+                      onChange={(event) => changeSelectedAngle(Number(event.target.value))}
+                      aria-label={t.rotateSelected}
+                      className="w-full accent-cyan-300"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => changeSelectedAngle(selectedAngle + 15)}
+                    aria-label={t.increaseAngle}
+                    className="grid min-h-12 place-items-center rounded-xl border border-slate-700 bg-slate-950 text-cyan-300 transition hover:border-cyan-300/60 hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  >
+                    <RotateCw className="size-5" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <div className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${eyeIsGlowing ? "border-cyan-300/25 bg-cyan-300/10 text-cyan-200" : "border-slate-700 bg-slate-950 text-slate-500"}`}>
+                <Eye className={`size-4 ${eyeIsGlowing ? "drop-shadow-[0_0_8px_#67e8f9]" : ""}`} aria-hidden="true" />
+                <span>{eyeIsGlowing ? t.eyeLit : t.eyeDark}</span>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -240,7 +374,7 @@ const LightWavePolarizationActivity = ({ language }: { language: AppLanguage }) 
               <legend className="mb-2 text-sm font-bold text-foreground">{t.stage}</legend>
               <div className="grid grid-cols-2 gap-2">
                 {(["single", "double"] as Stage[]).map((item) => (
-                  <button key={item} type="button" onClick={() => { setStage(item); setFeedback("idle"); }} aria-pressed={stage === item} className={`min-h-11 rounded-xl border px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${stage === item ? "border-physics bg-physics text-white" : "border-border bg-card text-muted-foreground hover:border-physics/40"}`}>{t[item]}</button>
+                  <button key={item} type="button" onClick={() => { setStage(item); if (item === "single") setActiveSheet("first"); setFeedback("idle"); }} aria-pressed={stage === item} className={`min-h-11 rounded-xl border px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${stage === item ? "border-physics bg-physics text-white" : "border-border bg-card text-muted-foreground hover:border-physics/40"}`}>{t[item]}</button>
                 ))}
               </div>
             </fieldset>
