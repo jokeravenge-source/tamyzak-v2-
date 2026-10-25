@@ -11,6 +11,9 @@ describe("shared flashcard chapter divisions", () => {
     expect(getFlashcardChapters("biology").find(c => c.n === 4)?.locked).toBe(true);
     expect(getFlashcardChapters("english").filter(c => !c.locked)).toHaveLength(3);
   });
+  it("temporarily locks chemistry chapter 7", () => {
+    expect(getFlashcardChapters("chemistry").find(c => c.n === 7)?.locked).toBe(true);
+  });
   it("uses actual Arabic flashcard numbers, not ministerial-bank numbers", () => {
     expect(getFlashcardChapters("arabic").find(c => c.n === 6)?.arTitle).toBe("الاستفهام");
     expect(resolveMcqChapter(row("arabic", 2, "Istifham"))?.n).toBe(6);
