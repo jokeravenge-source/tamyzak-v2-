@@ -11,6 +11,8 @@ describe("Chemical Equation tool", () => {
     expect(screen.getAllByText("Memory hint")).toHaveLength(19);
     expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(chemicalEquationTopics.map((topic) => topic.title.en));
     for (const equation of chemicalEquations) expect(screen.getByText(equation.formula)).toBeInTheDocument();
+    expect(screen.queryByText(/Based on the 19 entries you supplied/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Symbols: \(s\) solid/)).toBeInTheDocument();
   });
   it("uses RTL Arabic and keeps formulae and values LTR", () => {
     render(<ChemicalEquations language="ar" onBack={vi.fn()} />);
