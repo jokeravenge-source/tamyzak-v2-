@@ -6,6 +6,7 @@ import * as THREE from "three";
 import type { AppLanguage } from "@/components/LanguageGate";
 import CapacitorDischarge from "@/components/physics/CapacitorDischarge";
 import SelfInductionActivity from "@/components/physics/SelfInductionActivity";
+import SpectrumTypesActivity from "@/components/physics/SpectrumTypesActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -427,7 +428,7 @@ const PhysicsActivities = ({
         </header>
 
         <Tabs defaultValue="dielectric" className="w-full">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4">
             <TabsTrigger value="dielectric">
               {isRTL ? "المكثف والعازل" : "Capacitor & Dielectric"}
             </TabsTrigger>
@@ -436,6 +437,9 @@ const PhysicsActivities = ({
             </TabsTrigger>
             <TabsTrigger value="self-induction">
               {isRTL ? "الحث الذاتي" : "Self-Induction"}
+            </TabsTrigger>
+            <TabsTrigger value="spectra">
+              {isRTL ? "أنواع الأطياف" : "Types of Spectra"}
             </TabsTrigger>
           </TabsList>
 
@@ -539,6 +543,10 @@ const PhysicsActivities = ({
 
           <TabsContent value="self-induction">
             <SelfInductionActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="spectra">
+            <SpectrumTypesActivity language={language} />
           </TabsContent>
         </Tabs>
       </div>
