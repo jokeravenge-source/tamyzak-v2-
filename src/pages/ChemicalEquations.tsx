@@ -1,5 +1,5 @@
 import { useMemo, useState, type DragEvent } from "react";
-import { ArrowLeft, ArrowRight, BookOpen, Check, FlaskConical, GripVertical, Info, Lightbulb, Move, RotateCcw, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, FlaskConical, GripVertical, Lightbulb, Move, RotateCcw, Search, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { chemicalEquations, chemicalEquationTopics, type ChemicalEquation, type ChemicalEquationTopic } from "@/data/chemicalEquations";
 import { filterChemicalEquations } from "@/lib/chemicalEquationSearch";
@@ -19,7 +19,6 @@ const COPY = {
     incorrect: "Not quite. Move the highlighted pieces and check again.", incomplete: "Place every piece before checking.",
     results: "equations shown", noResults: "No matching equations",
     noResultsHint: "Try another formula or topic, or reset the filters.", reset: "Reset filters",
-    source: "Based on the 19 entries you supplied. The two repeated occurrences are not listed again; the doubled zinc equation is kept as its own learning example.",
     legend: "Symbols: (s) solid · (l) liquid · (g) gas · (aq) aqueous solution · → reaction · ⇌ reversible reaction",
     absorbed: "Heat absorbed", released: "Heat released", potential: "Standard oxidation potential",
   },
@@ -37,7 +36,6 @@ const COPY = {
     incorrect: "مو كلها صحيحة. انقل المواد المحددة وحاول مرة ثانية.", incomplete: "وزّع كل المواد قبل التحقق.",
     results: "معادلة معروضة", noResults: "ما لكينا معادلة مطابقة",
     noResultsHint: "جرّب صيغة أو موضوعاً آخر، أو أعد ضبط البحث والتصفية.", reset: "إعادة ضبط التصفية",
-    source: "المحتوى مبني على المعادلات الـ19 التي أرسلتها. لم نكرر موضعي الانصهار وأكسدة الخارصين؛ وأبقينا المعادلة المضاعفة مثالاً مستقلاً للتعلّم.",
     legend: "الرموز: (s) صلب · (l) سائل · (g) غاز · (aq) محلول مائي · → تفاعل · ⇌ تفاعل عكوس",
     absorbed: "حرارة ممتصة", released: "حرارة منطلقة", potential: "جهد الأكسدة القياسي",
   },
@@ -297,8 +295,7 @@ export default function ChemicalEquations({ language, onBack }: { language: AppL
               className="mt-4 min-h-11 rounded-xl border border-chemistry/30 bg-chemistry/10 px-4 text-sm font-semibold text-foreground focus-visible:outline-chemistry">{text.reset}</button>
           </section>
         )}
-        <footer className="space-y-3 rounded-2xl border border-border bg-card/70 p-4 text-xs leading-6 text-muted-foreground">
-          <p className="flex items-start gap-2"><Info aria-hidden="true" className="mt-1 size-3.5 shrink-0" />{text.source}</p>
+        <footer className="rounded-2xl border border-border bg-card/70 p-4 text-xs leading-6 text-muted-foreground">
           <p>{text.legend}</p>
         </footer>
       </div>
