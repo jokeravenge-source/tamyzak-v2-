@@ -1186,8 +1186,6 @@ const StudentApp = () => {
         <SubjectsHub language={language} onBack={backToBasics} onSelect={chooseMenu} />
       ) : menuChoice === "textToVideo" ? (
         <TextToVideo language={language} onBack={resetMenu} />
-      ) : menuChoice === "subjectTutor" ? (
-        <SubjectTutor language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsLaws" ? (
         <PhysicsLaws language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsQuickMcq" ? (
