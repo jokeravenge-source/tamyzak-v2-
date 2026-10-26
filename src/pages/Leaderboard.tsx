@@ -1,247 +1,109 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Trophy, Loader2, Medal, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { MainMenuChoice } from "@/pages/MainMenu";
-import { rankFor, RANKS } from "@/lib/points";
-import { CharacterAvatar, type Gender, type CharacterTraits } from "@/components/CharacterAvatar";
+import type { Gender, CharacterTraits } from "@/components/CharacterAvatar";
+import { LeaderboardView, type LeaderboardRow } from "@/components/leaderboard/LeaderboardView";
 import { readDaily, writeDaily } from "@/lib/dailyCache";
 import StudentProfileDialog from "@/components/StudentProfileDialog";
 
-type Row = { user_id: string; name: string; points: number; gender: Gender | null; traits: Partial<CharacterTraits> | null };
-
-const Leaderboard = ({
-  language,
-  onBack,
-  onNav,
-}: {
+const Leaderboard = ({ language, onBack, onNav }: {
   language: AppLanguage;
   onBack: () => void;
-  onNav: (c: MainMenuChoice) => void;
+  onNav: (choice: MainMenuChoice) => void;
 }) => {
-  const isAr = language === "ar";
-  const t = (en: string, ar: string) => (isAr ? ar : en);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
   const [openProfile, setOpenProfile] = useState<string | null>(null);
 
   const load = useCallback(async (force = false) => {
-    const { data: u } = await supabase.auth.getUser();
-    setMe(u.user?.id ?? null);
+    if (force) setRefreshing(true);
+    setError(false);
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      setMe(user.user?.id ?? null);
 
-    // Cost: the board is a full scan of user_points + profiles. It refreshes
-    // once per Baghdad day per device unless the user taps refresh.
-    if (!force) {
-      const cached = readDaily<Row[]>("leaderboard");
-      if (cached) { setRows(cached); setLoading(false); return; }
-    }
-
-    // All-time totals, so the leaderboard matches the points shown in each profile.
-    const pageSize = 1000;
-    const totals = new Map<string, number>();
-    let from = 0;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { data: page, error } = await supabase
-        .from("user_points")
-        .select("user_id, points")
-        .range(from, from + pageSize - 1);
-      if (error) break;
-      (page ?? []).forEach((r: any) => {
-        totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + (r.points ?? 0));
-      });
-      if (!page || page.length < pageSize) break;
-      from += pageSize;
-    }
-
-    // Profiles are also paged — the default 1000-row cap was dropping names.
-    const names = new Map<string, string>();
-    const genders = new Map<string, Gender | null>();
-    const characters = new Map<string, Partial<CharacterTraits> | null>();
-    let pFrom = 0;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { data: page, error } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, gender, character")
-        .order("updated_at", { ascending: false })
-        .range(pFrom, pFrom + pageSize - 1);
-      if (error) break;
-      (page ?? []).forEach((p: any) => {
-        if (!names.has(p.user_id)) {
-          names.set(p.user_id, (p.display_name || "").trim() || "Student");
-          genders.set(p.user_id, (p.gender as Gender) ?? null);
-          characters.set(p.user_id, (p.character as Partial<CharacterTraits>) ?? null);
+      // Keep the full-board read limited to once per Baghdad day, unless
+      // the student explicitly refreshes. Totals still match profile points.
+      if (!force) {
+        const cached = readDaily<LeaderboardRow[]>("leaderboard");
+        if (cached) {
+          setRows(cached);
+          return;
         }
-      });
-      if (!page || page.length < pageSize) break;
-      pFrom += pageSize;
-    }
+      }
 
-    const list: Row[] = Array.from(totals.entries())
-      .map(([user_id, points]) => ({
-        user_id,
-        points,
+      const pageSize = 1000;
+      const totals = new Map<string, number>();
+      let from = 0;
+      while (true) {
+        const { data: page, error: pointsError } = await supabase
+          .from("user_points")
+          .select("user_id, points")
+          .range(from, from + pageSize - 1);
+        if (pointsError) throw pointsError;
+        (page ?? []).forEach((row) => {
+          totals.set(row.user_id, (totals.get(row.user_id) ?? 0) + (row.points ?? 0));
+        });
+        if (!page || page.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const names = new Map<string, string>();
+      const genders = new Map<string, Gender | null>();
+      const characters = new Map<string, Partial<CharacterTraits> | null>();
+      let profileFrom = 0;
+      while (true) {
+        const { data: page, error: profileError } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, gender, character")
+          .order("updated_at", { ascending: false })
+          .range(profileFrom, profileFrom + pageSize - 1);
+        if (profileError) throw profileError;
+        (page ?? []).forEach((profile) => {
+          if (!names.has(profile.user_id)) {
+            names.set(profile.user_id, (profile.display_name || "").trim() || "Student");
+            genders.set(profile.user_id, (profile.gender as Gender) ?? null);
+            characters.set(profile.user_id, (profile.character as Partial<CharacterTraits>) ?? null);
+          }
+        });
+        if (!page || page.length < pageSize) break;
+        profileFrom += pageSize;
+      }
+
+      const list: LeaderboardRow[] = Array.from(totals.entries()).map(([user_id, points]) => ({
+        user_id, points,
         name: names.get(user_id) || "Student",
         gender: genders.get(user_id) ?? null,
         traits: characters.get(user_id) ?? null,
-      }))
-      .sort((a, b) => b.points - a.points);
-    setRows(list);
-    writeDaily("leaderboard", list);
-    setLoading(false);
+      })).sort((a, b) => b.points - a.points);
+
+      setRows(list);
+      writeDaily("leaderboard", list);
+    } catch {
+      // A failed page must not replace the last complete board with partial totals.
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  return (
-    <main className="min-h-screen px-4 py-12 md:py-16 pb-32 relative overflow-hidden" dir={isAr ? "rtl" : "ltr"}>
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-
-      <button aria-label="Back / رجوع" onClick={onBack} className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition">
-        <ArrowLeft className="w-5 h-5" />
-      </button>
-
-      <header className="text-center max-w-2xl mx-auto z-10 relative">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-5">
-          <Trophy className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            {t("Leaderboard", "لوحة المتصدرين")}
-          </span>
-          <button
-            onClick={async () => { setRefreshing(true); await load(true); setRefreshing(false); }}
-            className="text-muted-foreground hover:text-primary transition"
-            aria-label={t("Refresh", "تحديث")}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-        <h1 className="text-4xl md:text-6xl font-bold gradient-text mb-3">{t("Top Students", "أبطال النقاط")}</h1>
-        <p className="text-muted-foreground">
-          {t(
-            "Total points, updated live and matching the points on your profile.",
-            "مجموع نقاطك الكلي، يتحدّث مباشرة ويطابق النقاط في ملفك الشخصي."
-          )}
-        </p>
-      </header>
-
-      <section className="max-w-2xl mx-auto mt-10 relative z-10">
-        <div className="mb-6 rounded-3xl border border-primary/40 bg-gradient-to-br from-primary/20 via-secondary/80 to-accent/20 backdrop-blur p-5 shadow-[0_20px_60px_hsl(var(--primary)/0.35)] relative overflow-hidden" dir="rtl">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/30 blur-3xl" />
-          <div className="flex items-center gap-4 relative">
-            <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shrink-0">
-              <Trophy className="w-7 h-7" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-[0.25em] text-primary font-semibold mb-1">
-                {t("Congratulations!", "تهانينا!")} 🎉
-              </p>
-              <p className="text-lg font-bold text-foreground">
-                {t("Congrats to ", "تهانينا لـ ")}<span className="gradient-text">{rows[0]?.name || "—"}</span>
-              </p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {t("for achieving the first place!", "لحصوله على المرتبة الاولى")}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur p-3 md:p-4">
-          {loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-          ) : rows.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16">{t("No points yet. Be the first!", "لا توجد نقاط بعد. كن الأول!")}</p>
-          ) : (
-            (() => {
-              const top = rows.slice(0, 10);
-              const myIndex = rows.findIndex((r) => r.user_id === me);
-              const myRow = myIndex >= 0 && myIndex >= 10 ? rows[myIndex] : null;
-              const renderRow = (r: Row, i: number) => {
-                const rank = rankFor(r.points);
-                const isMe = r.user_id === me;
-                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
-                return (
-                  <li
-                    key={r.user_id}
-                    onClick={() => setOpenProfile(r.user_id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") setOpenProfile(r.user_id);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    className={`flex items-center gap-4 rounded-2xl p-3 md:p-4 border transition ${
-                      isMe ? "border-primary bg-primary/10" : "cursor-pointer border-white/5 bg-background/30 hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="w-9 text-center text-lg font-bold text-muted-foreground">
-                      {medal ?? `#${i + 1}`}
-                    </div>
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-background/40 border border-white/10 shrink-0">
-                      <CharacterAvatar seed={r.user_id} gender={r.gender ?? "male"} traits={r.traits} size={48} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{r.name}{isMe && <span className="text-primary text-xs ml-2">({t("you", "أنت")})</span>}</p>
-                      <span
-                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full mt-1"
-                        style={{ backgroundColor: `${rank.color}22`, color: rank.color, border: `1px solid ${rank.color}66` }}
-                      >
-                        <Medal className="w-3 h-3" />
-                        {isAr ? rank.label.ar : rank.label.en}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold gradient-text leading-none">{r.points}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{t("pts", "نقطة")}</p>
-                    </div>
-                  </li>
-                );
-              };
-              return (
-                <>
-                  <ol className="space-y-2">{top.map((r, i) => renderRow(r, i))}</ol>
-                  {myRow && (
-                    <>
-                      <div className="my-3 flex items-center gap-2 text-muted-foreground">
-                        <div className="flex-1 h-px bg-white/10" />
-                        <span className="text-xs">{t("Your place", "مركزك")}</span>
-                        <div className="flex-1 h-px bg-white/10" />
-                      </div>
-                      <ol className="space-y-2">{renderRow(myRow, myIndex)}</ol>
-                    </>
-                  )}
-                </>
-              );
-            })()
-          )}
-
-        </div>
-
-        <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("Ranks", "المراتب")}</p>
-          <div className="flex flex-wrap gap-2">
-            {RANKS.map((r) => (
-              <span
-                key={r.key}
-                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: `${r.color}22`, color: r.color, border: `1px solid ${r.color}66` }}
-              >
-                <Medal className="w-3 h-3" />
-                {isAr ? r.label.ar : r.label.en} · {r.min}+
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      
-    </main>
-  );
+  return <>
+    <LeaderboardView
+      language={language} rows={rows} me={me} loading={loading}
+      refreshing={refreshing} error={error} onBack={onBack}
+      onRefresh={() => { void load(true); }}
+      onProfile={setOpenProfile}
+      onStudy={() => onNav("subjectsHub")}
+    />
+    <StudentProfileDialog userId={openProfile} language={language} onClose={() => setOpenProfile(null)} />
+  </>;
 };
 
 export default Leaderboard;
