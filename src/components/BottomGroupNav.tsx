@@ -1,13 +1,13 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { Bot, Home, LayoutGrid, UserRound, UsersRound, Zap } from "lucide-react";
+import { BookOpen, GraduationCap, Home, UserRound, UsersRound, Zap } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type PrimaryNavItem = {
-  key: MainMenuChoice | "guide" | "tesla";
+  key: MainMenuChoice | "tesla";
   labelAr: string;
   labelEn: string;
   Icon: ComponentType<{ className?: string }>;
@@ -20,18 +20,18 @@ const TESLA_INSTAGRAM_URL = "https://www.instagram.com/tesl_astore/?utm_source=i
 // external destination so it does not compete with the active app section.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
-  { key: "guide", labelAr: "المرشد", labelEn: "Guide", Icon: Bot },
+  { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
+  { key: "more", labelAr: "الدراسة", labelEn: "Study", Icon: GraduationCap },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
-  { key: "more", labelAr: "كل الأدوات", labelEn: "All tools", Icon: LayoutGrid },
-  { key: "tesla", labelAr: "تيسلا", labelEn: "Tesla", Icon: Zap, href: TESLA_INSTAGRAM_URL },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
+  { key: "tesla", labelAr: "تيسلا", labelEn: "Tesla", Icon: Zap, href: TESLA_INSTAGRAM_URL },
 ];
 
 const BottomGroupNav = ({
   language,
   active,
   onSelect,
-  onGuide,
+  onGuide: _onGuide,
 }: {
   language: AppLanguage;
   active: MainMenuChoice | null;
@@ -49,19 +49,15 @@ const BottomGroupNav = ({
   }, []);
 
   const isItemActive = (key: PrimaryNavItem["key"]) => {
-    if (key === "guide" || key === "tesla") return false;
+    if (key === "tesla") return false;
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
-      return Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
+      return active === "more" || Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
     }
     return active === key;
   };
 
   const selectItem = (key: PrimaryNavItem["key"]) => {
-    if (key === "guide") {
-      onGuide();
-      return;
-    }
     if (key === "tesla") return;
     onSelect(key);
   };
@@ -79,19 +75,19 @@ const BottomGroupNav = ({
       dir={isRtl ? "rtl" : "ltr"}
     >
       <motion.nav
-        className="pointer-events-auto w-full max-w-xl rounded-2xl border border-border bg-background p-1.5"
+        className="pointer-events-auto w-full max-w-2xl rounded-[1.35rem] border border-border/90 bg-card p-1.5 shadow-[0_18px_55px_-24px_hsl(var(--foreground)/0.32)]"
         aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
       >
         <LayoutGroup id="primary-bottom-navigation">
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-[repeat(5,minmax(0,1fr))_46px] gap-1">
             {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon, href }) => {
               const selected = isItemActive(key);
               const label = isRtl ? labelAr : labelEn;
-              const itemClassName = `relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+              const itemClassName = `relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-[11px] ${
                 selected
                   ? "text-primary-foreground"
                   : key === "tesla"
-                    ? "text-primary hover:bg-primary/10 hover:text-primary"
+                    ? "border-s border-border text-primary hover:bg-primary/10"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               }`;
               const itemContent = (
@@ -99,12 +95,12 @@ const BottomGroupNav = ({
                   {selected && (
                     <motion.span
                       layoutId="primary-bottom-navigation-active"
-                      className="absolute inset-0 rounded-xl bg-primary"
+                      className="absolute inset-0 rounded-2xl bg-primary shadow-[0_8px_20px_-12px_hsl(var(--primary))]"
                       transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
                   <Icon className="relative z-10 h-[18px] w-[18px]" />
-                  <span className="relative z-10 max-w-full truncate">{label}</span>
+                  <span className={`relative z-10 max-w-full truncate ${key === "tesla" ? "sr-only" : ""}`}>{label}</span>
                 </>
               );
 

@@ -23,21 +23,15 @@ const groupFor = (slug: string) => {
 const GROUP_STYLES = {
   study: {
     label: "مراجعة وحفظ",
-    card: "border-violet-300/70 bg-gradient-to-br from-violet-100/80 via-background to-indigo-100/70 hover:border-violet-400 dark:border-violet-700/60 dark:from-violet-950/55 dark:to-indigo-950/45 dark:hover:border-violet-500",
-    badge: "bg-violet-600 text-white",
-    action: "text-violet-700 dark:text-violet-300",
+    marker: "bg-violet-500",
   },
   organize: {
     label: "تنظيم الدراسة",
-    card: "border-teal-300/70 bg-gradient-to-br from-teal-100/80 via-background to-emerald-100/70 hover:border-teal-400 dark:border-teal-700/60 dark:from-teal-950/55 dark:to-emerald-950/45 dark:hover:border-teal-500",
-    badge: "bg-teal-600 text-white",
-    action: "text-teal-700 dark:text-teal-300",
+    marker: "bg-teal-500",
   },
   subjects: {
     label: "مواد وأدوات",
-    card: "border-sky-300/70 bg-gradient-to-br from-sky-100/80 via-background to-cyan-100/70 hover:border-sky-400 dark:border-sky-700/60 dark:from-sky-950/55 dark:to-cyan-950/45 dark:hover:border-sky-500",
-    badge: "bg-sky-600 text-white",
-    action: "text-sky-700 dark:text-sky-300",
+    marker: "bg-sky-500",
   },
 } as const;
 
@@ -87,9 +81,9 @@ const ToolsIndex = () => {
       </Helmet>
 
       <div className="mx-auto max-w-5xl px-5 py-10 sm:py-14">
-        <header className="mb-8 sm:mb-10">
-          <p className="mb-3 text-sm font-semibold text-primary">منصة تميزك</p>
-          <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">أدوات الدراسة في مكان واحد.</h1>
+        <header className="mb-8 border-b border-border pb-8 sm:mb-10">
+          <p className="mb-3 text-xs font-bold tracking-[0.18em] text-primary">منصة تميزك</p>
+          <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">ادرس حسب هدفك.</h1>
           <p className="mt-4 max-w-3xl leading-relaxed text-muted-foreground">
             مجموعة أدوات مجانية لطلاب السادس العلمي في العراق: مراجعة بالفلاش كاردات، بنك أسئلة وزارية
             مع الأجوبة، أسئلة اختيار من متعدد، خرائط ذهنية، ملخصات وملازم، وأدوات تنظيم الوقت.
@@ -102,7 +96,7 @@ const ToolsIndex = () => {
           </a>
         </header>
 
-        <div className="mb-5 rounded-2xl bg-muted/60 p-2 sm:p-3">
+        <div className="mb-5 rounded-[1.35rem] border border-border bg-card p-2 shadow-sm sm:p-3">
           <label className="flex min-h-12 items-center gap-3 rounded-xl bg-background px-4 text-muted-foreground ring-1 ring-border focus-within:ring-2 focus-within:ring-primary">
             <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
             <span className="sr-only">ابحث عن أداة</span>
@@ -134,21 +128,18 @@ const ToolsIndex = () => {
 
         <p className="mb-4 text-sm text-muted-foreground" role="status" aria-live="polite">{filteredTools.length} أداة</p>
         {filteredTools.length ? (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="overflow-hidden rounded-[1.35rem] border border-border bg-card shadow-sm">
           {filteredTools.map((t) => {
             const group = groupFor(t.slug) as keyof typeof GROUP_STYLES;
             const style = GROUP_STYLES[group];
             return <li key={t.slug}>
               <a
                 href={`/tools/${t.slug}`}
-                className={`group block h-full rounded-2xl border p-5 text-secondary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${style.card}`}
+                className="group flex min-h-28 items-center gap-4 border-b border-border p-4 text-foreground transition-colors last:border-b-0 hover:bg-muted/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
               >
-                <span className={`mb-4 inline-flex rounded-full px-3 py-1 text-xs font-bold ${style.badge}`}>{style.label}</span>
-                <h2 className="text-base font-bold leading-relaxed text-foreground">{t.title}</h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                  {t.metaDescription}
-                </p>
-                <span className={`mt-4 inline-block text-sm font-bold ${style.action}`}>استكشف الأداة ←</span>
+                <span className={`h-12 w-1 shrink-0 rounded-full ${style.marker}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1"><span className="mb-1 block text-[11px] font-bold text-muted-foreground">{style.label}</span><h2 className="text-base font-bold leading-relaxed">{t.title}</h2><span className="mt-1 block line-clamp-2 text-sm leading-relaxed text-muted-foreground">{t.metaDescription}</span></span>
+                <span className="shrink-0 text-lg font-bold text-primary" aria-hidden="true">←</span>
               </a>
             </li>;
           })}

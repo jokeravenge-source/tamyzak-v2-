@@ -27,7 +27,6 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
-import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import { normalizeStudySearch } from "@/lib/studySearch";
@@ -1143,6 +1142,7 @@ const Basics = ({
           <section aria-label={isRTL ? "خطة دراسة اليوم" : "Today's study plan"} className="grid gap-4 sm:grid-cols-3">
             <motion.button
               type="button"
+              aria-label={isRTL ? "راجع أخطاءك" : "Review mistakes"}
               onClick={() => navigate("mistakes")}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
@@ -1159,6 +1159,7 @@ const Basics = ({
             </motion.button>
             <motion.button
               type="button"
+              aria-label={isRTL ? "البطاقات المقترحة" : "Recommended flashcards"}
               onClick={openRecommendedFlashcards}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
@@ -1182,6 +1183,7 @@ const Basics = ({
 
             <motion.button
               type="button"
+              aria-label={isRTL ? "أسئلة MCQ المقترحة" : "Recommended MCQs"}
               onClick={openRecommendedMcqs}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
@@ -1357,131 +1359,64 @@ const Basics = ({
           style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
         <div className="mx-auto max-w-6xl">
-          <header className="mb-6 border-b border-[var(--tmz-line)] pb-5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {isRTL ? "خطوتك الدراسية" : "Your next study step"}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--tmz-muted)]">
+          <header className="mb-7 flex flex-col gap-4 border-b border-[var(--tmz-line)] pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary/70">{isRTL ? "مساحتك الدراسية" : "Your study space"}</p>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {isRTL ? "شنو ننجز اليوم؟" : "What will you finish today?"}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--tmz-muted)]">
               {recommendationTopic
                 ? (isRTL ? `ابدأ بمراجعة ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}` : `Start with ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}`)
                 : (isRTL ? "ابدأ بمراجعة اليوم، أو اختَر مادة من فصولك." : "Start today's review, or choose a subject and chapter.")}
-            </p>
+              </p>
+            </div>
+            <button type="button" onClick={() => openDetail("progress")} className="inline-flex min-h-11 items-center gap-3 self-start rounded-2xl border border-[var(--tmz-line)] bg-card px-4 py-2 text-start shadow-sm hover:border-primary/35">
+              <RankStone rank={currentRank} size={38} fillProgress={stoneFill} glow={false} className="shrink-0" />
+              <span><span className="block text-[11px] font-semibold text-[var(--tmz-muted)]">{isRTL ? "رتبتك" : "Your rank"}</span><span className="block text-sm font-bold">{rankLabel}</span></span>
+            </button>
           </header>
 
-          <NewFeatureAnnouncement language={language} />
-
-          <button
-            id="progress-details-trigger"
-            type="button"
-            onClick={() => openDetail("progress")}
-            className="group mb-6 flex w-full items-center gap-4 rounded-2xl border border-blue-400/30 bg-gradient-to-br from-blue-500/15 via-sky-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tmz-blue)] sm:p-5"
-          >
-            <RankStone rank={currentRank} size={64} fillProgress={stoneFill} glow={currentRank === "royal" || currentRank === "diamond"} className="shrink-0" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs font-bold opacity-75">{isRTL ? "رتبتك" : "Your rank"}</span>
-              <span className="mt-1 block text-xl font-black sm:text-2xl">{rankLabel}</span>
-              <span className="mt-1 block text-xs font-medium opacity-80">
-                {nextRank
-                  ? (isRTL ? `${pointsToNextRank} نقطة حتى رتبة ${nextRank.label.ar}` : `${pointsToNextRank} points to ${nextRank.label.en}`)
-                  : (isRTL ? "وصلت إلى أعلى رتبة" : "Highest rank achieved")}
-              </span>
-            </span>
-            <ArrowRight className={`h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : ""}`} />
-          </button>
-
-          <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+          <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
             <motion.button
               type="button"
+              aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
               onClick={() => {
                 setRecommendedProfile(readWeeklyLearningProfile());
                 void totalDueCount().then(setDueCards).catch(() => {});
                 void dueMistakesCount().then(setDueMistakes).catch(() => {});
                 setShowRecommendedStudy(true);
               }}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative min-h-32 overflow-hidden rounded-2xl border border-primary bg-gradient-to-br from-primary via-primary to-blue-500 p-5 text-start text-primary-foreground shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.85)] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:col-span-2 sm:p-6"
+              className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-primary bg-primary p-6 text-start text-primary-foreground shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-8"
             >
-              <span className="relative flex items-center gap-4">
-                <BookOpen className="h-6 w-6 shrink-0 text-primary-foreground/90" aria-hidden="true" />
+              <span className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[28px] border-white/5" aria-hidden="true" />
+              <span className="relative flex h-full flex-col justify-between gap-8">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/12"><BookOpen className="h-6 w-6" aria-hidden="true" /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-lg font-semibold">{isRTL ? "ادرس اليوم" : "Study today"}</span>
-                  <span className="mt-1 block text-sm text-primary-foreground/80">
+                  <span className="block text-2xl font-bold">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
+                  <span className="mt-2 block max-w-md text-sm leading-6 text-primary-foreground/75">
                     {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
                   </span>
                 </span>
-                <ArrowRight className={`h-5 w-5 shrink-0 ${isRTL ? "rotate-180" : ""}`} aria-hidden="true" />
+                <span className="inline-flex items-center gap-2 text-sm font-bold">{isRTL ? "ابدأ الآن" : "Begin now"}<ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /></span>
               </span>
             </motion.button>
 
-            <motion.button
-              type="button"
-              onClick={() => navigate("subjectsHub")}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 overflow-hidden rounded-2xl border border-sky-400/35 bg-gradient-to-br from-sky-500/20 via-blue-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 sm:p-5"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-sky-600 text-white shadow-sm"><Layers className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="mt-3 block text-base font-semibold">{isRTL ? "اختَر مادة" : "Choose a subject"}</span>
-              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "شوف فصول المادة وأدواتها" : "Open its chapters and study tools"}</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => navigate("ourCourses")}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 overflow-hidden rounded-2xl border border-violet-400/35 bg-gradient-to-br from-violet-500/20 via-indigo-500/10 to-fuchsia-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:p-5"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-600 text-white shadow-sm"><GraduationCap className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="mt-3 block text-base font-semibold">{isRTL ? "دوراتنا" : "Our Courses"}</span>
-              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "تصفّح الدورات المتاحة وابدأ الدراسة" : "Browse available courses and start learning"}</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => onNav("mistakes")}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 overflow-hidden rounded-2xl border border-amber-400/35 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:p-5"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-slate-950 shadow-sm"><AlertTriangle className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="mt-3 flex items-center gap-2 text-base font-semibold">
-                {isRTL ? "مراجعة اليوم" : "Daily review"}
-                {dueMistakes > 0 && <span className="rounded-full bg-[var(--tmz-panel)] px-2 py-0.5 text-xs font-medium tabular-nums">{dueMistakes}</span>}
-              </span>
-              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">
-                {dueMistakes > 0
-                  ? (isRTL ? "راجع الأخطاء والبطاقات المستحقة اليوم" : "Review due mistakes and flashcards")
-                  : (isRTL ? "راجع بطاقاتك المستحقة أو تدرب على أخطائك" : "Practice due flashcards or revisit mistakes")}
-              </span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("app:open-weakness-check-in"))}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 overflow-hidden rounded-2xl border border-rose-400/35 bg-gradient-to-br from-rose-500/20 via-pink-500/10 to-orange-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 sm:p-5"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-white shadow-sm"><Target className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="mt-3 block text-base font-semibold">{isRTL ? "نقاط ضعفي" : "My weak areas"}</span>
-              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">
-                {isRTL ? "حدد المواد والفصول اللي تحتاج تقويها" : "Identify the subjects and chapters you need to strengthen"}
-              </span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => onNav("more")}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-28 overflow-hidden rounded-2xl border border-teal-400/35 bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-400/15 p-4 text-start text-[var(--tmz-ink)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal-400/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 sm:p-5"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-600 text-white shadow-sm"><Search className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="mt-3 block text-base font-semibold">{isRTL ? "كل الأدوات" : "All tools"}</span>
-              <span className="mt-1 block text-sm text-[var(--tmz-muted)]">{isRTL ? "ابحث عن أي أداة بمكان واحد" : "Find every tool in one organised screen"}</span>
-            </motion.button>
+            <div className="overflow-hidden rounded-[1.75rem] border border-[var(--tmz-line)] bg-card p-2 shadow-sm">
+              {[
+                { key: "subjectsHub", Icon: Layers, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub") },
+                { key: "mistakes", Icon: AlertTriangle, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${dueMistakes} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
+                { key: "more", Icon: Search, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
+              ].map(({ key, Icon, title, copy, action }, index) => (
+                <button key={key} type="button" aria-label={title} onClick={action} className={`group flex min-h-[66px] w-full items-center gap-3 rounded-2xl px-3 text-start hover:bg-muted/70 ${index ? "border-t border-[var(--tmz-line)]" : ""}`}>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block text-xs text-[var(--tmz-muted)]">{copy}</span></span>
+                  <ArrowRight className={`h-4 w-4 text-[var(--tmz-muted)] ${isRTL ? "rotate-180" : ""}`} />
+                </button>
+              ))}
+            </div>
           </section>
 
           <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />

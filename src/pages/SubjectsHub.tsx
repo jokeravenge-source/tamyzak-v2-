@@ -28,6 +28,20 @@ type Tool = {
   descAr?: string;
 };
 
+type ToolGroup = "learn" | "practice" | "revise";
+
+const toolGroup = (key: Tool["key"]): ToolGroup => {
+  if (["malazam", "biologySchemes", "physicsSchemes", "subjectTutor", "frenchConjugator", "physicsLaws"].includes(key)) return "learn";
+  if (["flashcards", "ministerialBank", "englishVerbForms", "englishEssays", "poemsChecker", "hadithChecker", "islamicSurahs"].includes(key)) return "revise";
+  return "practice";
+};
+
+const GROUP_COPY = {
+  learn: { ar: "تعلّم", en: "Learn", arHint: "شرح ومصادر المادة", enHint: "Lessons and study sources" },
+  practice: { ar: "تدرّب", en: "Practice", arHint: "أسئلة وأنشطة تطبيقية", enHint: "Questions and interactive practice" },
+  revise: { ar: "راجع", en: "Revise", arHint: "ثبّت معلوماتك قبل الامتحان", enHint: "Lock in knowledge before exams" },
+} satisfies Record<ToolGroup, { ar: string; en: string; arHint: string; enHint: string }>;
+
 
 const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.ComponentType<{ className?: string }>; tools: Tool[] }[] = [
   {
@@ -256,7 +270,7 @@ const SubjectsHub = ({
         )}
 
         {!current && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
           {SUBJECTS.map((s) => {
             const Icon = s.Icon;
             const active = open === s.code;
@@ -273,14 +287,14 @@ const SubjectsHub = ({
                     else localStorage.removeItem("app_subject_focus_v1");
                   } catch { /* ignore */ }
                 }}
-                className={`p-4 rounded-2xl border text-start transition-all ${
+                className={`group min-h-36 p-4 rounded-[1.35rem] border text-start transition-all ${
                   active
                     ? "border-primary bg-primary/10 shadow-[var(--shadow-card)]"
-                    : "border-border bg-background hover:border-primary/40"
+                    : "border-border bg-card hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
                 }`}
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                  <Icon className="w-5 h-5 text-primary" />
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
                 </div>
                 <p className="font-bold text-sm">{isRTL ? s.ar : s.en}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -314,18 +328,25 @@ const SubjectsHub = ({
                   </p>
                 </div>
               </header>
-              <p className="mb-4 text-sm leading-7 text-muted-foreground">
-                {isRTL ? "ابدأ بالمراجعة أو الملازم. افتح الأدوات الإضافية للتدريب المتخصص." : "Start with review cards or booklets. Explore extra tools for specialist practice."}
+              <p className="mb-7 max-w-2xl text-sm leading-7 text-muted-foreground">
+                {isRTL ? "اختَر هدفك أولاً، وبعدها افتح الأداة المناسبة بدون ما تضيع بين الخيارات." : "Choose your goal first, then open the right tool without hunting through a long list."}
               </p>
-              <button type="button" aria-expanded={showSpecialistTools} onClick={() => setShowSpecialistTools((value) => !value)}
-                className="mb-5 min-h-11 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+              <button type="button" aria-expanded={showSpecialistTools} onClick={() => setShowSpecialistTools((value) => !value)} className="mb-7 inline-flex min-h-11 items-center rounded-full border border-border bg-card px-4 text-sm font-bold text-primary shadow-sm hover:border-primary/35 hover:bg-primary/5">
                 {showSpecialistTools ? (isRTL ? "عرض الأساسيات فقط" : "Show essentials only") : (isRTL ? "عرض الأدوات الإضافية" : "Show extra tools")}
               </button>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {([{ key: "mcqBank", en: "MCQ Bank", ar: "بنك أسئلة MCQ", Icon: FileQuestion, descEn: "Practise questions from this subject.", descAr: "حل أسئلة الاختيار من متعدد لهذه المادة." } as Tool, ...current.tools]).filter((t) => showSpecialistTools || ["flashcards", "theoremVisualizer", "malazam", "ministerialBank", "mcqBank", "physicsSchemes", "biologySchemes"].includes(t.key)).sort((a, b) => {
-                  const order = ["flashcards", "mcqBank", "ministerialBank", "malazam", "biologySchemes", "physicsSchemes"];
-                  return (order.includes(a.key) ? order.indexOf(a.key) : 9) - (order.includes(b.key) ? order.indexOf(b.key) : 9);
-                }).map((t) => {
+              <div className="space-y-8">
+                {(["learn", "practice", "revise"] as ToolGroup[]).map((group) => {
+                  const copy = GROUP_COPY[group];
+                  const essentials = ["flashcards", "theoremVisualizer", "malazam", "ministerialBank", "mcqBank", "physicsSchemes", "biologySchemes"];
+                  const tools = ([{ key: "mcqBank", en: "MCQ Bank", ar: "بنك أسئلة MCQ", Icon: FileQuestion, descEn: "Practise questions from this subject.", descAr: "حل أسئلة الاختيار من متعدد لهذه المادة." } as Tool, ...current.tools]).filter((tool) => toolGroup(tool.key) === group && (showSpecialistTools || essentials.includes(tool.key)));
+                  if (!tools.length) return null;
+                  return <section key={group} aria-labelledby={`subject-group-${group}`}>
+                    <div className="mb-3 flex items-end justify-between gap-4">
+                      <div><h2 id={`subject-group-${group}`} className="text-lg font-bold">{isRTL ? copy.ar : copy.en}</h2><p className="text-xs text-muted-foreground">{isRTL ? copy.arHint : copy.enHint}</p></div>
+                      <span className="text-xs tabular-nums text-muted-foreground">{tools.length}</span>
+                    </div>
+                    <div className="overflow-hidden rounded-[1.35rem] border border-border bg-card shadow-sm">
+                    {tools.map((t, index) => {
                   const Icon = t.Icon;
                   const free = t.free || t.placeholder || !isPremiumTool(t.key);
                   const hardLocked = !!t.disabled;
@@ -334,16 +355,16 @@ const SubjectsHub = ({
                   return (
                     <motion.button
                       key={`${t.key}:${t.en}`}
-                      whileHover={{ y: -2 }}
+                      whileHover={{ x: isRTL ? -2 : 2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleToolClick(t)}
                       disabled={hardLocked || (!free && subscriptionLoading)}
-                      className={`group relative bg-background p-5 border rounded-2xl text-start transition-all ${
+                      className={`group relative flex min-h-[82px] w-full items-center gap-4 bg-card p-4 text-start transition-all ${index ? "border-t border-border" : ""} ${
                         comingSoon
-                          ? "border-border/60 hover:border-sky-400/60"
+                          ? "hover:bg-sky-50/70"
                           : locked
-                          ? "border-border/60 hover:border-amber-400/60"
-                          : "border-border hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
+                          ? "hover:bg-amber-50/70"
+                          : "hover:bg-muted/55"
                       }`}
                     >
                       {t.free ? (
@@ -360,17 +381,16 @@ const SubjectsHub = ({
                           {hardLocked ? (isRTL ? "مقفل" : "LOCKED") : isRTL ? "بريميوم" : "PREMIUM"}
                         </span>
                       )}
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
+                      <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
                         <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
                       </div>
-                      <h2 className="font-bold text-base mb-2">{isRTL ? t.ar : t.en}</h2>
-                      {(isRTL ? t.descAr : t.descEn) && <p className="mb-3 text-sm leading-6 text-muted-foreground">{isRTL ? t.descAr : t.descEn}</p>}
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold ${comingSoon ? "text-sky-600" : locked ? "text-amber-600" : "text-primary"}`}>
-                        {comingSoon ? (isRTL ? "معاينة" : "Preview") : hardLocked ? (isRTL ? "غير متاح حالياً" : "Unavailable") : locked ? (isRTL ? "ترقية للفتح" : "Upgrade to unlock") : (isRTL ? "افتح" : "Open")}
-                        <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? "rotate-180" : ""}`} />
-                      </span>
+                      <span className="min-w-0 flex-1"><span className="block font-bold text-sm sm:text-base">{isRTL ? t.ar : t.en}</span>{(isRTL ? t.descAr : t.descEn) && <span className="mt-1 block line-clamp-1 text-xs text-muted-foreground">{isRTL ? t.descAr : t.descEn}</span>}</span>
+                      <ArrowRight className={`w-4 h-4 shrink-0 text-muted-foreground ${isRTL ? "rotate-180" : ""}`} />
                     </motion.button>
                   );
+                    })}
+                    </div>
+                  </section>;
                 })}
               </div>
             </motion.section>
