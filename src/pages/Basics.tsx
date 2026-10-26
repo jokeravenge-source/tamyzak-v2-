@@ -1440,6 +1440,10 @@ const Basics = ({
               <p className="mt-1 text-xs text-[var(--tmz-muted)]">{isRTL ? "مهام اليوم" : "tasks today"}</p>
             </div>
           </section>
+
+          <div aria-label={isRTL ? "سماء المثابرة" : "Streak sky"}>
+            <StreakTree language={language} daysOverride={streakDays ?? 0} />
+          </div>
         </div>
         </motion.div>
         )}
