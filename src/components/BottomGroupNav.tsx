@@ -1,13 +1,13 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, GraduationCap, Home, UserRound, UsersRound, Zap } from "lucide-react";
+import { BookOpen, Bot, GraduationCap, Home, UserRound, UsersRound, Zap } from "lucide-react";
 import { LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type PrimaryNavItem = {
-  key: MainMenuChoice | "tesla";
+  key: MainMenuChoice | "guide" | "tesla";
   labelAr: string;
   labelEn: string;
   Icon: ComponentType<{ className?: string }>;
@@ -20,6 +20,7 @@ const TESLA_INSTAGRAM_URL = "https://www.instagram.com/tesl_astore/?utm_source=i
 // external destination so it does not compete with the active app section.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
+  { key: "guide", labelAr: "المرشد", labelEn: "Guide", Icon: Bot },
   { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
   { key: "more", labelAr: "الدراسة", labelEn: "Study", Icon: GraduationCap },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
@@ -31,7 +32,7 @@ const BottomGroupNav = ({
   language,
   active,
   onSelect,
-  onGuide: _onGuide,
+  onGuide,
 }: {
   language: AppLanguage;
   active: MainMenuChoice | null;
@@ -49,7 +50,7 @@ const BottomGroupNav = ({
   }, []);
 
   const isItemActive = (key: PrimaryNavItem["key"]) => {
-    if (key === "tesla") return false;
+    if (key === "guide" || key === "tesla") return false;
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
       return active === "more" || Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
@@ -58,6 +59,10 @@ const BottomGroupNav = ({
   };
 
   const selectItem = (key: PrimaryNavItem["key"]) => {
+    if (key === "guide") {
+      onGuide();
+      return;
+    }
     if (key === "tesla") return;
     onSelect(key);
   };
@@ -79,7 +84,7 @@ const BottomGroupNav = ({
         aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
       >
         <LayoutGroup id="primary-bottom-navigation">
-          <div className="grid grid-cols-[repeat(5,minmax(0,1fr))_46px] gap-1">
+          <div className="grid grid-cols-[repeat(6,minmax(0,1fr))_42px] gap-1">
             {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon, href }) => {
               const selected = isItemActive(key);
               const label = isRtl ? labelAr : labelEn;
