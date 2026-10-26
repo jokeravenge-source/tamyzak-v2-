@@ -659,6 +659,7 @@ const Basics = ({
   const stoneFill = nextRank
     ? Math.max(0, Math.min(1, (totalPoints - leaderboardRank.min) / (nextRank.min - leaderboardRank.min)))
     : 1;
+  const rankCardTheme = RANK_CARD_THEMES[currentRank] ?? RANK_CARD_THEMES.coal;
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -1371,9 +1372,22 @@ const Basics = ({
                 : (isRTL ? "ابدأ بمراجعة اليوم، أو اختَر مادة من فصولك." : "Start today's review, or choose a subject and chapter.")}
               </p>
             </div>
-            <button type="button" onClick={() => openDetail("progress")} className="inline-flex min-h-11 items-center gap-3 self-start rounded-2xl border border-[var(--tmz-line)] bg-card px-4 py-2 text-start shadow-sm hover:border-primary/35">
-              <RankStone rank={currentRank} size={38} fillProgress={stoneFill} glow={false} className="shrink-0" />
-              <span><span className="block text-[11px] font-semibold text-[var(--tmz-muted)]">{isRTL ? "رتبتك" : "Your rank"}</span><span className="block text-sm font-bold">{rankLabel}</span></span>
+            <button
+              type="button"
+              onClick={() => openDetail("progress")}
+              className="inline-flex min-h-11 items-center gap-3 self-start rounded-2xl border px-4 py-2 text-start transition-all hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              style={{
+                background: rankCardTheme.background,
+                borderColor: rankCardTheme.highlight,
+                color: rankCardTheme.ink,
+                boxShadow: `0 14px 30px -22px ${rankCardTheme.shadow}, 0 0 24px -18px ${rankCardTheme.glow}`,
+              }}
+            >
+              <RankStone rank={currentRank} size={38} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} className="shrink-0" />
+              <span>
+                <span className="block text-[11px] font-semibold" style={{ color: rankCardTheme.accent }}>{isRTL ? "رتبتك" : "Your rank"}</span>
+                <span className="block text-sm font-bold">{rankLabel}</span>
+              </span>
             </button>
           </header>
 
