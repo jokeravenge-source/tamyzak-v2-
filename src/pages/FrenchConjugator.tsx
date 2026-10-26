@@ -11,7 +11,6 @@ import {
   Languages,
   Loader2,
   Search,
-  Sparkles,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import {
@@ -371,10 +370,6 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                 })}
               </div>
 
-              <footer className="mt-12 flex flex-col gap-3 border-t border-border pt-5 text-xs leading-6 text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                <span className="inline-flex items-center gap-2"><Sparkles className="size-4 text-blue-700 dark:text-blue-300" aria-hidden="true" />{t.cached}</span>
-                <a href={data.meta?.canonical_url || "https://github.com/ClaudeCoulombe/FrenchLefffLemmatizer"} target="_blank" rel="noreferrer" className="underline decoration-blue-500/40 underline-offset-4 hover:text-foreground">{t.attribution} {t.sourceLink}</a>
-              </footer>
             </div>
           ) : (
             <div className="grid min-h-72 place-items-center rounded-[26px] border border-dashed border-border bg-card px-6 text-center">

@@ -21,7 +21,7 @@ describe("FrenchConjugator", () => {
     expect(await screen.findByText("je suis")).toBeInTheDocument();
     expect(screen.getByText("j’étais")).toBeInTheDocument();
     expect(screen.getByText("que je sois")).toBeInTheDocument();
-    expect(screen.getByText("Works without an internet connection")).toBeInTheDocument();
+    expect(screen.queryByText("Works without an internet connection")).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
