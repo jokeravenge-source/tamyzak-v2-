@@ -10,6 +10,8 @@ import SpectrumTypesActivity from "@/components/physics/SpectrumTypesActivity";
 import PhotoelectricEffectActivity from "@/components/physics/PhotoelectricEffectActivity";
 import PolarizationActivity from "@/components/physics/PolarizationActivity";
 import LightWavePolarizationActivity from "@/components/physics/LightWavePolarizationActivity";
+import MechanicalWavePolarizationActivity from "@/components/physics/MechanicalWavePolarizationActivity";
+import LightDiffractionActivity from "@/components/physics/LightDiffractionActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -431,7 +433,7 @@ const PhysicsActivities = ({
         </header>
 
         <Tabs defaultValue="dielectric" className="w-full">
-          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-3 xl:grid-cols-7">
+          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             <TabsTrigger value="dielectric">
               {isRTL ? "المكثف والعازل" : "Capacitor & Dielectric"}
             </TabsTrigger>
@@ -452,6 +454,12 @@ const PhysicsActivities = ({
             </TabsTrigger>
             <TabsTrigger value="light-wave-polarization">
               {isRTL ? "ف5 · موجات الضوء" : "Ch5 · Light Waves"}
+            </TabsTrigger>
+            <TabsTrigger value="mechanical-wave-polarization">
+              {isRTL ? "ف5 · موجات ميكانيكية" : "Ch5 · Mechanical Waves"}
+            </TabsTrigger>
+            <TabsTrigger value="light-diffraction">
+              {isRTL ? "ف5 · حيود الضوء" : "Ch5 · Light Diffraction"}
             </TabsTrigger>
           </TabsList>
 
@@ -571,6 +579,14 @@ const PhysicsActivities = ({
 
           <TabsContent value="light-wave-polarization">
             <LightWavePolarizationActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="mechanical-wave-polarization">
+            <MechanicalWavePolarizationActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="light-diffraction">
+            <LightDiffractionActivity language={language} />
           </TabsContent>
         </Tabs>
       </div>
