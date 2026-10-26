@@ -22,7 +22,10 @@ describe("Premium access policy", () => {
   it.each(["flashcards", "mcqBank", "ministerialBank", "malazam", "sessions", "todo", "chemicalEquations", "physicsActivities", "chemistryExperiments", "notes"])("keeps %s free", (tool) => {
     expect(isPremiumTool(tool)).toBe(false);
   });
-  it.each(["mcq", "essay", "subjectTutor", "problemGenerator", "physicsProblemSolver", "examGenerator", "videoNotes", "podcastTutor", "englishReadingPractice", "liveBattle"])("locks %s for non-members", (tool) => {
+  it("keeps Live Battle free without a Premium membership", () => {
+    expect(isPremiumTool("liveBattle")).toBe(false);
+  });
+  it.each(["mcq", "essay", "subjectTutor", "problemGenerator", "physicsProblemSolver", "examGenerator", "videoNotes", "podcastTutor", "englishReadingPractice"])("locks %s for non-members", (tool) => {
     expect(isPremiumTool(tool)).toBe(true);
   });
   it("uses the requested Telegram account", () => {

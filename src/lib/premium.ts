@@ -9,7 +9,7 @@ const PREMIUM_TOOLS = new Set([
   "subjectTutor", "physicsProblemSolver", "problemGenerator", "examGenerator",
   "biologyDrawings", "physicsLaws", "organicEquations", "islamicSurahs",
   "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat",
-  "englishVerbForms", "englishReadingPractice", "liveBattle",
+  "englishVerbForms", "englishReadingPractice",
 ]);
 
 export function isPremiumTool(menu: string | null): boolean {

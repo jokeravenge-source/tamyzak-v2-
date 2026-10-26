@@ -1,7 +1,7 @@
 # Task Roadmap
 
 ## In Progress
-- None.
+- Make Live Battle free and verify its direct link for signed-in users.
 
 ## Done
 - Added admin-only persisted editing and removal for Ahmed Al-Nadawi decks; verified saves, student readback, deletion and reloads, then restored test content.
