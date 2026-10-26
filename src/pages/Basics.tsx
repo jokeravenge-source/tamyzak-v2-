@@ -1378,40 +1378,46 @@ const Basics = ({
           </header>
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
-            <motion.button
-              type="button"
-              aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
-              onClick={() => {
-                setRecommendedProfile(readWeeklyLearningProfile());
-                void totalDueCount().then(setDueCards).catch(() => {});
-                void dueMistakesCount().then(setDueMistakes).catch(() => {});
-                setShowRecommendedStudy(true);
-              }}
+            <motion.div
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-primary bg-primary p-6 text-start text-primary-foreground shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-8"
             >
               <span className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[28px] border-white/5" aria-hidden="true" />
-              <span className="relative flex h-full flex-col justify-between gap-8">
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/12"><BookOpen className="h-6 w-6" aria-hidden="true" /></span>
-                <span className="min-w-0 flex-1">
+              <div className="absolute end-5 top-5 z-20 flex items-center gap-2 sm:end-7 sm:top-7">
+                <span className="hidden rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85 backdrop-blur sm:inline">{isRTL ? "هدية اليوم" : "Daily gift"}</span>
+                <GiftMcqButton language={language} compact />
+              </div>
+              <button
+                type="button"
+                aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
+                onClick={() => {
+                  setRecommendedProfile(readWeeklyLearningProfile());
+                  void totalDueCount().then(setDueCards).catch(() => {});
+                  void dueMistakesCount().then(setDueMistakes).catch(() => {});
+                  setShowRecommendedStudy(true);
+                }}
+                className="relative flex min-h-[160px] w-full flex-col justify-between gap-8 text-start focus-visible:outline-none"
+              >
+                <span className="grid h-12 w-12 place-items-center self-start rounded-2xl bg-white/12"><BookOpen className="h-6 w-6" aria-hidden="true" /></span>
+                <span className="min-w-0 flex-1 pe-4 sm:pe-24">
                   <span className="block text-2xl font-bold">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
                   <span className="mt-2 block max-w-md text-sm leading-6 text-primary-foreground/75">
                     {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
                   </span>
                 </span>
                 <span className="inline-flex items-center gap-2 text-sm font-bold">{isRTL ? "ابدأ الآن" : "Begin now"}<ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /></span>
-              </span>
-            </motion.button>
+              </button>
+            </motion.div>
 
-            <div className="overflow-hidden rounded-[1.75rem] border border-[var(--tmz-line)] bg-card p-2 shadow-sm">
+            <div className="grid gap-2 rounded-[1.75rem] border border-[var(--tmz-line)] bg-card p-2 shadow-sm">
               {[
-                { key: "subjectsHub", Icon: Layers, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub") },
-                { key: "mistakes", Icon: AlertTriangle, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${dueMistakes} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
-                { key: "more", Icon: Search, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
-              ].map(({ key, Icon, title, copy, action }, index) => (
-                <button key={key} type="button" aria-label={title} onClick={action} className={`group flex min-h-[66px] w-full items-center gap-3 rounded-2xl px-3 text-start hover:bg-muted/70 ${index ? "border-t border-[var(--tmz-line)]" : ""}`}>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
+                { key: "subjectsHub", Icon: Layers, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub"), surface: "border-sky-200 bg-sky-50 hover:bg-sky-100/80", icon: "bg-sky-600 text-white" },
+                { key: "mistakes", Icon: AlertTriangle, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${dueMistakes} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes"), surface: "border-amber-200 bg-amber-50 hover:bg-amber-100/80", icon: "bg-amber-400 text-amber-950" },
+                { key: "more", Icon: Search, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true), surface: "border-violet-200 bg-violet-50 hover:bg-violet-100/80", icon: "bg-violet-600 text-white" },
+              ].map(({ key, Icon, title, copy, action, surface, icon }) => (
+                <button key={key} type="button" aria-label={title} onClick={action} className={`group flex min-h-[66px] w-full items-center gap-3 rounded-2xl border px-3 text-start transition-colors ${surface}`}>
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-sm ${icon}`}><Icon className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block text-xs text-[var(--tmz-muted)]">{copy}</span></span>
                   <ArrowRight className={`h-4 w-4 text-[var(--tmz-muted)] ${isRTL ? "rotate-180" : ""}`} />
                 </button>
