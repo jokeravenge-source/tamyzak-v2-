@@ -1,4 +1,4 @@
-import { lazy as reactLazy, type ComponentType } from "react";
+import { createElement, lazy as reactLazy, type ComponentType } from "react";
 
 const RELOAD_KEY = "chunk-reload-at";
 
@@ -30,7 +30,25 @@ export function lazyWithRetry<T extends ComponentType<any>>(
         // keep the promise pending while the page reloads
         return new Promise<{ default: T }>(() => {});
       }
-      throw err;
+      console.warn("Chunk failed to load after reload", err);
+      const Fallback = () =>
+        createElement(
+          "div",
+          { className: "min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center bg-background text-foreground" },
+          createElement("p", { className: "text-base" }, "تم تحديث الموقع · The site was updated"),
+          createElement(
+            "button",
+            {
+              className: "h-10 px-5 rounded-lg bg-primary text-primary-foreground font-semibold",
+              onClick: () => {
+                sessionStorage.removeItem(RELOAD_KEY);
+                window.location.reload();
+              },
+            },
+            "تحديث الصفحة · Refresh",
+          ),
+        );
+      return { default: Fallback as unknown as T };
     }
   });
 }
