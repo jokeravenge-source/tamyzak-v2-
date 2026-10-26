@@ -1076,6 +1076,15 @@ const StudentApp = () => {
         <LanguageGate onSelect={setLanguage} />
       ) : authRole !== "admin" && !channelVerified && !isNadiaMinisterialRoute && !(typeof window !== "undefined" && window.location.pathname.startsWith("/flashcards")) ? (
         <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
+      ) : menuChoice === "subjectTutor" ? (
+        <main dir={language === "ar" ? "rtl" : "ltr"} className="flex min-h-screen items-center justify-center bg-background px-4 pb-28">
+          <section className="w-full max-w-md rounded-[1.75rem] border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-2xl" aria-hidden="true">🔒</span>
+            <h1 className="mt-5 text-2xl font-black text-foreground">{language === "ar" ? "المعلم الذكي مقفل مؤقتاً" : "AI Tutor is temporarily locked"}</h1>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">{language === "ar" ? "نعمل على تحسين التجربة. راح نرجّعه للطلاب قريباً." : "We are improving the experience and will make it available again soon."}</p>
+            <button type="button" onClick={backToBasics} className="mt-6 min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90">{language === "ar" ? "العودة للرئيسية" : "Back to home"}</button>
+          </section>
+        </main>
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
         <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
       ) : !menuChoice || menuChoice === "basics" ? (

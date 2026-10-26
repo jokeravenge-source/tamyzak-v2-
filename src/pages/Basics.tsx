@@ -99,7 +99,7 @@ export type BasicsChoice =
   | "subjectsHub"
   | "mindmap";
 
-const TEMP_LOCKED_TOOLS = new Set<MainMenuChoice>();
+const TEMP_LOCKED_TOOLS = new Set<MainMenuChoice>(["subjectTutor"]);
 
 const MOTIVATIONAL_PHRASES = {
   en: [
