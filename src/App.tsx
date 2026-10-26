@@ -99,6 +99,7 @@ const PhysicsProblemSolver = lazy(() => import("./pages/PhysicsProblemSolver"));
 const ProblemGenerator = lazy(() => import("./pages/ProblemGenerator"));
 const FrenchSynonyms = lazy(() => import("./pages/FrenchSynonyms"));
 const FrenchAntonyms = lazy(() => import("./pages/FrenchAntonyms"));
+const FrenchConjugator = lazy(() => import("./pages/FrenchConjugator"));
 const ToolPlaceholder = lazy(() => import("./pages/ToolPlaceholder"));
 const PhysicsActivities = lazy(() => import("./pages/PhysicsActivities"));
 const ChemistryExperiments = lazy(() => import("./pages/ChemistryExperiments"));
@@ -749,7 +750,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
   });
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (getNadiaMinisterialRouteMatch()) {
@@ -1190,6 +1191,8 @@ const StudentApp = () => {
         <FrenchSynonyms language={language} onBack={resetMenu} />
       ) : menuChoice === "frenchAntonyms" ? (
         <FrenchAntonyms language={language} onBack={resetMenu} />
+      ) : menuChoice === "frenchConjugator" ? (
+        <FrenchConjugator language={language} onBack={resetMenu} />
       ) : menuChoice === "toolPlaceholder" ? (
         <ToolPlaceholder language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsActivities" ? (

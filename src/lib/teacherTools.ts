@@ -26,6 +26,7 @@ export const TEACHER_TOOL_CATALOG = [
   { key: "poemsChecker", labelAr: "مدقق القصائد", labelEn: "Poems Checker" },
   { key: "frenchSynonyms", labelAr: "مرادفات الفرنسية", labelEn: "French Synonyms" },
   { key: "frenchAntonyms", labelAr: "أضداد الفرنسية", labelEn: "French Antonyms" },
+  { key: "frenchConjugator", labelAr: "مصرّف الأفعال الفرنسية", labelEn: "French Conjugator" },
   { key: "adminNotes", labelAr: "الإثرائيات", labelEn: "Enrichments" },
   { key: "ourCourses", labelAr: "دوراتنا", labelEn: "Our Courses" },
   { key: "summaries", labelAr: "الملخصات", labelEn: "Summaries" },

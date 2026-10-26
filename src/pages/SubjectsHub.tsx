@@ -103,6 +103,8 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "frenchSynonyms", en: "Synonyms", ar: "المرادفات", Icon: MousePointerClick },
       { key: "frenchAntonyms", en: "Antonyms", ar: "المعاكسات", Icon: MousePointerClick },
+      { key: "frenchConjugator", en: "French Conjugator", ar: "مصرّف الأفعال الفرنسية", Icon: SpellCheck2, free: true,
+        descEn: "Type any French verb and explore all available moods and tenses.", descAr: "اكتب أي فعل فرنسي وشاهد تصريفاته في جميع الصيغ والأزمنة." },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
       { key: "malazam", en: "Malazam", ar: "الملازم", Icon: BookMarked },
     ],

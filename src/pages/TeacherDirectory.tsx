@@ -103,6 +103,7 @@ const toolIcons: Partial<Record<TeacherToolKey, React.ComponentType<{ className?
   poemsChecker: ScrollText,
   frenchSynonyms: Languages,
   frenchAntonyms: Languages,
+  frenchConjugator: Languages,
   adminNotes: Sparkles,
   ourCourses: GraduationCap,
   summaries: BookOpen,

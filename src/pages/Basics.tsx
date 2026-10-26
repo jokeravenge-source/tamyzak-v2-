@@ -406,7 +406,7 @@ const TOOL_CATEGORY_LABELS = {
   en: { All: "All tools", Review: "Review", Test: "Test yourself", Organize: "Organize" },
 } as const;
 const TOOL_CATEGORY_KEYS: Record<"Review" | "Test" | "Organize", Set<string>> = {
-  Review: new Set(["flashcards", "malazam", "summaries", "adminNotes", "ministerialBank", "mistakes", "notes", "mindmap", "videoNotes", "podcastTutor", "youtube"]),
+  Review: new Set(["flashcards", "malazam", "summaries", "adminNotes", "ministerialBank", "mistakes", "notes", "mindmap", "videoNotes", "podcastTutor", "youtube", "frenchConjugator"]),
   Test: new Set(["mcq", "mcqBank", "essay", "liveBattle", "dailyGame", "challenge", "biologyDrawings", "biologySchemes", "physicsSchemes", "physicsQuickMcq", "physicsProblemSolver", "problemGenerator", "chemicalEquations", "organicEquations", "examGenerator"]),
   Organize: new Set(["subjectsHub", "ourCourses", "teachers", "ourTeachers", "report", "sessions", "missions", "todo", "leaderboard", "news", "advices", "whoIsBest", "account", "premium", "more", "joinTamayzak", "unlocks", "textToVideo", "canvas", "islamicSurahs", "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat", "englishVerbForms", "englishReadingPractice", "frenchSynonyms", "frenchAntonyms", "psych", "companion", "subjectTutor", "physicsLaws", "physicsActivities", "chemistryExperiments"]),
 };

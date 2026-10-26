@@ -33,6 +33,8 @@ const ENTRIES: Entry[] = [
   { key: "englishReadingPractice", en: { title: "English Reading Practice", desc: "Practise reading comprehension" }, ar: { title: "تدريب القطعة الإنكليزية", desc: "تدرّب على قراءة القطع وفهمها" } },
   { key: "frenchSynonyms", en: { title: "French Synonyms", desc: "Study matching vocabulary" }, ar: { title: "مرادفات الفرنسية", desc: "راجع الكلمات المتشابهة بالمعنى" } },
   { key: "frenchAntonyms", en: { title: "French Antonyms", desc: "Study opposite vocabulary" }, ar: { title: "معاكسات الفرنسية", desc: "راجع الكلمات المتعاكسة" } },
+  { key: "frenchConjugator", en: { title: "French Conjugator", desc: "All forms, moods, and tenses" }, ar: { title: "مصرّف الأفعال الفرنسية", desc: "جميع الصيغ والأزمنة" },
+    keywords: ["french", "conjugator", "conjugation", "verbs", "moods", "tenses", "فرنسي", "فرنسية", "تصريف", "أفعال", "محمد علي الكناني"] },
   { key: "notes", en: { title: "My Notes", desc: "Your notebooks and study notes" }, ar: { title: "ملاحظاتي", desc: "دفاترك وملاحظاتك الدراسية" } },
   { key: "canvas", en: { title: "Canvas", desc: "Draw, sketch and organise ideas" }, ar: { title: "اللوحة", desc: "ارسم ورتب أفكارك" } },
   { key: "youtube", en: { title: "YouTube Lectures", desc: "Watch lectures in your study space" }, ar: { title: "محاضرات يوتيوب", desc: "شاهد المحاضرات داخل مساحة الدراسة" } },
