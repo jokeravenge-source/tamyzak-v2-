@@ -167,29 +167,19 @@ const Summaries = ({ language, onBack }: { language: AppLanguage; onBack: () => 
     try {
       const ext = path.split(".").pop();
       const filename = /\.[^./]+$/.test(name) || !ext ? name : `${name}.${ext}`;
-      // Try direct download blob first
-      let blobUrl: string | null = null;
-      try {
-        const { data, error } = await supabase.storage.from("summaries").download(path);
-        if (error || !data) throw error ?? new Error("no-data");
-        blobUrl = URL.createObjectURL(data);
-      } catch {
-        // Fallback to signed URL with download flag
-        const { data: signed, error: sErr } = await supabase
-          .storage.from("summaries")
-          .createSignedUrl(path, 300, { download: filename });
-        if (sErr || !signed?.signedUrl) throw sErr ?? new Error("Failed to get URL");
-        blobUrl = signed.signedUrl;
-      }
+      // Use a normal HTTPS URL instead of a blob URL. WebKit cannot reliably
+      // open blob resources in a new Safari tab, especially from an installed PWA.
+      const { data: signed, error } = await supabase
+        .storage.from("summaries")
+        .createSignedUrl(path, 300, { download: filename });
+      if (error || !signed?.signedUrl) throw error ?? new Error("Failed to get URL");
       const a = document.createElement("a");
-      a.href = blobUrl;
+      a.href = signed.signedUrl;
       a.download = filename;
       a.rel = "noopener";
-      a.target = "_blank";
       document.body.appendChild(a);
       a.click();
       a.remove();
-      if (blobUrl.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(blobUrl!), 2000);
     } catch (e: any) {
       toast.error(e?.message ?? "Download failed");
     }

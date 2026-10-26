@@ -1534,18 +1534,18 @@ function CourseRunner({
                   <button
                     onClick={async () => {
                       try {
+                        const filename = `${selected.title}.pdf`;
                         const { data, error } = await supabase.storage
                           .from("course-exams")
-                          .download(selected.exam_path);
-                        if (error || !data) throw error ?? new Error("download failed");
-                        const url = URL.createObjectURL(data);
+                          .createSignedUrl(selected.exam_path, 300, { download: filename });
+                        if (error || !data?.signedUrl) throw error ?? new Error("download failed");
                         const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `${selected.title}.pdf`;
+                        a.href = data.signedUrl;
+                        a.download = filename;
+                        a.rel = "noopener";
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
                       } catch (e: any) {
                         toast.error(e?.message ?? (isAr ? "تعذّر التحميل" : "Download failed"));
                       }
