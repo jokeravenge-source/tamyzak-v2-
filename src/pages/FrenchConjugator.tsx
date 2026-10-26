@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   ArrowLeft,
@@ -10,33 +10,18 @@ import {
   CircleAlert,
   Languages,
   Loader2,
-  RotateCcw,
   Search,
   Sparkles,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
+import {
+  conjugateFrenchVerb,
+  findFrenchVerbSuggestions,
+  type ConjugationValue,
+  type FrenchConjugation,
+} from "@/lib/frenchConjugation";
 
-const API_URL = "https://conjugaison.my-french.com/api-public.php";
-const CACHE_PREFIX = "tmz_french_conjugation_v1:";
-
-type ConjugationValue = string | string[] | { [key: string]: ConjugationValue };
-
-export type FrenchConjugation = {
-  verb: string;
-  infinitive: string;
-  group?: string;
-  auxiliary?: string;
-  pronominal?: boolean;
-  moods: Record<string, ConjugationValue>;
-  meta?: {
-    source?: string;
-    canonical_url?: string;
-    license?: string;
-  };
-};
-
-type LookupMatch = { infinitive?: string };
-type ApiErrorBody = { error?: { code?: string; message?: string; suggestions?: string[] } };
+export type { FrenchConjugation } from "@/lib/frenchConjugation";
 
 const COMMON_VERBS = [
   "être", "avoir", "aller", "faire", "pouvoir", "vouloir", "savoir", "devoir",
@@ -67,7 +52,7 @@ const copy = {
     pronominal: "فعل انعكاسي",
     all: "الكل",
     forms: "صيغة",
-    cached: "محفوظ للفتح السريع",
+    cached: "يعمل بدون اتصال بالإنترنت",
     loadingTitle: "نجمع جميع تصريفات الفعل",
     loadingText: "لحظات ونرتبها حسب الصيغة والزمن.",
     emptyTitle: "ابدأ بكتابة فعل فرنسي",
@@ -76,11 +61,8 @@ const copy = {
     invalidText: "استخدم الحروف الفرنسية فقط، ويمكنك كتابة فعل انعكاسي مثل se lever.",
     notFoundTitle: "لم نعثر على هذا الفعل",
     notFoundText: "تحقق من كتابة المصدر أو اختر واحداً من الاقتراحات.",
-    networkTitle: "تعذر تحميل التصريفات",
-    networkText: "تحقق من اتصال الإنترنت ثم أعد المحاولة.",
-    retry: "إعادة المحاولة",
     suggestions: "هل تقصد؟",
-    attribution: "بيانات التصريف مقدمة من My French LLC بترخيص CC BY 4.0.",
+    attribution: "بيانات التصريف من معجم Lefff بترخيص LGPL-LR.",
     sourceLink: "مصدر البيانات",
     moodFallback: "الصيغة",
     tenseFallback: "الزمن",
@@ -103,7 +85,7 @@ const copy = {
     pronominal: "Pronominal verb",
     all: "All",
     forms: "forms",
-    cached: "Saved for quick access",
+    cached: "Works without an internet connection",
     loadingTitle: "Collecting every form",
     loadingText: "The conjugations are being organised by mood and tense.",
     emptyTitle: "Start with a French verb",
@@ -112,11 +94,8 @@ const copy = {
     invalidText: "Use French letters only. Pronominal verbs such as se lever are supported.",
     notFoundTitle: "That verb was not found",
     notFoundText: "Check the infinitive spelling or choose one of the suggestions.",
-    networkTitle: "The conjugations could not be loaded",
-    networkText: "Check your internet connection, then try again.",
-    retry: "Try again",
     suggestions: "Did you mean?",
-    attribution: "Conjugation data provided by My French LLC under CC BY 4.0.",
+    attribution: "Conjugation data from the Lefff lexicon under LGPL-LR.",
     sourceLink: "Data source",
     moodFallback: "Mood",
     tenseFallback: "Tense",
@@ -149,73 +128,6 @@ const normalizeForms = (value: ConjugationValue): string[] => {
   return Object.values(value).flatMap((item) => normalizeForms(item));
 };
 
-const readCache = (verb: string): FrenchConjugation | null => {
-  try {
-    const value = localStorage.getItem(`${CACHE_PREFIX}${normalizeKey(verb)}`);
-    return value ? JSON.parse(value) as FrenchConjugation : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeCache = (data: FrenchConjugation) => {
-  try {
-    localStorage.setItem(`${CACHE_PREFIX}${normalizeKey(data.infinitive || data.verb)}`, JSON.stringify(data));
-  } catch {
-    // The result is still usable when browser storage is unavailable or full.
-  }
-};
-
-const fetchJson = async <T,>(url: string, signal?: AbortSignal): Promise<{ response: Response; body: T }> => {
-  const response = await fetch(url, { signal, headers: { Accept: "application/json" } });
-  const body = await response.json() as T;
-  return { response, body };
-};
-
-const fetchVerb = async (verb: string, signal?: AbortSignal): Promise<FrenchConjugation> => {
-  const cached = readCache(verb);
-  if (cached) return cached;
-
-  const directUrl = `${API_URL}?v=${encodeURIComponent(verb)}`;
-  const direct = await fetchJson<FrenchConjugation & ApiErrorBody>(directUrl, signal);
-  if (direct.response.ok && direct.body.moods && direct.body.infinitive) {
-    writeCache(direct.body);
-    return direct.body;
-  }
-
-  if (direct.response.status === 404) {
-    const lookupUrl = `${API_URL}?lookup=${encodeURIComponent(verb)}`;
-    const lookup = await fetchJson<{ matches?: LookupMatch[] } & ApiErrorBody>(lookupUrl, signal);
-    const infinitive = lookup.body.matches?.find((match) => match.infinitive)?.infinitive;
-    if (lookup.response.ok && infinitive && normalizeKey(infinitive) !== normalizeKey(verb)) {
-      const resolved = await fetchJson<FrenchConjugation & ApiErrorBody>(`${API_URL}?v=${encodeURIComponent(infinitive)}`, signal);
-      if (resolved.response.ok && resolved.body.moods && resolved.body.infinitive) {
-        writeCache(resolved.body);
-        return resolved.body;
-      }
-    }
-  }
-
-  const error = new Error(direct.body.error?.message || "not_found");
-  Object.assign(error, { status: direct.response.status, code: direct.body.error?.code });
-  throw error;
-};
-
-const fetchSuggestions = async (query: string, signal?: AbortSignal): Promise<string[]> => {
-  try {
-    const result = await fetchJson<{ suggestions?: Array<string | { infinitive?: string; verb?: string }> }>(
-      `${API_URL}?suggest=${encodeURIComponent(query)}&limit=6`,
-      signal,
-    );
-    if (!result.response.ok || !Array.isArray(result.body.suggestions)) return [];
-    return result.body.suggestions
-      .map((item) => typeof item === "string" ? item : item.infinitive || item.verb || "")
-      .filter((item): item is string => Boolean(item));
-  } catch {
-    return [];
-  }
-};
-
 const isValidFrenchVerbInput = (value: string) => /^[a-zàâäçéèêëîïôöùûüÿœæ'’ -]+$/iu.test(value.trim());
 
 const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
@@ -223,18 +135,11 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
   const t = copy[language];
   const [query, setQuery] = useState("être");
   const [data, setData] = useState<FrenchConjugation | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "invalid" | "not-found" | "network">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "invalid" | "not-found">("idle");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [activeMood, setActiveMood] = useState("all");
-  const requestRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
-
-  const conjugate = useCallback(async (rawVerb: string) => {
+  const conjugate = useCallback((rawVerb: string) => {
     const verb = rawVerb.trim().toLocaleLowerCase("fr").normalize("NFC");
-    const requestId = requestRef.current + 1;
-    requestRef.current = requestId;
-    abortRef.current?.abort();
-    abortRef.current = null;
     setQuery(verb);
     setSuggestions([]);
     setActiveMood("all");
@@ -245,35 +150,22 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
       return;
     }
 
-    const controller = new AbortController();
-    abortRef.current = controller;
     setStatus("loading");
 
-    try {
-      const result = await fetchVerb(verb, controller.signal);
-      if (requestRef.current !== requestId) return;
-      setData(result);
-      setQuery(result.infinitive || result.verb || verb);
-      setStatus("success");
-    } catch (error) {
-      if (requestRef.current !== requestId || (error instanceof DOMException && error.name === "AbortError")) return;
-      const typedError = error as Error & { status?: number; code?: string };
-      if (typedError.status === 404 || typedError.code === "not_found") {
-        setData(null);
-        setStatus("not-found");
-        const nextSuggestions = await fetchSuggestions(verb, controller.signal);
-        if (requestRef.current === requestId) setSuggestions(nextSuggestions);
-      } else {
-        setStatus("network");
-      }
-    } finally {
-      if (abortRef.current === controller) abortRef.current = null;
+    const result = conjugateFrenchVerb(verb);
+    if (!result) {
+      setData(null);
+      setStatus("not-found");
+      setSuggestions(findFrenchVerbSuggestions(verb));
+      return;
     }
+    setData(result);
+    setQuery(result.infinitive);
+    setStatus("success");
   }, []);
 
   useEffect(() => {
-    void conjugate("être");
-    return () => abortRef.current?.abort();
+    conjugate("être");
   }, [conjugate]);
 
   const moodEntries = useMemo(() => {
@@ -300,11 +192,11 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void conjugate(query);
+    conjugate(query);
   };
 
-  const errorTitle = status === "invalid" ? t.invalidTitle : status === "not-found" ? t.notFoundTitle : t.networkTitle;
-  const errorText = status === "invalid" ? t.invalidText : status === "not-found" ? t.notFoundText : t.networkText;
+  const errorTitle = status === "invalid" ? t.invalidTitle : t.notFoundTitle;
+  const errorText = status === "invalid" ? t.invalidText : t.notFoundText;
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background pb-28 selection:bg-blue-600 selection:text-white">
@@ -378,7 +270,7 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                   <button
                     key={verb}
                     type="button"
-                    onClick={() => void conjugate(verb)}
+                    onClick={() => conjugate(verb)}
                     aria-pressed={data?.infinitive === verb}
                     className={`rounded-full border px-3 py-2 text-sm font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${data?.infinitive === verb ? "border-blue-900 bg-blue-950 text-white dark:border-blue-300 dark:bg-blue-300 dark:text-blue-950" : "border-slate-300 bg-white text-slate-700 hover:border-blue-600 hover:text-blue-800 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-blue-300 dark:hover:text-blue-200"}`}
                   >
@@ -399,7 +291,7 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                 <p className="mt-2 text-sm text-muted-foreground">{t.loadingText}</p>
               </div>
             </div>
-          ) : status === "invalid" || status === "not-found" || status === "network" ? (
+          ) : status === "invalid" || status === "not-found" ? (
             <div className="rounded-[26px] border border-rose-300/60 bg-rose-50 p-6 text-rose-950 dark:border-rose-400/20 dark:bg-rose-950/25 dark:text-rose-100 sm:p-8">
               <CircleAlert className="size-7 text-rose-600 dark:text-rose-300" aria-hidden="true" />
               <h2 className="mt-4 text-xl font-black">{errorTitle}</h2>
@@ -409,16 +301,10 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                   <p className="text-sm font-black">{t.suggestions}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {suggestions.map((suggestion) => (
-                      <button key={suggestion} type="button" onClick={() => void conjugate(suggestion)} className="rounded-full border border-rose-300 bg-white px-3 py-2 text-sm font-bold text-rose-900 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:border-rose-400/25 dark:bg-rose-950/40 dark:text-rose-100">{suggestion}</button>
+                      <button key={suggestion} type="button" onClick={() => conjugate(suggestion)} className="rounded-full border border-rose-300 bg-white px-3 py-2 text-sm font-bold text-rose-900 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:border-rose-400/25 dark:bg-rose-950/40 dark:text-rose-100">{suggestion}</button>
                     ))}
                   </div>
                 </div>
-              )}
-              {status === "network" && (
-                <button type="button" onClick={() => void conjugate(query)} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-900 px-4 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:bg-rose-200 dark:text-rose-950">
-                  <RotateCcw className="size-4" aria-hidden="true" />
-                  {t.retry}
-                </button>
               )}
             </div>
           ) : data ? (
@@ -487,7 +373,7 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
 
               <footer className="mt-12 flex flex-col gap-3 border-t border-border pt-5 text-xs leading-6 text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                 <span className="inline-flex items-center gap-2"><Sparkles className="size-4 text-blue-700 dark:text-blue-300" aria-hidden="true" />{t.cached}</span>
-                <a href={data.meta?.canonical_url || "https://conjugaison.my-french.com/"} target="_blank" rel="noreferrer" className="underline decoration-blue-500/40 underline-offset-4 hover:text-foreground">{t.attribution} {t.sourceLink}</a>
+                <a href={data.meta?.canonical_url || "https://github.com/ClaudeCoulombe/FrenchLefffLemmatizer"} target="_blank" rel="noreferrer" className="underline decoration-blue-500/40 underline-offset-4 hover:text-foreground">{t.attribution} {t.sourceLink}</a>
               </footer>
             </div>
           ) : (
