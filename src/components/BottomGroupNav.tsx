@@ -7,7 +7,7 @@ import { useNavVisibility } from "@/hooks/useNavVisibility";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type PrimaryNavItem = {
-  key: MainMenuChoice | "guide" | "tesla";
+  key: MainMenuChoice | "tesla";
   labelAr: string;
   labelEn: string;
   Icon: ComponentType<{ className?: string }>;
@@ -20,7 +20,6 @@ const TESLA_INSTAGRAM_URL = "https://www.instagram.com/tesl_astore/?utm_source=i
 // external destination so it does not compete with the active app section.
 const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
-  { key: "guide", labelAr: "المرشد", labelEn: "Guide", Icon: Bot },
   { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
   { key: "more", labelAr: "الدراسة", labelEn: "Study", Icon: GraduationCap },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
@@ -50,7 +49,7 @@ const BottomGroupNav = ({
   }, []);
 
   const isItemActive = (key: PrimaryNavItem["key"]) => {
-    if (key === "guide" || key === "tesla") return false;
+    if (key === "tesla") return false;
     if (key === "basics") return active === null || active === "basics";
     if (key === "more") {
       return active === "more" || Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
@@ -59,10 +58,6 @@ const BottomGroupNav = ({
   };
 
   const selectItem = (key: PrimaryNavItem["key"]) => {
-    if (key === "guide") {
-      onGuide();
-      return;
-    }
     if (key === "tesla") return;
     onSelect(key);
   };
@@ -79,12 +74,24 @@ const BottomGroupNav = ({
       }}
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <motion.nav
-        className="pointer-events-auto w-full max-w-2xl rounded-[1.35rem] border border-border/90 bg-card p-1.5 shadow-[0_18px_55px_-24px_hsl(var(--foreground)/0.32)]"
-        aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
-      >
+      <div className="pointer-events-none relative w-full max-w-2xl">
+        <motion.button
+          type="button"
+          onClick={onGuide}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label={isRtl ? "افتح المرشد" : "Open guide"}
+          className="pointer-events-auto absolute bottom-[calc(100%+0.65rem)] end-2 inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/20 bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-[0_12px_30px_-14px_hsl(var(--primary)/0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <Bot className="h-[18px] w-[18px]" aria-hidden="true" />
+          <span>{isRtl ? "المرشد" : "Guide"}</span>
+        </motion.button>
+        <motion.nav
+          className="pointer-events-auto w-full rounded-[1.35rem] border border-border/90 bg-card p-1.5 shadow-[0_18px_55px_-24px_hsl(var(--foreground)/0.32)]"
+          aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
+        >
         <LayoutGroup id="primary-bottom-navigation">
-          <div className="grid grid-cols-[repeat(6,minmax(0,1fr))_42px] gap-1">
+          <div className="grid grid-cols-[repeat(5,minmax(0,1fr))_46px] gap-1">
             {PRIMARY_NAV_ITEMS.map(({ key, labelAr, labelEn, Icon, href }) => {
               const selected = isItemActive(key);
               const label = isRtl ? labelAr : labelEn;
@@ -141,7 +148,8 @@ const BottomGroupNav = ({
             })}
           </div>
         </LayoutGroup>
-      </motion.nav>
+        </motion.nav>
+      </div>
     </div>
   );
 
