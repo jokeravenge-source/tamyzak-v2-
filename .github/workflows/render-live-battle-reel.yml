@@ -1,0 +1,32 @@
+name: Render Tamayzak Live Battle Reel
+
+on:
+  push:
+    branches:
+      - render-live-battle-reel
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: video/live-battle/package-lock.json
+      - name: Install dependencies
+        working-directory: video/live-battle
+        run: npm ci
+      - name: Render MP4
+        working-directory: video/live-battle
+        run: npx remotion render src/index.ts TamayzakLiveBattleArabic out/Tamayzak_Live_Battle_Arabic.mp4 --codec=h264 --crf=18 --audio-codec=aac
+      - name: Upload MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tamayzak-Live-Battle-Arabic-MP4
+          path: video/live-battle/out/Tamayzak_Live_Battle_Arabic.mp4
+          if-no-files-found: error
+          retention-days: 7
