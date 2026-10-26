@@ -138,7 +138,7 @@ const moodLabels: Record<string, { ar: string; en: string }> = {
 const normalizeKey = (value: string) => value.toLocaleLowerCase("fr").normalize("NFC");
 
 const sentenceCase = (value: string) => {
-  const cleaned = value.replaceAll("_", " ").trim();
+  const cleaned = value.replace(/_/g, " ").trim();
   return cleaned ? `${cleaned.charAt(0).toLocaleUpperCase("fr")}${cleaned.slice(1)}` : cleaned;
 };
 
