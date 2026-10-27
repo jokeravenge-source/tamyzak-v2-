@@ -13,6 +13,11 @@ import LightWavePolarizationActivity from "@/components/physics/LightWavePolariz
 import MechanicalWavePolarizationActivity from "@/components/physics/MechanicalWavePolarizationActivity";
 import LightDiffractionActivity from "@/components/physics/LightDiffractionActivity";
 import YoungDoubleSlitActivity from "@/components/physics/YoungDoubleSlitActivity";
+import FaradayInductionActivity from "@/components/physics/FaradayInductionActivity";
+import EddyCurrentPendulumActivity from "@/components/physics/EddyCurrentPendulumActivity";
+import InducedEmfFactorsActivity from "@/components/physics/InducedEmfFactorsActivity";
+import ElectromagneticWaveGenerationActivity from "@/components/physics/ElectromagneticWaveGenerationActivity";
+import WaveInterferenceActivity from "@/components/physics/WaveInterferenceActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -442,7 +447,22 @@ const PhysicsActivities = ({
               {isRTL ? "تفريغ المكثف" : "Discharging a Capacitor"}
             </TabsTrigger>
             <TabsTrigger value="self-induction">
-              {isRTL ? "الحث الذاتي" : "Self-Induction"}
+              {isRTL ? "ف2 · الحث الذاتي" : "Ch2 · Self-Induction"}
+            </TabsTrigger>
+            <TabsTrigger value="faraday-induction">
+              {isRTL ? "ف2 · تجربة فاراداي" : "Ch2 · Faraday's Experiment"}
+            </TabsTrigger>
+            <TabsTrigger value="eddy-current-pendulum">
+              {isRTL ? "ف2 · التيارات الدوامة" : "Ch2 · Eddy Currents"}
+            </TabsTrigger>
+            <TabsTrigger value="induced-emf-factors">
+              {isRTL ? "ف2 · عوامل القوة الحثية" : "Ch2 · Induced EMF Factors"}
+            </TabsTrigger>
+            <TabsTrigger value="electromagnetic-wave-generation">
+              {isRTL ? "ف4 · توليد الموجات" : "Ch4 · Wave Generation"}
+            </TabsTrigger>
+            <TabsTrigger value="wave-interference">
+              {isRTL ? "ف5 · تداخل الموجات" : "Ch5 · Wave Interference"}
             </TabsTrigger>
             <TabsTrigger value="spectra">
               {isRTL ? "أنواع الأطياف" : "Types of Spectra"}
@@ -567,6 +587,26 @@ const PhysicsActivities = ({
 
           <TabsContent value="self-induction">
             <SelfInductionActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="faraday-induction">
+            <FaradayInductionActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="eddy-current-pendulum">
+            <EddyCurrentPendulumActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="induced-emf-factors">
+            <InducedEmfFactorsActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="electromagnetic-wave-generation">
+            <ElectromagneticWaveGenerationActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="wave-interference">
+            <WaveInterferenceActivity language={language} />
           </TabsContent>
 
           <TabsContent value="spectra">

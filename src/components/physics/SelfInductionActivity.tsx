@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { BatteryCharging, ChevronDown, Lightbulb, Power, Wrench } from "lucide-react";
+import { BatteryCharging, ChevronDown, Lightbulb, ListChecks, Power, Wrench } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 export type LocalizedActivityText = { en: string; ar: string };
@@ -9,6 +9,8 @@ export interface SelfInductionActivityContent {
   title: LocalizedActivityText;
   toolsHeading: LocalizedActivityText;
   tools: LocalizedActivityText[];
+  stepsHeading: LocalizedActivityText;
+  steps: LocalizedActivityText[];
   diagramHeading: LocalizedActivityText;
   figureLabel: LocalizedActivityText;
   closedLabel: LocalizedActivityText;
@@ -26,7 +28,7 @@ export interface SelfInductionActivityContent {
 }
 
 const defaultSelfInductionContent: SelfInductionActivityContent = {
-  activityLabel: { en: "Activity (3)", ar: "النشاط (3)" },
+  activityLabel: { en: "Chapter 2 activity", ar: "نشاط الفصل الثاني" },
   title: {
     en: "Generating Self-Induced EMF at Both Ends of the Coil",
     ar: "توليد قوة دافعة كهربائية حثية ذاتيًا عند طرفي الملف",
@@ -37,6 +39,25 @@ const defaultSelfInductionContent: SelfInductionActivityContent = {
     { en: "Switch", ar: "مفتاح كهربائي" },
     { en: "Wire coil with a wrought-iron core", ar: "ملف سلكي ذو قلب من الحديد المطاوع" },
     { en: "80V neon lamp", ar: "مصباح نيون 80 فولت" },
+  ],
+  stepsHeading: { en: "Activity steps", ar: "خطوات النشاط" },
+  steps: [
+    {
+      en: "Connect the coil, switch, and battery in series.",
+      ar: "اربط الملف والمفتاح والبطارية على التوالي مع بعض.",
+    },
+    {
+      en: "Connect the neon lamp in parallel with the coil as shown in the circuit.",
+      ar: "اربط مصباح النيون على التوازي مع الملف كما في الدائرة.",
+    },
+    {
+      en: "Close the coil-and-battery circuit with the switch; the neon lamp does not glow.",
+      ar: "أغلق دائرة الملف والبطارية بواسطة المفتاح؛ فنلاحظ عدم توهج المصباح.",
+    },
+    {
+      en: "Open the circuit; the neon lamp gives a bright flash for a brief moment after the battery is disconnected.",
+      ar: "افتح دائرة الملف والبطارية بواسطة المفتاح؛ فنلاحظ توهج مصباح النيون بوميض ساطع لبرهة من الزمن بعد فصل البطارية عن الدائرة.",
+    },
   ],
   diagramHeading: { en: "Interactive circuit", ar: "الدائرة التفاعلية" },
   figureLabel: { en: "Figure (48)", ar: "الشكل (48)" },
@@ -52,13 +73,13 @@ const defaultSelfInductionContent: SelfInductionActivityContent = {
   conclusionHeading: { en: "Conclusion", ar: "الاستنتاج" },
   firstHeading: { en: "First — when the switch is closed", ar: "أولًا — عند غلق المفتاح" },
   firstExplanation: {
-    en: "The neon lamp does not glow. As the current in the coil grows from zero, the changing magnetic flux creates a self-induced EMF that opposes the increase in current according to Lenz’s law. The voltage across the lamp is therefore not enough to make it glow.",
-    ar: "لا يتوهج مصباح النيون. عندما يزداد التيار في الملف من الصفر، يولّد تغيّر الفيض المغناطيسي قوة دافعة كهربائية حثية ذاتية تعارض ازدياد التيار وفق قانون لنز؛ لذلك لا يكون فرق الجهد بين طرفي المصباح كافيًا لتوهجه.",
+    en: "The neon lamp does not glow when the switch is closed because the voltage across it is small and is not sufficient to make it glow. The current grows from zero to its steady value relatively slowly, so only a small self-induced EMF is generated across the coil according to Lenz's law.",
+    ar: "عدم توهج مصباح النيون لحظة إغلاق المفتاح سببه أن الفولتية الموضوعة على طرفيه كانت صغيرة ولم تكن كافية لتوهج المصباح؛ لأن نمو التيار من الصفر إلى مقداره الثابت كان بطيئًا نسبيًا، فتتولد قوة دافعة كهربائية محتثة ذاتيًا صغيرة في طرفي الملف وفق قانون لنز.",
   },
   secondHeading: { en: "Second — when the switch is opened", ar: "ثانيًا — عند فتح المفتاح" },
   secondExplanation: {
-    en: "The current collapses rapidly, producing a large self-induced EMF across the coil. For a brief moment, the coil releases its stored magnetic energy and drives enough voltage across the neon lamp to make it flash.",
-    ar: "يتلاشى التيار بسرعة، فيتولد بين طرفي الملف فرق جهد حثي ذاتي كبير. وللحظة قصيرة يحرر الملف الطاقة المغناطيسية المخزونة ويدفع فرق جهد كافيًا عبر مصباح النيون فيتوهج بوميض سريع.",
+    en: "The neon lamp produces a bright flash when the switch is opened because the voltage across it becomes large enough to make it glow. The current decreases rapidly, generating a large self-induced EMF across the coil; the coil acts as an energy source that supplies the lamp with sufficient voltage.",
+    ar: "توهج مصباح النيون لحظة فتح المفتاح بوميض ساطع سببه أن الفولتية على طرفيه كانت كبيرة وكافية لتوهجه؛ لأن تناقص التيار كان سريعًا، فتتولد قوة دافعة كهربائية محتثة ذاتيًا كبيرة في طرفي الملف، فيعمل الملف كمصدر طاقة يجهز المصباح بفولتية كافية لتوهجه.",
   },
   takeaway: {
     en: "The coil acts as a source of energy which provides the lamp enough voltage to glow.",
@@ -225,7 +246,7 @@ const SelfInductionActivity = ({ language, content, className = "" }: SelfInduct
                 />
               </g>
 
-              <g aria-label={pick(text.tools[3])}>
+              <g aria-label={pick(text.tools[3])} data-testid="self-induction-lamp" data-glowing={isFlashing ? "true" : "false"}>
                 {isFlashing && (
                   <circle key={`glow-${flashKey}`} cx="648" cy="180" r="58" fill="#fde047" opacity=".9" filter={`url(#${filterId})`} className="self-induction-flash" />
                 )}
@@ -250,7 +271,7 @@ const SelfInductionActivity = ({ language, content, className = "" }: SelfInduct
                 <g key={`spike-${flashKey}`} className="self-induction-spike">
                   <path d="M430 56l-12 26h17l-10 28 35-39h-19l12-15z" fill="#fde047" stroke="#f59e0b" strokeWidth="2" />
                   <rect x="346" y="16" width="238" height="35" rx="17" fill="#451a03" stroke="#f59e0b" strokeWidth="2" />
-                  <text x="465" y="39" fill="#fef3c7" textAnchor="middle" fontSize="17" fontWeight="800">⚡ {pick(text.spikeLabel)}</text>
+                  <text x="465" y="39" fill="#fef3c7" textAnchor="middle" fontSize="17" fontWeight="800">EMF · {pick(text.spikeLabel)}</text>
                 </g>
               )}
 
@@ -295,6 +316,23 @@ const SelfInductionActivity = ({ language, content, className = "" }: SelfInduct
             </ul>
           </div>
 
+          <div className="clip-facet border border-border/80 bg-background/45 p-5">
+            <h3 className="flex items-center gap-2 text-lg font-extrabold text-physics">
+              <ListChecks className="size-5" aria-hidden="true" />
+              {pick(text.stepsHeading)}
+            </h3>
+            <ol className="mt-4 space-y-4">
+              {text.steps.map((step, index) => (
+                <li key={`${step.en}-${index}`} className="flex items-start gap-3 text-sm leading-6 text-foreground/90">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-physics/12 text-xs font-black text-physics">
+                    {index + 1}
+                  </span>
+                  <span>{pick(step)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-extrabold text-physics">
               <Lightbulb className="size-5" aria-hidden="true" />
@@ -318,7 +356,7 @@ const SelfInductionActivity = ({ language, content, className = "" }: SelfInduct
               </summary>
               <div className="border-t border-border/60 px-4 pb-4 pt-3 text-sm leading-7 text-muted-foreground">
                 <p>{pick(text.secondExplanation)}</p>
-                <p className="mt-3 border-s-4 border-physics bg-physics/10 px-3 py-2 font-extrabold text-foreground">
+                <p className="mt-3 rounded-lg border border-physics/30 bg-physics/10 px-3 py-2 font-extrabold text-foreground">
                   {pick(text.takeaway)}
                 </p>
               </div>
