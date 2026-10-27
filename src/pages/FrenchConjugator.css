@@ -1,0 +1,217 @@
+.french-conjugator-page {
+  padding-bottom: max(7rem, var(--nav-safe, 7rem));
+}
+
+.french-conjugator-shell {
+  width: 100%;
+  max-width: 104rem;
+}
+
+.french-mood-filter {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 1.25rem -1rem 0;
+  overflow-x: auto;
+  border-block: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.96);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 12px 28px -24px rgb(15 23 42 / 0.5);
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  backdrop-filter: blur(18px);
+}
+
+.french-mood-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.french-mood-filter-track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  gap: 0.5rem;
+}
+
+.french-mood-filter-button {
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.french-mood-filter-button:hover {
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+}
+
+.french-mood-filter-button:focus-visible {
+  outline: 3px solid hsl(var(--primary) / 0.35);
+  outline-offset: 2px;
+}
+
+.french-mood-filter-button--active {
+  background: #172554;
+  color: white;
+  box-shadow: 0 10px 24px -16px rgb(23 37 84 / 0.8);
+}
+
+.french-mood-filter-button--active:hover {
+  background: #1e3a8a;
+  color: white;
+}
+
+.french-mood-results {
+  margin-top: 2rem;
+}
+
+.french-mood-section + .french-mood-section {
+  margin-top: 3.5rem;
+}
+
+.french-mood-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.french-mood-heading h3 {
+  color: hsl(var(--foreground));
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+.french-mood-icon {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 3.25rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: #172554;
+  color: white;
+}
+
+.french-mood-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.french-tense-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem 3rem;
+  margin-top: 1.75rem;
+}
+
+.french-tense-section {
+  min-width: 0;
+  border-top: 2px solid hsl(var(--foreground));
+  padding-top: 1rem;
+}
+
+.french-tense-section h4 {
+  color: #173b91;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.french-form-list {
+  margin-top: 0.75rem;
+}
+
+.french-form-row {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  color: hsl(var(--foreground));
+  font-size: 0.9375rem;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.french-form-row:nth-child(odd) {
+  background: hsl(var(--secondary) / 0.7);
+}
+
+.french-form-row svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  color: #2563eb;
+}
+
+.dark .french-mood-filter-button--active,
+.dark .french-mood-icon {
+  background: #93c5fd;
+  color: #172554;
+}
+
+.dark .french-tense-section {
+  border-top-color: #bfdbfe;
+}
+
+.dark .french-tense-section h4 {
+  color: #bfdbfe;
+}
+
+@media (min-width: 640px) {
+  .french-mood-filter {
+    margin-inline: 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+    padding: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .french-tense-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .french-form-row {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1180px) {
+  .french-mood-filter {
+    padding: 1rem;
+  }
+
+  .french-mood-filter-track {
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .french-mood-filter-button {
+    min-height: 3.25rem;
+    padding-inline: 1.25rem;
+    font-size: 1rem;
+  }
+
+  .french-tense-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .french-form-row {
+    min-height: 3.375rem;
+    padding-inline: 1rem;
+    font-size: 1.0625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .french-mood-filter-button {
+    transition: none;
+  }
+}

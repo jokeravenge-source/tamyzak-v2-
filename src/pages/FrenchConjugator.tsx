@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
+import "./FrenchConjugator.css";
 import {
   conjugateFrenchVerb,
   findFrenchVerbSuggestions,
@@ -198,8 +199,8 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
   const errorText = status === "invalid" ? t.invalidText : t.notFoundText;
 
   return (
-    <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background pb-28 selection:bg-blue-600 selection:text-white">
-      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+    <main dir={isRTL ? "rtl" : "ltr"} className="french-conjugator-page min-h-screen bg-background selection:bg-blue-600 selection:text-white">
+      <div className="french-conjugator-shell mx-auto px-4 pt-6 sm:px-6">
         <button
           type="button"
           onClick={onBack}
@@ -323,40 +324,40 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                 </dl>
               </div>
 
-              <div className="sticky top-0 z-10 -mx-4 mt-5 overflow-x-auto border-y border-border bg-background/95 px-4 py-3 shadow-[0_10px_24px_-20px_rgba(15,23,42,.4)] [scrollbar-width:none] sm:mx-0 sm:rounded-xl sm:border sm:px-3">
-                <div className="flex min-w-max gap-2">
-                  <button type="button" onClick={() => setActiveMood("all")} aria-pressed={activeMood === "all"} className={`min-h-10 rounded-lg px-4 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMood === "all" ? "bg-blue-950 text-white dark:bg-blue-300 dark:text-blue-950" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}>{t.all}</button>
+              <nav className="french-mood-filter" aria-label={language === "ar" ? "تصفية صيغ التصريف" : "Filter conjugation moods"}>
+                <div className="french-mood-filter-track">
+                  <button type="button" onClick={() => setActiveMood("all")} aria-pressed={activeMood === "all"} className={`french-mood-filter-button ${activeMood === "all" ? "french-mood-filter-button--active" : ""}`}>{t.all}</button>
                   {moodEntries.map(([mood]) => {
                     const key = normalizeKey(mood);
                     const label = moodLabels[key]?.[language] || sentenceCase(mood) || t.moodFallback;
-                    return <button key={mood} type="button" onClick={() => setActiveMood(key)} aria-pressed={activeMood === key} className={`min-h-10 rounded-lg px-4 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMood === key ? "bg-blue-950 text-white dark:bg-blue-300 dark:text-blue-950" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}>{label}</button>;
+                    return <button key={mood} type="button" onClick={() => setActiveMood(key)} aria-pressed={activeMood === key} className={`french-mood-filter-button ${activeMood === key ? "french-mood-filter-button--active" : ""}`}>{label}</button>;
                   })}
                 </div>
-              </div>
+              </nav>
 
-              <div className="mt-8 space-y-12">
+              <div className="french-mood-results">
                 {visibleMoods.map(([mood, moodValue]) => {
                   const moodKey = normalizeKey(mood);
                   const tenseEntries = typeof moodValue === "string" || Array.isArray(moodValue)
                     ? [[mood, moodValue] as const]
                     : Object.entries(moodValue);
                   return (
-                    <article key={mood}>
-                      <div className="flex items-center gap-3">
-                        <div className="grid size-10 place-items-center rounded-xl bg-blue-950 text-white dark:bg-blue-300 dark:text-blue-950"><BookOpenCheck className="size-5" aria-hidden="true" /></div>
-                        <h3 className="text-2xl font-black text-foreground">{moodLabels[moodKey]?.[language] || sentenceCase(mood) || t.moodFallback}</h3>
+                    <article key={mood} className="french-mood-section">
+                      <div className="french-mood-heading">
+                        <div className="french-mood-icon"><BookOpenCheck aria-hidden="true" /></div>
+                        <h3>{moodLabels[moodKey]?.[language] || sentenceCase(mood) || t.moodFallback}</h3>
                       </div>
-                      <div className="mt-5 grid gap-x-8 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="french-tense-grid">
                         {tenseEntries.map(([tense, value]) => {
                           const forms = normalizeForms(value);
                           if (forms.length === 0) return null;
                           return (
-                            <section key={tense} className="border-t-2 border-slate-900 pt-3 dark:border-blue-200">
-                              <h4 className="text-sm font-black text-blue-900 dark:text-blue-200">{sentenceCase(tense) || t.tenseFallback}</h4>
-                              <ol className="mt-3 space-y-1.5" dir="ltr">
+                            <section key={tense} className="french-tense-section">
+                              <h4>{sentenceCase(tense) || t.tenseFallback}</h4>
+                              <ol className="french-form-list" dir="ltr">
                                 {forms.map((form, index) => (
-                                  <li key={`${form}-${index}`} className="flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-foreground odd:bg-secondary/65">
-                                    <ChevronRight className="size-3.5 shrink-0 text-blue-700 dark:text-blue-300" aria-hidden="true" />
+                                  <li key={`${form}-${index}`} className="french-form-row">
+                                    <ChevronRight aria-hidden="true" />
                                     <span>{form}</span>
                                   </li>
                                 ))}

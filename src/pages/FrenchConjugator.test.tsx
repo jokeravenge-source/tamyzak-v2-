@@ -52,4 +52,17 @@ describe("FrenchConjugator", () => {
     expect(await screen.findByText("Enter a valid French verb")).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("filters the responsive conjugation table by mood", async () => {
+    render(<FrenchConjugator language="en" onBack={vi.fn()} />);
+    const filter = await screen.findByRole("navigation", { name: "Filter conjugation moods" });
+    const allButton = screen.getByRole("button", { name: "All" });
+    expect(filter).toBeInTheDocument();
+    expect(allButton).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Subjonctif" }));
+    expect(screen.getByRole("button", { name: "Subjonctif" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("que je sois")).toBeInTheDocument();
+    expect(screen.queryByText("je suis")).not.toBeInTheDocument();
+  });
 });
