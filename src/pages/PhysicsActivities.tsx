@@ -1,7 +1,7 @@
 import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Grid, Html, Text } from "@react-three/drei";
-import { ArrowLeft, Atom, RotateCcw, Zap } from "lucide-react";
+import { ArrowLeft, Atom, BookOpen, CircuitBoard, Radio, RotateCcw, Waves, Zap } from "lucide-react";
 import * as THREE from "three";
 import type { AppLanguage } from "@/components/LanguageGate";
 import CapacitorDischarge from "@/components/physics/CapacitorDischarge";
@@ -22,10 +22,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
   en: {
-    title: "Physics Activity",
+    title: "Physics Activities",
     subtitle:
-      "An isolated charged capacitor connected to a voltmeter. Slide the dielectric in — the voltmeter reading drops. Pull it out — the reading rises.",
+      "Choose a chapter first, then open one of its interactive experiments without searching through a long mixed list.",
     back: "Back",
+    chooseChapter: "Choose chapter",
+    chooseActivity: "Activities in this chapter",
+    activityCount: "activities",
     controls: "Controls",
     reset: "Reset",
     activityName: "Capacitor & Dielectric",
@@ -40,10 +43,13 @@ const copy = {
     },
   },
   ar: {
-    title: "نشاط فيزيائي",
+    title: "أنشطة الفيزياء",
     subtitle:
-      "مكثف معزول مشحون موصول بفولتمتر. أدخل العازل بين اللوحين فتنخفض قراءة الفولتمتر، وأخرجه فترتفع القراءة.",
+      "اختر الفصل أولًا، ثم افتح أحد نشاطاته التفاعلية بدون البحث داخل قائمة طويلة ومختلطة.",
     back: "رجوع",
+    chooseChapter: "اختر الفصل",
+    chooseActivity: "أنشطة هذا الفصل",
+    activityCount: "أنشطة",
     controls: "الإعدادات",
     reset: "إعادة",
     activityName: "مكثف وعازل",
@@ -401,6 +407,80 @@ const PhysicsActivities = ({
   const [kappa, setKappa] = useState(3);
   const [v0, setV0] = useState(10);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeChapter, setActiveChapter] = useState("chapter-1");
+  const [activeActivity, setActiveActivity] = useState("dielectric");
+
+  const chapters = [
+    {
+      id: "chapter-1",
+      number: 1,
+      title: isRTL ? "الفصل الأول" : "Chapter 1",
+      topic: isRTL ? "المتسعات" : "Capacitors",
+      icon: CircuitBoard,
+      activities: [
+        { id: "dielectric", label: isRTL ? "العازل في المتسعة" : "Dielectric in a Capacitor" },
+        { id: "discharge", label: isRTL ? "تفريغ المتسعة" : "Capacitor Discharge" },
+      ],
+    },
+    {
+      id: "chapter-2",
+      number: 2,
+      title: isRTL ? "الفصل الثاني" : "Chapter 2",
+      topic: isRTL ? "الحث الكهرومغناطيسي" : "Electromagnetic Induction",
+      icon: Zap,
+      activities: [
+        { id: "self-induction", label: isRTL ? "الحث الذاتي" : "Self-Induction" },
+        { id: "faraday-induction", label: isRTL ? "تجربة فاراداي" : "Faraday's Experiment" },
+        { id: "eddy-current-pendulum", label: isRTL ? "التيارات الدوامة" : "Eddy Currents" },
+        { id: "induced-emf-factors", label: isRTL ? "عوامل القوة الدافعة المحتثة" : "Induced EMF Factors" },
+      ],
+    },
+    {
+      id: "chapter-4",
+      number: 4,
+      title: isRTL ? "الفصل الرابع" : "Chapter 4",
+      topic: isRTL ? "الموجات الكهرومغناطيسية" : "Electromagnetic Waves",
+      icon: Radio,
+      activities: [
+        { id: "electromagnetic-wave-generation", label: isRTL ? "توليد الموجات" : "Wave Generation" },
+      ],
+    },
+    {
+      id: "chapter-5",
+      number: 5,
+      title: isRTL ? "الفصل الخامس" : "Chapter 5",
+      topic: isRTL ? "البصريات الفيزيائية" : "Physical Optics",
+      icon: Waves,
+      activities: [
+        { id: "wave-interference", label: isRTL ? "تداخل الموجات" : "Wave Interference" },
+        { id: "polarization", label: isRTL ? "استقطاب الضوء" : "Light Polarization" },
+        { id: "light-wave-polarization", label: isRTL ? "موجات الضوء" : "Light Waves" },
+        { id: "mechanical-wave-polarization", label: isRTL ? "استقطاب الموجات الميكانيكية" : "Mechanical Waves" },
+        { id: "light-diffraction", label: isRTL ? "حيود الضوء" : "Light Diffraction" },
+        { id: "young-double-slit", label: isRTL ? "تجربة يونك" : "Young's Experiment" },
+      ],
+    },
+    {
+      id: "chapter-6",
+      number: 6,
+      title: isRTL ? "الفصل السادس" : "Chapter 6",
+      topic: isRTL ? "الفيزياء الحديثة" : "Modern Physics",
+      icon: Atom,
+      activities: [
+        { id: "spectra", label: isRTL ? "أنواع الأطياف" : "Types of Spectra" },
+        { id: "photoelectric", label: isRTL ? "الظاهرة الكهروضوئية" : "Photoelectric Effect" },
+      ],
+    },
+  ];
+
+  const selectedChapter = chapters.find((chapter) => chapter.id === activeChapter) ?? chapters[0];
+
+  const selectChapter = (chapterId: string) => {
+    const nextChapter = chapters.find((chapter) => chapter.id === chapterId);
+    if (!nextChapter) return;
+    setActiveChapter(chapterId);
+    setActiveActivity(nextChapter.activities[0].id);
+  };
 
   // Isolated capacitor: Q constant. C = C0 * (1 + (κ-1) f)
   // V = Q / C = V0 / (1 + (κ-1) f)
@@ -438,54 +518,58 @@ const PhysicsActivities = ({
           </div>
         </header>
 
-        <Tabs defaultValue="dielectric" className="w-full">
-          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            <TabsTrigger value="dielectric">
-              {isRTL ? "المكثف والعازل" : "Capacitor & Dielectric"}
-            </TabsTrigger>
-            <TabsTrigger value="discharge">
-              {isRTL ? "تفريغ المكثف" : "Discharging a Capacitor"}
-            </TabsTrigger>
-            <TabsTrigger value="self-induction">
-              {isRTL ? "ف2 · الحث الذاتي" : "Ch2 · Self-Induction"}
-            </TabsTrigger>
-            <TabsTrigger value="faraday-induction">
-              {isRTL ? "ف2 · تجربة فاراداي" : "Ch2 · Faraday's Experiment"}
-            </TabsTrigger>
-            <TabsTrigger value="eddy-current-pendulum">
-              {isRTL ? "ف2 · التيارات الدوامة" : "Ch2 · Eddy Currents"}
-            </TabsTrigger>
-            <TabsTrigger value="induced-emf-factors">
-              {isRTL ? "ف2 · عوامل القوة الحثية" : "Ch2 · Induced EMF Factors"}
-            </TabsTrigger>
-            <TabsTrigger value="electromagnetic-wave-generation">
-              {isRTL ? "ف4 · توليد الموجات" : "Ch4 · Wave Generation"}
-            </TabsTrigger>
-            <TabsTrigger value="wave-interference">
-              {isRTL ? "ف5 · تداخل الموجات" : "Ch5 · Wave Interference"}
-            </TabsTrigger>
-            <TabsTrigger value="spectra">
-              {isRTL ? "أنواع الأطياف" : "Types of Spectra"}
-            </TabsTrigger>
-            <TabsTrigger value="photoelectric">
-              {isRTL ? "ف6 · الكهروضوئية" : "Ch6 · Photoelectric"}
-            </TabsTrigger>
-            <TabsTrigger value="polarization">
-              {isRTL ? "ف5 · الاستقطاب" : "Ch5 · Polarization"}
-            </TabsTrigger>
-            <TabsTrigger value="light-wave-polarization">
-              {isRTL ? "ف5 · موجات الضوء" : "Ch5 · Light Waves"}
-            </TabsTrigger>
-            <TabsTrigger value="mechanical-wave-polarization">
-              {isRTL ? "ف5 · موجات ميكانيكية" : "Ch5 · Mechanical Waves"}
-            </TabsTrigger>
-            <TabsTrigger value="light-diffraction">
-              {isRTL ? "ف5 · حيود الضوء" : "Ch5 · Light Diffraction"}
-            </TabsTrigger>
-            <TabsTrigger value="young-double-slit">
-              {isRTL ? "ف5 · تجربة يونك" : "Ch5 · Young's Experiment"}
-            </TabsTrigger>
-          </TabsList>
+        <section aria-labelledby="physics-chapter-picker" className="mb-5 rounded-3xl border border-border bg-card/75 p-3 shadow-sm sm:p-4">
+          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+            <h2 id="physics-chapter-picker" className="flex items-center gap-2 text-sm font-black text-foreground">
+              <BookOpen className="size-4 text-primary" aria-hidden="true" />
+              {t.chooseChapter}
+            </h2>
+            <span className="text-xs font-bold text-muted-foreground">{chapters.length}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+            {chapters.map((chapter) => {
+              const ChapterIcon = chapter.icon;
+              const isActive = chapter.id === activeChapter;
+              return (
+                <button
+                  key={chapter.id}
+                  type="button"
+                  onClick={() => selectChapter(chapter.id)}
+                  aria-pressed={isActive}
+                  className={`group relative min-h-[104px] overflow-hidden rounded-2xl border p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    isActive
+                      ? "border-primary/45 bg-primary text-primary-foreground shadow-[0_14px_36px_-22px_hsl(var(--primary))]"
+                      : "border-border bg-background hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/5"
+                  }`}
+                >
+                  <span className={`mb-3 grid size-9 place-items-center rounded-xl ${isActive ? "bg-white/15" : "bg-primary/10 text-primary"}`}>
+                    <ChapterIcon className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="block text-xs font-black opacity-75">{chapter.title}</span>
+                  <span className="mt-0.5 block line-clamp-2 text-sm font-black">{chapter.topic}</span>
+                  <span className={`mt-2 block text-[11px] font-bold ${isActive ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
+                    {chapter.activities.length} {chapter.activities.length === 1 && !isRTL ? "activity" : t.activityCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <Tabs value={activeActivity} onValueChange={setActiveActivity} className="w-full">
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center">
+            <div className="shrink-0 px-1">
+              <p className="text-xs font-black text-primary">{selectedChapter.title}</p>
+              <p className="text-sm font-black text-foreground">{t.chooseActivity}</p>
+            </div>
+            <TabsList className="grid h-auto min-w-0 flex-1 grid-cols-1 gap-1 bg-muted/70 p-1 sm:grid-cols-2 lg:grid-cols-3">
+              {selectedChapter.activities.map((activity) => (
+                <TabsTrigger key={activity.id} value={activity.id} className="min-h-10 whitespace-normal px-3 py-2 text-xs font-black sm:text-sm">
+                  {activity.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <TabsContent value="dielectric">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
