@@ -38,4 +38,17 @@ describe("PhotoelectricEffectActivity", () => {
     fireEvent.click(screen.getByRole("button", { name: /Illuminate the emitting plate/ }));
     expect(screen.getByText("Photoemission occurs")).toBeInTheDocument();
   });
+
+  it("offers large guided navigation and precise adjustment buttons", () => {
+    render(<PhotoelectricEffectActivity language="en" />);
+
+    expect(screen.getByText("Step 3 / 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(screen.getByText("Step 2 / 4")).toBeInTheDocument();
+    expect(screen.getByText("Light source off")).toBeInTheDocument();
+
+    expect(screen.getByLabelText("Wavelength λ")).toHaveValue("420");
+    fireEvent.click(screen.getByRole("button", { name: "Increase Wavelength λ" }));
+    expect(screen.getByLabelText("Wavelength λ")).toHaveValue("445");
+  });
 });

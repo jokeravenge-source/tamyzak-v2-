@@ -2,10 +2,14 @@ import { useId, useMemo, useState } from "react";
 import {
   Atom,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   CircleGauge,
   FlaskConical,
   Lightbulb,
   ListChecks,
+  Minus,
+  Plus,
   Power,
   RotateCcw,
   SlidersHorizontal,
@@ -40,6 +44,13 @@ const copy = {
     voltmeter: "الفولتميتر",
     light: "الضوء الساقط",
     controls: "إعدادات التجربة",
+    guidedTitle: "جرّبها خطوة بخطوة",
+    stepProgress: "الخطوة",
+    previous: "السابق",
+    next: "التالي",
+    adjustHint: "اسحب المؤشر أو استخدم زري − و +",
+    decrease: "تقليل",
+    increase: "زيادة",
     metal: "معدن المهبط",
     cesium: "السيزيوم",
     sodium: "الصوديوم",
@@ -106,6 +117,13 @@ const copy = {
     voltmeter: "Voltmeter",
     light: "Incident light",
     controls: "Experiment controls",
+    guidedTitle: "Try it step by step",
+    stepProgress: "Step",
+    previous: "Previous",
+    next: "Next",
+    adjustHint: "Drag the slider or use − and +",
+    decrease: "Decrease",
+    increase: "Increase",
     metal: "Cathode metal",
     cesium: "Cesium",
     sodium: "Sodium",
@@ -284,6 +302,44 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
               </span>
             </div>
 
+            <div className="mb-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.07] p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold text-cyan-300">{t.guidedTitle}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-300">
+                    {t.stepProgress} {activeStep + 1} / {t.steps.length}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => applyStep(activeStep - 1)}
+                    disabled={activeStep === 0}
+                    aria-label={t.previous}
+                    className="grid size-11 place-items-center rounded-xl border border-white/15 bg-white/5 text-white transition hover:border-cyan-300/50 hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    {isRTL ? <ChevronRight className="size-5" aria-hidden="true" /> : <ChevronLeft className="size-5" aria-hidden="true" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyStep(activeStep + 1)}
+                    disabled={activeStep === t.steps.length - 1}
+                    aria-label={t.next}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-black text-slate-950 transition hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    {t.next}
+                    {isRTL ? <ChevronLeft className="size-4" aria-hidden="true" /> : <ChevronRight className="size-4" aria-hidden="true" />}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-3 text-sm font-semibold leading-6 text-white">{t.steps[activeStep]}</p>
+              <div className="mt-3 flex gap-1.5" aria-hidden="true">
+                {t.steps.map((_, index) => (
+                  <span key={index} className={`h-1.5 flex-1 rounded-full ${index <= activeStep ? "bg-cyan-300" : "bg-white/15"}`} />
+                ))}
+              </div>
+            </div>
+
             <svg viewBox="0 0 760 350" className="h-auto w-full" role="img" aria-label={t.simulator}>
               <defs>
                 <filter id={`photo-glow-${glowId}`} x="-100%" y="-100%" width="300%" height="300%">
@@ -424,19 +480,80 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
             </fieldset>
 
             <div className="mt-5 space-y-5">
-              <label className="block">
-                <span className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.wavelength}</span><strong className="font-mono text-physics">{wavelength} nm</strong></span>
-                <input type="range" min="250" max="750" step="5" value={wavelength} onChange={(event) => setWavelength(Number(event.target.value))} className="mt-3 w-full accent-[hsl(var(--physics))]" />
+              <div>
+                <label htmlFor={`photoelectric-wavelength-${glowId}`} className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.wavelength}</span><strong className="font-mono text-physics">{wavelength} nm</strong></label>
+                <span className="mt-1 block text-xs font-medium text-muted-foreground">{t.adjustHint}</span>
+                <span className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWavelength((value) => clamp(value - 25, 250, 750))}
+                    disabled={wavelength <= 250}
+                    aria-label={`${t.decrease} ${t.wavelength}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Minus className="size-4" aria-hidden="true" />
+                  </button>
+                  <input id={`photoelectric-wavelength-${glowId}`} aria-label={t.wavelength} type="range" min="250" max="750" step="5" value={wavelength} onChange={(event) => setWavelength(Number(event.target.value))} className="min-w-0 flex-1 accent-[hsl(var(--physics))]" />
+                  <button
+                    type="button"
+                    onClick={() => setWavelength((value) => clamp(value + 25, 250, 750))}
+                    disabled={wavelength >= 750}
+                    aria-label={`${t.increase} ${t.wavelength}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Plus className="size-4" aria-hidden="true" />
+                  </button>
+                </span>
                 <span className="mt-2 block h-2 rounded-full bg-[linear-gradient(90deg,#7c3aed,#2563eb,#06b6d4,#22c55e,#eab308,#f97316,#ef4444)]" />
-              </label>
-              <label className="block">
-                <span className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.intensity}</span><strong className="font-mono text-physics">{intensity}%</strong></span>
-                <input type="range" min="10" max="100" step="5" value={intensity} onChange={(event) => setIntensity(Number(event.target.value))} className="mt-3 w-full accent-[hsl(var(--physics))]" />
-              </label>
-              <label className="block">
-                <span className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.voltage}</span><strong className="font-mono text-physics">{voltage.toFixed(1)} V</strong></span>
-                <input type="range" min="-5" max="5" step="0.1" value={voltage} onChange={(event) => setVoltage(Number(event.target.value))} className="mt-3 w-full accent-[hsl(var(--physics))]" />
-              </label>
+              </div>
+              <div>
+                <label htmlFor={`photoelectric-intensity-${glowId}`} className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.intensity}</span><strong className="font-mono text-physics">{intensity}%</strong></label>
+                <span className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIntensity((value) => clamp(value - 10, 10, 100))}
+                    disabled={intensity <= 10}
+                    aria-label={`${t.decrease} ${t.intensity}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Minus className="size-4" aria-hidden="true" />
+                  </button>
+                  <input id={`photoelectric-intensity-${glowId}`} aria-label={t.intensity} type="range" min="10" max="100" step="5" value={intensity} onChange={(event) => setIntensity(Number(event.target.value))} className="min-w-0 flex-1 accent-[hsl(var(--physics))]" />
+                  <button
+                    type="button"
+                    onClick={() => setIntensity((value) => clamp(value + 10, 10, 100))}
+                    disabled={intensity >= 100}
+                    aria-label={`${t.increase} ${t.intensity}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Plus className="size-4" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+              <div>
+                <label htmlFor={`photoelectric-voltage-${glowId}`} className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.voltage}</span><strong className="font-mono text-physics">{voltage.toFixed(1)} V</strong></label>
+                <span className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVoltage((value) => clamp(Number((value - 0.5).toFixed(1)), -5, 5))}
+                    disabled={voltage <= -5}
+                    aria-label={`${t.decrease} ${t.voltage}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Minus className="size-4" aria-hidden="true" />
+                  </button>
+                  <input id={`photoelectric-voltage-${glowId}`} aria-label={t.voltage} type="range" min="-5" max="5" step="0.1" value={voltage} onChange={(event) => setVoltage(Number(event.target.value))} className="min-w-0 flex-1 accent-[hsl(var(--physics))]" />
+                  <button
+                    type="button"
+                    onClick={() => setVoltage((value) => clamp(Number((value + 0.5).toFixed(1)), -5, 5))}
+                    disabled={voltage >= 5}
+                    aria-label={`${t.increase} ${t.voltage}`}
+                    className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
+                  >
+                    <Plus className="size-4" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
             </div>
           </div>
 
