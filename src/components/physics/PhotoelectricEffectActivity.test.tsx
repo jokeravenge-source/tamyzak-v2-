@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import PhotoelectricEffectActivity from "./PhotoelectricEffectActivity";
 
 describe("PhotoelectricEffectActivity", () => {
-  it("shows the chapter-six simulation and validates the concept check", () => {
+  it("shows the chapter-six simulation without an MCQ block", () => {
     render(<PhotoelectricEffectActivity language="en" />);
 
     expect(screen.getByRole("heading", { name: "Investigating the Photoelectric Effect" })).toBeInTheDocument();
@@ -13,10 +13,7 @@ describe("PhotoelectricEffectActivity", () => {
     expect(screen.getByRole("heading", { name: "Activity steps" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Conclusion" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Saturation current only" }));
-    fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
-
-    expect(screen.getByRole("status")).toHaveTextContent("Correct");
+    expect(screen.queryByRole("button", { name: "Check answer" })).not.toBeInTheDocument();
   });
 
   it("renders the Arabic chapter label and controls", () => {
@@ -50,5 +47,17 @@ describe("PhotoelectricEffectActivity", () => {
     expect(screen.getByLabelText("Wavelength λ")).toHaveValue("420");
     fireEvent.click(screen.getByRole("button", { name: "Increase Wavelength λ" }));
     expect(screen.getByLabelText("Wavelength λ")).toHaveValue("445");
+  });
+
+  it("lets the student switch the collector plate polarity and increase its negativity", () => {
+    render(<PhotoelectricEffectActivity language="en" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Negative plate (−)" }));
+    expect(screen.getByRole("button", { name: "Negative plate (−)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("-1.5 V")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Increase Plate-voltage magnitude" }));
+    expect(screen.getByLabelText("Plate-voltage magnitude")).toHaveValue("2");
+    expect(screen.getByText("-2.0 V")).toBeInTheDocument();
   });
 });

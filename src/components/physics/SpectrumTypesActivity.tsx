@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2,
   Eye,
   FlaskConical,
   Lightbulb,
   Power,
   RotateCcw,
   Sparkles,
-  XCircle,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
@@ -69,12 +67,6 @@ const copy = {
     continuousName: "الطيف المستمر",
     emissionName: "طيف الانبعاث الخطي",
     absorptionName: "طيف الامتصاص الخطي",
-    challenge: "اختبر ملاحظتك",
-    question: "ما نوع الطيف الظاهر على الشاشة؟",
-    check: "تحقق من الإجابة",
-    choose: "اختر إجابة أولًا.",
-    correct: "إجابة صحيحة — طابقت شكل الطيف مع مصدره.",
-    wrong: "ليست هذه النتيجة. راقب إن كانت الألوان متصلة أم تظهر كخطوط مضيئة أو معتمة.",
     conclusion: "الاستنتاج",
     conclusionText: "يختلف الطيف باختلاف مصدر الضوء ونوع الغاز؛ لذلك يُستعمل نمط الخطوط كعلامة مميزة للعناصر.",
   },
@@ -112,12 +104,6 @@ const copy = {
     continuousName: "Continuous spectrum",
     emissionName: "Line emission spectrum",
     absorptionName: "Line absorption spectrum",
-    challenge: "Check your observation",
-    question: "Which spectrum is shown on the screen?",
-    check: "Check answer",
-    choose: "Choose an answer first.",
-    correct: "Correct — you matched the spectrum pattern to its source.",
-    wrong: "Not quite. Check whether the colors are continuous or appear as bright or dark lines.",
     conclusion: "Conclusion",
     conclusionText: "A spectrum changes with the light source and gas. Its line pattern can therefore identify an element.",
   },
@@ -191,8 +177,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
   const [gas, setGas] = useState<Gas>("hydrogen");
   const [isOn, setIsOn] = useState(true);
   const [angle, setAngle] = useState(38);
-  const [answer, setAnswer] = useState<SpectrumMode | null>(null);
-  const [feedback, setFeedback] = useState<"idle" | "empty" | "correct" | "wrong">("idle");
 
   const modeName = isOn ? t[`${mode}Name`] : t.offName;
   const observation = isOn ? t[`${mode}Result`] : t.offResult;
@@ -200,8 +184,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
 
   const chooseMode = (nextMode: SpectrumMode) => {
     setMode(nextMode);
-    setAnswer(null);
-    setFeedback("idle");
   };
 
   const reset = () => {
@@ -209,8 +191,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
     setGas("hydrogen");
     setIsOn(true);
     setAngle(38);
-    setAnswer(null);
-    setFeedback("idle");
   };
 
   return (
@@ -253,8 +233,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
                   type="button"
                   onClick={() => {
                     setIsOn((current) => !current);
-                    setAnswer(null);
-                    setFeedback("idle");
                   }}
                   aria-pressed={isOn}
                   aria-label={isOn ? t.turnOff : t.turnOn}
@@ -352,8 +330,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
                   type="button"
                   onClick={() => {
                     setGas(item);
-                    setAnswer(null);
-                    setFeedback("idle");
                   }}
                   aria-pressed={gas === item}
                   className={`relative min-h-11 overflow-hidden rounded-xl border px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${
@@ -384,49 +360,6 @@ const SpectrumTypesActivity = ({ language }: { language: AppLanguage }) => {
             <span className="mt-2 block text-xs leading-5 text-muted-foreground">{t.angleHint}</span>
           </label>
 
-          <div className="rounded-2xl border border-border bg-secondary/25 p-4">
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-physics">{t.challenge}</p>
-            <p className="mt-2 text-sm font-bold text-foreground">{t.question}</p>
-            <div className="mt-3 grid gap-2">
-              {modes.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  disabled={!isOn}
-                  onClick={() => {
-                    setAnswer(item);
-                    setFeedback("idle");
-                  }}
-                  className={`min-h-10 rounded-lg border px-3 text-start text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:cursor-not-allowed disabled:opacity-40 ${answer === item ? "border-physics bg-physics/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-physics/40"}`}
-                >
-                  {t[`${item}Name`]}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setFeedback(answer === null ? "empty" : answer === mode ? "correct" : "wrong")}
-              disabled={!isOn}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-foreground px-4 text-sm font-extrabold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {t.check}
-            </button>
-            {feedback !== "idle" && (
-              <div
-                role="status"
-                className={`mt-3 flex items-start gap-2 rounded-xl border p-3 text-xs font-semibold leading-5 ${
-                  feedback === "correct"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : feedback === "wrong"
-                      ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-                      : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                }`}
-              >
-                {feedback === "correct" ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <XCircle className="mt-0.5 size-4 shrink-0" />}
-                <span>{feedback === "correct" ? t.correct : feedback === "wrong" ? t.wrong : t.choose}</span>
-              </div>
-            )}
-          </div>
         </aside>
       </div>
     </section>

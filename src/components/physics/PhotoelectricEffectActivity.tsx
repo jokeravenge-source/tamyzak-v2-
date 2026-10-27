@@ -13,14 +13,12 @@ import {
   Power,
   RotateCcw,
   SlidersHorizontal,
-  XCircle,
   Zap,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 type Metal = "cesium" | "sodium" | "zinc";
-type Answer = "intensity" | "voltage" | "none";
-
+type PlatePolarity = "positive" | "negative";
 const metals: Record<Metal, { workFunction: number; color: string }> = {
   cesium: { workFunction: 2.14, color: "#fbbf24" },
   sodium: { workFunction: 2.28, color: "#fb923c" },
@@ -58,6 +56,12 @@ const copy = {
     wavelength: "الطول الموجي λ",
     intensity: "شدة الضوء",
     voltage: "فرق الجهد V",
+    platePolarity: "قطبية الصفيحة الجامعة",
+    positivePlate: "صفيحة موجبة (+)",
+    negativePlate: "صفيحة سالبة (−)",
+    positivePlateHint: "تجذب الإلكترونات الضوئية؛ بزيادة جهدها الموجب يزداد التيار حتى الإشباع.",
+    negativePlateHint: "تتنافر مع الإلكترونات الضوئية؛ بزيادة سالبية جهدها يتناقص التيار حتى جهد الإيقاف.",
+    voltageMagnitude: "مقدار جهد الصفيحة",
     emitted: "حدث انبعاث كهروضوئي",
     blocked: "لا يحدث انبعاث",
     stopped: "توقفت الإلكترونات قبل المصعد",
@@ -75,15 +79,6 @@ const copy = {
     stoppedText: "طاقة الفوتون كافية، لكن الجهد السالب بلغ جهد الإيقاف أو تجاوزه، فأصبح التيار صفراً.",
     emissionText: "تحررت إلكترونات من المهبط ووصل قسم منها إلى المصعد، لذلك يمر تيار كهروضوئي في الدائرة.",
     law: "معادلة أينشتاين",
-    challenge: "اختبر فهمك",
-    question: "عند ثبوت تردد الضوء وزيادة شدته، ماذا يزداد؟",
-    intensityAnswer: "التيار الإشباعي فقط",
-    voltageAnswer: "جهد الإيقاف فقط",
-    noneAnswer: "دالة الشغل",
-    check: "تحقق",
-    choose: "اختر إجابة أولًا.",
-    correct: "صحيح — زيادة الشدة تعني فوتونات أكثر، فتزداد الإلكترونات المنبعثة والتيار الإشباعي.",
-    wrong: "راجع النتيجة: الشدة تغيّر عدد الفوتونات، أما طاقة الفوتون فتعتمد على تردده.",
     toolsTitle: "أدوات النشاط",
     tools: ["خلية كهروضوئية", "فولتميتر (V)", "أميتر (A)", "مصدر فولتية مستمر يمكن تغيير جهده", "أسلاك توصيل", "مصدر ضوئي"],
     stepsTitle: "خطوات النشاط",
@@ -131,6 +126,12 @@ const copy = {
     wavelength: "Wavelength λ",
     intensity: "Light intensity",
     voltage: "Potential difference V",
+    platePolarity: "Collector plate polarity",
+    positivePlate: "Positive plate (+)",
+    negativePlate: "Negative plate (−)",
+    positivePlateHint: "It attracts photoelectrons; increasing its positive voltage raises the current toward saturation.",
+    negativePlateHint: "It repels photoelectrons; increasing its negativity lowers the current toward the stopping potential.",
+    voltageMagnitude: "Plate-voltage magnitude",
     emitted: "Photoemission occurs",
     blocked: "No photoemission",
     stopped: "Electrons are stopped",
@@ -148,15 +149,6 @@ const copy = {
     stoppedText: "The photon energy is sufficient, but the reverse voltage has reached the stopping potential, so the current is zero.",
     emissionText: "Electrons leave the cathode and some reach the anode, producing a photoelectric current in the circuit.",
     law: "Einstein's equation",
-    challenge: "Check your understanding",
-    question: "At a fixed light frequency, what increases when intensity increases?",
-    intensityAnswer: "Saturation current only",
-    voltageAnswer: "Stopping potential only",
-    noneAnswer: "Work function",
-    check: "Check answer",
-    choose: "Choose an answer first.",
-    correct: "Correct — greater intensity means more photons, so more electrons are emitted and saturation current increases.",
-    wrong: "Review the result: intensity changes photon number, while photon energy depends on frequency.",
     toolsTitle: "Activity tools",
     tools: ["Photocell", "Voltmeter (V)", "Ammeter (A)", "Variable DC voltage source", "Connecting wires", "Light source"],
     stepsTitle: "Activity steps",
@@ -186,10 +178,9 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
   const [wavelength, setWavelength] = useState(420);
   const [intensity, setIntensity] = useState(70);
   const [voltage, setVoltage] = useState(1.5);
+  const [platePolarity, setPlatePolarity] = useState<PlatePolarity>("positive");
   const [lightOn, setLightOn] = useState(true);
   const [activeStep, setActiveStep] = useState(2);
-  const [answer, setAnswer] = useState<Answer | null>(null);
-  const [feedback, setFeedback] = useState<"idle" | "empty" | "correct" | "wrong">("idle");
 
   const photonEnergy = 1240 / wavelength;
   const workFunction = metals[metal].workFunction;
@@ -204,6 +195,8 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
       ? clamp((voltage + stoppingPotential) / Math.max(stoppingPotential, 0.01))
       : 0.72 + 0.28 * (1 - Math.exp(-voltage / 1.4));
   const current = hasEmission ? saturationCurrent * voltageFactor : 0;
+  const isNegativePlate = platePolarity === "negative";
+  const voltageMagnitude = Math.abs(voltage);
 
   const lightColor = useMemo(() => {
     if (wavelength < 380) return "#8b5cf6";
@@ -237,30 +230,43 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
     setWavelength(420);
     setIntensity(70);
     setVoltage(1.5);
+    setPlatePolarity("positive");
     setLightOn(true);
     setActiveStep(2);
-    setAnswer(null);
-    setFeedback("idle");
   };
 
   const applyStep = (index: number) => {
     setActiveStep(index);
-    setFeedback("idle");
     if (index === 0) {
       setLightOn(false);
       setVoltage(0);
+      setPlatePolarity("positive");
     } else if (index === 1) {
       setLightOn(false);
       setVoltage(1.5);
+      setPlatePolarity("positive");
     } else if (index === 2) {
       setLightOn(true);
       setWavelength(420);
       setVoltage(1.5);
+      setPlatePolarity("positive");
     } else {
       setLightOn(true);
       setWavelength(420);
       setVoltage(5);
+      setPlatePolarity("positive");
     }
+  };
+
+  const selectPlatePolarity = (negative: boolean) => {
+    const magnitude = Math.max(0.5, voltageMagnitude);
+    setPlatePolarity(negative ? "negative" : "positive");
+    setVoltage(negative ? -magnitude : magnitude);
+  };
+
+  const setPlateVoltageMagnitude = (magnitude: number) => {
+    const safeMagnitude = clamp(Number(magnitude.toFixed(1)), 0, 5);
+    setVoltage(isNegativePlate ? -safeMagnitude : safeMagnitude);
   };
 
   return (
@@ -372,9 +378,15 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
               <rect x="215" y="42" width="360" height="190" rx="80" fill={`url(#tube-${glowId})`} stroke="#94a3b8" strokeWidth="5" />
               <rect x="218" y="46" width="354" height="182" rx="76" fill="#dbeafe" opacity=".1" />
               <path d="M275 82 Q235 136 275 192" fill="none" stroke={metals[metal].color} strokeWidth="20" strokeLinecap="round" />
-              <path d="M510 80V194" stroke="#e2e8f0" strokeWidth="15" strokeLinecap="round" />
+              <path
+                d="M510 80V194"
+                stroke={isNegativePlate ? "#60a5fa" : "#fb7185"}
+                strokeWidth="15"
+                strokeLinecap="round"
+                filter={`url(#photo-glow-${glowId})`}
+              />
               <text x="240" y="254" fill="#f8fafc" fontSize="15">{t.cathode}</text>
-              <text x="472" y="254" fill="#f8fafc" fontSize="15">{t.anode}</text>
+              <text x="472" y="254" fill="#f8fafc" fontSize="15">{t.anode} {isNegativePlate ? "(−)" : "(+)"}</text>
 
               {hasEmission && !isStopped && Array.from({ length: electronCount }, (_, index) => {
                 const x = 305 + ((index * 47 + Math.round(voltage * 13)) % 165);
@@ -531,23 +543,57 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
                 </span>
               </div>
               <div>
-                <label htmlFor={`photoelectric-voltage-${glowId}`} className="flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.voltage}</span><strong className="font-mono text-physics">{voltage.toFixed(1)} V</strong></label>
+                <fieldset>
+                  <legend className="text-sm font-bold text-foreground">{t.platePolarity}</legend>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => selectPlatePolarity(false)}
+                      aria-pressed={!isNegativePlate}
+                      className={`min-h-12 rounded-xl border px-3 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${!isNegativePlate ? "border-rose-500 bg-rose-500 text-white" : "border-border bg-card text-muted-foreground hover:border-rose-400/50"}`}
+                    >
+                      {t.positivePlate}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => selectPlatePolarity(true)}
+                      aria-pressed={isNegativePlate}
+                      className={`min-h-12 rounded-xl border px-3 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${isNegativePlate ? "border-blue-500 bg-blue-500 text-white" : "border-border bg-card text-muted-foreground hover:border-blue-400/50"}`}
+                    >
+                      {t.negativePlate}
+                    </button>
+                  </div>
+                </fieldset>
+                <p className={`mt-2 text-xs font-semibold leading-5 ${isNegativePlate ? "text-blue-700 dark:text-blue-300" : "text-rose-700 dark:text-rose-300"}`}>
+                  {isNegativePlate ? t.negativePlateHint : t.positivePlateHint}
+                </p>
+                <label htmlFor={`photoelectric-voltage-${glowId}`} className="mt-4 flex items-center justify-between gap-3 text-sm font-bold text-foreground"><span>{t.voltageMagnitude}</span><strong className={`font-mono ${isNegativePlate ? "text-blue-600 dark:text-blue-300" : "text-rose-600 dark:text-rose-300"}`}>{voltageMagnitude.toFixed(1)} V</strong></label>
                 <span className="mt-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setVoltage((value) => clamp(Number((value - 0.5).toFixed(1)), -5, 5))}
-                    disabled={voltage <= -5}
-                    aria-label={`${t.decrease} ${t.voltage}`}
+                    onClick={() => setPlateVoltageMagnitude(voltageMagnitude - 0.5)}
+                    disabled={voltageMagnitude <= 0}
+                    aria-label={`${t.decrease} ${t.voltageMagnitude}`}
                     className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
                   >
                     <Minus className="size-4" aria-hidden="true" />
                   </button>
-                  <input id={`photoelectric-voltage-${glowId}`} aria-label={t.voltage} type="range" min="-5" max="5" step="0.1" value={voltage} onChange={(event) => setVoltage(Number(event.target.value))} className="min-w-0 flex-1 accent-[hsl(var(--physics))]" />
+                  <input
+                    id={`photoelectric-voltage-${glowId}`}
+                    aria-label={t.voltageMagnitude}
+                    type="range"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={voltageMagnitude}
+                    onChange={(event) => setPlateVoltageMagnitude(Number(event.target.value))}
+                    className={`min-w-0 flex-1 ${isNegativePlate ? "accent-blue-500" : "accent-rose-500"}`}
+                  />
                   <button
                     type="button"
-                    onClick={() => setVoltage((value) => clamp(Number((value + 0.5).toFixed(1)), -5, 5))}
-                    disabled={voltage >= 5}
-                    aria-label={`${t.increase} ${t.voltage}`}
+                    onClick={() => setPlateVoltageMagnitude(voltageMagnitude + 0.5)}
+                    disabled={voltageMagnitude >= 5}
+                    aria-label={`${t.increase} ${t.voltageMagnitude}`}
                     className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition hover:border-physics/50 hover:bg-physics/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics disabled:opacity-35"
                   >
                     <Plus className="size-4" aria-hidden="true" />
@@ -555,39 +601,6 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
                 </span>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary/25 p-5">
-            <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-physics/10 text-physics">
-              <Lightbulb className="size-5" aria-hidden="true" />
-            </div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-physics">{t.challenge}</p>
-            <p className="mt-2 text-sm font-bold leading-6 text-foreground">{t.question}</p>
-            <div className="mt-3 grid gap-2">
-              {(["intensity", "voltage", "none"] as Answer[]).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => { setAnswer(item); setFeedback("idle"); }}
-                  className={`min-h-11 rounded-xl border px-3 text-start text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${answer === item ? "border-physics bg-physics/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-physics/40"}`}
-                >
-                  {t[`${item}Answer`]}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setFeedback(answer === null ? "empty" : answer === "intensity" ? "correct" : "wrong")}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-foreground px-4 text-sm font-extrabold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics"
-            >
-              {t.check}
-            </button>
-            {feedback !== "idle" && (
-              <div role="status" className={`mt-3 flex items-start gap-2 rounded-xl border p-3 text-xs font-semibold leading-5 ${feedback === "correct" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : feedback === "wrong" ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>
-                {feedback === "correct" ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <XCircle className="mt-0.5 size-4 shrink-0" />}
-                <span>{feedback === "correct" ? t.correct : feedback === "wrong" ? t.wrong : t.choose}</span>
-              </div>
-            )}
           </div>
         </aside>
       </div>
