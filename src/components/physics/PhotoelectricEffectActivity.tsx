@@ -3,7 +3,10 @@ import {
   Atom,
   CheckCircle2,
   CircleGauge,
+  FlaskConical,
   Lightbulb,
+  ListChecks,
+  Power,
   RotateCcw,
   SlidersHorizontal,
   XCircle,
@@ -27,9 +30,14 @@ const copy = {
     subtitle: "سلّط ضوءًا أحادي اللون على سطح فلزي، ثم غيّر الطول الموجي وشدة الضوء والجهد لتكتشف شروط انبعاث الإلكترونات.",
     reset: "إعادة التجربة",
     simulator: "أنبوبة الظاهرة الكهروضوئية",
+    sourceOn: "المصدر الضوئي يعمل",
+    sourceOff: "المصدر الضوئي مطفأ",
+    turnOn: "تشغيل المصدر",
+    turnOff: "إطفاء المصدر",
     cathode: "المهبط الحساس",
     anode: "المصعد الجامع",
     ammeter: "الأميتر",
+    voltmeter: "الفولتميتر",
     light: "الضوء الساقط",
     controls: "إعدادات التجربة",
     metal: "معدن المهبط",
@@ -52,6 +60,7 @@ const copy = {
     voltageAxis: "الجهد V",
     observation: "المشاهدة الحالية",
     noEmissionText: "طاقة الفوتون أقل من دالة شغل المعدن؛ لذلك لا تتحرر إلكترونات مهما ازدادت شدة الضوء.",
+    sourceOffText: "المصدر الضوئي مطفأ، لذلك لا تسقط فوتونات على الصفيحة الباعثة وتكون قراءة الأميتر صفراً.",
     stoppedText: "طاقة الفوتون كافية، لكن الجهد السالب بلغ جهد الإيقاف أو تجاوزه، فأصبح التيار صفراً.",
     emissionText: "تحررت إلكترونات من المهبط ووصل قسم منها إلى المصعد، لذلك يمر تيار كهروضوئي في الدائرة.",
     law: "معادلة أينشتاين",
@@ -64,6 +73,22 @@ const copy = {
     choose: "اختر إجابة أولًا.",
     correct: "صحيح — زيادة الشدة تعني فوتونات أكثر، فتزداد الإلكترونات المنبعثة والتيار الإشباعي.",
     wrong: "راجع النتيجة: الشدة تغيّر عدد الفوتونات، أما طاقة الفوتون فتعتمد على تردده.",
+    toolsTitle: "أدوات النشاط",
+    tools: ["خلية كهروضوئية", "فولتميتر (V)", "أميتر (A)", "مصدر فولتية مستمر يمكن تغيير جهده", "أسلاك توصيل", "مصدر ضوئي"],
+    stepsTitle: "خطوات النشاط",
+    stepHint: "اضغط على أي خطوة لتطبيق حالتها في المحاكاة.",
+    steps: [
+      "اربط الدائرة الكهربائية كما موضح في أنبوبة الظاهرة الكهروضوئية.",
+      "أطفئ المصدر الضوئي ولاحظ أن قراءة الأميتر تساوي صفراً لعدم مرور تيار.",
+      "سلّط ضوءاً ذا تردد مؤثر على الصفيحة الباعثة؛ تنبعث الإلكترونات الضوئية ويمر تيار كهربائي.",
+      "زد الجهد الموجب للمجمّع؛ يزداد التيار الكهروضوئي حتى يبلغ قيمة عظمى ثابتة تسمى تيار الإشباع.",
+    ],
+    conclusionsTitle: "الاستنتاج",
+    conclusions: [
+      "تزداد شدة تيار الإشباع بزيادة شدة الضوء الساقط ذي التردد المؤثر، وعند مضاعفة شدة الضوء يتضاعف تيار الإشباع.",
+      "عند عكس قطبية المصدر ليصبح الباعث موجباً والمجمّع سالباً يتناقص التيار؛ لأن المجمّع السالب يتنافر مع الإلكترونات الضوئية، ولا تصل إليه إلا الإلكترونات ذات الطاقة الحركية الكافية.",
+      "عند زيادة الجهد السالب للمجمّع تدريجياً يتناقص التيار حتى يصبح صفراً. يسمى هذا الجهد جهد الإيقاف Vs، وهو لا يعتمد على شدة الضوء الساقط.",
+    ],
   },
   en: {
     chapter: "Chapter 6 · Modern Physics",
@@ -71,9 +96,14 @@ const copy = {
     subtitle: "Shine monochromatic light on a metal surface, then change wavelength, intensity, and voltage to discover when electrons are emitted.",
     reset: "Reset experiment",
     simulator: "Photoelectric tube",
+    sourceOn: "Light source on",
+    sourceOff: "Light source off",
+    turnOn: "Turn source on",
+    turnOff: "Turn source off",
     cathode: "Photosensitive cathode",
     anode: "Collector anode",
     ammeter: "Ammeter",
+    voltmeter: "Voltmeter",
     light: "Incident light",
     controls: "Experiment controls",
     metal: "Cathode metal",
@@ -96,6 +126,7 @@ const copy = {
     voltageAxis: "Voltage V",
     observation: "Current observation",
     noEmissionText: "The photon energy is below the metal's work function, so no electrons are released regardless of light intensity.",
+    sourceOffText: "The light source is off, so no photons strike the emitting plate and the ammeter reads zero.",
     stoppedText: "The photon energy is sufficient, but the reverse voltage has reached the stopping potential, so the current is zero.",
     emissionText: "Electrons leave the cathode and some reach the anode, producing a photoelectric current in the circuit.",
     law: "Einstein's equation",
@@ -108,6 +139,22 @@ const copy = {
     choose: "Choose an answer first.",
     correct: "Correct — greater intensity means more photons, so more electrons are emitted and saturation current increases.",
     wrong: "Review the result: intensity changes photon number, while photon energy depends on frequency.",
+    toolsTitle: "Activity tools",
+    tools: ["Photocell", "Voltmeter (V)", "Ammeter (A)", "Variable DC voltage source", "Connecting wires", "Light source"],
+    stepsTitle: "Activity steps",
+    stepHint: "Select a step to apply its state to the simulation.",
+    steps: [
+      "Connect the electric circuit as shown in the photoelectric tube.",
+      "Switch off the light source and observe that the ammeter reads zero because no current flows.",
+      "Illuminate the emitting plate with light of an effective frequency; photoelectrons are emitted and current flows.",
+      "Increase the collector's positive voltage; the photocurrent rises until it reaches a constant maximum called saturation current.",
+    ],
+    conclusionsTitle: "Conclusion",
+    conclusions: [
+      "Saturation current increases as the intensity of effective incident light increases; doubling the light intensity doubles the saturation current.",
+      "When the source polarity is reversed so the emitter is positive and the collector is negative, the current decreases because the negative collector repels photoelectrons; only electrons with sufficient kinetic energy reach it.",
+      "As the collector's negative voltage increases, the current falls to zero. This voltage is the stopping potential Vs, and it does not depend on incident-light intensity.",
+    ],
   },
 } as const;
 
@@ -121,6 +168,8 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
   const [wavelength, setWavelength] = useState(420);
   const [intensity, setIntensity] = useState(70);
   const [voltage, setVoltage] = useState(1.5);
+  const [lightOn, setLightOn] = useState(true);
+  const [activeStep, setActiveStep] = useState(2);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [feedback, setFeedback] = useState<"idle" | "empty" | "correct" | "wrong">("idle");
 
@@ -128,7 +177,7 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
   const workFunction = metals[metal].workFunction;
   const kineticEnergy = Math.max(0, photonEnergy - workFunction);
   const stoppingPotential = kineticEnergy;
-  const hasEmission = photonEnergy >= workFunction;
+  const hasEmission = lightOn && photonEnergy >= workFunction;
   const isStopped = hasEmission && voltage <= -stoppingPotential;
   const saturationCurrent = intensity / 10;
   const voltageFactor = !hasEmission
@@ -149,8 +198,8 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
   }, [wavelength]);
 
   const electronCount = Math.max(2, Math.round(intensity / 14));
-  const observation = !hasEmission ? t.noEmissionText : isStopped ? t.stoppedText : t.emissionText;
-  const status = !hasEmission ? t.blocked : isStopped ? t.stopped : t.emitted;
+  const observation = !lightOn ? t.sourceOffText : !hasEmission ? t.noEmissionText : isStopped ? t.stoppedText : t.emissionText;
+  const status = !lightOn ? t.sourceOff : !hasEmission ? t.blocked : isStopped ? t.stopped : t.emitted;
 
   const graphPoints = useMemo(() => {
     return Array.from({ length: 41 }, (_, index) => {
@@ -170,8 +219,30 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
     setWavelength(420);
     setIntensity(70);
     setVoltage(1.5);
+    setLightOn(true);
+    setActiveStep(2);
     setAnswer(null);
     setFeedback("idle");
+  };
+
+  const applyStep = (index: number) => {
+    setActiveStep(index);
+    setFeedback("idle");
+    if (index === 0) {
+      setLightOn(false);
+      setVoltage(0);
+    } else if (index === 1) {
+      setLightOn(false);
+      setVoltage(1.5);
+    } else if (index === 2) {
+      setLightOn(true);
+      setWavelength(420);
+      setVoltage(1.5);
+    } else {
+      setLightOn(true);
+      setWavelength(420);
+      setVoltage(5);
+    }
   };
 
   return (
@@ -208,7 +279,7 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
                 <Zap className="size-5 text-cyan-300" aria-hidden="true" />
                 {t.simulator}
               </h3>
-              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${!hasEmission ? "border-rose-400/30 bg-rose-400/10 text-rose-300" : isStopped ? "border-amber-400/30 bg-amber-400/10 text-amber-300" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"}`}>
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${!lightOn ? "border-slate-400/30 bg-slate-400/10 text-slate-300" : !hasEmission ? "border-rose-400/30 bg-rose-400/10 text-rose-300" : isStopped ? "border-amber-400/30 bg-amber-400/10 text-amber-300" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"}`}>
                 {status}
               </span>
             </div>
@@ -226,7 +297,7 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
                 </linearGradient>
               </defs>
 
-              <g opacity=".9">
+              <g opacity={lightOn ? .9 : .08}>
                 {Array.from({ length: 5 }, (_, index) => (
                   <path
                     key={index}
@@ -236,7 +307,7 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
                     strokeWidth={2 + intensity / 32}
                     strokeDasharray="12 10"
                     filter={`url(#photo-glow-${glowId})`}
-                    className="motion-safe:animate-pulse"
+                    className={lightOn ? "motion-safe:animate-pulse" : undefined}
                   />
                 ))}
               </g>
@@ -267,8 +338,9 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
               <g transform="translate(620 100)">
                 <circle cx="48" cy="48" r="45" fill="#111827" stroke="#64748b" strokeWidth="4" />
                 <path d="M20 58A30 30 0 0 1 76 58" fill="none" stroke="#cbd5e1" strokeWidth="3" />
-                <line x1="48" y1="58" x2={48 + Math.cos((-150 + clamp(current / Math.max(saturationCurrent, .1)) * 120) * Math.PI / 180) * 25} y2={58 + Math.sin((-150 + clamp(current / Math.max(saturationCurrent, .1)) * 120) * Math.PI / 180) * 25} stroke="#fb7185" strokeWidth="4" strokeLinecap="round" />
-                <text x="37" y="88" fill="#cbd5e1" fontSize="13">µA</text>
+                <line x1="48" y1="58" x2={48 + Math.cos((-210 + ((voltage + 5) / 10) * 120) * Math.PI / 180) * 25} y2={58 + Math.sin((-210 + ((voltage + 5) / 10) * 120) * Math.PI / 180) * 25} stroke="#fb7185" strokeWidth="4" strokeLinecap="round" />
+                <text x="43" y="88" fill="#cbd5e1" fontSize="13">V</text>
+                <text x="12" y="112" fill="#cbd5e1" fontSize="12">{voltage.toFixed(1)} V</text>
               </g>
             </svg>
           </div>
@@ -323,6 +395,16 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
               <SlidersHorizontal className="size-5 text-physics" aria-hidden="true" />
               {t.controls}
             </h3>
+
+            <button
+              type="button"
+              aria-pressed={lightOn}
+              onClick={() => { setLightOn((value) => !value); setActiveStep(lightOn ? 1 : 2); }}
+              className={`mb-5 inline-flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${lightOn ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-border bg-secondary/40 text-muted-foreground hover:border-physics/40"}`}
+            >
+              <span className="flex items-center gap-2"><Power className="size-5" aria-hidden="true" />{lightOn ? t.turnOff : t.turnOn}</span>
+              <span className={`size-2.5 rounded-full ${lightOn ? "bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,.8)]" : "bg-slate-400"}`} aria-hidden="true" />
+            </button>
 
             <fieldset>
               <legend className="mb-2 text-sm font-bold text-foreground">{t.metal}</legend>
@@ -391,6 +473,63 @@ const PhotoelectricEffectActivity = ({ language }: { language: AppLanguage }) =>
             )}
           </div>
         </aside>
+      </div>
+
+      <div className="relative border-t border-physics/15 bg-background/45 p-5 sm:p-8">
+        <div className="grid gap-8 xl:grid-cols-[.72fr_1.28fr]">
+          <section aria-labelledby="photoelectric-tools-title">
+            <h3 id="photoelectric-tools-title" className="flex items-center gap-2 text-lg font-black text-foreground">
+              <FlaskConical className="size-5 text-physics" aria-hidden="true" />
+              {t.toolsTitle}
+            </h3>
+            <ul className="mt-4 grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-1">
+              {t.tools.map((tool, index) => (
+                <li key={tool} className="flex items-center gap-3 text-sm font-semibold leading-6 text-foreground">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-physics/10 text-xs font-black text-physics">{index + 1}</span>
+                  <span>{tool}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section aria-labelledby="photoelectric-steps-title">
+            <h3 id="photoelectric-steps-title" className="flex items-center gap-2 text-lg font-black text-foreground">
+              <ListChecks className="size-5 text-physics" aria-hidden="true" />
+              {t.stepsTitle}
+            </h3>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">{t.stepHint}</p>
+            <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+              {t.steps.map((step, index) => (
+                <li key={step}>
+                  <button
+                    type="button"
+                    onClick={() => applyStep(index)}
+                    aria-pressed={activeStep === index}
+                    className={`flex min-h-full w-full items-start gap-3 rounded-xl border p-3 text-start text-sm font-semibold leading-6 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-physics ${activeStep === index ? "border-physics bg-physics/10 text-foreground" : "border-border bg-card text-muted-foreground hover:border-physics/40 hover:text-foreground"}`}
+                  >
+                    <span className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${activeStep === index ? "bg-physics text-white" : "bg-secondary text-muted-foreground"}`}>{index + 1}</span>
+                    <span>{step}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+
+        <section className="mt-8 border-t border-border pt-7" aria-labelledby="photoelectric-conclusions-title">
+          <h3 id="photoelectric-conclusions-title" className="flex items-center gap-2 text-lg font-black text-foreground">
+            <Lightbulb className="size-5 text-physics" aria-hidden="true" />
+            {t.conclusionsTitle}
+          </h3>
+          <ol className="mt-4 grid gap-4 lg:grid-cols-3">
+            {t.conclusions.map((conclusion) => (
+              <li key={conclusion} className="flex items-start gap-3 text-sm font-semibold leading-7 text-foreground">
+                <CheckCircle2 className="mt-1 size-5 shrink-0 text-physics" aria-hidden="true" />
+                <span>{conclusion}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </section>
   );
