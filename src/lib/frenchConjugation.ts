@@ -15,6 +15,7 @@ export type FrenchConjugation = {
 
 const lexicon = Lefff as Record<string, Record<string, string[]>>;
 const infinitives = Object.keys(lexicon);
+const searchableInfinitives = infinitives.map((verb) => ({ verb, normalized: verb.normalize("NFD").replace(/[\u0300-\u036f]/g, "") }));
 const dualAuxiliaryVerbs = new Set(["descendre", "entrer", "monter", "passer", "rentrer", "retourner", "sortir"]);
 const subjects = ["je", "tu", "il / elle / on", "nous", "vous", "ils / elles"];
 const subjunctiveSubjects = ["que je", "que tu", "qu’il / elle / on", "que nous", "que vous", "qu’ils / elles"];
@@ -22,6 +23,25 @@ const aspiratedHVerbs = /^(haïr|haleter|harceler|hasarder|hâter|hausser|héler
 
 const normalize = (value: string) => value.toLocaleLowerCase("fr").normalize("NFC").trim();
 const withoutMarks = (value: string) => normalize(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const editDistance = (left: string, right: string) => {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  const current = new Array<number>(right.length + 1);
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    current[0] = leftIndex;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      current[rightIndex] = Math.min(
+        current[rightIndex - 1] + 1,
+        previous[rightIndex] + 1,
+        previous[rightIndex - 1] + Number(left[leftIndex - 1] !== right[rightIndex - 1]),
+      );
+    }
+    for (let index = 0; index <= right.length; index += 1) previous[index] = current[index];
+  }
+
+  return previous[right.length];
+};
 
 const parseVerb = (raw: string) => {
   const value = normalize(raw).replace(/\s+/g, " ");
@@ -104,13 +124,29 @@ const displayInfinitive = (verb: string, pronominal: boolean) => {
 };
 
 export const findFrenchVerbSuggestions = (raw: string, limit = 6) => {
-  const { base } = parseVerb(raw);
+  const { base, pronominal } = parseVerb(raw);
   const needle = withoutMarks(base);
   if (!needle) return [];
-  return infinitives
-    .filter((verb) => withoutMarks(verb).startsWith(needle) || withoutMarks(verb).includes(needle))
-    .sort((a, b) => Number(!withoutMarks(a).startsWith(needle)) - Number(!withoutMarks(b).startsWith(needle)) || a.length - b.length)
-    .slice(0, limit);
+
+  const directMatches = searchableInfinitives
+    .filter(({ normalized }) => normalized.startsWith(needle) || normalized.includes(needle))
+    .sort((a, b) => (
+      Number(!a.normalized.startsWith(needle)) - Number(!b.normalized.startsWith(needle))
+      || a.normalized.indexOf(needle) - b.normalized.indexOf(needle)
+      || a.verb.length - b.verb.length
+      || a.verb.localeCompare(b.verb, "fr")
+    ));
+
+  const matches = directMatches.length > 0 || needle.length < 3
+    ? directMatches
+    : searchableInfinitives
+      .map((entry) => ({ ...entry, distance: editDistance(needle, entry.normalized) }))
+      .filter(({ distance }) => distance <= Math.min(2, Math.max(1, Math.floor(needle.length / 4))))
+      .sort((a, b) => a.distance - b.distance || a.verb.length - b.verb.length || a.verb.localeCompare(b.verb, "fr"));
+
+  return matches
+    .slice(0, limit)
+    .map(({ verb }) => displayInfinitive(verb, pronominal));
 };
 
 export const conjugateFrenchVerb = (raw: string): FrenchConjugation | null => {

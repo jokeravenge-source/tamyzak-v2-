@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -42,6 +42,8 @@ const copy = {
     creator: "أداة من إعداد الأستاذ محمد علي الكناني",
     verified: "تصريف موثّق",
     placeholder: "مثال: être, finir, se lever…",
+    liveSuggestions: "اقتراحات البحث",
+    suggestionHint: "استخدم الأسهم ثم Enter للاختيار",
     search: "عرض التصريف",
     searching: "جاري البحث…",
     common: "الأفعال الأكثر استعمالاً",
@@ -75,6 +77,8 @@ const copy = {
     creator: "Created by Ustadh Mohammed Ali Al-Kinani",
     verified: "Verified conjugation",
     placeholder: "Example: être, finir, se lever…",
+    liveSuggestions: "Search suggestions",
+    suggestionHint: "Use the arrows, then press Enter",
     search: "Conjugate verb",
     searching: "Searching…",
     common: "Most-used French verbs",
@@ -137,11 +141,15 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
   const [data, setData] = useState<FrenchConjugation | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "invalid" | "not-found">("idle");
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [activeMood, setActiveMood] = useState("all");
   const conjugate = useCallback((rawVerb: string) => {
     const verb = rawVerb.trim().toLocaleLowerCase("fr").normalize("NFC");
     setQuery(verb);
     setSuggestions([]);
+    setIsSearchOpen(false);
+    setActiveSuggestionIndex(-1);
     setActiveMood("all");
 
     if (!verb || !isValidFrenchVerbInput(verb)) {
@@ -178,6 +186,14 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
     });
   }, [data]);
 
+  const liveSuggestions = useMemo(() => {
+    const value = query.trim();
+    if (!isSearchOpen || !value || !isValidFrenchVerbInput(value)) return [];
+    return findFrenchVerbSuggestions(value, 8);
+  }, [isSearchOpen, query]);
+
+  const showLiveSuggestions = isSearchOpen && liveSuggestions.length > 0;
+
   const visibleMoods = activeMood === "all"
     ? moodEntries
     : moodEntries.filter(([mood]) => normalizeKey(mood) === activeMood);
@@ -193,6 +209,30 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     conjugate(query);
+  };
+
+  const chooseSuggestion = (suggestion: string) => {
+    conjugate(suggestion);
+  };
+
+  const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsSearchOpen(false);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+
+    if (!showLiveSuggestions) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % liveSuggestions.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current <= 0 ? liveSuggestions.length - 1 : current - 1));
+    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      chooseSuggestion(liveSuggestions[activeSuggestionIndex]);
+    }
   };
 
   const errorTitle = status === "invalid" ? t.invalidTitle : t.notFoundTitle;
@@ -233,19 +273,31 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
               <p className="mt-2 text-lg font-black text-blue-900 dark:text-blue-200 sm:text-xl">{t.titleAr}</p>
               <p className="mt-5 max-w-2xl text-sm font-medium leading-7 text-slate-600 dark:text-slate-300 sm:text-base">{t.description}</p>
 
-              <form onSubmit={onSubmit} className="mt-7">
+              <form onSubmit={onSubmit} className="relative mt-7">
                 <label className="sr-only" htmlFor="french-verb-search">{t.placeholder}</label>
-                <div className="flex flex-col gap-3 rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_14px_34px_-22px_rgba(15,36,76,.55)] focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 dark:border-white/15 dark:bg-white/5 sm:flex-row">
+                <div className={`flex flex-col gap-3 border border-slate-300 bg-white p-2 shadow-[0_14px_34px_-22px_rgba(15,36,76,.55)] focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 dark:border-white/15 dark:bg-white/5 sm:flex-row ${showLiveSuggestions ? "rounded-t-2xl rounded-b-none" : "rounded-2xl"}`}>
                   <div className="flex min-w-0 flex-1 items-center gap-3 px-3">
                     <Search className="size-5 shrink-0 text-blue-800 dark:text-blue-300" aria-hidden="true" />
                     <input
                       id="french-verb-search"
                       type="search"
                       value={query}
-                      onChange={(event) => setQuery(event.target.value)}
+                      onChange={(event) => {
+                        setQuery(event.target.value);
+                        setIsSearchOpen(true);
+                        setActiveSuggestionIndex(-1);
+                      }}
+                      onFocus={() => setIsSearchOpen(true)}
+                      onBlur={() => setIsSearchOpen(false)}
+                      onKeyDown={onSearchKeyDown}
                       placeholder={t.placeholder}
                       autoComplete="off"
                       spellCheck="false"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={showLiveSuggestions}
+                      aria-controls="french-verb-suggestions"
+                      aria-activedescendant={activeSuggestionIndex >= 0 ? `french-verb-suggestion-${activeSuggestionIndex}` : undefined}
                       className="min-h-12 w-full bg-transparent text-left text-lg font-black text-slate-950 caret-blue-600 outline-none placeholder:font-medium placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
                       dir="ltr"
                     />
@@ -259,6 +311,34 @@ const FrenchConjugator = ({ language, onBack }: { language: AppLanguage; onBack:
                     {status === "loading" ? t.searching : t.search}
                   </button>
                 </div>
+                {showLiveSuggestions && (
+                  <div className="french-search-suggestions" dir="ltr">
+                    <div className="french-search-suggestions__header">
+                      <span>{t.liveSuggestions}</span>
+                      <span>{t.suggestionHint}</span>
+                    </div>
+                    <ul id="french-verb-suggestions" role="listbox" aria-label={t.liveSuggestions}>
+                      {liveSuggestions.map((suggestion, index) => (
+                        <li key={suggestion}>
+                          <button
+                            id={`french-verb-suggestion-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={activeSuggestionIndex === index}
+                            className="french-search-suggestion"
+                            onPointerDown={(event) => event.preventDefault()}
+                            onMouseEnter={() => setActiveSuggestionIndex(index)}
+                            onClick={() => chooseSuggestion(suggestion)}
+                          >
+                            <Search aria-hidden="true" />
+                            <span>{suggestion}</span>
+                            <ChevronRight aria-hidden="true" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </form>
             </div>
 
