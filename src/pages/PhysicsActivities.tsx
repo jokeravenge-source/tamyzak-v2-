@@ -12,6 +12,7 @@ import PolarizationActivity from "@/components/physics/PolarizationActivity";
 import LightWavePolarizationActivity from "@/components/physics/LightWavePolarizationActivity";
 import MechanicalWavePolarizationActivity from "@/components/physics/MechanicalWavePolarizationActivity";
 import LightDiffractionActivity from "@/components/physics/LightDiffractionActivity";
+import YoungDoubleSlitActivity from "@/components/physics/YoungDoubleSlitActivity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const copy = {
@@ -461,6 +462,9 @@ const PhysicsActivities = ({
             <TabsTrigger value="light-diffraction">
               {isRTL ? "ف5 · حيود الضوء" : "Ch5 · Light Diffraction"}
             </TabsTrigger>
+            <TabsTrigger value="young-double-slit">
+              {isRTL ? "ف5 · تجربة يونك" : "Ch5 · Young's Experiment"}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dielectric">
@@ -587,6 +591,10 @@ const PhysicsActivities = ({
 
           <TabsContent value="light-diffraction">
             <LightDiffractionActivity language={language} />
+          </TabsContent>
+
+          <TabsContent value="young-double-slit">
+            <YoungDoubleSlitActivity language={language} />
           </TabsContent>
         </Tabs>
       </div>
