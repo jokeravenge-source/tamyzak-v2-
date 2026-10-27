@@ -105,15 +105,30 @@
 
 .french-tense-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2rem 3rem;
+  grid-auto-columns: minmax(17.5rem, 84vw);
+  grid-auto-flow: column;
+  grid-template-rows: 1fr;
+  gap: 1.25rem;
   margin-top: 1.75rem;
+  margin-inline: -1rem;
+  overflow-x: auto;
+  padding: 0 1rem 0.875rem;
+  scroll-padding-inline: 1rem;
+  scroll-snap-type: inline proximity;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.french-tense-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .french-tense-section {
   min-width: 0;
   border-top: 2px solid hsl(var(--foreground));
   padding-top: 1rem;
+  scroll-snap-align: start;
 }
 
 .french-tense-section h4 {
@@ -175,7 +190,11 @@
 
 @media (min-width: 768px) {
   .french-tense-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: minmax(21rem, calc((100% - 2rem) / 2));
+    gap: 2rem;
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
   }
 
   .french-form-row {
@@ -200,7 +219,14 @@
   }
 
   .french-tense-grid {
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+    gap: 2rem 3rem;
+    overflow: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
   }
 
   .french-form-row {

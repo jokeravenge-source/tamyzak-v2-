@@ -11,10 +11,11 @@ This refinement makes dense conjugation results easier to scan across screen siz
 
 ## Responsive behavior
 
-- Mobile: tense results use one column.
-- Tablet (`768px+`): tense results use two columns.
-- Desktop (`1180px+`): tense results use three columns, with slightly larger controls and rows.
+- Mobile: tense sections stay in one horizontal row. Each section uses most of the viewport and exposes part of the next section as a swipe cue; horizontal scrolling uses touch momentum and scroll snapping instead of stacking tenses vertically.
+- Tablet (`768px+`): tense sections remain side by side in the same horizontally swipeable, snapping strip, retaining the partial-next-section cue and sizing sections to show two at a time when space permits.
+- Desktop (`1180px+`): tense results return to the existing wrapped three-column grid, with slightly larger controls and rows.
 - On narrow screens, the mood filter is sticky at the top and horizontally scrollable. Its non-wrapping, non-shrinking buttons remain at least 44px high; touch momentum and contained inline overscroll support deliberate horizontal browsing. At wider sizes it becomes an inset, bordered control and distributes options across the available width.
+- These responsive layout changes are scoped to the French Conjugator stylesheet; they do not alter global design tokens.
 
 ## Direction, theme, motion, and accessibility
 
