@@ -135,8 +135,17 @@ const PhysicsActivities = ({
       topic: isRTL ? "الفيزياء الحديثة" : "Modern Physics",
       icon: Atom,
       activities: [
-        { id: "spectra", label: isRTL ? "أنواع الأطياف" : "Types of Spectra" },
         { id: "photoelectric", label: isRTL ? "الظاهرة الكهروضوئية" : "Photoelectric Effect" },
+      ],
+    },
+    {
+      id: "chapter-8",
+      number: 8,
+      title: isRTL ? "الفصل الثامن" : "Chapter 8",
+      topic: isRTL ? "الأطياف الذرية" : "Atomic Spectra",
+      icon: Atom,
+      activities: [
+        { id: "spectra", label: isRTL ? "أنواع الأطياف" : "Types of Spectra" },
       ],
     },
   ];
@@ -184,7 +193,7 @@ const PhysicsActivities = ({
             </h2>
             <span className="text-xs font-bold text-muted-foreground">{chapters.length}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
             {chapters.map((chapter) => {
               const ChapterIcon = chapter.icon;
               const isActive = chapter.id === activeChapter;
