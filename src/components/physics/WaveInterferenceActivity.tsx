@@ -1,4 +1,4 @@
-import { useMemo, useState, type PointerEvent } from "react";
+import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, Droplets, Power, RotateCcw, Sparkles, Waves, Wrench } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -7,7 +7,7 @@ const copy = {
   ar: {
     chapter: "الفصل الخامس · البصريات الفيزيائية",
     title: "تداخل الموجات في حوض الماء",
-    subtitle: "شغّل مصدر الاهتزاز لتبدأ الموجات بالانتشار، ثم انقر أي نقطة على سطح الماء لقياس محصلة الموجتين عندها.",
+    subtitle: "شغّل مصدر الاهتزاز لتبدأ الموجات بالانتشار ويتكوّن نمط التداخل على سطح الماء.",
     reset: "إعادة النشاط",
     experiment: "حوض الموجات التفاعلي",
     run: "تشغيل مصدر الموجات",
@@ -18,8 +18,6 @@ const copy = {
     turnOnHint: "شغّل المصدر لمشاهدة نمط التداخل",
     phase: "فرق الطور بين المصدرين",
     wavelength: "الطول الموجي",
-    probe: "مجس القياس",
-    probeHint: "انقر داخل الحوض لتغيير موضع المجس",
     constructive: "تداخل بنّاء",
     destructive: "تداخل هدّام",
     partial: "تداخل جزئي",
@@ -36,7 +34,7 @@ const copy = {
   en: {
     chapter: "Chapter 5 · Physical Optics",
     title: "Water-Wave Interference",
-    subtitle: "Turn on the vibrator to generate waves, then tap anywhere on the water surface to measure their resultant interference.",
+    subtitle: "Turn on the vibrator to generate waves and reveal the interference pattern across the water surface.",
     reset: "Reset activity",
     experiment: "Interactive ripple tank",
     run: "Turn wave source on",
@@ -47,8 +45,6 @@ const copy = {
     turnOnHint: "Turn on the source to reveal the interference pattern",
     phase: "Phase difference between sources",
     wavelength: "Wavelength",
-    probe: "Measurement probe",
-    probeHint: "Tap inside the tank to move the probe",
     constructive: "Constructive interference",
     destructive: "Destructive interference",
     partial: "Partial interference",
@@ -71,21 +67,13 @@ const WaveInterferenceActivity = ({ language }: { language: AppLanguage }) => {
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState(0);
   const [wavelength, setWavelength] = useState(44);
-  const [probe, setProbe] = useState({ x: 530, y: 170 });
 
   const sources = useMemo(() => [{ x: 190, y: 118, label: "S₁" }, { x: 190, y: 222, label: "S₂" }], []);
-  const distances = sources.map((source) => Math.hypot(probe.x - source.x, probe.y - source.y));
-  const phaseDifference = ((2 * Math.PI * (distances[1] - distances[0])) / wavelength) + (phase * Math.PI / 180);
+  const phaseDifference = phase * Math.PI / 180;
   const normalizedAmplitude = running ? Math.abs(Math.cos(phaseDifference / 2)) : 0;
   const interference = normalizedAmplitude > .86 ? "constructive" : normalizedAmplitude < .18 ? "destructive" : "partial";
 
-  const reset = () => { setRunning(false); setPhase(0); setWavelength(44); setProbe({ x: 530, y: 170 }); };
-  const moveProbe = (event: PointerEvent<SVGSVGElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 720;
-    const y = ((event.clientY - rect.top) / rect.height) * 340;
-    if (x > 270 && x < 680 && y > 35 && y < 305) setProbe({ x, y });
-  };
+  const reset = () => { setRunning(false); setPhase(0); setWavelength(44); };
 
   const statusText = running ? t.sourceOn : t.sourceOff;
   const statusClass = running ? "text-cyan-200 border-cyan-300/30 bg-cyan-300/10" : "text-slate-300 border-slate-400/30 bg-slate-400/10";
@@ -108,7 +96,7 @@ const WaveInterferenceActivity = ({ language }: { language: AppLanguage }) => {
         <div className="min-w-0 space-y-5">
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950 p-4 text-white shadow-2xl sm:p-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h3 className="flex items-center gap-2 text-base font-bold sm:text-lg"><Droplets className="size-5 text-cyan-300" />{t.experiment}</h3><div className="flex flex-wrap items-center gap-2"><span aria-live="polite" className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>{statusText}</span>{running ? <span className={`rounded-full border px-3 py-1 text-xs font-bold ${interferenceClass}`}>{interferenceText}</span> : null}</div></div>
-            <svg viewBox="0 0 720 340" className="h-auto w-full touch-none cursor-crosshair" role="img" aria-label={t.experiment} onPointerDown={moveProbe}>
+            <svg viewBox="0 0 720 340" className="h-auto w-full" role="img" aria-label={t.experiment}>
               <defs><radialGradient id="water" cx="50%" cy="45%"><stop offset="0" stopColor="#164e63" /><stop offset="1" stopColor="#082f49" /></radialGradient></defs>
               <rect x="20" y="20" width="680" height="300" rx="24" fill="url(#water)" stroke="#38bdf8" strokeOpacity=".4" strokeWidth="3" />
               <g aria-label={t.source}>
@@ -140,8 +128,6 @@ const WaveInterferenceActivity = ({ language }: { language: AppLanguage }) => {
                 </g>
               ))}
               {!running ? <g pointerEvents="none"><rect x="270" y="128" width="360" height="84" rx="20" fill="#020617" fillOpacity=".78" stroke="#64748b" strokeOpacity=".55" /><text x="450" y="178" textAnchor="middle" fill="#e2e8f0" fontSize="17" fontWeight="700">{t.turnOnHint}</text></g> : null}
-              <g transform={`translate(${probe.x} ${probe.y})`}><circle r={18 + normalizedAmplitude * 10} fill="none" stroke={interference === "constructive" ? "#34d399" : interference === "destructive" ? "#fb7185" : "#fbbf24"} strokeWidth="4" /><circle r="6" fill="#fff" /><path d="M-28 0H28M0-28V28" stroke="#fff" strokeWidth="1.5" strokeOpacity=".65" /></g>
-              <text x="520" y="305" textAnchor="middle" fill="#bae6fd" fontSize="14">{t.probeHint}</text>
             </svg>
           </div>
 

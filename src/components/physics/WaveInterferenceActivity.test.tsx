@@ -23,4 +23,10 @@ describe("WaveInterferenceActivity", () => {
     fireEvent.change(screen.getByRole("slider", { name: "فرق الطور بين المصدرين" }), { target: { value: "180" } });
     expect(screen.getByText("180°")).toBeInTheDocument();
   });
+
+  it("does not show a movable pointer or crosshair in the diagram", () => {
+    render(<WaveInterferenceActivity language="ar" />);
+    expect(screen.getByRole("img", { name: "حوض الموجات التفاعلي" })).not.toHaveClass("cursor-crosshair");
+    expect(screen.queryByText("مجس القياس")).not.toBeInTheDocument();
+  });
 });
