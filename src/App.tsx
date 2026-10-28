@@ -680,6 +680,7 @@ const StudentApp = () => {
       window.location.pathname.startsWith("/teachers") ||
       window.location.pathname.startsWith("/flashcards") ||
       window.location.pathname.startsWith("/enrichments") ||
+      window.location.pathname.replace(/\/+$/, "") === "/physics-activities" ||
       getNadiaMinisterialRouteMatch()
     ) {
       const l = new URLSearchParams(window.location.search).get("lang");
@@ -692,6 +693,10 @@ const StudentApp = () => {
   });
   const [subject, setSubject] = useState<AppSubject | null>(() => {
     if (typeof window === "undefined") return null;
+    if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
+      localStorage.setItem(SUBJECT_STORAGE_KEY, "physics");
+      return "physics";
+    }
     if (getNadiaMinisterialRouteMatch()) {
       localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
       return "biology";
@@ -753,6 +758,10 @@ const StudentApp = () => {
   type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
+    if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
+      localStorage.setItem(MENU_STORAGE_KEY, "physicsActivities");
+      return "physicsActivities";
+    }
     if (getNadiaMinisterialRouteMatch()) {
       localStorage.setItem(MENU_STORAGE_KEY, "ministerialBank");
       return "ministerialBank";
@@ -1203,7 +1212,15 @@ const StudentApp = () => {
       ) : menuChoice === "toolPlaceholder" ? (
         <ToolPlaceholder language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsActivities" ? (
-        <PhysicsActivities language={language} onBack={resetMenu} />
+        <PhysicsActivities
+          language={language}
+          onBack={() => {
+            if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
+              window.history.replaceState({}, "", "/");
+            }
+            resetMenu();
+          }}
+        />
       ) : menuChoice === "chemistryExperiments" ? (
         <ChemistryExperiments language={language} onBack={resetMenu} />
       ) : menuChoice === "ourCourses" ? (
