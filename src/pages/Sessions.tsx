@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu, UsersRound, PlaneTakeoff } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu, UsersRound, PlaneTakeoff, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { TripApp } from "@/features/trip/TripApp";
+import StudyChallengeHub from "@/components/StudyChallengeHub";
 import { createCloudRepository } from "@/features/trip/cloudRepository";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 import {
@@ -526,7 +527,7 @@ const T = {
 const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
-  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | null>(null);
+  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | null>(null);
   const [subject, setSubject] = useState<string | null>(null);
   const [mission, setMission] = useState("");
   const [seconds, setSeconds] = useState(0);
@@ -537,6 +538,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [challengeInviteCount, setChallengeInviteCount] = useState(0);
   const [pomodoro, setPomodoro] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [joinedStudyRoom, setJoinedStudyRoom] = useState(false);
@@ -919,6 +921,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   }, [subject]);
 
   useEffect(() => {
+    if (entryMode !== null || !userId) return;
+    void supabase.rpc("get_my_study_challenges").then(({ data }) => {
+      const rows = Array.isArray(data) ? data as Array<{ myStatus?: string; status?: string; endsAt?: string }> : [];
+      setChallengeInviteCount(rows.filter((row) => row.myStatus === "pending" && row.status === "active" && new Date(row.endsAt ?? 0).getTime() > Date.now()).length);
+    });
+  }, [entryMode, userId]);
+
+  useEffect(() => {
     if (running) {
       resumeAtRef.current = Date.now();
       accumulatedRef.current = secondsRef.current;
@@ -1229,6 +1239,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           flightTitle: "الدراسة أثناء الطيران",
           flightDescription: "اختار دولة، احصل على تذكرة، وواصل دراستك إلى أن توصل للوجهة.",
           flightAction: "ابدأ رحلة دراسية",
+          challengeTitle: "تحدي الأصدقاء",
+          challengeDescription: "حدد التحدي بالأيام، ادعُ صديق أو مجموعة، وتنافسون على أكثر وقت دراسة.",
+          challengeAction: "أنشئ أو تابع تحدي",
           back: "رجوع",
         }
       : {
@@ -1241,6 +1254,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           flightTitle: "Study while flying",
           flightDescription: "Choose a country, get a ticket, and keep studying until you reach your destination.",
           flightAction: "Start a study trip",
+          challengeTitle: "Challenge friends",
+          challengeDescription: "Set a challenge in days, invite one friend or a group, and compete for the most study time.",
+          challengeAction: "Create or view challenges",
           back: "Back",
         };
 
@@ -1262,6 +1278,15 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           </header>
 
           <section aria-label={choices.title} className="grid gap-4 md:grid-cols-2 md:gap-6">
+            <button onClick={() => setEntryMode("challenge")} className="group relative min-h-[16rem] overflow-hidden rounded-[2rem] border border-violet-400/40 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-start text-white shadow-[0_26px_80px_-42px_rgba(124,58,237,0.95)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_30px_85px_-38px_rgba(124,58,237,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:col-span-2 md:p-8">
+              <div aria-hidden="true" className="absolute -end-8 -top-16 h-52 w-52 rounded-full border-[34px] border-white/10" />
+              {challengeInviteCount > 0 && <span className="absolute end-5 top-5 inline-flex min-w-7 items-center justify-center rounded-full bg-amber-400 px-2 py-1 text-xs font-black text-slate-950 shadow-lg">{challengeInviteCount}</span>}
+              <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20"><Swords className="h-7 w-7" /></span>
+              <h2 className="relative mt-6 text-2xl font-black md:text-3xl">{choices.challengeTitle}</h2>
+              <p className="relative mt-2 max-w-xl text-sm leading-7 text-white/80">{choices.challengeDescription}</p>
+              <span className="relative mt-6 inline-flex items-center gap-2 text-sm font-black text-white">{choices.challengeAction}<ChevronRight className={`h-4 w-4 transition-transform ${dir === "rtl" ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} /></span>
+            </button>
+
             <button onClick={() => setEntryMode("rooms")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-border/80 bg-card p-6 text-start shadow-[0_22px_70px_-44px_rgba(0,0,0,0.65)] transition-[border-color,box-shadow] hover:border-primary/45 hover:shadow-[0_26px_80px_-40px_hsl(var(--primary)/0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-8">
               <div aria-hidden="true" className="absolute -end-12 -top-12 h-40 w-40 rounded-full bg-primary/10" />
               <span className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -1289,6 +1314,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         </div>
       </main>
     );
+  }
+
+  if (entryMode === "challenge") {
+    return <StudyChallengeHub language={language} onBack={() => setEntryMode(null)} onStudy={() => setEntryMode("rooms")} />;
   }
 
   if (entryMode === "flight") {
