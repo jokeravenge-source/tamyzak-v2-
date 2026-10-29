@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
-import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { LANGUAGE_STORAGE_KEY } from "@/components/LanguageGate";
@@ -10,7 +9,6 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 
 import { ThemePicker } from "@/components/ThemePicker";
 import { ReferralCard } from "@/components/ReferralCard";
-import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
@@ -20,7 +18,6 @@ import goldChain from "@/assets/gold-chain.png.asset.json";
 import { PET_DEFINITIONS, getSelectedPets, isPetUnlocked, type PetDefinition } from "@/lib/pets";
 import { RANKS, rankFor } from "@/lib/points";
 
-import { getNavVisibilityMode, setNavVisibilityMode, type NavVisibilityMode } from "@/hooks/useNavVisibility";
 import { useSubscription } from "@/hooks/useSubscription";
 import { openPremiumTelegram } from "@/lib/premium";
 import { CUSTOMIZABLE_STUDY_TOOLS, saveHiddenStudyTools, useHiddenStudyTools } from "@/lib/studyToolVisibility";
@@ -53,16 +50,16 @@ const uxText = {
     personalInfoDesc: "Review your email and update the name shown to other students.",
     customize: "Customize your character",
     customizeDesc: "Change your character's appearance and accessories.",
-    preferences: "Appearance & preferences",
-    services: "Tools & connected services",
+    preferences: "App & study settings",
+    services: "Notifications, invites & support",
   },
   ar: {
     personalInfo: "المعلومات الشخصية",
     personalInfoDesc: "راجع بريدك وحدّث الاسم الذي يظهر للطلاب الآخرين.",
     customize: "تخصيص شخصيتك",
     customizeDesc: "غيّر مظهر الشخصية وإكسسواراتها.",
-    preferences: "المظهر والتفضيلات",
-    services: "الأدوات والخدمات المرتبطة",
+    preferences: "إعدادات التطبيق والدراسة",
+    services: "التنبيهات والدعوات والدعم",
   },
 } as const;
 
@@ -95,7 +92,6 @@ const AccountCenter = ({
   const text = t[language];
   const ux = uxText[language];
   const [name, setName] = useState("");
-  const [navMode, setNavMode] = useState<NavVisibilityMode>(() => getNavVisibilityMode());
   const hiddenStudyTools = useHiddenStudyTools();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -256,11 +252,8 @@ const AccountCenter = ({
 
 
   return (
-    <main className="min-h-screen px-4 py-12 md:py-20 pb-32 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-
-      <section className="relative z-10 max-w-md mx-auto space-y-5 animate-fade-up">
+    <main className="min-h-screen bg-background px-4 pb-32 pt-8 sm:px-6 sm:pt-12" dir={language === "ar" ? "rtl" : "ltr"}>
+      <section className="mx-auto max-w-2xl space-y-5 animate-fade-up">
         <header className="flex items-start gap-3 pb-2">
           <button
             type="button"
@@ -271,12 +264,12 @@ const AccountCenter = ({
             <ArrowLeft className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} />
           </button>
           <div>
-            <h1 className="text-3xl font-bold gradient-text">{text.title}</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">{text.title}</h1>
             <p className="text-sm text-muted-foreground mt-1">{text.subtitle}</p>
           </div>
         </header>
 
-        <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6">
+        <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-sm sm:p-6">
           <div className="flex items-start gap-3 mb-5">
             <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
               <User className="w-5 h-5 text-primary" />
@@ -319,8 +312,10 @@ const AccountCenter = ({
         )}
         </div>
 
+        <TelegramLinkCard language={language} source="profile" />
+
         {!loading && (
-          <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+          <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
             <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
               <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary" />
@@ -618,7 +613,7 @@ const AccountCenter = ({
           </details>
         )}
 
-        <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+        <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
           <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
             <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
               <Palette className="w-5 h-5 text-primary" />
@@ -631,9 +626,6 @@ const AccountCenter = ({
               <h3 className="text-sm font-semibold">{text.theme}</h3>
               <ThemePicker language={language} variant="inline" />
             </div>
-
-            <ProfileDetailsCard language={language} />
-            <CountdownSettings language={language} />
 
             <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-4">
               <div className="flex items-start gap-3">
@@ -708,33 +700,6 @@ const AccountCenter = ({
               <h2 className="text-lg font-semibold">{text.account}</h2>
             </div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-background/40 p-3 space-y-2">
-            <p className="text-sm font-medium text-foreground">{text.navBar}</p>
-            <p className="text-xs text-muted-foreground">{text.navBarDesc}</p>
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {(["always", "auto-hide"] as NavVisibilityMode[]).map((m) => {
-                const active = navMode === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => {
-                      setNavMode(m);
-                      setNavVisibilityMode(m);
-                      toast.success(text.navSaved);
-                    }}
-                    className={`h-11 px-3 rounded-lg border text-xs font-semibold transition ${
-                      active
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-white/10 bg-background/40 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    {m === "always" ? text.navAlways : text.navAutoHide}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
           <button
             onClick={() => {
               localStorage.removeItem(LANGUAGE_STORAGE_KEY);
@@ -756,7 +721,7 @@ const AccountCenter = ({
           </div>
         </details>
 
-        <details className="group rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl overflow-hidden">
+        <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
           <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
             <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
               <MessageCircle className="w-5 h-5 text-primary" />
@@ -766,7 +731,6 @@ const AccountCenter = ({
           </summary>
           <div className="border-t border-white/10 p-4 space-y-4">
             <ReferralCard language={language} />
-            <TelegramLinkCard language={language} />
             <PushNotificationsCard language={language} />
 
             <a
@@ -794,69 +758,3 @@ const AccountCenter = ({
 };
 
 export default AccountCenter;
-
-function CountdownSettings({ language }: { language: AppLanguage }) {
-  const isAr = language === "ar";
-  const DEFAULT_ISO = "2026-06-13T07:00";
-  const [name, setName] = useState<string>(() => localStorage.getItem("custom_countdown_name_v1") || "");
-  const [dateIso, setDateIso] = useState<string>(() => localStorage.getItem("custom_countdown_date_v1") || DEFAULT_ISO);
-  const save = () => {
-    if (name.trim()) localStorage.setItem("custom_countdown_name_v1", name.trim());
-    else localStorage.removeItem("custom_countdown_name_v1");
-    if (dateIso) localStorage.setItem("custom_countdown_date_v1", dateIso);
-    localStorage.removeItem("countdown_hidden_v1");
-    window.dispatchEvent(new Event("app:countdown-changed"));
-    toast.success(isAr ? "تم حفظ العد التنازلي" : "Countdown saved");
-  };
-  const reset = () => {
-    localStorage.removeItem("custom_countdown_name_v1");
-    localStorage.removeItem("custom_countdown_date_v1");
-    localStorage.removeItem("countdown_hidden_v1");
-    setName("");
-    setDateIso(DEFAULT_ISO);
-    window.dispatchEvent(new Event("app:countdown-changed"));
-    toast.success(isAr ? "تمت إعادة الضبط" : "Reset to default");
-  };
-  return (
-    <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-          <CalendarClock className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold">{isAr ? "العد التنازلي" : "Countdown"}</h2>
-          <p className="text-sm text-muted-foreground">{isAr ? "اختر تاريخك واسم المناسبة الخاصة بك." : "Pick your own date and event name."}</p>
-        </div>
-      </div>
-      <div className="space-y-3">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">{isAr ? "اسم المناسبة" : "Event name"}</label>
-          <input aria-label={isAr ? "اسم الموعد" : "Event name"}
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={isAr ? "مثال: امتحان الفيزياء" : "e.g. Physics Exam"}
-            className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">{isAr ? "التاريخ والوقت" : "Date & time"}</label>
-          <input
-            type="datetime-local"
-            value={dateIso}
-            onChange={(e) => setDateIso(e.target.value)}
-            className="w-full h-11 px-4 rounded-xl border border-white/10 bg-background/60 text-foreground text-sm"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={save} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
-            {isAr ? "حفظ" : "Save"}
-          </button>
-          <button onClick={reset} className="h-10 px-4 rounded-xl border border-white/10 text-muted-foreground text-sm hover:text-foreground transition">
-            {isAr ? "إعادة الضبط" : "Reset"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
