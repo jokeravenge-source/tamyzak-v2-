@@ -2641,6 +2641,74 @@ export type Database = {
         }
         Relationships: []
       }
+      study_challenge_members: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          invited_by: string
+          joined_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          invited_by: string
+          joined_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          invited_by?: string
+          joined_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_challenge_members_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "study_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_challenges: {
+        Row: {
+          created_at: string
+          creator_id: string
+          ends_at: string
+          id: string
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          ends_at: string
+          id?: string
+          starts_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          ends_at?: string
+          id?: string
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_room_bans: {
         Row: {
           banned_by: string
@@ -3542,6 +3610,10 @@ export type Database = {
       }
       can_take_study_room_ownership: { Args: never; Returns: boolean }
       can_use_premium_tools: { Args: never; Returns: boolean }
+      cancel_study_challenge: {
+        Args: { _challenge_id: string }
+        Returns: undefined
+      }
       check_edge_rate_limit: {
         Args: {
           _feature: string
@@ -3571,6 +3643,10 @@ export type Database = {
         }[]
       }
       cleanup_inactive_study_room_members: { Args: never; Returns: number }
+      create_study_challenge: {
+        Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
+        Returns: string
+      }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       get_due_mcq_bank_reviews: {
         Args: never
@@ -3581,6 +3657,7 @@ export type Database = {
       get_exam_answer_path: { Args: { _exam_id: string }; Returns: string }
       get_home_dashboard_stats: { Args: never; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
+      get_my_study_challenges: { Args: never; Returns: Json }
       has_active_premium: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
@@ -3646,6 +3723,10 @@ export type Database = {
       }
       resolve_mistake: {
         Args: { _correct: boolean; _id: string }
+        Returns: undefined
+      }
+      respond_study_challenge: {
+        Args: { _accept: boolean; _challenge_id: string }
         Returns: undefined
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
