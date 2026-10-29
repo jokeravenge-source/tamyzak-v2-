@@ -3110,46 +3110,34 @@ export type Database = {
       }
       telegram_verifications: {
         Row: {
-          connected_at: string | null
-          connection_source: string | null
           created_at: string
           last_checked_at: string | null
           last_error: string | null
           telegram_user_id: number | null
           telegram_username: string | null
           token: string
-          token_expires_at: string | null
-          token_used_at: string | null
           updated_at: string
           user_id: string
           verified: boolean
         }
         Insert: {
-          connected_at?: string | null
-          connection_source?: string | null
           created_at?: string
           last_checked_at?: string | null
           last_error?: string | null
           telegram_user_id?: number | null
           telegram_username?: string | null
           token: string
-          token_expires_at?: string | null
-          token_used_at?: string | null
           updated_at?: string
           user_id: string
           verified?: boolean
         }
         Update: {
-          connected_at?: string | null
-          connection_source?: string | null
           created_at?: string
           last_checked_at?: string | null
           last_error?: string | null
           telegram_user_id?: number | null
           telegram_username?: string | null
           token?: string
-          token_expires_at?: string | null
-          token_used_at?: string | null
           updated_at?: string
           user_id?: string
           verified?: boolean
