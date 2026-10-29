@@ -25,6 +25,9 @@ const WELCOME_TEXT =
 const WELCOME_KEYBOARD = {
   inline_keyboard: [[{ text: "🌐 افتح الموقع وأكمل التسجيل", url: SITE_URL }]],
 };
+const EXPIRED_TEXT =
+  "⏳ <b>انتهت صلاحية رابط الربط</b>\n\n" +
+  "حفاظاً على أمان حسابك، رابط الربط يعمل لمدة 15 دقيقة ولمرة واحدة. ارجع إلى تميّزك واضغط «اربط عبر تيليجرام» للحصول على رابط جديد.";
 
 /** Never throws and never hangs: a slow connector must not crash the worker. */
 async function tg(method: string, body: unknown) {
@@ -87,28 +90,44 @@ Deno.serve(async (req) => {
   }
 
   // Find the verification row. Prefer match by token (new link); fall back to telegram_user_id (re-check).
-  let row: { user_id: string; token: string } | null = null;
+  type VerificationRow = {
+    user_id: string;
+    token: string;
+    telegram_user_id: number | null;
+    verified: boolean;
+    token_expires_at: string | null;
+    token_used_at: string | null;
+  };
+  let row: VerificationRow | null = null;
+  let invalidToken = false;
   if (token) {
     const { data } = await supabase
       .from("telegram_verifications")
-      .select("user_id, token")
+      .select("user_id, token, telegram_user_id, verified, token_expires_at, token_used_at")
       .eq("token", token)
       .maybeSingle();
-    row = data ?? null;
+    if (data) {
+      const expired = !data.token_expires_at || new Date(data.token_expires_at).getTime() <= Date.now();
+      const alreadyUsedByThisAccount = data.verified && data.telegram_user_id === fromId;
+      invalidToken = (expired || Boolean(data.token_used_at)) && !alreadyUsedByThisAccount;
+      if (!invalidToken) row = data as VerificationRow;
+    } else {
+      invalidToken = true;
+    }
   }
   if (!row) {
     const { data } = await supabase
       .from("telegram_verifications")
-      .select("user_id, token")
+      .select("user_id, token, telegram_user_id, verified, token_expires_at, token_used_at")
       .eq("telegram_user_id", fromId)
       .maybeSingle();
-    row = data ?? null;
+    row = (data as VerificationRow | null) ?? null;
   }
 
   if (!row) {
     await tg("sendMessage", {
       chat_id: chatId,
-      text: WELCOME_TEXT,
+      text: invalidToken ? EXPIRED_TEXT : WELCOME_TEXT,
       parse_mode: "HTML",
       disable_web_page_preview: true,
       reply_markup: WELCOME_KEYBOARD,
@@ -129,6 +148,9 @@ Deno.serve(async (req) => {
     .update({
       telegram_user_id: fromId,
       telegram_username: username,
+      token_used_at: new Date().toISOString(),
+      token_expires_at: null,
+      connected_at: new Date().toISOString(),
       last_checked_at: new Date().toISOString(),
       last_error: null,
       verified: true,

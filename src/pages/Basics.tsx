@@ -28,6 +28,7 @@ import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
+import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import { normalizeStudySearch } from "@/lib/studySearch";
@@ -1393,6 +1394,7 @@ const Basics = ({
           </header>
 
           <NewFeatureAnnouncement language={language} />
+          <TelegramLinkCard language={language} source="home" variant="home" />
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
             <motion.div
