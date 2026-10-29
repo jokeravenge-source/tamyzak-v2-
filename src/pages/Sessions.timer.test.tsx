@@ -6,6 +6,7 @@ import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 const backend = vi.hoisted(() => ({ upsert: vi.fn(async () => ({ data: null, error: null })) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   auth: { getUser: async () => ({ data: { user: { id: "self" } } }) },
+  rpc: async () => ({ data: [], error: null }),
   from: () => {
     const query = {
       select: () => query, eq: () => query, in: () => query, order: () => query, limit: () => query,
