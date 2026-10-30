@@ -15,7 +15,7 @@ type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "
 // A tool either points to a real MainMenuChoice route, or is a placeholder
 // with its own display metadata (routed through the shared ToolPlaceholder page).
 type Tool = {
-  key: MainMenuChoice | "theoremVisualizer";
+  key: MainMenuChoice | "theoremVisualizer" | "atomAtlas";
   en: string;
   ar: string;
   Icon: React.ComponentType<{ className?: string }>;
@@ -26,12 +26,14 @@ type Tool = {
   disabled?: boolean;
   descEn?: string;
   descAr?: string;
+  /** Open a separately hosted or repository-backed tool in a new tab. */
+  externalUrl?: string;
 };
 
 type ToolGroup = "learn" | "practice" | "revise";
 
 const toolGroup = (key: Tool["key"]): ToolGroup => {
-  if (["malazam", "biologySchemes", "physicsSchemes", "subjectTutor", "frenchConjugator", "physicsLaws"].includes(key)) return "learn";
+  if (["malazam", "biologySchemes", "physicsSchemes", "subjectTutor", "frenchConjugator", "physicsLaws", "atomAtlas"].includes(key)) return "learn";
   if (["flashcards", "ministerialBank", "englishVerbForms", "englishEssays", "poemsChecker", "hadithChecker", "islamicSurahs"].includes(key)) return "revise";
   return "practice";
 };
@@ -65,6 +67,9 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
     code: "chemistry", en: "Chemistry", ar: "الكيمياء", Icon: FlaskConical,
     tools: [
       { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "atomAtlas", en: "Atom Atlas", ar: "أطلس الذرة", Icon: Atom, free: true,
+        descEn: "Open the bilingual chemistry learning lab project.", descAr: "افتح مشروع مختبر تعلّم الكيمياء ثنائي اللغة.",
+        externalUrl: "https://github.com/jokeravenge-source/atom-atlas-learning-lab" },
       { key: "chemistryExperiments", en: "Chemistry Experiment", ar: "تجربة الكيمياء", Icon: FlaskConical },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
@@ -176,6 +181,11 @@ const SubjectsHub = ({
   const current = SUBJECTS.find((s) => s.code === open);
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const handleToolClick = (t: Tool) => {
+    if (t.externalUrl) {
+      trackFeature(`tool_${t.key}`);
+      window.open(t.externalUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (t.key === "theoremVisualizer") {
       trackFeature("tool_theoremVisualizer");
       window.location.assign("/math/theorem-visualizer");
@@ -337,7 +347,7 @@ const SubjectsHub = ({
               <div className="space-y-8">
                 {(["learn", "practice", "revise"] as ToolGroup[]).map((group) => {
                   const copy = GROUP_COPY[group];
-                  const essentials = ["flashcards", "theoremVisualizer", "malazam", "ministerialBank", "mcqBank", "physicsSchemes", "biologySchemes"];
+                  const essentials = ["flashcards", "theoremVisualizer", "atomAtlas", "malazam", "ministerialBank", "mcqBank", "physicsSchemes", "biologySchemes"];
                   const tools = ([{ key: "mcqBank", en: "MCQ Bank", ar: "بنك أسئلة MCQ", Icon: FileQuestion, descEn: "Practise questions from this subject.", descAr: "حل أسئلة الاختيار من متعدد لهذه المادة." } as Tool, ...current.tools]).filter((tool) => toolGroup(tool.key) === group && (showSpecialistTools || essentials.includes(tool.key)));
                   if (!tools.length) return null;
                   return <section key={group} aria-labelledby={`subject-group-${group}`}>
