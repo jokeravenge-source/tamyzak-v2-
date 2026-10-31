@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { getCuratedTeacherLectureNote } from "@/data/teacherLectureNotes";
 import { getNadiaArabicLectureNoteSourceKeys } from "@/data/nadiaLectureNoteSources";
+import { getNadiaTopicTitle, type NadiaChapterNumber } from "@/data/nadiaTeacherContent";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -150,12 +151,12 @@ function renderMd(md: string, isRTL: boolean) {
   };
   lines.forEach((raw, i) => {
     const line = raw.replace(/\s+$/, "");
-    if (/^###\s+/.test(line)) {
+    if (/^#{3,6}\s+/.test(line)) {
       flush(`p${i}`);
-      out.push(<h4 key={i} className="mb-2 mt-6 break-words text-lg font-extrabold text-foreground">{renderInline(line.replace(/^###\s+/, ""))}</h4>);
+      out.push(<h4 key={i} dir="auto" className="mb-2 mt-6 break-words text-lg font-extrabold text-foreground">{renderInline(line.replace(/^#{3,6}\s+/, ""))}</h4>);
     } else if (/^##\s+/.test(line)) {
       flush(`p${i}`);
-      out.push(<h3 key={i} className="mb-3 mt-7 border-s-4 border-primary ps-3 text-xl font-extrabold text-primary">{renderInline(line.replace(/^##\s+/, ""))}</h3>);
+      out.push(<h3 key={i} dir="auto" className="mb-3 mt-7 border-s-4 border-primary ps-3 text-xl font-extrabold text-primary">{renderInline(line.replace(/^##\s+/, ""))}</h3>);
     } else if (/^#\s+/.test(line)) {
       flush(`p${i}`);
       out.push(<h2 key={i} className="mb-4 mt-2 break-words text-2xl font-black leading-tight text-primary md:text-3xl">{renderInline(line.replace(/^#\s+/, ""))}</h2>);
@@ -176,7 +177,7 @@ function renderMd(md: string, isRTL: boolean) {
       out.push(
         <div key={i} className="my-2 flex min-w-0 items-start gap-3 rounded-xl border border-border/70 px-3 py-2.5 text-[15px] leading-7 text-foreground/90">
           <span className="grid h-6 min-w-6 shrink-0 place-items-center rounded-lg bg-primary/10 px-1 text-xs font-bold text-primary">{match?.[1]}</span>
-          <p className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{renderInline(match?.[2] || line)}</p>
+          <p dir="auto" className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{renderInline(match?.[2] || line)}</p>
         </div>,
       );
     } else if (!line.trim()) {
@@ -199,7 +200,11 @@ export default function TeacherLectureVideos({
   contentLanguage?: AppLanguage;
   isAdmin: boolean;
 }) {
-  const T = L[language];
+  const englishNadia = teacherId === "nadia-al-nuaimy" && contentLanguage === "en";
+  const notesLanguage = englishNadia ? "en" : language;
+  const T = L[notesLanguage];
+  const topicMatch = englishNadia ? topicKey.match(/^nadia-en-ch([1-5])-lec(\d+)-study$/) : null;
+  const englishTopicTitle = topicMatch ? getNadiaTopicTitle("en", Number(topicMatch[1]) as NadiaChapterNumber, Number(topicMatch[2]), "en") : undefined;
   const isRTL = language === "ar";
   const usesArabicEnglishCurriculumStyle =
     usesArabicExplanationEnglishCurriculum(teacherId, contentLanguage);
@@ -285,7 +290,8 @@ export default function TeacherLectureVideos({
         }
       }
 
-      setVideos([...curatedVideo, ...savedVideos, ...arabicFallbackVideo]);
+      const rows = curatedNote && savedVideos.length ? savedVideos.map((row) => ({ ...row, notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }] })) : [...curatedVideo, ...savedVideos, ...arabicFallbackVideo];
+      setVideos(englishTopicTitle ? rows.map((row) => ({ ...row, title: englishTopicTitle, notes_parts: row.notes_parts.map((part, index) => ({ ...part, title: row.notes_parts.length === 1 ? englishTopicTitle : `${englishTopicTitle} — Section ${index + 1}` })) })) : rows);
     }
     setLoading(false);
   };
@@ -435,7 +441,7 @@ export default function TeacherLectureVideos({
         {openVideo && (
           <VideoNotesModal
             video={openVideo}
-            language={language}
+            language={notesLanguage}
             contentLanguage={contentLanguage}
             usesArabicEnglishCurriculumStyle={usesArabicEnglishCurriculumStyle}
             T={T}

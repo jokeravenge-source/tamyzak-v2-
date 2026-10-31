@@ -114,7 +114,7 @@ describe("Nadia teacher hub", () => {
       });
     }
     const { rerender } = render(<NadiaLectureWorkspace language="ar" curriculum="en" chapter={1} lecture={1} isAdmin={false} />);
-    expect(await screen.findByText("en lecture")).toBeInTheDocument();
+    expect(await screen.findByText("Introduction to the Cell")).toBeInTheDocument();
     expect(screen.queryByText("ar lecture")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "بنك الأسئلة" }));
     expect(await screen.findByText("en questions")).toBeInTheDocument();
@@ -129,11 +129,12 @@ describe("Nadia teacher hub", () => {
 
   it.each(["ar", "en"] as const)("generates and saves %s lectures in their own curriculum", async (curriculum) => {
     render(<NadiaLectureWorkspace language="ar" curriculum={curriculum} chapter={1} lecture={2} isAdmin />);
-    expect(await screen.findByText("لا توجد محاضرات بعد.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "إضافة محاضرة يوتيوب" }));
-    fireEvent.change(screen.getByLabelText("رابط اليوتيوب"), { target: { value: "https://youtu.be/abcdefghijk" } });
-    fireEvent.click(screen.getByRole("button", { name: "توليد الملاحظات" }));
-    fireEvent.click(await screen.findByRole("button", { name: "اعتماد ونشر" }));
+    const en = curriculum === "en";
+    expect(await screen.findByText(en ? "No lectures yet." : "لا توجد محاضرات بعد.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en ? "Add YouTube lecture" : "إضافة محاضرة يوتيوب" }));
+    fireEvent.change(screen.getByLabelText(en ? "YouTube URL" : "رابط اليوتيوب"), { target: { value: "https://youtu.be/abcdefghijk" } });
+    fireEvent.click(screen.getByRole("button", { name: en ? "Generate notes" : "توليد الملاحظات" }));
+    fireEvent.click(await screen.findByRole("button", { name: en ? "Approve & publish" : "اعتماد ونشر" }));
     await waitFor(() => expect(backend.writes).toContainEqual(expect.objectContaining({
       table: "teacher_topic_videos", row: expect.objectContaining({ topic_key: `nadia-${curriculum}-ch1-lec2-study` }),
     })));
@@ -141,7 +142,7 @@ describe("Nadia teacher hub", () => {
       body: expect.objectContaining({
         language: curriculum,
         notesStyle: curriculum === "en"
-          ? "arabic-explanation-english-curriculum"
+          ? "nadia-english-arabic-explanations"
           : "default",
       }),
     }));
