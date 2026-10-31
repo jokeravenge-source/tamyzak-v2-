@@ -8,10 +8,29 @@ const corsHeaders = {
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const AI_MODEL = "google/gemini-3.8-flash";
-const MAX_CHARS = 120000;
+const MAX_CHARS = 180000;
 
-const SYSTEM_PROMPT =
-  "You are a master information architect. Build a hierarchical mind map STRICTLY from the provided source material. Do NOT use any outside knowledge, prior training, assumptions, or invented examples — every label and every `info` field must be directly supported by the source text. If the source is empty or insufficient, return an empty `nodes` array. Generate short, scannable labels (2-6 words) drawn from the source. For each conceptual node, write a concise `info` field (1-3 short sentences) that paraphrases ONLY what the source says about it. Skip `info` for purely structural grouping labels. Every child node must point to its parent node's ID. Return only raw JSON matching the schema.";
+const SYSTEM_PROMPT = `You are a scientific information architect. Build a comprehensive hierarchical mind map STRICTLY from the uploaded PDF content.
+
+SOURCE FIDELITY
+- Use only facts explicitly supported by the supplied source text or page images. Never add outside knowledge, assumptions, corrections, or invented examples.
+- Preserve the source's scientific meaning, terminology, numbers, formulas, symbols, units, qualifications, and uncertainty.
+- Write in the primary language used by the source.
+
+SCIENTIFIC SCOPE
+- Include all substantive scientific material present: definitions, concepts, classifications, structures, components, functions, mechanisms, processes, ordered steps, relationships, causes and effects, conditions, variables, formulas, equations, units, quantitative values, comparisons, exceptions, examples, experiments, observations, results, interpretations, and conclusions.
+- Exclude non-scientific filler such as author biographies, publisher details, navigation, page furniture, advertisements, acknowledgements, and repeated headers or footers.
+- Include an exercise or question only when its scientific explanation or answer adds source-backed knowledge; omit instructions, scoring, and administrative wording.
+
+NODE QUALITY
+- Infer a concise scientific title for the root from the PDF itself; no user-supplied topic exists.
+- Organize the material into a clear hierarchy without dropping unique scientific information or repeating the same fact across nodes.
+- Give every substantive node a short, specific label and a detailed, self-contained \`info\` field containing everything the PDF states about that concept. Do not reduce details to vague keywords or arbitrary 1-3 sentence summaries.
+- Keep structural grouping nodes to a minimum. If a grouping node has source-backed scientific meaning, include that meaning in \`info\` too.
+- Split genuinely different concepts into child nodes so blocks remain readable, but do not omit details to make the map shorter.
+- Every non-root node must reference its parent's ID. Use stable, unique string IDs.
+
+If the source contains no scientific content, return an empty \`nodes\` array. Return only raw JSON matching the schema.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -26,13 +45,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { topic, context, pageImages } = await req.json();
-    if (!topic || typeof topic !== "string") {
-      return new Response(JSON.stringify({ error: "Missing topic" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { context, pageImages } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -52,7 +65,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const instructions = `Topic: ${topic}\n\nUse ONLY the source material below (text and/or attached page images). Do not add any information not present in it. If a detail is not in the source, omit it.`;
+    const instructions = "Create the complete scientific mind map directly from this PDF material. Check the entire supplied source before organizing the hierarchy, and retain every unique source-backed scientific detail.";
     const userContent: any[] = [{ type: "text", text: instructions }];
     if (ctx.trim()) {
       userContent.push({ type: "text", text: `=== SOURCE TEXT START ===\n${ctx}\n=== SOURCE TEXT END ===` });
@@ -73,6 +86,7 @@ Deno.serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
+        max_tokens: 16000,
         tools: [
           {
             type: "function",
@@ -91,9 +105,9 @@ Deno.serve(async (req) => {
                         type: { type: "string" },
                         label: { type: "string" },
                         parentId: { type: "string" },
-                        info: { type: "string" },
+                        info: { type: "string", description: "Complete source-backed scientific detail for this concept" },
                       },
-                      required: ["id", "type", "label"],
+                      required: ["id", "type", "label", "info"],
                     },
                   },
                 },

@@ -164,7 +164,7 @@ const copy = {
       todo: { title: "To-Do List", subtitle: "Plan tasks and celebrate when you finish." },
       news: { title: "News", subtitle: "Latest announcements and updates." },
       ministerialBank: { title: "Ministerial Questions Bank", subtitle: "Past ministerial questions by chapter." },
-      mindmap: { title: "Mind Map", subtitle: "AI builds a clean mind map from any topic or file." },
+      mindmap: { title: "Mind Map", subtitle: "Upload a PDF to map all of its scientific content." },
     },
   },
   ar: {
@@ -180,7 +180,7 @@ const copy = {
       todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },
       news: { title: "الأخبار", subtitle: "آخر الإعلانات والتحديثات." },
       ministerialBank: { title: "بنك الوزاريات", subtitle: "أسئلة وزارية سابقة مرتبة حسب الفصل." },
-      mindmap: { title: "الخريطة الذهنية", subtitle: "ينشئ الذكاء خريطة ذهنية من أي موضوع أو ملف." },
+      mindmap: { title: "الخريطة الذهنية", subtitle: "ارفع ملف PDF لرسم كل محتواه العلمي." },
     },
   },
 } as const;

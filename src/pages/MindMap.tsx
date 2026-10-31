@@ -33,28 +33,31 @@ type MindNode = {
   info?: string;
 };
 
-const NODE_W = 200;
-const NODE_H = 64;
+const NODE_W = 300;
+const NODE_H = 88;
+
+const estimatedNodeHeight = (node: MindNode) => {
+  const labelLines = Math.max(1, Math.ceil(node.label.length / 34));
+  const infoLines = node.info ? Math.max(1, Math.ceil(node.info.length / 48)) : 0;
+  return NODE_H + (labelLines - 1) * 18 + infoLines * 17;
+};
 
 function MindmapNode({ data }: NodeProps) {
   const isRoot = (data as { isRoot?: boolean }).isRoot;
   const label = (data as { label: string }).label;
-  const hasInfo = !!(data as { info?: string }).info;
+  const info = (data as { info?: string }).info;
   return (
     <div
       className={
         isRoot
-          ? "relative px-5 py-3 rounded-xl border-2 border-primary bg-primary/10 backdrop-blur shadow-md text-foreground text-sm font-bold tracking-tight text-center max-w-[200px] cursor-pointer hover:shadow-lg transition-shadow"
-          : "relative px-4 py-2.5 rounded-xl border border-border bg-background shadow-sm text-foreground text-xs font-medium text-center max-w-[200px] cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
+          ? "relative w-[300px] px-5 py-4 rounded-xl border-2 border-primary bg-primary/10 backdrop-blur shadow-md text-foreground cursor-pointer hover:shadow-lg transition-shadow"
+          : "relative w-[300px] px-4 py-3.5 rounded-xl border border-border bg-background shadow-sm text-foreground cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
       }
     >
       <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
-      <span className="leading-snug break-words">{label}</span>
-      {hasInfo && (
-        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow">
-          <Info className="w-2.5 h-2.5" />
-        </span>
-      )}
+      <div className={`${isRoot ? "text-sm" : "text-xs"} font-bold leading-snug break-words text-center`}>{label}</div>
+      {info && <div className="mt-2 pt-2 border-t border-border/70 text-[11px] font-normal leading-relaxed whitespace-pre-wrap break-words text-start text-muted-foreground">{info}</div>}
+      {info && <Info className="absolute top-2.5 right-2.5 w-3 h-3 text-primary/70" />}
       <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
     </div>
   );
@@ -78,11 +81,8 @@ function layoutTree(raw: MindNode[]): { nodes: Node[]; edges: Edge[] } {
   if (!root) root = byId.values().next().value as typeof root;
 
   const layout = flextree({
-    nodeSize: (n: { data: { label: string } }) => {
-      const lines = Math.max(1, Math.ceil(n.data.label.length / 22));
-      return [NODE_H + (lines - 1) * 16 + 24, NODE_W + 60];
-    },
-    spacing: 24,
+    nodeSize: (n: { data: MindNode }) => [estimatedNodeHeight(n.data) + 28, NODE_W + 80],
+    spacing: 34,
   });
   const hierarchy = layout.hierarchy(root!);
   layout(hierarchy);
@@ -114,14 +114,11 @@ function layoutTree(raw: MindNode[]): { nodes: Node[]; edges: Edge[] } {
 const copy = {
   en: {
     title: "AI Mind Map",
-    subtitle: "Type a topic, optionally upload a file, and Gemini will build a clean mind map.",
-    topic: "Topic or question",
-    placeholder: "e.g. The cell cycle and mitosis",
-    upload: "Upload file (optional)",
-    file: "Choose file (PDF, DOCX, TXT)",
+    subtitle: "Upload a PDF to map all of its scientific content and supporting details.",
+    file: "Choose PDF",
     generate: "Generate Mind Map",
     generating: "Generating…",
-    empty: "Your mind map will appear here",
+    empty: "Upload a PDF to generate a complete scientific mind map",
     back: "Back",
     remove: "Remove",
     download: "Download",
@@ -129,14 +126,11 @@ const copy = {
   },
   ar: {
     title: "خريطة ذهنية بالذكاء",
-    subtitle: "اكتب موضوعاً وارفع ملفاً اختيارياً، وسيبني جيميناي خريطة ذهنية أنيقة.",
-    topic: "الموضوع أو السؤال",
-    placeholder: "مثال: الانقسام الخلوي",
-    upload: "ارفع ملف (اختياري)",
-    file: "اختر ملف (PDF، DOCX، TXT)",
+    subtitle: "ارفع ملف PDF لإنشاء خريطة تغطي كل محتواه العلمي وتفاصيله.",
+    file: "اختر ملف PDF",
     generate: "أنشئ الخريطة",
     generating: "جارٍ الإنشاء…",
-    empty: "ستظهر خريطتك هنا",
+    empty: "ارفع ملف PDF لإنشاء خريطة ذهنية علمية شاملة",
     back: "رجوع",
     remove: "إزالة",
     download: "تنزيل",
@@ -218,7 +212,6 @@ function Canvas({
 const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   useFeatureUsed("mind_map");
   const t = copy[language];
-  const [topic, setTopic] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -229,12 +222,12 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
   const inputRef = useRef<HTMLInputElement>(null);
 
   const generate = useCallback(async () => {
-    if (!topic.trim()) {
-      toast.error(language === "ar" ? "اكتب موضوعاً" : "Enter a topic");
-      return;
-    }
     if (!file) {
       toast.error(language === "ar" ? "ارفع ملف PDF لاستخراج الخريطة منه" : "Upload a PDF — mind maps are built only from the file");
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      toast.error(language === "ar" ? "يجب أن يكون الملف بصيغة PDF" : "Please choose a PDF file");
       return;
     }
     setLoading(true);
@@ -254,7 +247,7 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
         return;
       }
       const { data, error } = await supabase.functions.invoke("generate-mindmap", {
-        body: { topic: topic.trim(), context, pageImages: context.trim() ? undefined : pageImages },
+        body: { context, pageImages },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -269,7 +262,7 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
     } finally {
       setLoading(false);
     }
-  }, [topic, file, language, setNodes, setEdges]);
+  }, [file, language, setNodes, setEdges]);
 
   const handleDownload = useCallback(async () => {
     if (!nodes.length) return;
@@ -298,7 +291,7 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
         },
       });
       const link = document.createElement("a");
-      const safe = topic.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) || "mindmap";
+      const safe = file?.name.replace(/\.pdf$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) || "mindmap";
       link.download = `${safe}.png`;
       link.href = dataUrl;
       link.click();
@@ -307,7 +300,7 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
     } finally {
       setDownloading(false);
     }
-  }, [nodes, topic]);
+  }, [nodes, file]);
 
   return (
     <main className="min-h-screen flex flex-col" dir={language === "ar" ? "rtl" : "ltr"}>
@@ -324,17 +317,10 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-3 flex flex-col md:flex-row gap-2">
-          <input aria-label={t.placeholder}
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !loading) generate(); }}
-            placeholder={t.placeholder}
-            className="flex-1 h-11 px-4 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <input ref={inputRef} type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           <button
             onClick={() => inputRef.current?.click()}
-            className="h-11 px-4 rounded-xl border border-border bg-background text-sm hover:bg-accent transition inline-flex items-center gap-2"
+            className="flex-1 h-11 px-4 rounded-xl border border-border bg-background text-sm hover:bg-accent transition inline-flex items-center justify-center md:justify-start gap-2"
           >
             <Upload className="w-4 h-4" />
             <span className="max-w-[160px] truncate">{file ? file.name : t.file}</span>
