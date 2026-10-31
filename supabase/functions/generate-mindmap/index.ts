@@ -1,5 +1,6 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import type {} from "../_shared/ai-gateway-models.d.ts";
 import { generateChatCompletion, GatewayError, type GeminiChatMessage } from "npm:@lovable.dev/ai-gateway@0.1.11";
 
 const corsHeaders = {
@@ -58,7 +59,8 @@ Deno.serve(async (req) => {
       );
     }
     const instructions = "Create the complete scientific mind map directly from this PDF material. Check the entire supplied source before organizing the hierarchy, and retain every unique source-backed scientific detail.";
-    const userContent: Exclude<GeminiChatMessage["content"], string | null | undefined> = [{ type: "text", text: instructions }];
+    type UserContentParts = Exclude<Extract<GeminiChatMessage, { role: "user" }>["content"], string>;
+    const userContent: UserContentParts = [{ type: "text", text: instructions }];
     if (ctx.trim()) {
       userContent.push({ type: "text", text: `=== SOURCE TEXT START ===\n${ctx}\n=== SOURCE TEXT END ===` });
     }
@@ -105,7 +107,7 @@ Deno.serve(async (req) => {
         tool_choice: { type: "function", function: { name: "submit_mindmap" } },
     });
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
+    if (!toolCall || toolCall.type !== "function") {
       return new Response(JSON.stringify({ error: "No mind map generated" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
