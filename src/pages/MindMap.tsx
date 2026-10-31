@@ -24,6 +24,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { toast } from "sonner";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 type MindNode = {
   id: string;
@@ -73,7 +74,7 @@ function layoutTree(raw: MindNode[]): { nodes: Node[]; edges: Edge[] } {
   let root: TreeNode | undefined;
   byId.forEach((n) => {
     if (n.parentId && byId.has(n.parentId)) {
-      byId.get(n.parentId)!.children.push(n as TreeNode);
+      byId.get(n.parentId)?.children.push(n as TreeNode);
     } else if (!root) {
       root = n;
     }
@@ -84,7 +85,8 @@ function layoutTree(raw: MindNode[]): { nodes: Node[]; edges: Edge[] } {
     nodeSize: (n: { data: MindNode }) => [estimatedNodeHeight(n.data) + 28, NODE_W + 80],
     spacing: 34,
   });
-  const hierarchy = layout.hierarchy(root!);
+  if (!root) return { nodes: [], edges: [] };
+  const hierarchy = layout.hierarchy(root);
   layout(hierarchy);
 
   const nodes: Node[] = [];
@@ -246,8 +248,15 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
         setLoading(false);
         return;
       }
+      let { data: { session } } = await supabase.auth.getSession();
+      if (session?.expires_at && session.expires_at * 1000 < Date.now() + 30_000) {
+        const refreshed = await supabase.auth.refreshSession();
+        session = refreshed.data.session;
+      }
+      if (!session) throw new Error(language === "ar" ? "سجّل الدخول لإنشاء الخريطة الذهنية" : "Sign in to generate a mind map.");
       const { data, error } = await supabase.functions.invoke("generate-mindmap", {
         body: { context, pageImages },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -257,8 +266,8 @@ const MindMap = ({ language, onBack }: { language: AppLanguage; onBack: () => vo
       setNodes(ln);
       setEdges(le);
       setFlash((f) => f + 1);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to generate");
+    } catch (e: unknown) {
+      toast.error(await edgeErrorMessage(e, language === "ar" ? "تعذّر إنشاء الخريطة. حاول مرة أخرى أو استخدم ملف PDF أصغر." : "Could not generate the mind map. Try again or use a smaller PDF."));
     } finally {
       setLoading(false);
     }
