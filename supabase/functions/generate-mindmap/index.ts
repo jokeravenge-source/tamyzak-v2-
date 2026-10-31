@@ -1,12 +1,12 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import { generateChatCompletion, GatewayError, type GeminiChatMessage } from "npm:@lovable.dev/ai-gateway@0.1.11";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const AI_MODEL = "google/gemini-3.8-flash";
 const MAX_CHARS = 180000;
 
@@ -47,14 +47,6 @@ Deno.serve(async (req) => {
     }
     const { context, pageImages } = await req.json();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const ctx = typeof context === "string" ? context.slice(0, MAX_CHARS) : "";
     const images: string[] = Array.isArray(pageImages)
       ? pageImages.filter((s: unknown): s is string => typeof s === "string" && s.startsWith("data:image/")).slice(0, 12)
@@ -66,7 +58,7 @@ Deno.serve(async (req) => {
       );
     }
     const instructions = "Create the complete scientific mind map directly from this PDF material. Check the entire supplied source before organizing the hierarchy, and retain every unique source-backed scientific detail.";
-    const userContent: any[] = [{ type: "text", text: instructions }];
+    const userContent: Exclude<GeminiChatMessage["content"], string | null | undefined> = [{ type: "text", text: instructions }];
     if (ctx.trim()) {
       userContent.push({ type: "text", text: `=== SOURCE TEXT START ===\n${ctx}\n=== SOURCE TEXT END ===` });
     }
@@ -74,13 +66,7 @@ Deno.serve(async (req) => {
       userContent.push({ type: "image_url", image_url: { url: img } });
     }
 
-    const res = await fetch(AI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const data = await generateChatCompletion({
         model: AI_MODEL,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -117,30 +103,7 @@ Deno.serve(async (req) => {
           },
         ],
         tool_choice: { type: "function", function: { name: "submit_mindmap" } },
-      }),
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      if (res.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit. Try again shortly." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (res.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: `AI error: ${errText}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const data = await res.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       return new Response(JSON.stringify({ error: "No mind map generated" }), {
@@ -153,8 +116,13 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500,
+    const status = e instanceof GatewayError ? e.httpStatus ?? 500 : 500;
+    console.error("Mind map generation failed", e instanceof GatewayError ? { code: e.code, status, ids: e.ids } : { message: String(e) });
+    const message = status === 429 ? "AI is busy. Please try again shortly."
+      : status === 402 ? "AI credits are unavailable. Please contact the site owner."
+      : "Could not generate the mind map. Please try again or use a smaller PDF.";
+    return new Response(JSON.stringify({ error: message }), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
