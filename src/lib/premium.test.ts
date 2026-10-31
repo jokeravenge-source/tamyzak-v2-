@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasActivePremiumSubscription, isPremiumTool, PREMIUM_TELEGRAM_URL } from "./premium";
+import { FREE_DAY_ENDS_AT, hasActivePremiumSubscription, isPremiumTool, PREMIUM_TELEGRAM_URL } from "./premium";
 import { PREMIUM_AI_FEATURES, verifyPremiumAccess } from "../../supabase/functions/_shared/premium-access";
 
 describe("Premium access policy", () => {
@@ -26,7 +26,14 @@ describe("Premium access policy", () => {
     expect(isPremiumTool("liveBattle")).toBe(false);
   });
   it.each(["mcq", "essay", "subjectTutor", "problemGenerator", "physicsProblemSolver", "examGenerator", "videoNotes", "podcastTutor", "englishReadingPractice"])("locks %s for non-members", (tool) => {
-    expect(isPremiumTool(tool)).toBe(true);
+    expect(isPremiumTool(tool, FREE_DAY_ENDS_AT)).toBe(true);
+  });
+  it("keeps biology drawings free", () => {
+    expect(isPremiumTool("biologyDrawings", FREE_DAY_ENDS_AT)).toBe(false);
+  });
+  it("opens every AI tool on Oct 31 2026 until midnight Baghdad", () => {
+    expect(isPremiumTool("mcq", Date.parse("2026-10-31T20:59:00Z"))).toBe(false);
+    expect(isPremiumTool("mcq", Date.parse("2026-10-31T21:00:00Z"))).toBe(true);
   });
   it("uses the requested Telegram account", () => {
     expect(PREMIUM_TELEGRAM_URL).toBe("https://t.me/ias404");
