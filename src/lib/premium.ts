@@ -7,12 +7,16 @@ export const PREMIUM_ENVIRONMENT = "live";
 const PREMIUM_TOOLS = new Set([
   "mcq", "essay", "videoNotes", "podcastTutor", "mindmap", "textToVideo",
   "subjectTutor", "physicsProblemSolver", "problemGenerator", "examGenerator",
-  "biologyDrawings", "physicsLaws", "organicEquations", "islamicSurahs",
+  "physicsLaws", "organicEquations", "islamicSurahs",
   "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat",
   "englishVerbForms", "englishReadingPractice",
 ]);
 
-export function isPremiumTool(menu: string | null): boolean {
+// Free-day promo: every locked tool is open until midnight Baghdad time, Oct 31 2026.
+export const FREE_DAY_ENDS_AT = Date.parse("2026-10-31T21:00:00Z");
+
+export function isPremiumTool(menu: string | null, now = Date.now()): boolean {
+  if (now < FREE_DAY_ENDS_AT) return false;
   return menu !== null && PREMIUM_TOOLS.has(menu);
 }
 
