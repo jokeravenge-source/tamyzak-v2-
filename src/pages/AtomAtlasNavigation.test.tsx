@@ -16,10 +16,10 @@ afterEach(() => {
 });
 
 describe("Atom Atlas navigation", () => {
-  it.each(["en", "ar"] as const)("shows the free Chemistry tool and opens its repository in %s", async (language) => {
-    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+  it.each(["en", "ar"] as const)("shows the free Chemistry tool and opens it inside Tamayzak in %s", async (language) => {
+    const onSelect = vi.fn();
     await act(async () => {
-      render(<SubjectsHub language={language} onBack={vi.fn()} onSelect={vi.fn()} />);
+      render(<SubjectsHub language={language} onBack={vi.fn()} onSelect={onSelect} />);
     });
 
     const tool = screen.getByRole("button", { name: /Atom Atlas|أطلس الذرة/ });
@@ -27,10 +27,6 @@ describe("Atom Atlas navigation", () => {
     expect(tool).toHaveTextContent(language === "ar" ? "مجاني" : "FREE");
 
     fireEvent.click(tool);
-    expect(open).toHaveBeenCalledExactlyOnceWith(
-      "https://github.com/jokeravenge-source/atom-atlas-learning-lab",
-      "_blank",
-      "noopener,noreferrer",
-    );
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("atomAtlas");
   });
 });

@@ -15,7 +15,7 @@ type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "
 // A tool either points to a real MainMenuChoice route, or is a placeholder
 // with its own display metadata (routed through the shared ToolPlaceholder page).
 type Tool = {
-  key: MainMenuChoice | "theoremVisualizer" | "atomAtlas";
+  key: MainMenuChoice | "theoremVisualizer";
   en: string;
   ar: string;
   Icon: React.ComponentType<{ className?: string }>;
@@ -26,8 +26,6 @@ type Tool = {
   disabled?: boolean;
   descEn?: string;
   descAr?: string;
-  /** Open a separately hosted or repository-backed tool in a new tab. */
-  externalUrl?: string;
 };
 
 type ToolGroup = "learn" | "practice" | "revise";
@@ -68,8 +66,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
     tools: [
       { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
       { key: "atomAtlas", en: "Atom Atlas", ar: "أطلس الذرة", Icon: Atom, free: true,
-        descEn: "Open the bilingual chemistry learning lab project.", descAr: "افتح مشروع مختبر تعلّم الكيمياء ثنائي اللغة.",
-        externalUrl: "https://github.com/jokeravenge-source/atom-atlas-learning-lab" },
+        descEn: "Explore all 118 elements, atoms, molecules, terms and lessons.", descAr: "استكشف العناصر الـ118 والذرات والجزيئات والمصطلحات والدروس." },
       { key: "chemistryExperiments", en: "Chemistry Experiment", ar: "تجربة الكيمياء", Icon: FlaskConical },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
@@ -181,11 +178,6 @@ const SubjectsHub = ({
   const current = SUBJECTS.find((s) => s.code === open);
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const handleToolClick = (t: Tool) => {
-    if (t.externalUrl) {
-      trackFeature(`tool_${t.key}`);
-      window.open(t.externalUrl, "_blank", "noopener,noreferrer");
-      return;
-    }
     if (t.key === "theoremVisualizer") {
       trackFeature("tool_theoremVisualizer");
       window.location.assign("/math/theorem-visualizer");

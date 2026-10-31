@@ -84,6 +84,7 @@ const Canvas = lazy(() => import("./pages/Canvas"));
 const YoutubePlayer = lazy(() => import("./pages/YoutubePlayer"));
 const OrganicEquations = lazy(() => import("./pages/OrganicEquations"));
 const ChemicalEquations = lazy(() => import("./pages/ChemicalEquations"));
+const AtomAtlas = lazy(() => import("./pages/AtomAtlas"));
 const LiveBattle = lazy(() => import("./pages/LiveBattle"));
 const SubjectsHub = lazy(() => import("./pages/SubjectsHub"));
 const TheoremVisualizerPage = lazy(() => import("./pages/TheoremVisualizerPage"));
@@ -755,7 +756,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
   });
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
@@ -1189,6 +1190,8 @@ const StudentApp = () => {
         <OrganicEquations language={language} onBack={resetMenu} />
       ) : menuChoice === "chemicalEquations" ? (
         <ChemicalEquations language={language} onBack={resetMenu} />
+      ) : menuChoice === "atomAtlas" ? (
+        <AtomAtlas language={language} onBack={resetMenu} />
       ) : menuChoice === "liveBattle" ? (
         <LiveBattle language={language} onBack={resetMenu} />
       ) : menuChoice === "subjectsHub" ? (
