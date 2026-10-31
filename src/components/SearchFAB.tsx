@@ -29,6 +29,8 @@ const ENTRIES: Entry[] = [
   { key: "problemGenerator", en: { title: "Problem Generator", desc: "Generate practice problems" }, ar: { title: "مولّد المسائل", desc: "ولّد مسائل للتدريب" } },
   { key: "organicEquations", en: { title: "Organic Equations", desc: "Review organic chemistry reactions" }, ar: { title: "تفاعلات العضوية", desc: "راجع تفاعلات الكيمياء العضوية" } },
   { key: "chemistryExperiments", en: { title: "Chemistry Experiments", desc: "Explore chemistry experiments" }, ar: { title: "تجارب الكيمياء", desc: "تعلّم التجارب الكيميائية" } },
+  { key: "atomAtlas", en: { title: "Atom Atlas", desc: "Elements, atoms, molecules and chemistry lessons" }, ar: { title: "أطلس الذرة", desc: "العناصر والذرات والجزيئات ودروس الكيمياء" },
+    keywords: ["periodic table", "elements", "atoms", "molecules", "dictionary", "chemistry", "جدول دوري", "عناصر", "ذرات", "جزيئات", "قاموس", "كيمياء"] },
   { key: "englishVerbForms", en: { title: "English Verb Forms", desc: "Study verb conjugations" }, ar: { title: "تصريف الأفعال", desc: "راجع تصاريف الأفعال الإنكليزية" } },
   { key: "englishReadingPractice", en: { title: "English Reading Practice", desc: "Practise reading comprehension" }, ar: { title: "تدريب القطعة الإنكليزية", desc: "تدرّب على قراءة القطع وفهمها" } },
   { key: "frenchSynonyms", en: { title: "French Synonyms", desc: "Study matching vocabulary" }, ar: { title: "مرادفات الفرنسية", desc: "راجع الكلمات المتشابهة بالمعنى" } },
