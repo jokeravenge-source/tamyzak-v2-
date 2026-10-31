@@ -1,3 +1,4 @@
+import type {} from "./_shared/ai-gateway-models.d.ts";
 import { generateChatCompletion } from "npm:@lovable.dev/ai-gateway@0.1.11";
 
 const M = "google/gemini-3.8-flash";
