@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
       );
     }
     const instructions = "Create the complete scientific mind map directly from this PDF material. Check the entire supplied source before organizing the hierarchy, and retain every unique source-backed scientific detail.";
-    const userContent: Exclude<GeminiChatMessage["content"], string | null | undefined> = [{ type: "text", text: instructions }];
+    type UserContentParts = Exclude<Extract<GeminiChatMessage, { role: "user" }>["content"], string>;
+    const userContent: UserContentParts = [{ type: "text", text: instructions }];
     if (ctx.trim()) {
       userContent.push({ type: "text", text: `=== SOURCE TEXT START ===\n${ctx}\n=== SOURCE TEXT END ===` });
     }
