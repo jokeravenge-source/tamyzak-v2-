@@ -1,7 +1,15 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import AtomAtlas from "@/pages/AtomAtlas";
 import { ELEMENTS } from "@/data/atomAtlas/elements";
+
+const subscription = vi.hoisted(() => ({ isPremium: false, loading: false }));
+vi.mock("@/hooks/useSubscription", () => ({ useSubscription: () => subscription }));
+
+beforeEach(() => {
+  subscription.isPremium = false;
+  subscription.loading = false;
+});
 
 describe("Atom Atlas", () => {
   it("ships one complete, ordered record for every confirmed element", () => {
@@ -27,5 +35,24 @@ describe("Atom Atlas", () => {
     render(<AtomAtlas language="ar" onBack={() => undefined} />);
     expect(screen.getByRole("main")).toHaveAttribute("dir", "rtl");
     expect(screen.getByRole("heading", { name: "أطلس الذرة" })).toBeInTheDocument();
+  });
+
+  it.each(["Dictionary", "Lessons"])("locks the %s section for free students", (section) => {
+    render(<AtomAtlas language="en" onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole("button", { name: `${section} — Premium` }));
+
+    expect(screen.getByRole("heading", { name: "This section is for Premium members" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Unlock via Telegram" })).toHaveAttribute("href", "https://t.me/ias404");
+  });
+
+  it("opens Dictionary and Lessons for Premium students", () => {
+    subscription.isPremium = true;
+    render(<AtomAtlas language="en" onBack={() => undefined} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Dictionary" }));
+    expect(screen.getByPlaceholderText("Search English or Arabic terms…")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Lessons" }));
+    expect(screen.getByText("Learning objectives")).toBeInTheDocument();
   });
 });
