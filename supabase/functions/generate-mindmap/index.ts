@@ -1,5 +1,6 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import type {} from "../_shared/ai-gateway-models.d.ts";
 import { generateChatCompletion, GatewayError, type GeminiChatMessage } from "npm:@lovable.dev/ai-gateway@0.1.11";
 
 const corsHeaders = {
