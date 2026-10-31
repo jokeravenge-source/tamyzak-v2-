@@ -637,7 +637,12 @@ function VideoNotesModal({
   const [pretty, setPretty] = useState<{ blocks: PrettyBlock[]; images: PrettyImage[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [noteQuery, setNoteQuery] = useState("");
   const prettyRef = useRef<HTMLDivElement>(null);
+  const isNadia = video.teacher_id === "nadia-al-nuaimy";
+  const visibleParts = video.notes_parts.map((part, index) => ({ part, index })).filter(({ part }) =>
+    !noteQuery.trim() || `${part.title} ${part.notes}`.toLocaleLowerCase().includes(noteQuery.trim().toLocaleLowerCase()),
+  );
 
   const rawText = useMemo(
     () => video.notes_parts.map((p) => `# ${p.title}\n\n${p.notes}`).join("\n\n---\n\n"),
@@ -746,6 +751,16 @@ function VideoNotesModal({
         )}
 
         <div className="p-3 sm:p-6">
+          {isNadia && !pretty && (
+            <div className="mb-5 space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <label className="block text-sm font-bold" htmlFor="lecture-notes-search">{language === "ar" ? "ابحث في الملاحظات" : "Search lecture notes"}</label>
+              <input id="lecture-notes-search" value={noteQuery} onChange={(event) => setNoteQuery(event.target.value)} placeholder={language === "ar" ? "ابحث عن عنوان أو معلومة…" : "Search a heading or detail…"} className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" />
+              <p role="status" className="text-xs text-muted-foreground">{language === "ar" ? `${visibleParts.length} من ${video.notes_parts.length} أقسام` : `${visibleParts.length} of ${video.notes_parts.length} sections`}</p>
+              <nav aria-label={language === "ar" ? "أقسام الملاحظات" : "Notes sections"} className="flex flex-wrap gap-2">
+                {visibleParts.map(({ part, index }) => <a key={index} href={`#lecture-note-section-${index}`} className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:border-primary">{index + 1}. {part.title}</a>)}
+              </nav>
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {!pretty ? (
               <button
@@ -769,6 +784,8 @@ function VideoNotesModal({
             {!pretty && (
               <span className="text-xs text-muted-foreground">{T.prettyIntro}</span>
             )}
+            {isNadia && !pretty && <button onClick={exportPdf} disabled={exporting || !!noteQuery.trim()} title={noteQuery.trim() ? (language === "ar" ? "امسح البحث لتنزيل جميع الأقسام" : "Clear the search to download all sections") : undefined} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-50"><Download className="h-4 w-4" />{exporting ? (language === "ar" ? "جارٍ التصدير…" : "Exporting…") : T.exportPdf}</button>}
+            {isNadia && !pretty && noteQuery.trim() && <span className="text-xs text-muted-foreground">{language === "ar" ? "امسح البحث لتنزيل جميع الأقسام" : "Clear search to download all sections"}</span>}
           </div>
 
           {pretty ? (
@@ -781,9 +798,10 @@ function VideoNotesModal({
               <PrettyBlocks blocks={pretty.blocks} images={pretty.images} title={video.title || ""} T={T} />
             </div>
           ) : (
-            <article className="max-w-none overflow-hidden rounded-2xl border border-border bg-background/45 shadow-sm">
-              {video.notes_parts.map((p, i) => (
-                <section key={i} className="min-w-0 border-b border-border p-4 last:border-b-0 sm:p-7">
+            <article ref={prettyRef} className="max-w-none overflow-hidden rounded-2xl border border-border bg-background/45 shadow-sm">
+              {isNadia && visibleParts.length === 0 && <p className="p-6 text-sm text-muted-foreground">{language === "ar" ? "لا توجد أقسام مطابقة لبحثك." : "No sections match your search."}</p>}
+              {(isNadia ? visibleParts : video.notes_parts.map((part, index) => ({part, index}))).map(({part: p, index: i}) => (
+                <section id={`lecture-note-section-${i}`} key={i} className="min-w-0 scroll-mt-24 border-b border-border p-4 last:border-b-0 sm:p-7">
                   <div className="mb-5 flex min-w-0 items-start gap-3">
                     <span className="grid h-8 min-w-8 shrink-0 place-items-center rounded-xl bg-primary text-sm font-extrabold text-primary-foreground">{i + 1}</span>
                     <h3 className="min-w-0 break-words text-xl font-black leading-tight text-primary sm:text-2xl">{p.title}</h3>
