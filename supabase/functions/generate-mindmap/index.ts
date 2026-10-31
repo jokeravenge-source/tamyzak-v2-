@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
         tool_choice: { type: "function", function: { name: "submit_mindmap" } },
     });
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
+    if (!toolCall || toolCall.type !== "function") {
       return new Response(JSON.stringify({ error: "No mind map generated" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
