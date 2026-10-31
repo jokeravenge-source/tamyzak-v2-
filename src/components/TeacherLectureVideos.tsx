@@ -477,7 +477,7 @@ function AdminAddVideo({
           mode: "notes",
           adminGeneration: true,
           notesStyle: usesArabicExplanationEnglishCurriculum(teacherId, contentLanguage)
-            ? "arabic-explanation-english-curriculum"
+            ? (teacherId === "nadia-al-nuaimy" ? "nadia-english-arabic-explanations" : "arabic-explanation-english-curriculum")
             : "default",
         },
       });
@@ -658,7 +658,7 @@ function VideoNotesModal({
           topic: source,
           language: contentLanguage,
           notesStyle: usesArabicEnglishCurriculumStyle
-            ? "arabic-explanation-english-curriculum"
+            ? (video.teacher_id === "nadia-al-nuaimy" ? "nadia-english-arabic-explanations" : "arabic-explanation-english-curriculum")
             : "default",
         },
       });
