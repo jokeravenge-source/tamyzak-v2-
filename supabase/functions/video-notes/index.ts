@@ -41,7 +41,7 @@ const isDailyOrDisabledQuota = (payload: any) => {
 
 const hasArabicLetters = (value: string) => /[\u0600-\u06ff]/.test(value);
 
-const formatEnglishCurriculumParts = (input: any[]) => {
+const formatEnglishCurriculumParts = (input: any[], englishLabelsOnly = false) => {
   const formatted: { title: string; notes: string }[] = [];
   for (const part of input) {
     const questions = Array.isArray(part?.review_questions)
@@ -50,6 +50,7 @@ const formatEnglishCurriculumParts = (input: any[]) => {
     // Never save an English-curriculum result unless every review question
     // has actually been returned in English.
     if (questions.length < 3 || questions.some(hasArabicLetters)) return null;
+    if (englishLabelsOnly && (hasArabicLetters(String(part?.title || "")) || String(part?.notes || "").split(/\r?\n/).some((line) => (/^#{1,6}\s/.test(line.trim()) || /[؟?]/.test(line)) && hasArabicLetters(line)))) return null;
 
     let insideReviewSection = false;
     const cleanNotes = String(part?.notes || "")
@@ -176,8 +177,8 @@ Deno.serve(async (req) => {
   try {
     const { url, language, mode, transcript: providedTranscript, count, adminGeneration, notesStyle } = await req.json();
     const lang0 = language === "en" ? "en" : "ar";
-    const arabicEnglishCurriculum =
-      lang0 === "en" && notesStyle === "arabic-explanation-english-curriculum";
+    const nadiaEnglishStyle = lang0 === "en" && notesStyle === "nadia-english-arabic-explanations";
+    const arabicEnglishCurriculum = lang0 === "en" && (notesStyle === "arabic-explanation-english-curriculum" || nadiaEnglishStyle);
     const runMode: "notes" | "flashcards" = mode === "flashcards" ? "flashcards" : "notes";
     if ((!url || typeof url !== "string") && !providedTranscript) {
       return jsonResponse({ error: "Missing url" }, 400);
@@ -227,7 +228,7 @@ Deno.serve(async (req) => {
     );
     const vid = url ? extractYouTubeId(url.trim()) : "";
     const cacheKey = runMode === "notes" && vid && !providedTranscript
-      ? `${vid}|${lang0}|${arabicEnglishCurriculum ? "encur" : "std"}`
+      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}`
       : "";
     if (cacheKey) {
       const { data: cached } = await cacheClient
@@ -296,7 +297,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ cards: parsed.cards || [], transcript: transcriptText });
     }
 
-    const curriculumLanguageRules = arabicEnglishCurriculum
+    const curriculumLanguageRules = nadiaEnglishStyle
+      ? `
+NADIA ENGLISH CURRICULUM LANGUAGE RULES (mandatory, overriding conflicting instructions below):
+- Write all titles, headings, section names, labels, scientific terms, definitions' term names, example labels, diagram labels and questions in English only. Preserve English scientific terminology from the source.
+- Write explanatory prose and answers in clear Arabic. Retain scientific terms in English within Arabic explanations. Equations, numerical values and symbols remain as in the source.
+- All questions, including embedded examples, practice, review questions and question-form headings, must be English only; their explanations and answers may be Arabic.
+- Use these English section headings: Overview, Key Concepts, Definitions, Formulas and Rules, Worked Examples, Important Notes, Summary. Use English titles for each part.
+- Return 3–6 English-only review questions in review_questions, never in notes. Do not add unsupported facts.
+`
+      : arabicEnglishCurriculum
       ? `
 قواعد اللغة الخاصة بالمنهج الإنجليزي (إلزامية):
 - الطالب يدرس المنهج باللغة الإنجليزية لكنه يتحدث العربية؛ لذلك اكتب الشرح العام، التوضيح، الأمثلة، التنبيهات، والخلاصة باللغة العربية الفصحى الواضحة.
@@ -309,20 +319,29 @@ Deno.serve(async (req) => {
 `
       : "";
 
-    const systemPrompt = `أنت كاتب ملاحظات دراسية خبير ومتقن. مهمتك تحويل محتوى الفيديو إلى ملاحظات دراسية شاملة ومفصّلة جداً باللغة العربية الفصحى دائماً (تَرجِم إذا لزم الأمر، بغض النظر عن لغة المصدر).
+    const systemPrompt = `أنت كاتب ملاحظات دراسية خبير ومتقن. مهمتك تحويل محتوى الفيديو إلى ملاحظات دراسية شاملة ومفصّلة جداً. ${nadiaEnglishStyle ? "Apply the mandatory Nadia English curriculum language rules below to all output, including headings and questions." : "اكتب باللغة العربية الفصحى دائماً (تَرجِم إذا لزم الأمر، بغض النظر عن لغة المصدر)."}
 ${curriculumLanguageRules}
 
 القواعد الصارمة:
 1) لا تختصر ولا تلخّص بشكل مخلّ. اذكر كل فكرة مهمة، وكل تعريف، وكل قاعدة، وكل خطوة، وكل استثناء، وكل ملاحظة جانبية ذكرها المتحدث.
 2) انقل جميع الأمثلة الواردة في الفيديو حرفياً مع شرحها خطوة بخطوة (الأرقام، المعادلات، الحالات، السيناريوهات، الأسماء، التواريخ، النِّسَب، القِيَم). لا تحذف أي مثال مهما بدا بسيطاً.
 2.أ) إذا كان المثال رياضياً أو علمياً: اكتب المعطيات، ثم القانون/الصيغة، ثم خطوات الحل، ثم النتيجة النهائية مع الوحدة.
-3) ${arabicEnglishCurriculum ? "اكتب كل مصطلح تقني بالاسم العربي ثم الاسم الإنجليزي المطابق للمصدر بين قوسين في كل ظهور، مثل: التمثيل الضوئي (Photosynthesis). لا تستخدم مرادفات أو مصطلحات من خارج نص المحاضرة ومنهج الأحياء." : "احتفظ بكل المصطلحات التقنية مع ذكر مقابلها بالإنجليزية بين قوسين عند أول ظهور، مثل: التمثيل الضوئي (Photosynthesis)."}
+3) ${nadiaEnglishStyle ? "Use source-backed English scientific terms in every part of the notes." : arabicEnglishCurriculum ? "اكتب كل مصطلح تقني بالاسم العربي ثم الاسم الإنجليزي المطابق للمصدر بين قوسين في كل ظهور، مثل: التمثيل الضوئي (Photosynthesis). لا تستخدم مرادفات أو مصطلحات من خارج نص المحاضرة ومنهج الأحياء." : "احتفظ بكل المصطلحات التقنية مع ذكر مقابلها بالإنجليزية بين قوسين عند أول ظهور، مثل: التمثيل الضوئي (Photosynthesis)."}
 4) احتفظ بالتسلسل المنطقي الذي اتبعه المتحدث، ووضّح الانتقالات بين الأفكار.
 5) أبرز التحذيرات، الأخطاء الشائعة، النصائح، الحيل، النقاط التي قال عنها المتحدث "مهم"، "انتبه"، "يأتي بالامتحان"، أو ما شابه — ضعها في مربع تنبيه ⚠️.
 6) لا تُضِف معلومات من عندك غير موجودة في الفيديو، ولا تَفتَرِض. إن كان شيء غير واضح، اكتب: "(غير موضّح في الفيديو)".
 7) اكتب الملاحظات بأسلوب طالب يستذكر للامتحان: واضح، منظّم، قابل للحفظ.
 
-بنية المخرجات (Markdown):
+${nadiaEnglishStyle ? `Output structure (Markdown), using English headings and labels and Arabic explanatory prose:
+# Lecture title
+## Overview
+## Key Concepts
+## Definitions
+## Formulas and Rules
+## Worked Examples
+## Important Notes
+## Summary
+Put English-only questions in review_questions, not in notes.` : `بنية المخرجات (Markdown):
 # العنوان الرئيسي للفيديو
 ## 🧭 نظرة عامة سريعة
 فقرة 3–5 أسطر تشرح الموضوع وأهميته.
@@ -348,7 +367,7 @@ ${curriculumLanguageRules}
 - نقاط الخلاصة.
 - ${arabicEnglishCurriculum ? "اكتب نقاط الخلاصة بالعربية، ثم اكتب 3–6 أسئلة مراجعة باللغة الإنجليزية فقط تحت عنوان ### Review Questions." : "3–6 أسئلة قصيرة يمكن للطالب اختبار نفسه بها."}
 
-لا تكتب أي شيء خارج هذه البنية. ${arabicEnglishCurriculum ? "استخدم العربية في الشرح العام، واستخدم الإنجليزية داخل أسماء المصطلحات الثنائية وفي نص أسئلة Review Questions فقط." : "لا تستخدم لغة غير العربية في الشرح (المصطلحات الإنجليزية مسموحة فقط بين قوسين)."}
+لا تكتب أي شيء خارج هذه البنية. ${arabicEnglishCurriculum ? "استخدم العربية في الشرح العام، واستخدم الإنجليزية داخل أسماء المصطلحات الثنائية وفي نص أسئلة Review Questions فقط." : "لا تستخدم لغة غير العربية في الشرح (المصطلحات الإنجليزية مسموحة فقط بين قوسين)."}`}
 
 تقسيم إجباري: قسّم الفيديو إلى عدة أجزاء متتابعة (2 إلى 3 أجزاء فقط)، واكتب بإيجاز مركّز على ما يأتي بالامتحان، ولكل جزء أعد كامل البنية أعلاه (نظرة عامة، مفاهيم، تعريفات، قوانين، أمثلة، نقاط مهمة، خلاصة) خاصة بذلك الجزء فقط. ابدأ كل جزء بعنوان واضح يصف موضوعه. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
     // Try Lovable AI Gateway first (multiple models for fallback on quota/overload),
@@ -462,7 +481,7 @@ ${curriculumLanguageRules}
               if (Array.isArray(args?.parts) && args.parts.length) {
                 const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
                 const checkedParts = arabicEnglishCurriculum
-                  ? formatEnglishCurriculumParts(candidateParts)
+                  ? formatEnglishCurriculumParts(candidateParts, nadiaEnglishStyle)
                   : candidateParts;
                 if (!checkedParts) {
                   lastGeminiError = {

@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     const lang = language === "en" ? "en" : "ar";
     const arabicEnglishCurriculum =
       lang === "en" && notesStyle === "arabic-explanation-english-curriculum";
+    const nadiaEnglishStyle = lang === "en" && notesStyle === "nadia-english-arabic-explanations";
     if (!topic || typeof topic !== "string" || topic.trim().length < 3) {
       return json({ error: lang === "ar" ? "اكتب موضوعاً أو نصاً أطول قليلاً" : "Provide a longer topic or text" }, 400);
     }
@@ -44,7 +45,9 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY not configured" }, 500);
 
     const langName = lang === "ar" ? "Arabic" : "English";
-    const languageInstructions = arabicEnglishCurriculum
+    const languageInstructions = nadiaEnglishStyle
+      ? `Write every title, heading, label, scientific term and question in English only. Write explanatory prose and answers in clear Arabic, keeping scientific terms in English. Questions must have no Arabic text. Preserve source facts and terminology; do not invent information.`
+      : arabicEnglishCurriculum
       ? `The student studies an English-language curriculum but speaks Arabic. Write all general explanations, examples, summaries, warnings, and transitions in clear Modern Standard Arabic. Every scientific term must be written bilingually every time it appears, in the format: Arabic name (English Term). Review questions must be written in English only, without Arabic inside the question, under a heading named Review Questions. Preserve the English curriculum terminology accurately.`
       : `Write the notes in ${langName}.`;
     const sys = `You are an expert study-note writer. ${languageInstructions} Produce rich, well-structured notes about the user's topic. Use varied block types: headings (h1/h2/h3), short paragraphs (text), bullets, numbered lists, quote callouts for key ideas, and divider lines between sections. Cover: definition, key concepts, important facts, examples, common mistakes, and a quick review. Also suggest 2 concise visual prompts (in English) that describe an illustration which would help understand the topic — clean, educational infographic-style, no text/labels. Return ONLY via the submit_notes tool.`;
