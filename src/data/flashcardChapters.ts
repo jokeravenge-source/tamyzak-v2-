@@ -53,6 +53,7 @@ export const frenchChapters = [
   { n: 4, title: "Feminization", arTitle: "التأنيث", subtitle: "Règles & exceptions", locked: false },
   { n: 5, title: "Plural", arTitle: "الجمع", subtitle: "Pluriel des noms & adjectifs", locked: false },
   { n: 6, title: "Adverbs", arTitle: "اشتقاق الظروف", subtitle: "-ment / -emment / -amment", locked: false },
+  { n: 7, title: "Reading Comprehension", arTitle: "القطع الاستيعابية", subtitle: "5 textes · 37 questions", locked: false },
 ];
 
 export const mathChapters = [

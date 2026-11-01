@@ -6,6 +6,7 @@ import {
   Clock3,
   Gauge,
   Languages,
+  MessageSquareText,
   Layers3,
   Link2,
   ListPlus,
@@ -21,7 +22,7 @@ import { isDue, loadDeckStates } from "@/lib/srs";
 
 type DeckProgress = { reviewed: number; due: number };
 
-const deckIcons = [Layers3, CircleHelp, Link2, UserRound, ListPlus, Gauge] as const;
+const deckIcons = [Layers3, CircleHelp, Link2, UserRound, ListPlus, Gauge, MessageSquareText] as const;
 const deckStyles = [
   "from-blue-500/20 via-indigo-500/10 to-transparent text-blue-500 border-blue-400/30",
   "from-violet-500/20 via-purple-500/10 to-transparent text-violet-500 border-violet-400/30",
@@ -29,6 +30,7 @@ const deckStyles = [
   "from-rose-500/20 via-pink-500/10 to-transparent text-rose-500 border-rose-400/30",
   "from-amber-500/20 via-orange-500/10 to-transparent text-amber-500 border-amber-400/30",
   "from-emerald-500/20 via-teal-500/10 to-transparent text-emerald-500 border-emerald-400/30",
+  "from-fuchsia-500/20 via-violet-500/10 to-transparent text-fuchsia-500 border-fuchsia-400/30",
 ] as const;
 
 const emptyProgress = () => Object.fromEntries(
@@ -94,12 +96,12 @@ export default function FrenchFlashcardsDashboard({
               {isArabic ? "الأستاذ محمد علي الكناني" : "Mohammed Ali Al-Kinani"}
             </div>
             <h2 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-              {isArabic ? "راجع قواعد الفرنسية من لوحة واحدة" : "Master French grammar from one dashboard"}
+              {isArabic ? "راجع قواعد الفرنسية والقطع من لوحة واحدة" : "Master French grammar and reading from one dashboard"}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
               {isArabic
-                ? "ستة مواضيع مرتبة، مع تتبع مراجعتك والبطاقات المستحقة والعودة السريعة إلى آخر تقدمك."
-                : "Six organized grammar decks with review progress, due cards, and a quick path back to studying."}
+                ? "سبعة مواضيع مرتبة تشمل القواعد والقطع الاستيعابية، مع تتبع مراجعتك والبطاقات المستحقة والعودة السريعة إلى آخر تقدمك."
+                : "Seven organized grammar and reading decks with review progress, due cards, and a quick path back to studying."}
             </p>
           </div>
           <button

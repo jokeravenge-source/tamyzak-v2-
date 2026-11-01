@@ -130,8 +130,8 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
     : text.title;
   const pageDescription = subject === "french"
     ? (language === "ar"
-        ? "راجع 143 بطاقة في ستة مواضيع لقواعد اللغة الفرنسية وتابع تقدمك من مكان واحد."
-        : "Review 143 cards across six French grammar decks and track your progress in one place.")
+        ? "راجع 180 بطاقة في سبعة مواضيع تشمل قواعد اللغة الفرنسية والقطع الاستيعابية، وتابع تقدمك من مكان واحد."
+        : "Review 180 cards across seven French grammar and reading decks, and track your progress in one place.")
     : subject === "math"
       ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
       : subject === "biology"
