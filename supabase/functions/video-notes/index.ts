@@ -2,6 +2,7 @@ import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { claimFeature } from "../_shared/entitlement.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasArabicLectureQuestions } from "../_shared/lecture-question-language.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,6 +51,7 @@ const formatEnglishCurriculumParts = (input: any[], englishLabelsOnly = false) =
     // Never save an English-curriculum result unless every review question
     // has actually been returned in English.
     if (questions.length < 3 || questions.some(hasArabicLetters)) return null;
+    if (englishLabelsOnly && hasArabicLectureQuestions(String(part?.notes || ""))) return null;
     if (englishLabelsOnly && (hasArabicLetters(String(part?.title || "")) || String(part?.notes || "").split(/\r?\n/).some((line) => (/^#{1,6}\s/.test(line.trim()) || /[؟?]/.test(line)) && hasArabicLetters(line)))) return null;
 
     let insideReviewSection = false;

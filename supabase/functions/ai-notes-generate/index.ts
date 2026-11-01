@@ -1,6 +1,7 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { claimFeature } from "../_shared/entitlement.ts";
+import { hasArabicLectureQuestions } from "../_shared/lecture-question-language.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +47,7 @@ Deno.serve(async (req) => {
 
     const langName = lang === "ar" ? "Arabic" : "English";
     const languageInstructions = nadiaEnglishStyle
-      ? `Write every title, heading, label, scientific term and question in English only. Write explanatory prose and answers in clear Arabic, keeping scientific terms in English. Questions must have no Arabic text. Preserve source facts and terminology; do not invent information.`
+      ? `Write every title, heading, label, scientific term and question in English only. Write explanatory prose and answers in clear Arabic, keeping scientific terms in English. Every question, including worked examples, table prompts, headings, practice and review questions, must have no Arabic text. Preserve source facts and terminology; do not invent information.`
       : arabicEnglishCurriculum
       ? `The student studies an English-language curriculum but speaks Arabic. Write all general explanations, examples, summaries, warnings, and transitions in clear Modern Standard Arabic. Every scientific term must be written bilingually every time it appears, in the format: Arabic name (English Term). Review questions must be written in English only, without Arabic inside the question, under a heading named Review Questions. Preserve the English curriculum terminology accurately.`
       : `Write the notes in ${langName}.`;
@@ -113,6 +114,13 @@ Deno.serve(async (req) => {
       const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall?.function?.arguments) {
         parsed = parseJsonMaybe(toolCall.function.arguments);
+        if (parsed && nadiaEnglishStyle) {
+          const markdown = (parsed.blocks || []).map((block: GenBlock) => {
+            const prefix = block.type.startsWith("h") ? "### " : block.type === "numbered" ? "1. " : "";
+            return `${prefix}${block.text}`;
+          }).join("\n");
+          if (hasArabicLectureQuestions(markdown)) parsed = null;
+        }
         if (parsed) break;
       }
     }

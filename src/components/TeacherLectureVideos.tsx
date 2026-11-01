@@ -10,6 +10,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { getCuratedTeacherLectureNote } from "@/data/teacherLectureNotes";
 import { getNadiaArabicLectureNoteSourceKeys } from "@/data/nadiaLectureNoteSources";
 import { getNadiaTopicTitle, type NadiaChapterNumber } from "@/data/nadiaTeacherContent";
+import { hasArabicLectureQuestions } from "../../supabase/functions/_shared/lecture-question-language";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -25,6 +26,7 @@ type LectureVideo = {
   notes_parts: NotePart[];
   approved: boolean;
   created_at: string;
+  note_source_ids?: string[];
 };
 
 type PrettyBlock = {
@@ -213,6 +215,8 @@ export default function TeacherLectureVideos({
   const [showAdd, setShowAdd] = useState(false);
   const [openVideo, setOpenVideo] = useState<LectureVideo | null>(null);
   const [playingVideo, setPlayingVideo] = useState<LectureVideo | null>(null);
+  const [openingNoteId, setOpeningNoteId] = useState<string | null>(null);
+  const noteRequest = useRef(0);
   const curatedNote = useMemo(
     () => getCuratedTeacherLectureNote(teacherId, topicKey),
     [teacherId, topicKey],
@@ -283,6 +287,7 @@ export default function TeacherLectureVideos({
                 : "ملاحظات المحاضرة — من محتوى المنهج العربي",
               transcript: null,
               notes_parts: fallbackParts,
+              note_source_ids: orderedSources.map((source) => source.id),
               approved: true,
               created_at: orderedSources[0]?.created_at ?? new Date(0).toISOString(),
             }];
@@ -296,6 +301,44 @@ export default function TeacherLectureVideos({
     setLoading(false);
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey, curatedNote, arabicFallbackTopicKeys]);
+
+  useEffect(() => {
+    noteRequest.current++;
+    setOpeningNoteId(null);
+    setOpenVideo(null);
+    return () => { noteRequest.current++; };
+  }, [teacherId, topicKey, contentLanguage]);
+
+  const openNotes = async (video: LectureVideo) => {
+    if (!englishNadia || !video.notes_parts.some((part) => hasArabicLectureQuestions(part.notes))) {
+      setOpenVideo(video);
+      return;
+    }
+    const request = ++noteRequest.current;
+    setOpeningNoteId(video.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("english-lecture-questions", {
+        body: { topicKey, sourceIds: video.note_source_ids ?? [video.id] },
+      });
+      if (request !== noteRequest.current) return;
+      if (error) throw new Error(await getFunctionError(error, "Could not prepare the English questions. Please try again."));
+      if (!Array.isArray(data?.parts) || data.parts.length !== video.notes_parts.length
+        || data.parts.some((part: NotePart) => typeof part?.notes !== "string" || hasArabicLectureQuestions(part.notes))) {
+        throw new Error("Some questions could not be translated. Please try again.");
+      }
+      const translated = {
+        ...video,
+        // Keep the selected English topic titles rather than source-lesson names.
+        notes_parts: video.notes_parts.map((part, index) => ({ ...part, notes: data.parts[index].notes })),
+      };
+      setVideos((rows) => rows.map((row) => row.id === video.id ? translated : row));
+      setOpenVideo(translated);
+    } catch (error) {
+      if (request === noteRequest.current) toast.error(error instanceof Error ? error.message : "Could not prepare the English questions. Please try again.");
+    } finally {
+      if (request === noteRequest.current) setOpeningNoteId(null);
+    }
+  };
 
   const remove = async (id: string) => {
     if (!confirm(T.confirmDelete)) return;
@@ -388,7 +431,7 @@ export default function TeacherLectureVideos({
                       <BookOpen className="h-7 w-7" />
                     </span>
                     <span className="text-sm font-black">
-                      {language === "ar" ? "ملاحظات المحاضرة" : "Lecture notes"}
+                      {notesLanguage === "ar" ? "ملاحظات المحاضرة" : "Lecture notes"}
                     </span>
                   </div>
                 )}
@@ -403,10 +446,12 @@ export default function TeacherLectureVideos({
                 <div className="mt-2 flex items-center gap-2">
                   {v.notes_parts?.some((part) => part.notes?.trim()) && (
                     <button
-                      onClick={() => setOpenVideo(v)}
-                      className="inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90"
+                      onClick={() => openNotes(v)}
+                      disabled={openingNoteId !== null}
+                      className="inline-flex items-center gap-1 min-h-8 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-60"
                     >
-                      <BookOpen className="w-3.5 h-3.5" /> {T.openNotes}
+                      {openingNoteId === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
+                      {openingNoteId === v.id ? "Preparing English questions…" : T.openNotes}
                     </button>
                   )}
                   {v.youtube_url && (
