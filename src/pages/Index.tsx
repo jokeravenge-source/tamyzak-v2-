@@ -87,12 +87,7 @@ import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
 import { flashcardsEngGrammar7 } from "@/data/flashcardsEngGrammar7";
 import { flashcardsEngGrammar8 } from "@/data/flashcardsEngGrammar8";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
-import { flashcardsFrenchNegationAr } from "@/data/flashcardsFrenchNegationAr";
-import { flashcardsFrenchInterrogationAr } from "@/data/flashcardsFrenchInterrogationAr";
-import { flashcardsFrenchRelativePronounsAr } from "@/data/flashcardsFrenchRelativePronounsAr";
-import { flashcardsFrenchFeminineAr } from "@/data/flashcardsFrenchFeminineAr";
-import { flashcardsFrenchPluralAr } from "@/data/flashcardsFrenchPluralAr";
-import { flashcardsFrenchAdverbsAr } from "@/data/flashcardsFrenchAdverbsAr";
+import { getFrenchFlashcardDeck } from "@/data/frenchFlashcardDecks";
 import { flashcardsMathCh1Ar } from "@/data/flashcardsMathCh1Ar";
 import { flashcardsMathCh2Ar } from "@/data/flashcardsMathCh2Ar";
 import { flashcardsCh1 } from "@/data/flashcardsCh1";
@@ -500,22 +495,14 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       }
 
       if (subject === "french") {
-        const frenchDecks: Record<string, { ar: string; en: string; cards: typeof flashcards }> = {
-          "1": { ar: "الفرنسية · النفي", en: "French · Negation", cards: flashcardsFrenchNegationAr },
-          "2": { ar: "الفرنسية · الاستفهام", en: "French · Interrogation", cards: flashcardsFrenchInterrogationAr },
-          "3": { ar: "الفرنسية · ضمائر الوصل", en: "French · Relative Pronouns", cards: flashcardsFrenchRelativePronounsAr },
-          "4": { ar: "الفرنسية · التأنيث", en: "French · Feminization", cards: flashcardsFrenchFeminineAr },
-          "5": { ar: "الفرنسية · الجمع", en: "French · Plural", cards: flashcardsFrenchPluralAr },
-          "6": { ar: "الفرنسية · اشتقاق الظروف", en: "French · Adverbs", cards: flashcardsFrenchAdverbsAr },
-        };
-        const d = frenchDecks[chapter];
+        const d = getFrenchFlashcardDeck(chapter);
         if (d) {
           return {
             title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
             eyebrow: language === "ar"
-              ? `${d.ar} · الأستاذ محمد علي الكناني`
-              : `${d.en} · Teacher: Mohammed Ali Al-Kinani`,
-            cards: d.cards,
+              ? `الفرنسية · ${d.titleAr} · الأستاذ محمد علي الكناني`
+              : `French · ${d.titleEn} · Teacher: Mohammed Ali Al-Kinani`,
+            cards: [...d.cards],
           };
         }
       }

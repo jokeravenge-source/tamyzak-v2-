@@ -17,6 +17,7 @@ import SeoHead from "@/components/SeoHead";
 import haydarDiwanImage from "@/assets/teachers/haydar-diwan-flashcards.png";
 import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
 import ahmedCh3EnglishInfo from "@/data/flashcardsChemCh3AhmedNadawiEn.info.json";
+import FrenchFlashcardsDashboard from "@/components/FrenchFlashcardsDashboard";
 
 
 
@@ -123,6 +124,21 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   const handleClick = (chapter: typeof chapters[number]) => {
     if (!chapter.locked) navigate(`/flashcards/${chapter.n}`);
   };
+  const openFrenchDeck = (chapter: number) => navigate(`/flashcards/${chapter}`);
+  const pageTitle = subject === "french"
+    ? (language === "ar" ? "لوحة بطاقات الفرنسية" : "French Flashcards Dashboard")
+    : text.title;
+  const pageDescription = subject === "french"
+    ? (language === "ar"
+        ? "راجع 143 بطاقة في ستة مواضيع لقواعد اللغة الفرنسية وتابع تقدمك من مكان واحد."
+        : "Review 143 cards across six French grammar decks and track your progress in one place.")
+    : subject === "math"
+      ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
+      : subject === "biology"
+        ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
+        : subject === "chemistry"
+          ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
+          : text.description;
 
   return (
     <>
@@ -172,20 +188,14 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
         <h1 className="text-5xl md:text-7xl font-bold gradient-text leading-[1.1] mb-4">
           {showTeacherPicker
             ? (language === "ar" ? "اختر المدرّس" : "Choose your teacher")
-            : text.title}
+            : pageTitle}
         </h1>
         <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">
           {showTeacherPicker
             ? (language === "ar"
                 ? `اختر المدرّس لعرض ${subject === "biology" ? "بطاقات الأحياء" : subject === "chemistry" ? "بطاقات الكيمياء" : "فصول الفيزياء وبطاقاتها التعليمية"}.`
                 : `Choose a teacher to view ${subject === "biology" ? "their Biology flashcards" : subject === "chemistry" ? "their Chemistry flashcards" : "all eight Physics chapters and their flashcards"}.`)
-            : subject === "math"
-              ? (language === "ar" ? "اختر الفصل المتاح لمراجعة بطاقات الرياضيات." : "Choose an available mathematics chapter to review its flashcards.")
-              : subject === "biology"
-                ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
-                : subject === "chemistry"
-                  ? (language === "ar" ? "اختر الفصل المتاح من قائمة المدرّس." : "Choose an available chapter from this teacher's list.")
-                : text.description}
+            : pageDescription}
         </p>
       </header>
 
@@ -307,6 +317,8 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
             </div>
           )}
         </section>
+      ) : subject === "french" ? (
+        <FrenchFlashcardsDashboard language={language} onOpenDeck={openFrenchDeck} />
       ) : (
       <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
         {visibleChapters.map((c, i) => {
