@@ -87,6 +87,7 @@ import { flashcardsEngGrammar6 } from "@/data/flashcardsEngGrammar6";
 import { flashcardsEngGrammar7 } from "@/data/flashcardsEngGrammar7";
 import { flashcardsEngGrammar8 } from "@/data/flashcardsEngGrammar8";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
+import { getEnglishLiteratureDeck } from "@/data/englishLiteratureFlashcards";
 import { getFrenchFlashcardDeck } from "@/data/frenchFlashcardDecks";
 import { flashcardsMathCh1Ar } from "@/data/flashcardsMathCh1Ar";
 import { flashcardsMathCh2Ar } from "@/data/flashcardsMathCh2Ar";
@@ -408,6 +409,19 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       const engCat = typeof window !== "undefined" ? localStorage.getItem("app_english_category_v1") : null;
 
+      if (subject === "english" && engCat === "literature") {
+        const literatureDeck = getEnglishLiteratureDeck(chapter);
+        if (literatureDeck) {
+          return {
+            title: language === "ar" ? "بطاقات الأدب الإنكليزي" : "English Literature Flashcards",
+            eyebrow: language === "ar"
+              ? `الإنجليزية · الأدب · ${literatureDeck.titleAr}`
+              : `English · Literature · ${literatureDeck.title}`,
+            cards: [...literatureDeck.cards],
+          };
+        }
+      }
+
       if (subject === "english" && engCat === "paragraphs" && chapter === "1") {
         return {
           title: language === "ar" ? "بطاقات تعليمية" : "Flashcards",
@@ -573,7 +587,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     if (
       subject === "english" &&
       englishGrammarTopicRanges[String(chapter)] &&
-      !(chapter === "1" && englishCategory === "paragraphs")
+      (englishCategory ?? "grammar") === "grammar"
     ) {
       return englishGrammarTopicRanges[String(chapter)].map((topic) => ({
         key: `english-unit-${chapter}-${topic.key}`,

@@ -76,7 +76,12 @@ export const englishGrammarChapters = Array.from({ length: 8 }, (_, i) => ({
   locked: i > 2 && i !== 3 && i !== 4 && i !== 5 && i !== 6 && i !== 7,
 }));
 export const englishLiteratureChapters = [
-  { n: 1, title: "Coming Soon", arTitle: "قريباً", subtitle: "", locked: true },
+  { n: 1, title: "Section 1", arTitle: "القسم الأول", subtitle: "29 flashcards", locked: false },
+  { n: 2, title: "Section 2", arTitle: "القسم الثاني", subtitle: "31 flashcards", locked: false },
+  { n: 3, title: "Section 3", arTitle: "القسم الثالث", subtitle: "15 flashcards", locked: false },
+  { n: 4, title: "Section 4", arTitle: "القسم الرابع", subtitle: "26 flashcards", locked: false },
+  { n: 5, title: "Section 5", arTitle: "القسم الخامس", subtitle: "28 flashcards", locked: false },
+  { n: 6, title: "Section 6", arTitle: "القسم السادس", subtitle: "18 flashcards", locked: false },
 ];
 export const englishParagraphsChapters = [
   { n: 1, title: "Textbook Passages", arTitle: "قطع الكتاب", subtitle: "Reading-comprehension flashcards", locked: false },
