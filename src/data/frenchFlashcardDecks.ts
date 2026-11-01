@@ -5,6 +5,7 @@ import { flashcardsFrenchInterrogationAr } from "./flashcardsFrenchInterrogation
 import { flashcardsFrenchNegationAr } from "./flashcardsFrenchNegationAr";
 import { flashcardsFrenchPluralAr } from "./flashcardsFrenchPluralAr";
 import { flashcardsFrenchRelativePronounsAr } from "./flashcardsFrenchRelativePronounsAr";
+import { flashcardsFrenchReadingComprehension } from "./flashcardsFrenchReadingComprehension";
 
 export type FrenchFlashcardDeck = {
   chapter: number;
@@ -21,6 +22,7 @@ export const FRENCH_FLASHCARD_DECKS: readonly FrenchFlashcardDeck[] = [
   { chapter: 4, titleAr: "التأنيث", titleEn: "Feminization", subtitle: "Règles & exceptions", cards: flashcardsFrenchFeminineAr },
   { chapter: 5, titleAr: "الجمع", titleEn: "Plural", subtitle: "Pluriel des noms & adjectifs", cards: flashcardsFrenchPluralAr },
   { chapter: 6, titleAr: "اشتقاق الظروف", titleEn: "Adverbs", subtitle: "-ment / -emment / -amment", cards: flashcardsFrenchAdverbsAr },
+  { chapter: 7, titleAr: "القطع الاستيعابية", titleEn: "Reading Comprehension", subtitle: "5 textes · 37 questions", cards: flashcardsFrenchReadingComprehension },
 ] as const;
 
 export const FRENCH_FLASHCARD_TOTAL = FRENCH_FLASHCARD_DECKS.reduce(

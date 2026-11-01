@@ -30,23 +30,41 @@ beforeEach(() => {
 });
 
 describe("French flashcards dashboard", () => {
-  it("uses the six real French decks and their exact card total", () => {
-    expect(FRENCH_FLASHCARD_DECKS).toHaveLength(6);
-    expect(FRENCH_FLASHCARD_TOTAL).toBe(143);
-    expect(FRENCH_FLASHCARD_DECKS.map((deck) => deck.cards.length)).toEqual([16, 30, 16, 28, 23, 30]);
+  it("uses the seven real French decks and their exact card total", () => {
+    expect(FRENCH_FLASHCARD_DECKS).toHaveLength(7);
+    expect(FRENCH_FLASHCARD_TOTAL).toBe(180);
+    expect(FRENCH_FLASHCARD_DECKS.map((deck) => deck.cards.length)).toEqual([16, 30, 16, 28, 23, 30, 37]);
     expect(getFrenchFlashcardDeck(3)?.titleEn).toBe("Relative Pronouns");
+  });
+
+  it("includes every checked comprehension question with its answer", () => {
+    const readingDeck = getFrenchFlashcardDeck(7)!;
+    const expectedCounts = new Map([
+      ["Jean Dugommier", 8],
+      ["Rêves de gloire", 9],
+      ["Rêves d’enfance", 8],
+      ["Rêves de révolte", 5],
+      ["Rêves de sagesse", 7],
+    ]);
+
+    expect(readingDeck.cards).toHaveLength(37);
+    expect(new Set(readingDeck.cards.map((card) => card.q)).size).toBe(37);
+    expect(readingDeck.cards.every((card) => card.q.trim() && card.a.trim())).toBe(true);
+    for (const [title, count] of expectedCounts) {
+      expect(readingDeck.cards.filter((card) => card.q.startsWith(`${title}\n`))).toHaveLength(count);
+    }
   });
 
   it("shows every deck, progress, due cards and opens the selected deck", async () => {
     const openDeck = vi.fn();
     render(<FrenchFlashcardsDashboard language="en" onOpenDeck={openDeck} />);
 
-    expect(screen.getByText("143")).toBeInTheDocument();
-    expect(screen.getByText("6")).toBeInTheDocument();
+    expect(screen.getByText("180")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
     for (const deck of FRENCH_FLASHCARD_DECKS) {
       expect(screen.getByRole("heading", { name: deck.titleEn })).toBeInTheDocument();
     }
-    await waitFor(() => expect(screen.getByText("2 / 143 · 1%")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("2 / 180 · 1%")).toBeInTheDocument());
     expect(screen.getByText("1 due")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("heading", { name: "Plural" }).closest("button")!);
     expect(openDeck).toHaveBeenCalledWith(5);
@@ -65,6 +83,6 @@ describe("French flashcards dashboard", () => {
     expect(screen.getByRole("region", { name: "لوحة بطاقات الفرنسية" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "الاستفهام" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ابدأ المراجعة/ })).toBeInTheDocument();
-    await waitFor(() => expect(srs.loadDeckStates).toHaveBeenCalledTimes(6));
+    await waitFor(() => expect(srs.loadDeckStates).toHaveBeenCalledTimes(7));
   });
 });
