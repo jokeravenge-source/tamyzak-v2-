@@ -43,6 +43,7 @@ const VideoNotes = lazy(() => import("./pages/VideoNotes"));
 const PodcastTutor = lazy(() => import("./pages/PodcastTutor"));
 import ZombieGuard from "./components/ZombieGuard";
 import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
+import StudyChallengeInviteWatcher from "./components/StudyChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import type { BasicsChoice } from "./pages/Basics";
 const Basics = lazy(() => import("./pages/Basics"));
@@ -988,6 +989,9 @@ const StudentApp = () => {
             />
           </Suspense>
         </div>
+      )}
+      {authed && language && channelVerified && (
+        <StudyChallengeInviteWatcher language={language} />
       )}
       {authed && language && channelVerified && (
         <ChallengeInviteWatcher language={language} onAccept={() => chooseMenu("liveBattle" as MenuChoice)} />
