@@ -3591,11 +3591,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      french_flashcard_access: { Args: Record<PropertyKey, never>; Returns: Json }
-      manage_french_flashcard_staff: {
-        Args: { staff_email?: string; action?: string }
-        Returns: { email: string; created_at: string }[]
-      }
       adjust_parent_student_score: {
         Args: { _delta: number; _link_id: string; _student_user_id: string }
         Returns: number
