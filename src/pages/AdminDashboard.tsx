@@ -907,7 +907,10 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
         ) : tab === "notes" ? (
           <AdminNotesTab />
         ) : tab === "frenchFlashcards" ? (
-          <AdminFrenchFlashcardsTab />
+          <>
+            <a href="/tmz-ctrl-8462/french-flashcards" className="mb-5 inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-semibold hover:bg-secondary">Open teacher dashboard & manage French staff</a>
+            <AdminFrenchFlashcardsTab />
+          </>
         ) : tab === "flashcards" ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

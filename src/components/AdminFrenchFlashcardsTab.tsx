@@ -3,7 +3,6 @@ import {
   Check,
   ExternalLink,
   Eye,
-  EyeOff,
   Languages,
   Loader2,
   Pencil,
@@ -134,6 +133,7 @@ export default function AdminFrenchFlashcardsTab() {
   };
 
   const setLibraryVisibility = async (row: LibraryRow, hidden: boolean) => {
+    if (hidden && !window.confirm("Delete this French flashcard from the student decks? You can restore it later.")) return;
     const key = `library:${row.chapter}:${row.cardIndex}`;
     setBusyKey(key);
     const { data: auth } = await supabase.auth.getUser();
@@ -147,7 +147,7 @@ export default function AdminFrenchFlashcardsTab() {
     }, { onConflict: "chapter,card_index" });
     setBusyKey(null);
     if (saveError) return toast.error(saveError.message);
-    toast.success(hidden ? "Card hidden from students" : "Card published again");
+    toast.success(hidden ? "Card deleted from student decks" : "Card restored to student decks");
     await load();
   };
 
@@ -231,7 +231,7 @@ export default function AdminFrenchFlashcardsTab() {
         <div>
           <h2 id="french-admin-title" className="text-2xl font-bold text-foreground">French Flashcards</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Edit the 180 bundled cards, hide incorrect cards, restore source content, and publish additional cards.
+            View, edit, delete, and add French flashcards. Deleted library cards can be restored later.
           </p>
           <p className="mt-3 text-xs font-semibold text-muted-foreground">
             {FRENCH_FLASHCARD_TOTAL} source cards · {editedCount} changed · {hiddenCount} hidden · {customCards.length} additional · {pendingCount} pending
@@ -344,7 +344,7 @@ export default function AdminFrenchFlashcardsTab() {
                         <span className="rounded-full bg-secondary px-2.5 py-1">Deck {row.chapter}: {row.deckTitle}</span>
                         <span>Card {row.cardIndex + 1}</span>
                         {row.override && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-primary">Changed</span>}
-                        {row.hidden && <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-amber-600 dark:text-amber-300">Hidden from students</span>}
+                        {row.hidden && <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-amber-600 dark:text-amber-300">Deleted from student decks</span>}
                       </div>
                       {isEditing ? (
                         <div className="space-y-3">
@@ -367,7 +367,7 @@ export default function AdminFrenchFlashcardsTab() {
                       ) : (
                         <>
                           <button type="button" onClick={() => setEditing({ kind: "library", chapter: row.chapter, cardIndex: row.cardIndex, question: row.question, answer: row.answer, hidden: row.hidden })} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-secondary"><Pencil className="h-4 w-4" /> Edit</button>
-                          <button type="button" disabled={busyKey === key} onClick={() => void setLibraryVisibility(row, !row.hidden)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-secondary disabled:opacity-60">{row.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} {row.hidden ? "Publish" : "Hide"}</button>
+                          <button type="button" disabled={busyKey === key} onClick={() => void setLibraryVisibility(row, !row.hidden)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-secondary disabled:opacity-60">{row.hidden ? <Eye className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />} {row.hidden ? "Restore card" : "Delete"}</button>
                           {row.override && <button type="button" disabled={busyKey === key} onClick={() => void restoreLibraryCard(row)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-secondary disabled:opacity-60"><RotateCcw className="h-4 w-4" /> Restore</button>}
                         </>
                       )}

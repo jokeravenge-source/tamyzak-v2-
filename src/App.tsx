@@ -27,6 +27,7 @@ const Summaries = lazy(() => import("./pages/Summaries"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const FrenchTeacherDashboard = lazy(() => import("./pages/FrenchTeacherDashboard"));
 const AdminAhmedFlashcardsReview = lazy(() => import("./pages/AdminAhmedFlashcardsReview"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
 const FlashcardsDashboard = lazy(() => import("./pages/FlashcardsDashboard"));
@@ -503,7 +504,7 @@ const StudentApp = () => {
     () => {
       if (typeof window === "undefined") return "student";
       // Hidden admin entry point: only reachable by typing the secret URL.
-      if (window.location.pathname.replace(/\/+$/, "") === ADMIN_PANEL_PATH) return "admin";
+      if (window.location.pathname.replace(/\/+$/, "") === ADMIN_PANEL_PATH || window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/french-flashcards`) return "admin";
       if (window.location.pathname.startsWith("/who-is-best")) return "guest";
       // Lecture deep links remain public without making every visitor choose
       // a role before entering the app.
@@ -1015,7 +1016,9 @@ const StudentApp = () => {
       <PageTransition
         routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${channelVerified ? "ch" : "noch"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
-      {authLoading ? (
+      {authRole === "admin" && (window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/french-flashcards` || new URLSearchParams(window.location.search).get("section") === "french-flashcards") ? (
+        <FrenchTeacherDashboard />
+      ) : authLoading ? (
         <main className="min-h-screen flex items-center justify-center">
           <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
         </main>
