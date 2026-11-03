@@ -1,22 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
-  BookOpenCheck,
   CircleHelp,
-  Clock3,
   Gauge,
-  Languages,
   MessageSquareText,
   Layers3,
   Link2,
   ListPlus,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
+import { supabase } from "@/integrations/supabase/client";
 import {
   FRENCH_FLASHCARD_DECKS,
-  FRENCH_FLASHCARD_TOTAL,
 } from "@/data/frenchFlashcardDecks";
 import { isDue, loadDeckStates } from "@/lib/srs";
 
@@ -37,6 +33,10 @@ const emptyProgress = () => Object.fromEntries(
   FRENCH_FLASHCARD_DECKS.map((deck) => [deck.chapter, { reviewed: 0, due: 0 }]),
 ) as Record<number, DeckProgress>;
 
+const sourceCardCounts = () => Object.fromEntries(
+  FRENCH_FLASHCARD_DECKS.map((deck) => [deck.chapter, deck.cards.length]),
+) as Record<number, number>;
+
 export default function FrenchFlashcardsDashboard({
   language,
   onOpenDeck,
@@ -46,6 +46,7 @@ export default function FrenchFlashcardsDashboard({
 }) {
   const isArabic = language === "ar";
   const [progress, setProgress] = useState<Record<number, DeckProgress>>(emptyProgress);
+  const [cardCounts, setCardCounts] = useState<Record<number, number>>(sourceCardCounts);
 
   useEffect(() => {
     let active = true;
@@ -63,91 +64,34 @@ export default function FrenchFlashcardsDashboard({
     return () => { active = false; };
   }, []);
 
-  const totals = useMemo(() => FRENCH_FLASHCARD_DECKS.reduce(
-    (result, deck) => ({
-      reviewed: result.reviewed + (progress[deck.chapter]?.reviewed ?? 0),
-      due: result.due + (progress[deck.chapter]?.due ?? 0),
-    }),
-    { reviewed: 0, due: 0 },
-  ), [progress]);
-  const overallPercent = Math.round((totals.reviewed / FRENCH_FLASHCARD_TOTAL) * 100);
-  const continueDeck = useMemo(() => {
-    const due = FRENCH_FLASHCARD_DECKS.find((deck) => (progress[deck.chapter]?.due ?? 0) > 0);
-    if (due) return due;
-    const started = [...FRENCH_FLASHCARD_DECKS]
-      .reverse()
-      .find((deck) => {
-        const reviewed = progress[deck.chapter]?.reviewed ?? 0;
-        return reviewed > 0 && reviewed < deck.cards.length;
-      });
-    return started ?? FRENCH_FLASHCARD_DECKS.find((deck) => (progress[deck.chapter]?.reviewed ?? 0) < deck.cards.length)
-      ?? FRENCH_FLASHCARD_DECKS[0];
-  }, [progress]);
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      supabase.from("french_flashcard_overrides").select("chapter, hidden"),
+      supabase.from("custom_flashcards").select("chapter").eq("subject", "french").eq("language", language).eq("approved", true),
+    ]).then(([overrideResult, customResult]) => {
+      if (!active || overrideResult.error || customResult.error) return;
+      const next = sourceCardCounts();
+      for (const item of overrideResult.data ?? []) {
+        if (item.hidden && next[item.chapter] != null) next[item.chapter] = Math.max(0, next[item.chapter] - 1);
+      }
+      for (const item of customResult.data ?? []) {
+        const deck = Number(item.chapter);
+        if (next[deck] != null) next[deck] += 1;
+      }
+      setCardCounts(next);
+    });
+    return () => { active = false; };
+  }, [language]);
 
   return (
-    <section className="relative z-10 mx-auto mt-10 w-full max-w-6xl md:mt-14" aria-label={isArabic ? "لوحة بطاقات الفرنسية" : "French flashcards dashboard"}>
-      <div className="relative overflow-hidden rounded-[2rem] border border-violet-400/25 bg-gradient-to-br from-[#172554] via-[#312e81] to-[#581c87] p-6 text-white shadow-2xl shadow-violet-950/20 sm:p-8 lg:p-10">
-        <div className="pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-blue-400/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 size-72 rounded-full bg-fuchsia-400/20 blur-3xl" />
-        <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold backdrop-blur">
-              <Sparkles className="size-3.5 text-amber-300" />
-              {isArabic ? "الأستاذ محمد علي الكناني" : "Mohammed Ali Al-Kinani"}
-            </div>
-            <h2 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl">
-              {isArabic ? "راجع قواعد الفرنسية والقطع من لوحة واحدة" : "Master French grammar and reading from one dashboard"}
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
-              {isArabic
-                ? "سبعة مواضيع مرتبة تشمل القواعد والقطع الاستيعابية، مع تتبع مراجعتك والبطاقات المستحقة والعودة السريعة إلى آخر تقدمك."
-                : "Seven organized grammar and reading decks with review progress, due cards, and a quick path back to studying."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onOpenDeck(continueDeck.chapter)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-indigo-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            <BookOpenCheck className="size-5" />
-            {totals.reviewed > 0
-              ? (isArabic ? "متابعة المراجعة" : "Continue reviewing")
-              : (isArabic ? "ابدأ المراجعة" : "Start reviewing")}
-            <ArrowRight className={`size-4 ${isArabic ? "rotate-180" : ""}`} />
-          </button>
-        </div>
-
-        <div className="relative mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { value: FRENCH_FLASHCARD_TOTAL, label: isArabic ? "بطاقة" : "Flashcards", Icon: Languages },
-            { value: FRENCH_FLASHCARD_DECKS.length, label: isArabic ? "مواضيع" : "Decks", Icon: Layers3 },
-            { value: totals.reviewed, label: isArabic ? "تمت مراجعتها" : "Reviewed", Icon: BookOpenCheck },
-            { value: totals.due, label: isArabic ? "مستحقة الآن" : "Due now", Icon: Clock3 },
-          ].map(({ value, label, Icon }) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur">
-              <Icon className="size-4 text-violet-200" />
-              <strong className="mt-3 block text-2xl font-black tabular-nums">{value.toLocaleString("en-US")}</strong>
-              <span className="text-xs font-semibold text-white/60">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative mt-5 rounded-2xl border border-white/10 bg-black/10 p-4">
-          <div className="mb-2 flex items-center justify-between gap-4 text-xs font-bold">
-            <span>{isArabic ? "التقدم الكلي" : "Overall progress"}</span>
-            <span>{totals.reviewed} / {FRENCH_FLASHCARD_TOTAL} · {overallPercent}%</span>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-300 to-fuchsia-300 transition-[width] duration-700" style={{ width: `${overallPercent}%` }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="relative z-10 mx-auto mt-10 w-full max-w-6xl md:mt-14" aria-label={isArabic ? "أقسام بطاقات الفرنسية" : "French flashcard decks"}>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FRENCH_FLASHCARD_DECKS.map((deck, index) => {
           const Icon = deckIcons[index];
           const deckProgress = progress[deck.chapter] ?? { reviewed: 0, due: 0 };
-          const percent = Math.round((deckProgress.reviewed / deck.cards.length) * 100);
+          const cardCount = cardCounts[deck.chapter] ?? deck.cards.length;
+          const percent = cardCount ? Math.round((deckProgress.reviewed / cardCount) * 100) : 0;
           return (
             <button
               type="button"
@@ -161,7 +105,7 @@ export default function FrenchFlashcardsDashboard({
                   <Icon className="size-6" />
                 </span>
                 <span className="rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-bold text-muted-foreground">
-                  {deck.cards.length} {isArabic ? "بطاقة" : "cards"}
+                  {cardCount} {isArabic ? "بطاقة" : "cards"}
                 </span>
               </div>
               <div className="mt-6">

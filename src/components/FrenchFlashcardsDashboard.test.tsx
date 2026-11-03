@@ -8,10 +8,27 @@ import {
 } from "@/data/frenchFlashcardDecks";
 
 const srs = vi.hoisted(() => ({ loadDeckStates: vi.fn() }));
+const database = vi.hoisted(() => ({ overrides: [] as unknown[], customCards: [] as unknown[] }));
 vi.mock("@/lib/srs", () => ({
   loadDeckStates: srs.loadDeckStates,
   isDue: (state: { dueAt: number }) => state.dueAt <= Date.now(),
 }));
+vi.mock("@/integrations/supabase/client", () => {
+  const query = (data: unknown[]) => {
+    const builder = {
+      select: () => builder,
+      eq: () => builder,
+      then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+        Promise.resolve({ data, error: null }).then(resolve),
+    };
+    return builder;
+  };
+  return {
+    supabase: {
+      from: (table: string) => query(table === "french_flashcard_overrides" ? database.overrides : database.customCards),
+    },
+  };
+});
 
 const state = (lastRating: "good" | "hard" | null, dueAt: number) => ({
   cardKey: "card", ease: 2.5, intervalDays: 1, reps: lastRating ? 1 : 0,
@@ -29,7 +46,7 @@ beforeEach(() => {
   });
 });
 
-describe("French flashcards dashboard", () => {
+describe("French flashcard decks", () => {
   it("uses the seven real French decks and their exact card total", () => {
     expect(FRENCH_FLASHCARD_DECKS).toHaveLength(7);
     expect(FRENCH_FLASHCARD_TOTAL).toBe(180);
@@ -59,30 +76,26 @@ describe("French flashcards dashboard", () => {
     const openDeck = vi.fn();
     render(<FrenchFlashcardsDashboard language="en" onOpenDeck={openDeck} />);
 
-    expect(screen.getByText("180")).toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
     for (const deck of FRENCH_FLASHCARD_DECKS) {
       expect(screen.getByRole("heading", { name: deck.titleEn })).toBeInTheDocument();
     }
-    await waitFor(() => expect(screen.getByText("2 / 180 · 1%")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("2 reviewed")).toBeInTheDocument());
     expect(screen.getByText("1 due")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("heading", { name: "Plural" }).closest("button")!);
     expect(openDeck).toHaveBeenCalledWith(5);
   });
 
-  it("continues with a deck that has cards due", async () => {
-    const openDeck = vi.fn();
-    render(<FrenchFlashcardsDashboard language="en" onOpenDeck={openDeck} />);
-    const continueButton = await screen.findByRole("button", { name: /Continue reviewing/ });
-    fireEvent.click(continueButton);
-    expect(openDeck).toHaveBeenCalledWith(1);
+  it("does not render the removed overview dashboard", async () => {
+    render(<FrenchFlashcardsDashboard language="en" onOpenDeck={vi.fn()} />);
+    expect(screen.queryByText("Master French grammar and reading from one dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Start reviewing|Continue reviewing/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(srs.loadDeckStates).toHaveBeenCalledTimes(7));
   });
 
-  it("renders the dashboard in Arabic", async () => {
+  it("renders the deck list in Arabic", async () => {
     render(<FrenchFlashcardsDashboard language="ar" onOpenDeck={vi.fn()} />);
-    expect(screen.getByRole("region", { name: "لوحة بطاقات الفرنسية" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "أقسام بطاقات الفرنسية" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "الاستفهام" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ابدأ المراجعة/ })).toBeInTheDocument();
     await waitFor(() => expect(srs.loadDeckStates).toHaveBeenCalledTimes(7));
   });
 });

@@ -89,6 +89,10 @@ import { flashcardsEngGrammar8 } from "@/data/flashcardsEngGrammar8";
 import { flashcardsEngParagraphs } from "@/data/flashcardsEngParagraphs";
 import { getEnglishLiteratureDeck } from "@/data/englishLiteratureFlashcards";
 import { getFrenchFlashcardDeck } from "@/data/frenchFlashcardDecks";
+import {
+  applyFrenchFlashcardOverrides,
+  type FrenchFlashcardOverride,
+} from "@/lib/frenchFlashcardOverrides";
 import { flashcardsMathCh1Ar } from "@/data/flashcardsMathCh1Ar";
 import { flashcardsMathCh2Ar } from "@/data/flashcardsMathCh2Ar";
 import { flashcardsCh1 } from "@/data/flashcardsCh1";
@@ -174,6 +178,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
     && chemistryFlashcardTeacher === "wijdan";
   const [extraRows, setExtraRows] = useState<{ id: string; q: string; a: string }[]>([]);
   const extraCards = useMemo(() => extraRows.map((r) => ({ q: r.q, a: r.a })), [extraRows]);
+  const [frenchOverrides, setFrenchOverrides] = useState<FrenchFlashcardOverride[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const SAVED_KEY = "saved_flashcards_v1";
   type SavedCard = { q: string; a: string; subject: string; chapter: string };
@@ -215,6 +220,23 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
       });
     return () => { active = false; };
   }, [subject, chapter, language]);
+
+  useEffect(() => {
+    if (subject !== "french") {
+      setFrenchOverrides([]);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("french_flashcard_overrides")
+      .select("*")
+      .eq("chapter", Number(chapter))
+      .order("card_index", { ascending: true })
+      .then(({ data }) => {
+        if (active) setFrenchOverrides((data ?? []) as FrenchFlashcardOverride[]);
+      });
+    return () => { active = false; };
+  }, [subject, chapter]);
 
   const loading = isAhmedNadawiDeck && ahmedOverrides.isPending;
   const useRemote = false;
@@ -516,7 +538,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
             eyebrow: language === "ar"
               ? `الفرنسية · ${d.titleAr} · الأستاذ محمد علي الكناني`
               : `French · ${d.titleEn} · Teacher: Mohammed Ali Al-Kinani`,
-            cards: [...d.cards],
+            cards: applyFrenchFlashcardOverrides(d.cards, d.chapter, frenchOverrides),
           };
         }
       }
@@ -574,7 +596,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
 
       return baseDeck;
     },
-    [baseDeck, chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject, ahmedOverrides.data]
+    [baseDeck, chapter, isAhmedNadawiDeck, isNadiaBiologyDeck, isWijdanChemistryDeck, language, subject, ahmedOverrides.data, frenchOverrides]
   );
   const text = copy[language];
   // Explicit, source-derived topic groups for decks that are built from

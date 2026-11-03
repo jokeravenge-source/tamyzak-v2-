@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap, Trophy } from "lucide-react";
+import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap, Trophy, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SUMMARY_SUBJECTS } from "./Summaries";
@@ -14,6 +14,7 @@ import AdminPointsTab from "@/components/AdminPointsTab";
 import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
+import AdminFrenchFlashcardsTab from "@/components/AdminFrenchFlashcardsTab";
 import WhoIsBest from "./WhoIsBest";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
@@ -34,10 +35,16 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
-  const [tab, setTab] = useState<Tab>("pending");
+  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "french-flashcards") {
+      return "frenchFlashcards";
+    }
+    return "pending";
+  });
   const sectionLabels: Record<Tab, string> = {
     pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
+    frenchFlashcards: "French Flashcards",
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
     credits: "Credits", points: "Points", announcements: "Announcements", mistakes: "Common Mistakes",
@@ -68,6 +75,13 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     if (accessReady && !canSee(tab)) setTab(isFlashcardOnlyAdmin ? "flashcards" : "pending");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessReady, isOwner, isFlashcardOnlyAdmin]);
+  useEffect(() => {
+    if (!accessReady || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (tab === "frenchFlashcards") url.searchParams.set("section", "french-flashcards");
+    else if (url.searchParams.get("section") === "french-flashcards") url.searchParams.delete("section");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [accessReady, tab]);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -795,6 +809,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <Layers className="w-4 h-4 inline mr-1.5" />Flashcards
             </button>
           )}
+          {canSee("frenchFlashcards") && (
+            <button onClick={() => setTab("frenchFlashcards")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "frenchFlashcards" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <Languages className="w-4 h-4 inline mr-1.5" />French Flashcards
+            </button>
+          )}
           {canSee("notifications") && (
             <button onClick={() => setTab("notifications")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "notifications" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Bell className="w-4 h-4 inline mr-1.5" />Notifications
@@ -887,6 +906,8 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <AdminBankTab />
         ) : tab === "notes" ? (
           <AdminNotesTab />
+        ) : tab === "frenchFlashcards" ? (
+          <AdminFrenchFlashcardsTab />
         ) : tab === "flashcards" ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

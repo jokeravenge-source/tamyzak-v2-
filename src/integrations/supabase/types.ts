@@ -1055,6 +1055,42 @@ export type Database = {
         }
         Relationships: []
       }
+      french_flashcard_overrides: {
+        Row: {
+          answer: string
+          card_index: number
+          chapter: number
+          created_at: string
+          hidden: boolean
+          id: string
+          question: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer: string
+          card_index: number
+          chapter: number
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          question: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer?: string
+          card_index?: number
+          chapter?: number
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          question?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       daily_games: {
         Row: {
           day: number

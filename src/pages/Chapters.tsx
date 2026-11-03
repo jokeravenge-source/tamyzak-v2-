@@ -126,14 +126,14 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
   };
   const openFrenchDeck = (chapter: number) => navigate(`/flashcards/${chapter}`);
   const pageTitle = subject === "french"
-    ? (language === "ar" ? "لوحة بطاقات الفرنسية" : "French Flashcards Dashboard")
+    ? (language === "ar" ? "بطاقات الفرنسية" : "French Flashcards")
     : subject === "english" && englishCategory === "literature"
       ? (language === "ar" ? "بطاقات الأدب الإنكليزي" : "English Literature Flashcards")
       : text.title;
   const pageDescription = subject === "french"
     ? (language === "ar"
-        ? "راجع 180 بطاقة في سبعة مواضيع تشمل قواعد اللغة الفرنسية والقطع الاستيعابية، وتابع تقدمك من مكان واحد."
-        : "Review 180 cards across seven French grammar and reading decks, and track your progress in one place.")
+        ? "اختر واحداً من سبعة مواضيع لمراجعة قواعد اللغة الفرنسية والقطع الاستيعابية."
+        : "Choose one of seven French grammar and reading decks to start reviewing.")
     : subject === "english" && englishCategory === "literature"
       ? (language === "ar"
           ? "اختر واحداً من الأقسام الستة لمراجعة 147 بطاقة سؤال وجواب من رواية Pride and Prejudice."
