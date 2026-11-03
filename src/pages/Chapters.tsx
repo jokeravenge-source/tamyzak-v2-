@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, ArrowLeft, ArrowRight, Sparkles, Dna, Layers3, FlaskConical } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Dna, Layers3, FlaskConical } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import type { AppSubject } from "@/pages/Subjects";
 import {
@@ -18,6 +18,7 @@ import haydarDiwanImage from "@/assets/teachers/haydar-diwan-flashcards.png";
 import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
 import ahmedCh3EnglishInfo from "@/data/flashcardsChemCh3AhmedNadawiEn.info.json";
 import FrenchFlashcardsDashboard from "@/components/FrenchFlashcardsDashboard";
+import ChapterFlashcardsGrid from "@/components/ChapterFlashcardsGrid";
 
 
 
@@ -326,63 +327,14 @@ const Chapters = ({ language, subject, onChangeLanguage }: { language: AppLangua
       ) : subject === "french" ? (
         <FrenchFlashcardsDashboard language={language} onOpenDeck={openFrenchDeck} />
       ) : (
-      <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 z-10 relative">
-        {visibleChapters.map((c, i) => {
-          const isAvailable = !c.locked;
-          return (
-            <button
-              key={c.n}
-              onClick={() => handleClick(c)}
-              disabled={c.locked}
-              style={{ animationDelay: `${i * 70}ms` }}
-              className={`group relative text-left rounded-3xl p-6 h-56 border backdrop-blur overflow-hidden transition-all duration-500 animate-fade-up
-                ${isAvailable
-                  ? "border-primary/40 bg-secondary/40 hover:-translate-y-2 hover:border-primary cursor-pointer shadow-lg hover:shadow-[var(--shadow-glow)]"
-                  : "border-white/5 bg-secondary/20 opacity-60 cursor-not-allowed"}`}
-            >
-              {/* Gradient sheen for available */}
-              {isAvailable && (
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "var(--gradient-primary)", mixBlendMode: "overlay" }}
-                />
-              )}
-
-              {/* Number */}
-              <div className="relative z-10 flex items-start justify-between">
-                <span
-                  className={`text-6xl font-bold font-mono leading-none ${
-                    isAvailable ? "gradient-text" : "text-muted-foreground/40"
-                  }`}
-                >
-                  {String(c.n).padStart(2, "0")}
-                </span>
-                {c.locked ? (
-                  <Lock className="w-4 h-4 text-muted-foreground/60" />
-                ) : (
-                  <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
-                )}
-              </div>
-
-              {/* Title */}
-              <div className="relative z-10 absolute bottom-6 left-6 right-6">
-                <h3 className={`text-lg font-semibold mb-1 ${language === "ar" ? "text-center" : ""} ${isAvailable ? "text-foreground" : "text-muted-foreground"}`}>
-                  {language === "ar" ? c.arTitle : c.title}
-                </h3>
-                <p className="text-xs text-muted-foreground line-clamp-1">{c.subtitle}</p>
-              </div>
-
-              {/* Bottom border accent */}
-              {isAvailable && (
-                <div
-                  className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700"
-                  style={{ background: "var(--gradient-primary)" }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </section>
+      <ChapterFlashcardsGrid
+        key={`${subject}:${language}:${biologyTeacher}:${chemistryTeacher}:${englishCategory}`}
+        chapters={visibleChapters}
+        subject={subject}
+        variant={subject === "biology" ? biologyTeacher ?? "mohammed-al-anzi" : subject === "chemistry" ? chemistryTeacher ?? "ahmed-al-nadawi" : subject === "english" ? englishCategory ?? "grammar" : "default"}
+        language={language}
+        onOpenChapter={handleClick}
+      />
       )}
 
       <footer className="text-center mt-16 text-xs text-muted-foreground tracking-widest z-10 relative">
