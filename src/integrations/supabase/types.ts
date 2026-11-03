@@ -1403,6 +1403,21 @@ export type Database = {
         }
         Relationships: []
       }
+      french_flashcard_staff: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       inactivity_push_log: {
         Row: {
           batch_id: string
@@ -3708,6 +3723,7 @@ export type Database = {
         Returns: string
       }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
+      french_flashcard_access: { Args: never; Returns: Json }
       get_due_mcq_bank_reviews: {
         Args: never
         Returns: {
@@ -3734,6 +3750,8 @@ export type Database = {
       is_course_enrolled: { Args: { _course: string }; Returns: boolean }
       is_course_student: { Args: never; Returns: boolean }
       is_course_teacher: { Args: { _course: string }; Returns: boolean }
+      is_french_flashcard_owner: { Args: never; Returns: boolean }
+      is_french_flashcard_staff: { Args: never; Returns: boolean }
       is_study_room_member: { Args: { _room: string }; Returns: boolean }
       is_study_room_owner: { Args: { _room: string }; Returns: boolean }
       list_subject_chapters: {
@@ -3742,6 +3760,19 @@ export type Database = {
           chapter: string
           has_files: boolean
         }[]
+      }
+      manage_french_flashcard_staff: {
+        Args: { action?: string; staff_email?: string }
+        Returns: {
+          created_at: string
+          email: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "french_flashcard_staff"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       my_poll_vote: {
         Args: { _guest_key?: string; _poll_id: string }
