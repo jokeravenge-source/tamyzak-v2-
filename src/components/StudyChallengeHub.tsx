@@ -219,11 +219,15 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
   const createChallenge = async () => {
     if (!title.trim() || selected.length === 0 || creating) return;
     setCreating(true);
-    const { error } = await supabase.rpc("create_study_challenge", {
+    const { data: challengeId, error } = await supabase.rpc("create_study_challenge", {
       _title: title.trim(), _duration_days: duration, _invitee_ids: selected.map((friend) => friend.user_id),
     });
+    if (error) { setCreating(false); toast.error(error.message); return; }
+    if (challengeId) {
+      const { error: pushError } = await supabase.functions.invoke("study-challenge-notify", { body: { challengeId } });
+      if (pushError) console.warn("Challenge created, but push delivery could not be started", pushError);
+    }
     setCreating(false);
-    if (error) { toast.error(error.message); return; }
     toast.success(t.created);
     setCreateOpen(false); setTitle(""); setSelected([]); setQuery(""); setDuration(7);
     await load();
