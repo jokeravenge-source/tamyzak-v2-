@@ -6,15 +6,21 @@ import {
   Check,
   CheckCircle2,
   CircleAlert,
+  Clock3,
+  Crown,
   FileQuestion,
   Loader2,
+  LockKeyhole,
   RefreshCw,
   RotateCcw,
+  Send,
   Sparkles,
   XCircle,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
+import { useEnglishReadingAccess } from "@/hooks/useEnglishReadingAccess";
+import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
 
 type Difficulty = "easy" | "medium" | "hard";
 type QuestionType = "short" | "true_false" | "fill_blank" | "title";
@@ -66,6 +72,8 @@ const COPY = {
     correct: "Correct",
     partial: "Partly correct",
     incorrect: "Incorrect",
+    trial: "3-day free trial",
+    trialRemaining: "Trial time remaining",
   },
   ar: {
     badge: "الإنجليزية · تدريب القطعة الخارجية",
@@ -96,6 +104,8 @@ const COPY = {
     correct: "صحيحة",
     partial: "صحيحة جزئياً",
     incorrect: "غير صحيحة",
+    trial: "تجربة مجانية لمدة 3 أيام",
+    trialRemaining: "الوقت المتبقي من التجربة",
   },
 } as const;
 
@@ -137,6 +147,7 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
   const [review, setReview] = useState<Review | null>(null);
   const [loading, setLoading] = useState<"generate" | "grade" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const readingAccess = useEnglishReadingAccess();
 
   const answeredCount = useMemo(() => answers.filter((answer) => answer.trim()).length, [answers]);
 
@@ -150,7 +161,9 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
       setAnswers(generated.questions.map(() => ""));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Request failed");
+      const message = requestError instanceof Error ? requestError.message : "Request failed";
+      setError(message);
+      if (/3-day|premium/i.test(message)) void readingAccess.refresh();
     } finally {
       setLoading(null);
     }
@@ -173,7 +186,9 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
       setReview(result);
       window.setTimeout(() => document.getElementById("reading-results")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Request failed");
+      const message = requestError instanceof Error ? requestError.message : "Request failed";
+      setError(message);
+      if (/3-day|premium/i.test(message)) void readingAccess.refresh();
     } finally {
       setLoading(null);
     }
@@ -194,10 +209,15 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  if (readingAccess.loading) return <ReadingAccessLoading language={language} />;
+  if (readingAccess.error) return <ReadingAccessError language={language} onBack={onBack} onRetry={() => { void readingAccess.refresh(); }} />;
+  if (!readingAccess.hasAccess) return <ReadingTrialExpired language={language} onBack={onBack} />;
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-4 pb-28 pt-6 text-foreground sm:px-6" dir={isArabic ? "rtl" : "ltr"}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,hsl(var(--primary)/.18),transparent_34%),radial-gradient(circle_at_92%_72%,hsl(var(--accent)/.16),transparent_36%)]" />
       <div className="relative mx-auto max-w-5xl">
+        {!readingAccess.premium && <TrialBanner language={language} remainingMs={readingAccess.remainingMs} />}
         <div className="mb-8 flex items-center justify-between gap-3">
           <button onClick={practice ? startOver : onBack} className="grid h-11 w-11 place-items-center rounded-2xl border border-white/15 bg-secondary/60 text-muted-foreground backdrop-blur transition hover:border-primary/40 hover:text-foreground" aria-label={isArabic ? "رجوع" : "Back"}>
             {isArabic ? <ArrowRight className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
@@ -278,6 +298,73 @@ export default function EnglishReadingPractice({ language, onBack }: { language:
         )}
       </div>
     </main>
+  );
+}
+
+function accessShell(language: AppLanguage, children: React.ReactNode) {
+  const ar = language === "ar";
+  return (
+    <main dir={ar ? "rtl" : "ltr"} className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12 pb-28 text-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,hsl(var(--primary)/.18),transparent_34%),radial-gradient(circle_at_92%_72%,hsl(var(--accent)/.16),transparent_36%)]" />
+      {children}
+    </main>
+  );
+}
+
+function ReadingAccessLoading({ language }: { language: AppLanguage }) {
+  return accessShell(language,
+    <section role="status" className="relative flex items-center gap-3 rounded-2xl border border-white/15 bg-secondary/60 px-6 py-5 text-muted-foreground backdrop-blur-xl">
+      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      {language === "ar" ? "جارٍ التحقق من مدة التجربة…" : "Checking your trial…"}
+    </section>,
+  );
+}
+
+function ReadingAccessError({ language, onBack, onRetry }: { language: AppLanguage; onBack: () => void; onRetry: () => void }) {
+  const ar = language === "ar";
+  return accessShell(language,
+    <section className="relative w-full max-w-md rounded-[28px] border border-rose-500/25 bg-card/90 p-7 text-center shadow-xl backdrop-blur-xl">
+      <CircleAlert className="mx-auto h-10 w-10 text-rose-500" />
+      <h1 className="mt-4 text-2xl font-black">{ar ? "تعذّر التحقق من الوصول" : "We couldn't check access"}</h1>
+      <p className="mt-2 text-sm leading-7 text-muted-foreground">{ar ? "تحقق من اتصالك وحاول مرة ثانية." : "Check your connection and try again."}</p>
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <button type="button" onClick={onBack} className="min-h-12 rounded-xl border border-border font-bold hover:bg-secondary">{ar ? "رجوع" : "Back"}</button>
+        <button type="button" onClick={onRetry} className="min-h-12 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90">{ar ? "إعادة المحاولة" : "Try again"}</button>
+      </div>
+    </section>,
+  );
+}
+
+function ReadingTrialExpired({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
+  const ar = language === "ar";
+  return accessShell(language,
+    <section className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-card p-7 text-center shadow-2xl backdrop-blur-xl">
+      <button type="button" onClick={onBack} className="absolute start-5 top-5 grid h-11 w-11 place-items-center rounded-xl border border-border bg-background/50 text-muted-foreground hover:text-foreground" aria-label={ar ? "رجوع" : "Back"}>
+        {ar ? <ArrowRight className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
+      </button>
+      <div className="mx-auto mt-12 grid h-16 w-16 place-items-center rounded-2xl bg-amber-500/15 text-amber-500"><LockKeyhole className="h-7 w-7" /></div>
+      <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-black text-amber-600 dark:text-amber-300"><Crown className="h-4 w-4" />Premium</p>
+      <h1 className="mt-3 text-3xl font-black">{ar ? "انتهت تجربتك المجانية" : "Your free trial has ended"}</h1>
+      <p className="mt-3 text-sm leading-7 text-muted-foreground">{ar ? "استفدت من تدريب القطع لمدة 3 أيام. اشترك في تميّزك Premium حتى تستمر بتوليد القطع وتصحيح الإجابات بدون توقف." : "Your 3-day reading-practice trial is complete. Join Tamayzak Premium to keep generating passages and checking answers."}</p>
+      <a href={PREMIUM_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-400 to-yellow-300 px-5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:brightness-105">
+        <Send className="h-4 w-4" />{ar ? "اشترك الآن عبر تيليجرام" : "Subscribe via Telegram"}
+      </a>
+      <p className="mt-3 text-xs font-semibold text-muted-foreground" dir="ltr">@ias404</p>
+    </section>,
+  );
+}
+
+function TrialBanner({ language, remainingMs }: { language: AppLanguage; remainingMs: number }) {
+  const text = COPY[language];
+  const totalHours = Math.max(1, Math.ceil(remainingMs / 3_600_000));
+  const amount = totalHours >= 24
+    ? (language === "ar" ? `${Math.ceil(totalHours / 24)} يوم` : `${Math.ceil(totalHours / 24)} day${Math.ceil(totalHours / 24) === 1 ? "" : "s"}`)
+    : (language === "ar" ? `${totalHours} ساعة` : `${totalHours} hour${totalHours === 1 ? "" : "s"}`);
+  return (
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm backdrop-blur-xl">
+      <span className="inline-flex items-center gap-2 font-black text-primary"><Sparkles className="h-4 w-4" />{text.trial}</span>
+      <span className="inline-flex items-center gap-2 font-bold text-foreground"><Clock3 className="h-4 w-4 text-primary" />{text.trialRemaining}: {amount}</span>
+    </div>
   );
 }
 

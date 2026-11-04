@@ -25,8 +25,11 @@ describe("Premium access policy", () => {
   it("keeps Live Battle free without a Premium membership", () => {
     expect(isPremiumTool("liveBattle")).toBe(false);
   });
-  it.each(["mcq", "essay", "subjectTutor", "problemGenerator", "physicsProblemSolver", "examGenerator", "videoNotes", "podcastTutor", "englishReadingPractice"])("locks %s for non-members", (tool) => {
+  it.each(["mcq", "essay", "subjectTutor", "problemGenerator", "physicsProblemSolver", "examGenerator", "videoNotes", "podcastTutor"])("locks %s for non-members", (tool) => {
     expect(isPremiumTool(tool, FREE_DAY_ENDS_AT)).toBe(true);
+  });
+  it("lets the reading page manage its own three-day trial gate", () => {
+    expect(isPremiumTool("englishReadingPractice", FREE_DAY_ENDS_AT)).toBe(false);
   });
   it("keeps biology drawings free", () => {
     expect(isPremiumTool("biologyDrawings", FREE_DAY_ENDS_AT)).toBe(false);

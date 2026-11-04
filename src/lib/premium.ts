@@ -9,7 +9,7 @@ const PREMIUM_TOOLS = new Set([
   "subjectTutor", "physicsProblemSolver", "problemGenerator", "examGenerator",
   "physicsLaws", "organicEquations", "islamicSurahs",
   "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat",
-  "englishVerbForms", "englishReadingPractice",
+  "englishVerbForms",
 ]);
 
 // Free-day promo: every locked tool is open until midnight Baghdad time, Oct 31 2026.

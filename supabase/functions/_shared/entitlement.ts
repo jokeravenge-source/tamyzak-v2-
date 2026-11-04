@@ -37,5 +37,21 @@ export async function claimFeature(req: Request, feature: string): Promise<Entit
     return { ok: false, status: 401, error: "Your session expired. Please sign out and sign in again." };
   }
 
+  if (feature === "english_reading_generate" || feature === "english_reading_grade") {
+    try {
+      const { data, error } = await supabase.rpc("claim_english_reading_access");
+      if (error || !data || typeof data !== "object") {
+        return { ok: false, status: 500, error: "Could not verify reading-practice access. Please try again." };
+      }
+      const access = data as { access?: unknown; premium?: unknown };
+      if (access.access !== true) {
+        return { ok: false, status: 403, error: "Your 3-day reading-practice trial has ended. Premium membership is required." };
+      }
+      return { ok: true, userId, bypassed: access.premium === true };
+    } catch {
+      return { ok: false, status: 500, error: "Could not verify reading-practice access. Please try again." };
+    }
+  }
+
   return authorizeFeature(userId, feature, () => supabase.rpc("can_use_premium_tools"));
 }

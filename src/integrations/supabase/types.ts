@@ -1160,6 +1160,24 @@ export type Database = {
         }
         Relationships: []
       }
+      english_reading_trials: {
+        Row: {
+          expires_at: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       english_lecture_question_cache: {
         Row: {
           created_at: string
@@ -3711,6 +3729,7 @@ export type Database = {
         Args: { _feature: string; _limit?: number }
         Returns: boolean
       }
+      claim_english_reading_access: { Args: never; Returns: Json }
       claim_inactive_push_recipients_stage: {
         Args: { _batch_id: string; _limit?: number; _stage: string }
         Returns: {
