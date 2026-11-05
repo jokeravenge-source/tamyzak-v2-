@@ -1160,24 +1160,6 @@ export type Database = {
         }
         Relationships: []
       }
-      english_reading_trials: {
-        Row: {
-          expires_at: string
-          started_at: string
-          user_id: string
-        }
-        Insert: {
-          expires_at?: string
-          started_at?: string
-          user_id: string
-        }
-        Update: {
-          expires_at?: string
-          started_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       english_lecture_question_cache: {
         Row: {
           created_at: string
@@ -3703,7 +3685,6 @@ export type Database = {
       }
       can_take_study_room_ownership: { Args: never; Returns: boolean }
       can_use_premium_tools: { Args: never; Returns: boolean }
-      redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       cancel_study_challenge: {
         Args: { _challenge_id: string }
         Returns: undefined
@@ -3730,7 +3711,6 @@ export type Database = {
         Args: { _feature: string; _limit?: number }
         Returns: boolean
       }
-      claim_english_reading_access: { Args: never; Returns: Json }
       claim_inactive_push_recipients_stage: {
         Args: { _batch_id: string; _limit?: number; _stage: string }
         Returns: {
