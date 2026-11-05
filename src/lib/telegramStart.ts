@@ -14,6 +14,10 @@ function isUnauthorized(error: unknown): boolean {
   return status === 401;
 }
 
+function rejected(res: { data: unknown; error: unknown }): boolean {
+  return isUnauthorized(res.error) || Boolean((res.data as { signedOut?: boolean } | null)?.signedOut);
+}
+
 /**
  * Calls telegram-start only with a valid signed-in session.
  * Refreshes an expired token first. If the server still rejects the token
@@ -30,11 +34,11 @@ export async function invokeTelegramStart(body?: Record<string, unknown>) {
   if (!session) return { data: null, error: null, signedOut: true as const };
 
   let res = await callWith(session, body);
-  if (isUnauthorized(res.error)) {
+  if (rejected(res)) {
     const { data } = await supabase.auth.refreshSession();
     if (!data.session) return { data: null, error: null, signedOut: true as const };
     res = await callWith(data.session, body);
-    if (isUnauthorized(res.error)) return { data: null, error: null, signedOut: true as const };
+    if (rejected(res)) return { data: null, error: null, signedOut: true as const };
   }
   return { ...res, signedOut: false as const };
 }
