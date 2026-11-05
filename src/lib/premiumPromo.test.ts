@@ -6,6 +6,10 @@ const migration = readFileSync(
   "supabase/migrations/20261105190000_premium_word_campaign.sql",
   "utf8",
 );
+const physicsMigration = readFileSync(
+  "supabase/migrations/20261106090000_add_physics_premium_word.sql",
+  "utf8",
+);
 
 describe("temporary Premium word campaign", () => {
   it("ends at 10:00 AM Baghdad time on Sunday, Nov 8 2026", () => {
@@ -29,5 +33,12 @@ describe("temporary Premium word campaign", () => {
   it("keeps later campaign words configurable without a client release", () => {
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS public.premium_promo_codes");
     expect(migration).toContain("JOIN public.premium_promo_codes promo");
+  });
+
+  it("adds the Al-Eilaf physics word to the same campaign window", () => {
+    expect(physicsMigration).toContain("'al-eilaf-physics-2026-11'");
+    expect(physicsMigration).toContain("'الأيلاف'");
+    expect(physicsMigration).toContain("'2026-11-08 10:00:00+03'");
+    expect(physicsMigration).toContain("ON CONFLICT (id) DO UPDATE");
   });
 });
