@@ -1184,6 +1184,24 @@ export type Database = {
         }
         Relationships: []
       }
+      english_reading_trials: {
+        Row: {
+          expires_at: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -2406,6 +2424,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      premium_promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          starts_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id: string
+          is_active?: boolean
+          starts_at: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          starts_at?: string
+        }
+        Relationships: []
+      }
+      premium_promo_redemptions: {
+        Row: {
+          campaign_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_promo_redemptions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "premium_promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -3711,6 +3782,7 @@ export type Database = {
         Args: { _feature: string; _limit?: number }
         Returns: boolean
       }
+      claim_english_reading_access: { Args: never; Returns: Json }
       claim_inactive_push_recipients_stage: {
         Args: { _batch_id: string; _limit?: number; _stage: string }
         Returns: {
@@ -3803,6 +3875,7 @@ export type Database = {
         }
         Returns: string
       }
+      redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       redeem_premium_with_points: {
         Args: { _environment?: string }
         Returns: Json

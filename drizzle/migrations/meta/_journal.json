@@ -127,6 +127,20 @@
       "when": 1793674969858,
       "tag": "0017_french_teacher_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793917463779,
+      "tag": "0018_english_reading_three_day_trial",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793917477705,
+      "tag": "0019_premium_word_campaign",
+      "breakpoints": true
     }
   ]
 }
