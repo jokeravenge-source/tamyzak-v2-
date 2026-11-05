@@ -16,7 +16,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 import { useSubscription } from "@/hooks/useSubscription";
-import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
+import { isPremiumTool } from "@/lib/premium";
 import { missionsData, missionsOrder } from "@/data/missions";
 import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
@@ -698,7 +698,8 @@ const Basics = ({
   const navigate = (k: MainMenuChoice) => {
     if (TEMP_LOCKED_TOOLS.has(k)) return;
     if (k === "premium" || (isPremiumTool(k) && !isPremium && !subscriptionLoading)) {
-      openPremiumTelegram();
+      recordToolUse(k);
+      onNav(k);
       return;
     }
     if (isPremiumTool(k) && subscriptionLoading) return;

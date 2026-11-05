@@ -7,7 +7,7 @@ import type { MainMenuChoice } from "@/pages/MainMenu";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { TOOL_PLACEHOLDER_KEY } from "@/pages/ToolPlaceholder";
-import { isPremiumTool, openPremiumTelegram } from "@/lib/premium";
+import { isPremiumTool } from "@/lib/premium";
 import { CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY } from "@/pages/Subjects";
 
 type SubjectKey = "physics" | "chemistry" | "biology" | "english" | "french" | "arabic" | "islamic" | "math";
@@ -193,7 +193,7 @@ const SubjectsHub = ({
     if (!free && subscriptionLoading) return;
     if (!free && !isPremium) {
       toast.error(isRTL ? "هذه الأداة متاحة للمشتركين في البريميوم فقط." : "This tool is available for Premium members only.");
-      openPremiumTelegram();
+      onSelect(t.key as MainMenuChoice);
       return;
     }
     trackFeature(`tool_${t.key}`);

@@ -14,6 +14,9 @@ vi.mock("@/components/VisitCounter", () => ({ default: () => null }));
 vi.mock("@/components/GiftMcqButton", () => ({ default: () => null }));
 vi.mock("@/components/StreakTree", () => ({ default: () => null }));
 vi.mock("@/components/RankStone", () => ({ default: () => null }));
+vi.mock("@/components/NewFeatureAnnouncement", () => ({ default: () => null }));
+vi.mock("@/components/ChapterProgressCircles", () => ({ default: () => null }));
+vi.mock("@/components/TelegramLinkCard", () => ({ TelegramLinkCard: () => null }));
 beforeEach(() => { localStorage.clear(); state.isPremium = false; state.loading = false; state.openTelegram.mockClear(); });
 afterEach(cleanup);
 describe("locked tool navigation", () => {
@@ -25,13 +28,8 @@ describe("locked tool navigation", () => {
     expect(card).toHaveTextContent("Premium");
     expect(card).not.toBeDisabled();
     fireEvent.click(card);
-    if (premium) {
-      expect(onNav).toHaveBeenCalledWith("mcq");
-      expect(state.openTelegram).not.toHaveBeenCalled();
-    } else {
-      expect(onNav).not.toHaveBeenCalled();
-      expect(state.openTelegram).toHaveBeenCalledOnce();
-    }
+    expect(onNav).toHaveBeenCalledWith("mcq");
+    expect(state.openTelegram).not.toHaveBeenCalled();
   });
   it("waits for entitlement instead of redirecting or opening a paid tool early", async () => {
     state.loading = true;
@@ -41,14 +39,14 @@ describe("locked tool navigation", () => {
     fireEvent.click(card);
     expect(state.openTelegram).not.toHaveBeenCalled();
   });
-  it.each(["en", "ar"] as const)("routes the %s subject AI lock to Telegram", async (language) => {
+  it.each(["en", "ar"] as const)("routes a %s subject Premium tool through the app gate", async (language) => {
     localStorage.setItem("app_subject_focus_v1", "physics");
     const onSelect = vi.fn();
     await act(async () => { render(<SubjectsHub language={language} onBack={vi.fn()} onSelect={onSelect} />); });
     fireEvent.click(screen.getByRole("button", { name: language === "ar" ? "عرض الأدوات الإضافية" : "Show extra tools" }));
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(language === "ar" ? "المعلم الذكي" : "AI Tutor") }));
-    expect(state.openTelegram).toHaveBeenCalledOnce();
-    expect(onSelect).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(language === "ar" ? "توليد امتحان كامل" : "Full Exam Generator") }));
+    expect(state.openTelegram).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenCalledWith("examGenerator");
   });
   it("does not turn the existing hard lock into a paid unlock", async () => {
     localStorage.setItem("app_subject_focus_v1", "physics");

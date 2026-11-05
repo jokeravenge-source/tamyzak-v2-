@@ -6,6 +6,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
+import PremiumPromoCodeForm from "@/components/PremiumPromoCodeForm";
 
 const copy = {
   en: {
@@ -126,6 +127,7 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
             </div>
           ) : (
             <div className="space-y-2">
+              <PremiumPromoCodeForm language={language} />
               <a
                 href={PREMIUM_TELEGRAM_URL}
                 target="_blank"
