@@ -3703,6 +3703,7 @@ export type Database = {
       }
       can_take_study_room_ownership: { Args: never; Returns: boolean }
       can_use_premium_tools: { Args: never; Returns: boolean }
+      redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       cancel_study_challenge: {
         Args: { _challenge_id: string }
         Returns: undefined

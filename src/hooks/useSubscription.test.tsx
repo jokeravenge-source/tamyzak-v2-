@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSubscription } from "./useSubscription";
 
 const mocks = vi.hoisted(() => ({
-  getUser: vi.fn(), order: vi.fn(), unsubscribe: vi.fn(),
+  getUser: vi.fn(), order: vi.fn(), rpc: vi.fn(), unsubscribe: vi.fn(),
   callback: undefined as undefined | ((event: string, session: { user: { id: string } } | null) => void),
 }));
 vi.mock("@/integrations/supabase/client", () => {
@@ -11,6 +11,7 @@ vi.mock("@/integrations/supabase/client", () => {
   query.select.mockReturnValue(query); query.eq.mockReturnValue(query); query.in.mockReturnValue(query);
   return { supabase: {
     from: () => query,
+    rpc: mocks.rpc,
     auth: {
       getUser: mocks.getUser,
       onAuthStateChange: (callback: typeof mocks.callback) => {
@@ -24,6 +25,7 @@ const row = { id: "sub1", status: "active", environment: "live", current_period_
 beforeEach(() => {
   mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: "user1" } } });
   mocks.order.mockReset().mockResolvedValue({ data: [], error: null });
+  mocks.rpc.mockReset().mockResolvedValue({ data: false, error: null });
   mocks.unsubscribe.mockReset();
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
@@ -40,6 +42,12 @@ describe("subscription membership", () => {
     const { result } = renderHook(useSubscription);
     await waitFor(() => expect(result.current.isPremium).toBe(true));
     expect(result.current.subscription?.id).toBe("sub1");
+  });
+  it("accepts a server-verified campaign entitlement", async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    const { result } = renderHook(useSubscription);
+    await waitFor(() => expect(result.current.isPremium).toBe(true));
+    expect(result.current.subscription).toBeNull();
   });
   it("clears access immediately on sign-out and checks the next user's membership", async () => {
     mocks.order.mockResolvedValueOnce({ data: [row], error: null });

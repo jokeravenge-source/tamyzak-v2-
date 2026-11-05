@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { hasActivePremiumSubscription, PREMIUM_ENVIRONMENT } from "@/lib/premium";
+import { hasActivePremiumSubscription, PREMIUM_ENVIRONMENT, PREMIUM_PROMO_ENDS_AT } from "@/lib/premium";
 
 export type SubscriptionRow = {
   id: string;
@@ -72,6 +72,14 @@ export function useSubscription() {
       lastFetch = Date.now();
       void fetchSub(uid);
     };
+    const promoRemaining = PREMIUM_PROMO_ENDS_AT - Date.now();
+    const promoTimer = promoRemaining > 0
+      ? window.setTimeout(() => {
+          if (!uid) return;
+          lastFetch = Date.now();
+          void fetchSub(uid);
+        }, Math.min(promoRemaining + 250, 2_147_483_647))
+      : null;
     // A root-level gate stays mounted across sign-in and sign-out.
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       ++authVersion;
@@ -98,6 +106,7 @@ export function useSubscription() {
       authListener.subscription.unsubscribe();
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
+      if (promoTimer !== null) window.clearTimeout(promoTimer);
     };
   }, []);
 
