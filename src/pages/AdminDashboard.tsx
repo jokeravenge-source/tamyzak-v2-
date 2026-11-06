@@ -15,6 +15,7 @@ import AdminMistakesTab from "@/components/AdminMistakesTab";
 import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
 import AdminFrenchFlashcardsTab from "@/components/AdminFrenchFlashcardsTab";
+import AdminMalazamTab from "@/components/AdminMalazamTab";
 import WhoIsBest from "./WhoIsBest";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
@@ -35,7 +36,7 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
+  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "french-flashcards") {
       return "frenchFlashcards";
@@ -44,7 +45,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   });
   const sectionLabels: Record<Tab, string> = {
     pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
-    frenchFlashcards: "French Flashcards",
+    frenchFlashcards: "French Flashcards", malazam: "Al-Malazam Library",
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
     credits: "Credits", points: "Points", announcements: "Announcements", mistakes: "Common Mistakes",
@@ -814,6 +815,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <Languages className="w-4 h-4 inline mr-1.5" />French Flashcards
             </button>
           )}
+          {isOwner && (
+            <button onClick={() => setTab("malazam")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "malazam" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              <BookOpen className="w-4 h-4 inline mr-1.5" />Al-Malazam
+            </button>
+          )}
           {canSee("notifications") && (
             <button onClick={() => setTab("notifications")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "notifications" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Bell className="w-4 h-4 inline mr-1.5" />Notifications
@@ -890,6 +896,8 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <WhoIsBest language="en" isAdmin onBack={() => setTab("pending")} />
         ) : tab === "teachers" ? (
           <AdminTeachersTab />
+        ) : tab === "malazam" ? (
+          <AdminMalazamTab />
         ) : tab === "mistakes" ? (
           <AdminMistakesTab />
         ) : tab === "announcements" ? (

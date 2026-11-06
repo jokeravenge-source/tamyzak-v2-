@@ -24,6 +24,7 @@ import { supabase } from "./integrations/supabase/client";
 const Missions = lazy(() => import("./pages/Missions"));
 const MCQ = lazy(() => import("./pages/MCQ"));
 const Summaries = lazy(() => import("./pages/Summaries"));
+const MalazamLibrary = lazy(() => import("./pages/MalazamLibrary"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -374,12 +375,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <Subjects
-            language="ar"
-            onChangeLanguage={() => window.location.assign("/")}
-            onSelectSubject={() => {}}
-            mode="malazam"
-          />
+          <Suspense fallback={null}><MalazamLibrary /></Suspense>
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -672,6 +668,14 @@ const StudentApp = () => {
     void redeemPendingReferral(
       (typeof localStorage !== "undefined" && localStorage.getItem(LANGUAGE_STORAGE_KEY)) === "ar" ? "ar" : "en"
     );
+  }, [authed]);
+
+  useEffect(() => {
+    if (!authed || typeof window === "undefined") return;
+    const returnPath = sessionStorage.getItem("tamayzak_return_after_auth");
+    if (!returnPath) return;
+    sessionStorage.removeItem("tamayzak_return_after_auth");
+    if (/^\/malazam(?:\/|$)/.test(returnPath)) window.location.assign(returnPath);
   }, [authed]);
 
   // Periodic "did the user leave the Tamayzak channel?" re-check is disabled
