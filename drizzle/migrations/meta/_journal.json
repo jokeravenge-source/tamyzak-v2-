@@ -141,6 +141,13 @@
       "when": 1793917477705,
       "tag": "0019_premium_word_campaign",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793983056584,
+      "tag": "0020_admin_malazam_library",
+      "breakpoints": true
     }
   ]
 }
