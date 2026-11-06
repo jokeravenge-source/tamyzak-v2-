@@ -1499,6 +1499,77 @@ export type Database = {
         }
         Relationships: []
       }
+      malazam: {
+        Row: {
+          cover_path: string
+          created_at: string
+          created_by: string | null
+          file_path: string
+          id: string
+          is_published: boolean
+          name: string
+          sort_order: number
+          subject: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          cover_path: string
+          created_at?: string
+          created_by?: string | null
+          file_path: string
+          id?: string
+          is_published?: boolean
+          name: string
+          sort_order?: number
+          subject: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          cover_path?: string
+          created_at?: string
+          created_by?: string | null
+          file_path?: string
+          id?: string
+          is_published?: boolean
+          name?: string
+          sort_order?: number
+          subject?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      malazam_downloads: {
+        Row: {
+          downloaded_at: string
+          id: number
+          malzama_id: string
+          user_id: string
+        }
+        Insert: {
+          downloaded_at?: string
+          id?: number
+          malzama_id: string
+          user_id: string
+        }
+        Update: {
+          downloaded_at?: string
+          id?: number
+          malzama_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "malazam_downloads_malzama_id_fkey"
+            columns: ["malzama_id"]
+            isOneToOne: false
+            referencedRelation: "malazam"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcq_bank_review_attempts: {
         Row: {
           attempt_count: number
