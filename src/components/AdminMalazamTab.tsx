@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookMarked, Eye, EyeOff, FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { BookMarked, Copy, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { malzamaUrl } from "@/lib/malazamLinks";
 
 type Malzama = {
   id: string;
@@ -153,6 +154,15 @@ export default function AdminMalazamTab() {
 
   const coverUrl = (path: string) => supabase.storage.from("malazam-covers").getPublicUrl(path).data.publicUrl;
 
+  const copyLink = async (item: Malzama) => {
+    try {
+      await navigator.clipboard.writeText(malzamaUrl(item));
+      toast.success("تم نسخ رابط الملزمة");
+    } catch {
+      toast.error("تعذر نسخ الرابط");
+    }
+  };
+
   return (
     <section className="space-y-6" dir="rtl">
       <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
@@ -222,7 +232,13 @@ export default function AdminMalazamTab() {
                   </div>
                   <h3 className="mt-3 font-black leading-7">{item.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{item.topic}</p>
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => void copyLink(item)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-primary/30 px-3 text-xs font-bold text-primary hover:bg-primary/5">
+                      <Copy className="size-4" />نسخ الرابط
+                    </button>
+                    <a href={malzamaUrl(item)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-secondary">
+                      <ExternalLink className="size-4" />فتح الصفحة
+                    </a>
                     <button type="button" disabled={actionId === item.id} onClick={() => void togglePublished(item)} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 text-xs font-bold hover:bg-secondary disabled:opacity-50">
                       {item.is_published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}{item.is_published ? "إخفاء" : "نشر"}
                     </button>

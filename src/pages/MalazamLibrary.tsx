@@ -4,6 +4,7 @@ import { ArrowLeft, BookMarked, CheckCircle2, Download, FileText, Link2, Loader2
 import { supabase } from "@/integrations/supabase/client";
 import { invokeTelegramStart } from "@/lib/telegramStart";
 import SeoHead from "@/components/SeoHead";
+import { malzamaPath, parseMalzamaId } from "@/lib/malazamLinks";
 import {
   MALAZAM_SEO_CATEGORIES,
   getMalazamSeoCategory,
@@ -44,27 +45,49 @@ async function responsePayload(data: unknown, error: unknown) {
 }
 
 export default function MalazamLibrary() {
-  const slug = typeof window === "undefined" ? "" : decodeURIComponent(window.location.pathname.replace(/\/+$/, "").split("/")[2] ?? "");
+  const pathname = typeof window === "undefined" ? "/malazam/" : window.location.pathname;
+  const dynamicItemId = parseMalzamaId(pathname);
+  const slug = typeof window === "undefined" ? "" : decodeURIComponent(pathname.replace(/\/+$/, "").split("/")[2] ?? "");
   const requestedCategory = getMalazamSeoCategory(slug);
   const legacyItem = getMalazamSeoItem(slug);
   const activeSubject = requestedCategory?.slug ?? legacyItem?.subject ?? null;
   const [items, setItems] = useState<Malzama[]>([]);
+  const [detailItem, setDetailItem] = useState<Malzama | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadId, setDownloadId] = useState<string | null>(null);
   const [gate, setGate] = useState<DownloadGate | null>(null);
   const [pendingItem, setPendingItem] = useState<Malzama | null>(null);
 
-  const title = legacyItem
+  const title = detailItem
+    ? `${detailItem.name} ${subjectName(detailItem.subject)} PDF | تميزك`
+    : legacyItem
     ? `${legacyItem.title} PDF | تميزك`
     : requestedCategory
       ? `${requestedCategory.title} | تميزك`
       : "ملازم السادس العلمي 2027 PDF | تميزك";
-  const description = legacyItem?.description ?? requestedCategory?.description ??
+  const description = detailItem
+    ? `تحميل ${detailItem.name} ضمن ${subjectName(detailItem.subject)} — ${detailItem.topic} لطلاب السادس العلمي من منصة تميزك بعد التحقق من حساب تيليجرام.`
+    : legacyItem?.description ?? requestedCategory?.description ??
     "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، وحمّل الملفات بعد ربط حساب تيليجرام.";
-  const canonicalPath = slug ? `/malazam/${slug}/` : "/malazam/";
+  const canonicalPath = detailItem ? malzamaPath(detailItem) : slug ? `/malazam/${slug}/` : "/malazam/";
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (dynamicItemId) {
+      const { data } = await supabase
+        .from("malazam")
+        .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
+        .eq("id", dynamicItemId)
+        .eq("is_published", true)
+        .maybeSingle();
+      const item = (data ?? null) as Malzama | null;
+      setDetailItem(item);
+      setItems(item ? [item] : []);
+      setLoading(false);
+      return;
+    }
+
+    setDetailItem(null);
     let query = supabase
       .from("malazam")
       .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
@@ -75,7 +98,7 @@ export default function MalazamLibrary() {
     const { data } = await query;
     setItems((data ?? []) as Malzama[]);
     setLoading(false);
-  }, [activeSubject]);
+  }, [activeSubject, dynamicItemId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -119,7 +142,7 @@ export default function MalazamLibrary() {
     }
   };
 
-  const visibleHeading = legacyItem?.title ?? requestedCategory?.title ?? "مكتبة ملازم السادس العلمي";
+  const visibleHeading = detailItem?.name ?? legacyItem?.title ?? requestedCategory?.title ?? "مكتبة ملازم السادس العلمي";
   const categoryLinks = useMemo(() => MALAZAM_SEO_CATEGORIES.filter((category) => category.slug !== "revision"), []);
 
   return (
@@ -129,11 +152,18 @@ export default function MalazamLibrary() {
         <html lang="ar" dir="rtl" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "CollectionPage",
+          "@type": detailItem ? "LearningResource" : "CollectionPage",
           name: visibleHeading,
           description,
           url: `https://tamyazak.site${canonicalPath}`,
           inLanguage: "ar",
+          educationalLevel: "السادس العلمي",
+          ...(detailItem ? {
+            learningResourceType: "ملزمة دراسية PDF",
+            about: subjectName(detailItem.subject),
+            image: coverUrl(detailItem.cover_path),
+            provider: { "@type": "Organization", name: "تميزك", url: "https://tamyazak.site/" },
+          } : {}),
         })}</script>
       </Helmet>
 
@@ -154,12 +184,12 @@ export default function MalazamLibrary() {
           </div>
         </header>
 
-        <nav className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label="مواد الملازم">
+        {!dynamicItemId && <nav className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label="مواد الملازم">
           <a href="/malazam/" className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${!activeSubject ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>الكل</a>
           {categoryLinks.map((category) => (
             <a key={category.slug} href={`/malazam/${category.slug}/`} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${activeSubject === category.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}>{category.name}</a>
           ))}
-        </nav>
+        </nav>}
 
         <section className="mt-8" aria-live="polite">
           {loading ? (
@@ -170,17 +200,33 @@ export default function MalazamLibrary() {
               <h2 className="mt-4 text-xl font-black">ماكو ملازم مضافة بهذا القسم حالياً</h2>
               <p className="mt-2 text-sm text-muted-foreground">راح تظهر هنا مباشرة من يضيفها الأدمن.</p>
             </div>
+          ) : detailItem ? (
+            <article className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg">
+              <div className="grid md:grid-cols-[minmax(280px,420px)_1fr]">
+                <img src={coverUrl(detailItem.cover_path)} alt={`غلاف ${detailItem.name}`} className="h-full min-h-80 w-full bg-secondary object-cover" />
+                <div className="flex flex-col justify-center p-6 md:p-10">
+                  <a href={`/malazam/${detailItem.subject}/`} className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{subjectName(detailItem.subject)}</a>
+                  <p className="mt-5 text-sm font-black text-primary">{detailItem.topic}</p>
+                  <h2 className="mt-2 text-3xl font-black leading-tight md:text-4xl">{detailItem.name}</h2>
+                  <p className="mt-4 leading-8 text-muted-foreground">ملزمة دراسية لطلاب السادس العلمي. التحميل محمي ويتطلب تسجيل الدخول وربط حساب تيليجرام والانضمام إلى القنوات المطلوبة.</p>
+                  <button type="button" disabled={downloadId === detailItem.id} onClick={() => void startDownload(detailItem)} className="mt-7 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-lg font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60 sm:w-fit sm:min-w-64">
+                    {downloadId === detailItem.id ? <Loader2 className="size-5 animate-spin" /> : <Download className="size-5" />}
+                    {downloadId === detailItem.id ? "جارٍ التحقق…" : "تحميل الملزمة PDF"}
+                  </button>
+                </div>
+              </div>
+            </article>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((item) => (
                 <article key={item.id} className="group overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                   <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-                    <img src={coverUrl(item.cover_path)} alt={`غلاف ${item.name}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" />
+                    <a href={malzamaPath(item)} aria-label={`فتح صفحة ${item.name}`}><img src={coverUrl(item.cover_path)} alt={`غلاف ${item.name}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" loading="lazy" /></a>
                     <span className="absolute right-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-black text-foreground backdrop-blur">{subjectName(item.subject)}</span>
                   </div>
                   <div className="p-5">
                     <p className="text-xs font-black text-primary">{item.topic}</p>
-                    <h2 className="mt-2 min-h-14 text-lg font-black leading-7">{item.name}</h2>
+                    <h2 className="mt-2 min-h-14 text-lg font-black leading-7"><a href={malzamaPath(item)} className="hover:text-primary">{item.name}</a></h2>
                     <button type="button" disabled={downloadId === item.id} onClick={() => void startDownload(item)} className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-black text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60">
                       {downloadId === item.id ? <Loader2 className="size-5 animate-spin" /> : <Download className="size-5" />}
                       {downloadId === item.id ? "جارٍ التحقق…" : "تحميل الملزمة"}
