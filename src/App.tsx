@@ -28,6 +28,7 @@ const MalazamLibrary = lazy(() => import("./pages/MalazamLibrary"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminMalazamPortal = lazy(() => import("./pages/AdminMalazamPortal"));
 const FrenchTeacherDashboard = lazy(() => import("./pages/FrenchTeacherDashboard"));
 const AdminAhmedFlashcardsReview = lazy(() => import("./pages/AdminAhmedFlashcardsReview"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
@@ -38,6 +39,7 @@ import AdminMcqReview from "./pages/AdminMcqReview";
 
 // Secret admin panel URL — not linked anywhere in the UI.
 const ADMIN_PANEL_PATH = "/tmz-ctrl-8462";
+const ADMIN_MALAZAM_PATH = `${ADMIN_PANEL_PATH}/malazam`;
 
 const AccountCenter = lazy(() => import("./pages/AccountCenter"));
 const Essay = lazy(() => import("./pages/Essay"));
@@ -500,7 +502,7 @@ const StudentApp = () => {
     () => {
       if (typeof window === "undefined") return "student";
       // Hidden admin entry point: only reachable by typing the secret URL.
-      if (window.location.pathname.replace(/\/+$/, "") === ADMIN_PANEL_PATH || window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/french-flashcards`) return "admin";
+      if ([ADMIN_PANEL_PATH, ADMIN_MALAZAM_PATH, `${ADMIN_PANEL_PATH}/french-flashcards`].includes(window.location.pathname.replace(/\/+$/, ""))) return "admin";
       if (window.location.pathname.startsWith("/who-is-best")) return "guest";
       // Lecture deep links remain public without making every visitor choose
       // a role before entering the app.
@@ -1029,7 +1031,9 @@ const StudentApp = () => {
       ) : authRole === "admin" && !authed ? (
         <AdminLogin onAuthed={() => setAuthed(true)} onBack={exitSpecialRoute} />
       ) : authRole === "admin" && authed && isAdmin ? (
-        adminPreviewDay != null ? (
+        window.location.pathname.replace(/\/+$/, "") === ADMIN_MALAZAM_PATH ? (
+          <AdminMalazamPortal onLogout={adminLogout} />
+        ) : adminPreviewDay != null ? (
           <DailyGame
             language={language ?? "ar"}
             onBack={exitAdminPreview}
