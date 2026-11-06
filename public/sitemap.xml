@@ -51,6 +51,56 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tamyazak.site/malazam/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/physics/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/chemistry/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/biology/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/math/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/arabic/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/english/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/french/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/islamic/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tamyazak.site/malazam/revision/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://tamyazak.site/tools/video-notes</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -121,107 +171,107 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/haider-abdul-aemma-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/haider-abdul-aemma-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/haider-abdul-aemma-chapter-2</loc>
+    <loc>https://tamyazak.site/malazam/haider-abdul-aemma-chapter-2/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/ustathna-istifham</loc>
+    <loc>https://tamyazak.site/malazam/ustathna-istifham/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/ustathna-negation</loc>
+    <loc>https://tamyazak.site/malazam/ustathna-negation/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/istifham-homework</loc>
+    <loc>https://tamyazak.site/malazam/istifham-homework/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/negation-homework</loc>
+    <loc>https://tamyazak.site/malazam/negation-homework/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/al-wadih-wal-madmoon</loc>
+    <loc>https://tamyazak.site/malazam/al-wadih-wal-madmoon/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/qusay-al-nadawi-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/qusay-al-nadawi-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/qusay-al-nadawi-chapter-2</loc>
+    <loc>https://tamyazak.site/malazam/qusay-al-nadawi-chapter-2/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-1</loc>
+    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-2</loc>
+    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-2/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-3</loc>
+    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-3/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-4</loc>
+    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-unit-4/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-literature-part-1</loc>
+    <loc>https://tamyazak.site/malazam/sajjad-al-ubaidi-literature-part-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/mohammed-al-anazi-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/mohammed-al-anazi-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/diagrams-capsule</loc>
+    <loc>https://tamyazak.site/malazam/diagrams-capsule/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/drawings-capsule</loc>
+    <loc>https://tamyazak.site/malazam/drawings-capsule/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/chapters-1-2-homework</loc>
+    <loc>https://tamyazak.site/malazam/chapters-1-2-homework/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/lecture-notebook-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/lecture-notebook-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/binary-math-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/binary-math-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tamyazak.site/malazam/binary-enrichment-chapter-1</loc>
+    <loc>https://tamyazak.site/malazam/binary-enrichment-chapter-1/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

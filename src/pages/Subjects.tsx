@@ -2,7 +2,13 @@ import { Lock, ArrowLeft, ArrowRight, Sparkles, Atom, FlaskConical, Leaf, BookOp
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import { Helmet } from "react-helmet-async";
 import SeoHead from "@/components/SeoHead";
-import { getMalazamSeoItem } from "@/data/malazamSeo";
+import {
+  MALAZAM_SEO_CATEGORIES,
+  MALAZAM_SEO_ITEMS,
+  getMalazamItemsForSubject,
+  getMalazamSeoCategory,
+  getMalazamSeoItem,
+} from "@/data/malazamSeo";
 
 export const SUBJECT_STORAGE_KEY = "app_subject_v1";
 export const PREVIOUS_SUBJECT_STORAGE_KEY = "app_previous_subject_v1";
@@ -11,18 +17,6 @@ export const BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY = "biology_flashcard_teacher_
 export const CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY = "chemistry_flashcard_teacher_v1";
 
 export type AppSubject = "physics" | "english" | "chemistry" | "biology" | "french" | "arabic" | "islamic" | "math" | "revision";
-
-const subjectTelegramLinks: Record<AppSubject, string | null> = {
-  physics: "https://t.me/sad6ths/17274",
-  chemistry: "https://t.me/sad6ths/17140",
-  biology: "https://t.me/sad6ths/14821",
-  arabic: "https://t.me/sad6ths/16594",
-  french: "https://t.me/sad6ths/14196",
-  english: null,
-  islamic: null,
-  math: null,
-  revision: "https://t.me/sad6ths/17466",
-};
 
 const subjects: Array<{
   code: AppSubject;
@@ -76,18 +70,23 @@ const Subjects = ({
       ? decodeURIComponent(window.location.pathname.replace(/\/+$/, "").split("/")[2] ?? "")
       : "";
   const seoItem = getMalazamSeoItem(malazamSlug);
-  const seoPath = seoItem ? `/malazam/${seoItem.slug}` : "/malazam";
+  const requestedCategory = getMalazamSeoCategory(malazamSlug);
+  const seoCategory = requestedCategory ?? getMalazamSeoCategory(seoItem?.subject);
+  const categoryItems = getMalazamItemsForSubject(seoCategory?.slug);
   const seoTitle = seoItem
-    ? `${seoItem.title} — ملازم السادس العلمي | تميزك`
-    : "ملازم السادس العلمي | تميزك";
-  const seoDescription = seoItem?.description ??
-    "تصفح ملازم السادس العلمي لجميع المواد والأساتذة من خلال منصة تميزك التعليمية.";
+    ? `${seoItem.title} PDF | تميزك`
+    : requestedCategory
+      ? `${requestedCategory.title} | تميزك`
+      : "ملازم السادس العلمي 2027 PDF | تميزك";
+  const resolvedSeoPath = seoItem || requestedCategory ? `/malazam/${malazamSlug}/` : "/malazam/";
+  const seoDescription = seoItem?.description ?? requestedCategory?.description ??
+    "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق من خلال منصة تميزك التعليمية.";
   const learningResourceJsonLd = {
     "@context": "https://schema.org",
     "@type": "LearningResource",
-    name: seoItem?.title ?? "ملازم السادس العلمي",
+    name: seoItem?.title ?? requestedCategory?.title ?? "ملازم السادس العلمي 2027",
     description: seoDescription,
-    url: `https://tamyazak.site${seoPath}`,
+    url: `https://tamyazak.site${resolvedSeoPath}`,
     inLanguage: "ar",
     educationalLevel: "السادس العلمي",
     provider: {
@@ -106,8 +105,7 @@ const Subjects = ({
   const handleClick = (s: typeof subjects[number]) => {
     if (s.locked) return;
     if (mode === "malazam") {
-      const link = subjectTelegramLinks[s.code];
-      if (link) window.open(link, "_blank", "noopener,noreferrer");
+      window.location.assign(`/malazam/${s.code}/`);
       return;
     }
     const previousSubject = localStorage.getItem(SUBJECT_STORAGE_KEY) as AppSubject | null;
@@ -131,7 +129,7 @@ const Subjects = ({
     <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
       {mode === "malazam" && (
         <>
-          <SeoHead path={seoPath} title={seoTitle} description={seoDescription} />
+          <SeoHead path={resolvedSeoPath} title={seoTitle} description={seoDescription} />
           <Helmet>
             <html lang="ar" dir="rtl" />
             <script type="application/ld+json">{JSON.stringify(learningResourceJsonLd)}</script>
@@ -155,17 +153,55 @@ const Subjects = ({
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{text.badge}</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-bold gradient-text leading-[1.25] mb-4">
-          {seoItem ? seoItem.title : text.title}
+          {seoItem?.title ?? requestedCategory?.title ?? "ملازم السادس العلمي 2027"}
         </h1>
         <p className="text-muted-foreground md:text-lg max-w-2xl mx-auto leading-relaxed">
-          {seoItem ? seoDescription : text.description}
+          {mode === "malazam" ? seoDescription : text.description}
         </p>
-        {seoItem && (
+        {(seoItem || requestedCategory) && (
           <p className="mt-3 text-sm font-semibold text-primary">
-            اختر المادة للوصول إلى الملزمة
+            {seoItem ? `المادة: ${seoCategory?.name ?? "السادس العلمي"}` : "اختر الملزمة أو افتح ملفات المادة"}
           </p>
         )}
       </header>
+
+      {mode === "malazam" && (seoItem || requestedCategory) && (
+        <nav aria-label="مسار الصفحة" className="max-w-6xl mx-auto mt-8 relative z-10 text-sm text-muted-foreground">
+          <a className="hover:text-primary" href="/malazam/">الملازم</a>
+          <span className="mx-2">/</span>
+          {seoItem && seoCategory ? (
+            <>
+              <a className="hover:text-primary" href={`/malazam/${seoCategory.slug}/`}>{seoCategory.name}</a>
+              <span className="mx-2">/</span>
+              <span>{seoItem.title}</span>
+            </>
+          ) : (
+            <span>{requestedCategory?.name}</span>
+          )}
+        </nav>
+      )}
+
+      {mode === "malazam" && seoCategory && (
+        <section className="max-w-6xl mx-auto mt-8 relative z-10 rounded-3xl border border-primary/30 bg-secondary/50 p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-foreground">
+            {seoItem ? "الوصول إلى الملزمة" : `ملازم ${seoCategory.name}`}
+          </h2>
+          <p className="mt-3 text-muted-foreground leading-7">
+            {seoItem?.description ?? seoCategory.description}
+          </p>
+          {seoItem?.teacher && (
+            <p className="mt-3 text-sm text-foreground">إعداد: <strong>{seoItem.teacher}</strong></p>
+          )}
+          <a
+            href={seoCategory.telegramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground transition hover:opacity-90"
+          >
+            افتح ملفات {seoCategory.name}
+          </a>
+        </section>
+      )}
 
       <section className="max-w-6xl mx-auto mt-14 md:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 z-10 relative">
         {displayedSubjects.map((s, i) => {
@@ -217,6 +253,40 @@ const Subjects = ({
           );
         })}
       </section>
+
+      {mode === "malazam" && (
+        <section className="max-w-6xl mx-auto mt-16 relative z-10" aria-labelledby="malazam-catalog-title">
+          <h2 id="malazam-catalog-title" className="text-2xl md:text-3xl font-bold text-foreground">
+            {seoCategory ? `ملازم أخرى في ${seoCategory.name}` : "تصفح الملازم حسب المادة"}
+          </h2>
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(seoCategory ? categoryItems : MALAZAM_SEO_CATEGORIES).map((entry) => {
+              const isItem = "subject" in entry;
+              const href = `/malazam/${entry.slug}/`;
+              return (
+                <a key={entry.slug} href={href} className="rounded-2xl border border-white/10 bg-secondary/40 p-5 transition hover:-translate-y-1 hover:border-primary/50">
+                  <h3 className="font-bold text-foreground">{isItem ? entry.title : entry.name}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground line-clamp-2">{entry.description}</p>
+                </a>
+              );
+            })}
+          </div>
+
+          {!seoCategory && (
+            <div className="mt-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">أحدث ملازم السادس العلمي</h2>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {MALAZAM_SEO_ITEMS.map((item) => (
+                  <a key={item.slug} href={`/malazam/${item.slug}/`} className="rounded-2xl border border-white/10 bg-secondary/30 p-5 transition hover:border-primary/50">
+                    <h3 className="font-bold text-foreground">{item.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 };
