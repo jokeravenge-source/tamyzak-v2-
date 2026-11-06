@@ -2708,6 +2708,36 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_push_log: {
+        Row: {
+          batch_id: string
+          claimed_at: string
+          reminder_day: string
+          reminder_type: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          claimed_at?: string
+          reminder_day: string
+          reminder_type: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          claimed_at?: string
+          reminder_day?: string
+          reminder_type?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       signup_attribution: {
         Row: {
           code: string | null
@@ -3856,6 +3886,21 @@ export type Database = {
       claim_english_reading_access: { Args: never; Returns: Json }
       claim_inactive_push_recipients_stage: {
         Args: { _batch_id: string; _limit?: number; _stage: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      claim_scheduled_study_reminders: {
+        Args: { _batch_id: string; _limit?: number }
+        Returns: {
+          due_count: number
+          reminder_type: string
+          study_seconds: number
+          user_id: string
+        }[]
+      }
+      claim_study_today_push: {
+        Args: { _batch_id: string; _limit?: number }
         Returns: {
           user_id: string
         }[]
