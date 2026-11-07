@@ -1,0 +1,51 @@
+name: Cinematic animation studio
+
+on:
+  pull_request:
+    paths: ['animation-studio/**', '.github/workflows/animation-studio.yml']
+  push:
+    branches: [main]
+    paths: ['animation-studio/**', '.github/workflows/animation-studio.yml']
+  workflow_dispatch:
+    inputs:
+      render:
+        description: Video to export
+        type: choice
+        options: [opening, reel]
+        default: opening
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: animation-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: animation-studio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run audio
+      - run: npx remotion browser ensure
+      - name: Smoke render the opening
+        if: github.event_name != 'workflow_dispatch'
+        run: npx remotion still src/index.ts Opening-5s out/opening-check.png --frame=65 --gl=swangle --scale=0.5
+      - name: Export five-second scene
+        if: github.event_name == 'workflow_dispatch' && inputs.render == 'opening'
+        run: npm run render:opening
+      - name: Export full reel
+        if: github.event_name == 'workflow_dispatch' && inputs.render == 'reel'
+        run: npm run render:reel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tamayzak-cinematic-render
+          path: animation-studio/out/
+          retention-days: 14

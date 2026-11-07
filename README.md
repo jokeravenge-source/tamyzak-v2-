@@ -25,3 +25,16 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Cinematic 3D animation studio
+
+The independent [animation studio](animation-studio/README.md) creates a 30-second, 1080 × 1920 Tamayzak reel using procedural 3D characters, cinematic lighting, a JSON story timeline, and Remotion.
+
+```sh
+cd animation-studio
+npm ci
+npm run dev
+# Export the five-second opening or complete reel:
+npm run render:opening
+npm run render:reel
+```
