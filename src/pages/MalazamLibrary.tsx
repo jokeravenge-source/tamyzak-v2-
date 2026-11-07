@@ -32,6 +32,7 @@ type DownloadGate =
 
 const CHANNELS = [
   { username: "@a6th_DHS", name: "6th D’H’S", url: "https://t.me/a6th_DHS" },
+  { username: "@sad6ths", name: "مفاتيح النجاح", url: "https://t.me/sad6ths" },
 ] as const;
 
 const subjectName = (code: string) => MALAZAM_SEO_CATEGORIES.find((category) => category.slug === code)?.name ?? code;
@@ -154,7 +155,7 @@ export default function MalazamLibrary() {
         const missingChannels = Array.isArray(payload.missingChannels) ? payload.missingChannels.map(String) : [];
         setGate({ type: "channels", missingChannels });
       } else if (code === "bot_not_channel_admin") {
-        setGate({ type: "error", message: "بوت التحقق غير مهيّأ في قناة 6th D’H’S حالياً. يجب إضافة بوت تميّزك كمشرف في القناة ثم المحاولة مجدداً." });
+        setGate({ type: "error", message: "بوت التحقق غير مهيّأ في إحدى القناتين حالياً. يجب إضافة بوت تميّزك كمشرف في القناتين ثم المحاولة مجدداً." });
       } else if (code === "wrong_bot_connection") {
         setGate({ type: "error", message: `اتصال تيليجرام في الخادم مرتبط ببوت آخر. يجب إعادة ربطه بالبوت الرسمي @${TAMAYZAK_BOT_USERNAME}.` });
       } else if (code === "telegram_not_configured" || code === "telegram_gateway_unavailable") {
@@ -290,12 +291,12 @@ export default function MalazamLibrary() {
               <button type="button" onClick={() => setGate(null)} className="grid size-10 place-items-center rounded-xl border border-border hover:bg-secondary" aria-label="إغلاق"><X className="size-5" /></button>
             </div>
             <h2 id="malazam-gate-title" className="mt-5 text-2xl font-black">
-              {gate.type === "auth" ? "سجّل دخولك أولاً" : gate.type === "link" ? "اربط حساب تيليجرام" : gate.type === "channels" ? "انضم إلى القناة" : "تعذّر التحقق"}
+              {gate.type === "auth" ? "سجّل دخولك أولاً" : gate.type === "link" ? "اربط حساب تيليجرام" : gate.type === "channels" ? "انضم إلى القناتين" : "تعذّر التحقق"}
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               {gate.type === "auth" && "لازم تستخدم حساب تميّزك حتى نربطه بحساب تيليجرام ونحفظ صلاحية التحميل."}
               {gate.type === "link" && `افتح البوت الرسمي @${TAMAYZAK_BOT_USERNAME} واضغط Start، وبعدها ارجع واضغط تحقق وتحميل.`}
-              {gate.type === "channels" && "تحميل الملازم متاح لأعضاء قناة 6th D’H’S. انضم للقناة ثم أعد التحقق."}
+              {gate.type === "channels" && "تحميل الملازم متاح لأعضاء 6th D’H’S ومفاتيح النجاح. انضم للقناتين ثم أعد التحقق."}
               {gate.type === "error" && gate.message}
             </p>
 

@@ -189,7 +189,7 @@ export default function AdminMalazamTab() {
         </div>
 
         <div className="mb-6 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm font-semibold leading-7 text-amber-950">
-          حتى يعمل التحقق من الاشتراك، لازم يكون بوت تميّزك مشرفاً في قناة <span dir="ltr">@a6th_DHS</span>.
+          حتى يعمل التحقق من الاشتراك، لازم يكون بوت تميّزك مشرفاً في قناتي <span dir="ltr">@a6th_DHS</span> و<span dir="ltr">@sad6ths</span>.
         </div>
 
         <form ref={formRef} onSubmit={create} className="grid gap-4 md:grid-cols-2">
