@@ -29,6 +29,7 @@ const SUBJECTS = [
 ] as const;
 
 const subjectName = (code: string) => SUBJECTS.find(([value]) => value === code)?.[1] ?? code;
+const MAX_MALAZAM_PDF_BYTES = 1024 * 1024 * 1024;
 const safeExtension = (file: File, fallback: string) => {
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
   return extension && extension.length <= 5 ? extension : fallback;
@@ -76,6 +77,10 @@ export default function AdminMalazamTab() {
     }
     if (pdf.type !== "application/pdf" && !pdf.name.toLowerCase().endsWith(".pdf")) {
       toast.error("ملف الملزمة يجب أن يكون PDF");
+      return;
+    }
+    if (pdf.size > MAX_MALAZAM_PDF_BYTES) {
+      toast.error("حجم ملف الملزمة يجب ألا يتجاوز 1 GB");
       return;
     }
 
@@ -198,7 +203,7 @@ export default function AdminMalazamTab() {
             <span className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 text-primary"><Upload className="size-4 shrink-0" /><span className="truncate">{coverName || "اختر صورة"}</span><input name="cover" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setCoverName(event.target.files?.[0]?.name ?? "")} className="sr-only" required /></span>
           </label>
           <label className="space-y-2 text-sm font-bold">
-            <span>ملف الملزمة</span>
+            <span>ملف الملزمة <span className="font-medium text-muted-foreground">— الحد الأقصى 1 GB</span></span>
             <span className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 text-primary"><FileText className="size-4 shrink-0" /><span className="truncate">{pdfName || "اختر PDF"}</span><input name="pdf" type="file" accept="application/pdf,.pdf" onChange={(event) => setPdfName(event.target.files?.[0]?.name ?? "")} className="sr-only" required /></span>
           </label>
           <label className="flex items-center gap-2 text-sm font-bold md:col-span-2">

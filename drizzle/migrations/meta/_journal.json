@@ -155,6 +155,13 @@
       "when": 1793992320987,
       "tag": "0021_scheduled_push_log_and_reminder_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794022800000,
+      "tag": "0022_malazam_file_limit_1gb",
+      "breakpoints": true
     }
   ]
 }
