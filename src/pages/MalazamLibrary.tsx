@@ -72,7 +72,7 @@ export default function MalazamLibrary() {
     ? `تحميل ${detailItem.name} ضمن ${subjectName(detailItem.subject)} — ${detailItem.topic} لطلاب السادس العلمي من منصة تميزك بعد التحقق من حساب تيليجرام.`
     : legacyItem?.description ?? requestedCategory?.description ??
     "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، وحمّل الملفات بعد ربط حساب تيليجرام.";
-  const canonicalPath = detailItem ? malzamaPath(detailItem) : slug ? `/malazam/${slug}/` : "/malazam/";
+  const canonicalPath = detailItem ? malzamaPath(detailItem) : dynamicItemId ? pathname : slug ? `/malazam/${slug}/` : "/malazam/";
 
   const load = useCallback(async () => {
     setLoading(true);
