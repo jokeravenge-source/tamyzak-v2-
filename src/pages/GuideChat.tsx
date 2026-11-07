@@ -5,40 +5,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
+import { isGuideToolKey } from "@/lib/guideTools";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const copy = {
   ar: {
-    title: "مرشد التطبيق",
-    subtitle: "قل لي ماذا تريد أن تنجز وسأدلّك على الأداة المناسبة",
-    intro: "أهلاً بك في تميّزك! أخبرني ماذا تريد أن تفعل اليوم — مثلاً: «أريد أن أراجع الفيزياء» أو «أريد تنظيم وقتي» — وسأشرح لك الأداة المناسبة وأنقلك إليها مباشرة.",
-    placeholder: "ماذا تريد أن تفعل؟",
+    title: "مرشد تميّزك",
+    subtitle: "اوصف هدفك وسأفتح لك الميزة المناسبة",
+    intro: "أهلاً بك! أساعدك توصل بسرعة إلى موادك، الملازم، بنوك الأسئلة، مراجعة الأخطاء، جلسات الدراسة وتحديات الأصدقاء. اكتب شنو تريد تسوي وسأنقلك إلى المكان الصحيح.",
+    placeholder: "مثلاً: أريد ملزمة فيزياء أو تحدي ويا أصدقائي",
     back: "دخول التطبيق",
     loading: "يفكّر...",
     error: "حدث خطأ، حاول مرة أخرى.",
-    quick: ["أريد المراجعة للامتحان", "أريد تنظيم وقتي", "أريد حل أسئلة", "أريد ملاحظات جاهزة"],
+    quick: ["أريد ملزمة لمادتي", "أريد أتدرّب على أخطائي", "أريد تحدي دراسة ويا أصدقائي", "أريد أدوات مادة معيّنة"],
   },
   en: {
-    title: "App guide",
-    subtitle: "Tell me what you want to do and I'll point you to the right tool",
-    intro: "Welcome to Tamayzak! Tell me what you'd like to do today — e.g. \"I want to revise physics\" or \"help me plan my time\" — and I'll explain the right tool and take you there.",
-    placeholder: "What do you want to do?",
+    title: "Tamayzak guide",
+    subtitle: "Describe your goal and I'll open the right feature",
+    intro: "Welcome! I can take you straight to your subjects, booklets, question banks, mistake review, study sessions, and friend challenges. Tell me what you want to do and I'll open the right place.",
+    placeholder: "Try: I need a Physics booklet or a friend challenge",
     back: "Enter the app",
     loading: "Thinking...",
     error: "Something went wrong, try again.",
-    quick: ["Revise for an exam", "Plan my day", "Practice questions", "Read study notes"],
+    quick: ["Find a subject booklet", "Review my mistakes", "Start a study challenge", "Show tools for a subject"],
   },
 } as const;
 
-const LINK_RE = /\[\[tool:([a-zA-Z]+)\|([^\]]+)\]\]/g;
+const LINK_RE = /\[\[tool:([a-zA-Z][a-zA-Z0-9_-]*)\|([^\]]+)\]\]/g;
 
-function renderParts(text: string) {
+export function renderParts(text: string) {
   const parts: ({ t: "text"; v: string } | { t: "link"; key: string; label: string })[] = [];
   let last = 0;
   for (const m of text.matchAll(LINK_RE)) {
     if (m.index! > last) parts.push({ t: "text", v: text.slice(last, m.index) });
-    parts.push({ t: "link", key: m[1], label: m[2] });
+    if (isGuideToolKey(m[1])) {
+      parts.push({ t: "link", key: m[1], label: m[2] });
+    } else {
+      parts.push({ t: "text", v: m[2] });
+    }
     last = m.index! + m[0].length;
   }
   if (last < text.length) parts.push({ t: "text", v: text.slice(last) });

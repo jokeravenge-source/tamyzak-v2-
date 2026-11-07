@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner, toast } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
@@ -125,6 +125,7 @@ import { PUBLIC_TOOL_SLUGS } from "@/data/publicTools";
 import { readWeeklyLearningProfile } from "@/lib/weeklyLearning";
 import { RETURN_TO_PROGRESS_KEY, TOPIC_PRACTICE_TARGET_KEY } from "@/lib/topicPracticeQuiz";
 import { useStudyBackHistory } from "@/hooks/useStudyBackHistory";
+import { isGuideToolKey } from "@/lib/guideTools";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
 const ParentFollow = lazy(() => import("./pages/ParentFollow"));
@@ -992,7 +993,14 @@ const StudentApp = () => {
             <GuideChat
               language={language}
               onBack={() => setGuideOpen(false)}
-              onOpenTool={(key) => { setGuideOpen(false); chooseMenu(key as MenuChoice); }}
+              onOpenTool={(key) => {
+                if (!isGuideToolKey(key)) {
+                  toast.error(language === "ar" ? "هذه الميزة غير متاحة حالياً." : "This feature is not available right now.");
+                  return;
+                }
+                setGuideOpen(false);
+                chooseMenu(key);
+              }}
             />
           </Suspense>
         </div>
