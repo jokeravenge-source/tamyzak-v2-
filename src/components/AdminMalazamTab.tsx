@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookMarked, Copy, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { BookMarked, Copy, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { malzamaUrl } from "@/lib/malazamLinks";
@@ -39,6 +39,7 @@ export default function AdminMalazamTab() {
   const formRef = useRef<HTMLFormElement>(null);
   const [items, setItems] = useState<Malzama[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [coverName, setCoverName] = useState("");
@@ -47,14 +48,22 @@ export default function AdminMalazamTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("malazam")
-      .select("id, subject, topic, name, cover_path, file_path, is_published, sort_order, created_at")
-      .order("sort_order")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    setItems((data ?? []) as Malzama[]);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      const { data, error } = await supabase
+        .from("malazam")
+        .select("id, subject, topic, name, cover_path, file_path, is_published, sort_order, created_at")
+        .order("sort_order")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setItems((data ?? []) as Malzama[]);
+    } catch {
+      setLoadError(true);
+      setItems([]);
+      toast.error("تعذر تحميل قائمة الملازم");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -219,10 +228,15 @@ export default function AdminMalazamTab() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-black">الملازم المضافة</h2>
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">{items.length} ملزمة</span>
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">{loading ? "جاري التحميل…" : loadError ? "تعذر التحميل" : `${items.length} ملزمة`}</span>
         </div>
         {loading ? (
           <div className="grid min-h-40 place-items-center"><Loader2 className="size-6 animate-spin text-primary" /></div>
+        ) : loadError ? (
+          <div role="alert" className="rounded-2xl border border-amber-500/40 p-6 text-center">
+            <p className="font-bold">تعذر تحميل الملازم، ولا يمكن تأكيد أن القائمة فارغة.</p>
+            <button type="button" onClick={() => void load()} className="mx-auto mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-primary/30 px-4 font-bold text-primary"><RefreshCw className="size-4" />إعادة المحاولة</button>
+          </div>
         ) : items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">ماكو ملازم مضافة حالياً.</div>
         ) : (

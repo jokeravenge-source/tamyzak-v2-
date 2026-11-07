@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, BookMarked, CheckCircle2, Download, FileText, Link2, Loader2, LockKeyhole, Send, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, BookMarked, CheckCircle2, Download, FileText, Link2, Loader2, LockKeyhole, RefreshCw, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeTelegramStart } from "@/lib/telegramStart";
 import { invokeMalazamDownload } from "@/lib/malazamDownload";
@@ -55,6 +55,7 @@ export default function MalazamLibrary() {
   const [items, setItems] = useState<Malzama[]>([]);
   const [detailItem, setDetailItem] = useState<Malzama | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [downloadId, setDownloadId] = useState<string | null>(null);
   const [gate, setGate] = useState<DownloadGate | null>(null);
   const [pendingItem, setPendingItem] = useState<Malzama | null>(null);
@@ -74,31 +75,40 @@ export default function MalazamLibrary() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    if (dynamicItemId) {
-      const { data } = await supabase
+    setLoadError(false);
+    try {
+      if (dynamicItemId) {
+        const { data, error } = await supabase
+          .from("malazam")
+          .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
+          .eq("id", dynamicItemId)
+          .eq("is_published", true)
+          .maybeSingle();
+        if (error) throw error;
+        const item = (data ?? null) as Malzama | null;
+        setDetailItem(item);
+        setItems(item ? [item] : []);
+        return;
+      }
+
+      setDetailItem(null);
+      let query = supabase
         .from("malazam")
         .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
-        .eq("id", dynamicItemId)
         .eq("is_published", true)
-        .maybeSingle();
-      const item = (data ?? null) as Malzama | null;
-      setDetailItem(item);
-      setItems(item ? [item] : []);
+        .order("sort_order")
+        .order("created_at", { ascending: false });
+      if (activeSubject) query = query.eq("subject", activeSubject);
+      const { data, error } = await query;
+      if (error) throw error;
+      setItems((data ?? []) as Malzama[]);
+    } catch {
+      setItems([]);
+      setDetailItem(null);
+      setLoadError(true);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setDetailItem(null);
-    let query = supabase
-      .from("malazam")
-      .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
-      .eq("is_published", true)
-      .order("sort_order")
-      .order("created_at", { ascending: false });
-    if (activeSubject) query = query.eq("subject", activeSubject);
-    const { data } = await query;
-    setItems((data ?? []) as Malzama[]);
-    setLoading(false);
   }, [activeSubject, dynamicItemId]);
 
   useEffect(() => { void load(); }, [load]);
@@ -213,11 +223,25 @@ export default function MalazamLibrary() {
         <section className="mt-8" aria-live="polite">
           {loading ? (
             <div className="grid min-h-72 place-items-center"><Loader2 className="size-8 animate-spin text-primary" /></div>
+          ) : loadError ? (
+            <div role="alert" className="rounded-3xl border border-amber-500/40 bg-card p-10 text-center">
+              <AlertCircle className="mx-auto size-10 text-amber-600" />
+              <h2 className="mt-4 text-xl font-black">تعذّر تحميل الملازم من الخادم</h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">صار خطأ بجلب القائمة. هذا لا يعني أن الملازم غير موجودة.</p>
+              <button type="button" onClick={() => void load()} className="mx-auto mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground"><RefreshCw className="size-4" />إعادة المحاولة</button>
+            </div>
+          ) : dynamicItemId && !detailItem ? (
+            <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
+              <FileText className="mx-auto size-10 text-muted-foreground" />
+              <h2 className="mt-4 text-xl font-black">الملزمة غير متاحة حالياً</h2>
+              <p className="mt-2 text-sm text-muted-foreground">تگدر ترجع للمكتبة وتختار ملزمة منشورة.</p>
+              <a href="/malazam/" className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-primary px-5 font-bold text-primary-foreground">الرجوع للمكتبة</a>
+            </div>
           ) : items.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
               <FileText className="mx-auto size-10 text-muted-foreground" />
-              <h2 className="mt-4 text-xl font-black">ماكو ملازم مضافة بهذا القسم حالياً</h2>
-              <p className="mt-2 text-sm text-muted-foreground">راح تظهر هنا مباشرة من يضيفها الأدمن.</p>
+              <h2 className="mt-4 text-xl font-black">ماكو ملازم منشورة بهذا القسم حالياً</h2>
+              <p className="mt-2 text-sm text-muted-foreground">راح تظهر هنا مباشرة من ينشرها الأدمن.</p>
             </div>
           ) : detailItem ? (
             <article className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg">
