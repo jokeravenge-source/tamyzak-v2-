@@ -4,13 +4,14 @@ import { invokeTelegramStart } from "@/lib/telegramStart";
 import { BellRing, CheckCircle2, Gift, Loader2, RefreshCw, Send, ShieldCheck, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
+import { TAMAYZAK_BOT_USERNAME, tamayzakBotLink } from "@/lib/tamayzakTelegram";
 
 type TelegramLinkVariant = "profile" | "home";
 
 const T = {
   en: {
     eyebrow: "Tamayzak assistant", title: "Connect Telegram",
-    desc: "Get useful reminders at the right time—not more noise.",
+    desc: `Connect your account through @${TAMAYZAK_BOT_USERNAME} to receive useful reminders.`,
     linked: "Telegram connected",
     linkedDesc: "Reminders and important Tamayzak updates can reach you here.",
     connect: "Connect in Telegram", reconnect: "Connect another account", disconnect: "Disconnect",
@@ -22,7 +23,7 @@ const T = {
   },
   ar: {
     eyebrow: "مساعد تميّزك", title: "اربط تيليجرام",
-    desc: "استلم التذكيرات المفيدة بوقتها، بدون رسائل مزعجة.",
+    desc: `اربط حسابك حصراً عبر @${TAMAYZAK_BOT_USERNAME} حتى تستلم التذكيرات المفيدة.`,
     linked: "تيليجرام مرتبط",
     linkedDesc: "توصلك تذكيرات الدراسة وتحديثات تميّزك المهمة هنا.",
     connect: "اربط عبر تيليجرام", reconnect: "ربط حساب آخر", disconnect: "فصل الربط",
@@ -52,7 +53,7 @@ export function TelegramLinkCard({ language, source = "profile", variant = "prof
       if (error) throw error;
       setVerified(Boolean(data?.verified));
       setUsername(data?.telegramUsername ?? null);
-      setLink(data?.deepLink ?? null);
+      setLink(tamayzakBotLink(data));
       if (data?.verified) setPending(false);
     } catch {
       // Retry after the next focus event or explicit action.
@@ -99,7 +100,7 @@ export function TelegramLinkCard({ language, source = "profile", variant = "prof
     try {
       const { data, error } = await invokeTelegramStart({ action: verified ? "relink" : "start", source });
       if (error) throw error;
-      const deepLink = data?.deepLink ?? link;
+      const deepLink = tamayzakBotLink(data) ?? link;
       setLink(deepLink ?? null);
       setPending(true);
       setVerified(false);

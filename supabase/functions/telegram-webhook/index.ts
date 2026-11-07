@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+import { callTelegramGateway, verifyTamayzakBotConnection } from "../_shared/telegram-gateway.ts";
 
 async function deriveSecret(apiKey: string): Promise<string> {
   const data = new TextEncoder().encode(`telegram-webhook:${apiKey}`);
@@ -31,28 +30,7 @@ const EXPIRED_TEXT =
 
 /** Never throws and never hangs: a slow connector must not crash the worker. */
 async function tg(method: string, body: unknown) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-  const TELEGRAM_API_KEY = Deno.env.get("TELEGRAM_API_KEY")!;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch(`${GATEWAY_URL}/${method}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": TELEGRAM_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    const data = await res.json().catch(() => ({} as Record<string, unknown>));
-    return { ok: res.ok && (data as { ok?: boolean }).ok === true, data, status: res.status };
-  } catch (_e) {
-    return { ok: false, data: null, status: 0 };
-  } finally {
-    clearTimeout(timer);
-  }
+  return callTelegramGateway(method, body);
 }
 
 Deno.serve(async (req) => {
@@ -64,6 +42,15 @@ Deno.serve(async (req) => {
   const expected = await deriveSecret(TELEGRAM_API_KEY);
   const actual = req.headers.get("X-Telegram-Bot-Api-Secret-Token");
   if (!safeEqual(actual, expected)) return new Response("Unauthorized", { status: 401 });
+
+  // Never attach a website account through a Telegram connection belonging
+  // to a different bot, even if that connection has a valid webhook secret.
+  const bot = await verifyTamayzakBotConnection();
+  if (!bot.ok) {
+    return new Response(JSON.stringify({ ok: true, ignored: bot.error, actualBotUsername: bot.actualUsername }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
   const supabase = createClient(

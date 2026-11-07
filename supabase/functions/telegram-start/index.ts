@@ -1,8 +1,11 @@
 import { protect } from "../_shared/guard.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { TAMAYZAK_BOT_USERNAME } from "../_shared/telegram-gateway.ts";
 
-const BOT_USERNAME = Deno.env.get("TAMAYZAK_BOT_USERNAME") || "sovforcejoin_bot";
+// This must never be overridden by a stale environment variable: the webhook
+// and website connection flow belong to this exact bot.
+const BOT_USERNAME = TAMAYZAK_BOT_USERNAME;
 const TOKEN_TTL_MS = 15 * 60 * 1000;
 
 function randomToken(len = 24): string {

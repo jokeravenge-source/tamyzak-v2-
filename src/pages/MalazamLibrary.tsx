@@ -6,6 +6,7 @@ import { invokeTelegramStart } from "@/lib/telegramStart";
 import { invokeMalazamDownload } from "@/lib/malazamDownload";
 import SeoHead from "@/components/SeoHead";
 import { malzamaPath, parseMalzamaId } from "@/lib/malazamLinks";
+import { TAMAYZAK_BOT_USERNAME, tamayzakBotLink } from "@/lib/tamayzakTelegram";
 import {
   MALAZAM_SEO_CATEGORIES,
   getMalazamSeoCategory,
@@ -135,16 +136,20 @@ export default function MalazamLibrary() {
         const linkResult = await invokeTelegramStart({ source: "malazam-download" });
         if (linkResult.signedOut) {
           setGate({ type: "auth" });
-        } else if (linkResult.error || !linkResult.data?.deepLink) {
+        } else if (linkResult.error || !tamayzakBotLink(linkResult.data)) {
           setGate({ type: "error", message: "تعذّر فتح بوت تميّزك حالياً. حاول مرة ثانية بعد قليل." });
         } else {
-          setGate({ type: "link", botUrl: linkResult.data.deepLink });
+          setGate({ type: "link", botUrl: tamayzakBotLink(linkResult.data) });
         }
       } else if (code === "not_joined") {
         const missingChannels = Array.isArray(payload.missingChannels) ? payload.missingChannels.map(String) : [];
         setGate({ type: "channels", missingChannels });
       } else if (code === "bot_not_channel_admin") {
         setGate({ type: "error", message: "بوت التحقق غير مهيّأ في إحدى القناتين حالياً. تم تحديد المشكلة، ويجب إضافة بوت تميّزك كمشرف في القناتين ثم المحاولة مجدداً." });
+      } else if (code === "wrong_bot_connection") {
+        setGate({ type: "error", message: `اتصال تيليجرام في الخادم مرتبط ببوت آخر. يجب إعادة ربطه بالبوت الرسمي @${TAMAYZAK_BOT_USERNAME}.` });
+      } else if (code === "telegram_not_configured" || code === "telegram_gateway_unavailable") {
+        setGate({ type: "error", message: "اتصال بوت تميّزك بالخادم غير متاح حالياً. أعد ربط تكامل Telegram ثم حاول مجدداً." });
       } else if (code === "too_many_requests" || code.toLowerCase().includes("too many")) {
         setGate({ type: "error", message: "صارت محاولات كثيرة خلال دقيقة. انتظر دقيقة واحدة ثم جرّب مجدداً." });
       } else {
@@ -266,14 +271,14 @@ export default function MalazamLibrary() {
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               {gate.type === "auth" && "لازم تستخدم حساب تميّزك حتى نربطه بحساب تيليجرام ونحفظ صلاحية التحميل."}
-              {gate.type === "link" && "افتح بوت تميّزك واضغط Start، وبعدها ارجع واضغط تحقق وتحميل."}
+              {gate.type === "link" && `افتح البوت الرسمي @${TAMAYZAK_BOT_USERNAME} واضغط Start، وبعدها ارجع واضغط تحقق وتحميل.`}
               {gate.type === "channels" && "تحميل الملازم متاح لأعضاء 6th D’H’S ومفاتيح النجاح. انضم للقناتين ثم أعد التحقق."}
               {gate.type === "error" && gate.message}
             </p>
 
             {gate.type === "auth" && <a href="/" onClick={() => sessionStorage.setItem("tamayzak_return_after_auth", window.location.pathname + window.location.search)} className="mt-5 flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 font-black text-primary-foreground">تسجيل الدخول</a>}
             {gate.type === "link" && (
-              <a href={gate.botUrl ?? undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!gate.botUrl} className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-4 font-black text-white"><Link2 className="size-5" />فتح بوت تميّزك</a>
+              <a href={gate.botUrl ?? undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!gate.botUrl} className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-4 font-black text-white"><Link2 className="size-5" />فتح @{TAMAYZAK_BOT_USERNAME}</a>
             )}
             {gate.type === "channels" && (
               <div className="mt-5 space-y-3">

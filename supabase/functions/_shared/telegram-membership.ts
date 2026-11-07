@@ -1,4 +1,4 @@
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+import { callTelegramGateway, verifyTamayzakBotConnection } from "./telegram-gateway.ts";
 
 export const TELEGRAM_CHANNEL_GROUPS = {
   default: ["@Tamayuzak"],
@@ -14,6 +14,7 @@ export type TelegramChannelCheck = {
   joined: boolean;
   status?: string;
   error?: string;
+  actualBotUsername?: string | null;
 };
 
 const MEMBER_STATUSES = new Set(["creator", "administrator", "member"]);
@@ -30,25 +31,15 @@ function isBotAccessError(message: string) {
   return BOT_ACCESS_ERRORS.some((part) => normalized.includes(part));
 }
 
-async function requestMember(channel: string, telegramUserId: number, lovableApiKey: string, telegramApiKey: string) {
+async function requestMember(channel: string, telegramUserId: number) {
   let lastError = "telegram_unavailable";
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const res = await fetch(`${GATEWAY_URL}/getChatMember`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "X-Connection-Api-Key": telegramApiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ chat_id: channel, user_id: telegramUserId }),
-        signal: AbortSignal.timeout(8_000),
-      });
-      const data = await res.json().catch(() => ({} as Record<string, unknown>));
-      if (res.ok && (data as { ok?: boolean })?.ok) return { data, error: null };
+      const response = await callTelegramGateway("getChatMember", { chat_id: channel, user_id: telegramUserId });
+      if (response.ok && response.data) return { data: response.data, error: null };
 
-      lastError = (data as { description?: string })?.description ?? `status_${res.status}`;
-      if (res.status < 500 && res.status !== 429) break;
+      lastError = response.error ?? "telegram_gateway_unavailable";
+      if (response.status > 0 && response.status < 500 && response.status !== 429) break;
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
     }
@@ -60,13 +51,20 @@ export async function checkTelegramMembership(
   telegramUserId: number,
   scope: TelegramChannelScope,
 ): Promise<TelegramChannelCheck[]> {
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-  const telegramApiKey = Deno.env.get("TELEGRAM_API_KEY");
-  if (!lovableApiKey || !telegramApiKey) throw new Error("telegram_not_configured");
+  const bot = await verifyTamayzakBotConnection();
+  if (!bot.ok) {
+    return TELEGRAM_CHANNEL_GROUPS[scope].map((channel) => ({
+      channel,
+      ok: false,
+      joined: false,
+      error: bot.error,
+      actualBotUsername: bot.actualUsername,
+    }));
+  }
 
   return Promise.all(
     TELEGRAM_CHANNEL_GROUPS[scope].map(async (channel): Promise<TelegramChannelCheck> => {
-      const { data, error } = await requestMember(channel, telegramUserId, lovableApiKey, telegramApiKey);
+      const { data, error } = await requestMember(channel, telegramUserId);
       if (!data || error) {
         return {
           channel,

@@ -21,6 +21,15 @@ verify_jwt = false
 [functions.telegram-webhook]
 verify_jwt = false
 
+[functions.telegram-start]
+verify_jwt = false
+
+[functions.telegram-recheck]
+verify_jwt = false
+
+[functions.telegram-channel-check]
+verify_jwt = false
+
 [functions.payments-webhook]
 verify_jwt = false
 

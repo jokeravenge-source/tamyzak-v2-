@@ -43,7 +43,13 @@ Deno.serve(async (req) => {
     const channels = await checkTelegramMembership(Number(verification.telegram_user_id), "malazam");
     const failed = channels.find((channel) => !channel.ok);
     if (failed) {
-      const error = failed.error === "bot_not_channel_admin" ? "bot_not_channel_admin" : "membership_check_failed";
+      const passthroughErrors = new Set([
+        "bot_not_channel_admin",
+        "wrong_bot_connection",
+        "telegram_not_configured",
+        "telegram_gateway_unavailable",
+      ]);
+      const error = failed.error && passthroughErrors.has(failed.error) ? failed.error : "membership_check_failed";
       return json({ error, failedChannel: failed.channel, channels }, 503);
     }
 

@@ -39,12 +39,12 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: row } = await admin
       .from("telegram_verifications")
-      .select("telegram_user_id")
+      .select("telegram_user_id, verified")
       .eq("user_id", auth.userId)
       .maybeSingle();
 
     const tgId = row?.telegram_user_id;
-    if (!tgId) return json({ ok: false, joined: false, error: "not_linked" });
+    if (!row?.verified || !tgId) return json({ ok: false, joined: false, error: "not_linked" });
 
 
     const channels = await checkTelegramMembership(Number(tgId), scope);
