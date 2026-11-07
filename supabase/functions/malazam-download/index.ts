@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
     if (!item?.is_published) return json({ error: "not_found" }, 404);
     if (!verification?.verified || !verification.telegram_user_id) {
-      return json({ error: "not_linked" }, 403);
+      return json({ ok: false, error: "not_linked" });
     }
 
     const channels = await checkTelegramMembership(Number(verification.telegram_user_id), "malazam");
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     const missingChannels = channels.filter((channel) => !channel.joined).map((channel) => channel.channel);
     if (missingChannels.length) {
-      return json({ error: "not_joined", missingChannels, channels }, 403);
+      return json({ ok: false, error: "not_joined", missingChannels, channels });
     }
 
     const { data: signed, error: signedError } = await admin.storage
