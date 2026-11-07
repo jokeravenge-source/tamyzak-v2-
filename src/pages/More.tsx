@@ -41,10 +41,10 @@ const GROUPS: Group[] = [
       ],
       [
         "malazam",
-        "Booklets",
-        "الملازم",
-        "Find study materials by subject.",
-        "تصفّح الملازم حسب المادة."
+        "Al Malazam",
+        "بنك الملازم",
+        "Read PDFs, download booklets and save your copies.",
+        "اقرأ الملازم وحمّلها واحفظ نسختك."
       ],
       [
         "summaries",

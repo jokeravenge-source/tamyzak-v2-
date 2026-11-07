@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ComponentProps } from "react";
 import { Lock, ArrowLeft, ArrowRight, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, RefreshCw, Moon, Sigma } from "lucide-react";
 import { LANGUAGE_STORAGE_KEY, type AppLanguage } from "@/components/LanguageGate";
 import { Helmet } from "react-helmet-async";
@@ -52,7 +53,7 @@ const copy = {
   },
 };
 
-const Subjects = ({
+const SubjectsBySubject = ({
   language,
   onChangeLanguage,
   onSelectSubject,
@@ -291,4 +292,11 @@ const Subjects = ({
   );
 };
 
-export default Subjects;
+const MalazamLibrary = lazy(() => import("./MalazamLibrary"));
+
+export default function Subjects(props: ComponentProps<typeof SubjectsBySubject>) {
+  if (props.mode === "malazam") {
+    return <Suspense fallback={<div role="status" className="grid min-h-60 place-items-center">{props.language === "ar" ? "جاري فتح بنك الملازم…" : "Opening Al Malazam…"}</div>}><MalazamLibrary onBack={props.onChangeLanguage} /></Suspense>;
+  }
+  return <SubjectsBySubject {...props} />;
+}
