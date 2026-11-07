@@ -162,6 +162,13 @@
       "when": 1794022800000,
       "tag": "0022_malazam_file_limit_1gb",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794075603127,
+      "tag": "0023_fix_public_malazam_catalog",
+      "breakpoints": true
     }
   ]
 }
