@@ -1,12 +1,36 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadEnv } from "vite";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(projectRoot, "dist");
 const catalog = JSON.parse(await readFile(path.join(projectRoot, "src/data/malazamSeo.json"), "utf8"));
 const template = await readFile(path.join(distDir, "index.html"), "utf8");
 const siteUrl = "https://tamyazak.site";
+
+// Admin-published booklets must be discoverable too, not just the legacy list.
+// Use the public API and public metadata only; PDF objects stay private.
+const env = { ...loadEnv("production", projectRoot, "VITE_"), ...process.env };
+const apiUrl = env.VITE_SUPABASE_URL;
+const apiKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY;
+if (!apiUrl || !apiKey) throw new Error("Missing public Supabase configuration for booklet SEO generation");
+const published = [];
+for (let offset = 0; ; offset += 1000) {
+  const url = new URL("/rest/v1/malazam", apiUrl);
+  url.search = new URLSearchParams({ select: "id,name,subject,topic", is_published: "eq.true", order: "id.asc", limit: "1000", offset: String(offset) }).toString();
+  const response = await fetch(url, { headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(20000) });
+  if (!response.ok) throw new Error(`Unable to fetch published booklet metadata (HTTP ${response.status})`);
+  const batch = await response.json();
+  if (!Array.isArray(batch)) throw new Error("Invalid published booklet metadata response");
+  published.push(...batch);
+  if (batch.length < 1000) break;
+}
+const publishedPath = (item) => {
+  const slug = item.name.normalize("NFKC").trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 110) || "malzama";
+  return `/malazam/file/${item.id}/${encodeURIComponent(slug)}/`;
+};
+const publishedCards = published.map((item) => ({ ...item, title: item.name, href: publishedPath(item), description: item.topic }));
 
 const escapeHtml = (value) => String(value)
   .replaceAll("&", "&amp;")
@@ -26,7 +50,7 @@ const categoryFor = (item) => catalog.categories.find((category) => category.slu
 
 function renderCards(entries) {
   return entries.map((entry) => `
-    <a class="seo-card" href="/malazam/${escapeHtml(entry.slug)}/">
+    <a class="seo-card" href="${escapeHtml(entry.href ?? `/malazam/${entry.slug}/`)}">
       <strong>${escapeHtml(entry.name ?? entry.title)}</strong>
       <small>${escapeHtml(entry.description)}</small>
     </a>`).join("");
@@ -38,13 +62,13 @@ function pageData(resource) {
       path: "/malazam/",
       title: "ملازم السادس العلمي 2027 PDF | تميزك",
       description: "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، مرتبة حسب المادة والفصل على منصة تميزك.",
-      body: `<span class="seo-badge">منصة تميزك التعليمية</span><h1>ملازم السادس العلمي 2027 PDF</h1><p>اختر المادة أو الملزمة التي تبحث عنها. جمعنا روابط الملازم وملفات الدراسة والمراجعة في صفحات واضحة وسريعة لطلاب السادس العلمي في العراق.</p><h2>الملازم حسب المادة</h2><div class="seo-grid">${renderCards(catalog.categories)}</div><h2>ملازم مختارة</h2><div class="seo-grid">${renderCards(catalog.items)}</div>`,
+      body: `<span class="seo-badge">منصة تميزك التعليمية</span><h1>ملازم السادس العلمي 2027 PDF</h1><p>اختر المادة أو الملزمة التي تبحث عنها. جمعنا روابط الملازم وملفات الدراسة والمراجعة في صفحات واضحة وسريعة لطلاب السادس العلمي في العراق.</p><h2>الملازم حسب المادة</h2><div class="seo-grid">${renderCards(catalog.categories)}</div><h2>الملازم المنشورة</h2><div class="seo-grid">${renderCards(publishedCards)}</div><h2>ملازم مختارة</h2><div class="seo-grid">${renderCards(catalog.items)}</div>`,
       schemaType: "CollectionPage",
     };
   }
 
   if (resource.kind === "category") {
-    const items = catalog.items.filter((item) => item.subject === resource.slug);
+    const items = [...publishedCards, ...catalog.items].filter((item) => item.subject === resource.slug);
     return {
       path: `/malazam/${resource.slug}/`,
       title: `${resource.title} | تميزك`,
@@ -93,10 +117,23 @@ const pages = [
   pageData(null),
   ...catalog.categories.map((category) => pageData({ ...category, kind: "category" })),
   ...catalog.items.map((item) => pageData({ ...item, kind: "item" })),
+  ...published.map((item) => {
+    const category = categoryFor(item);
+    const label = category?.name ?? "ملازم السادس العلمي";
+    const description = `تحميل ${item.name} ضمن ${label} — ${item.topic} لطلاب السادس العلمي من منصة تميزك بعد التحقق من حساب تيليجرام.`;
+    return {
+      path: publishedPath(item),
+      title: `${item.name} ${label} PDF | تميزك`,
+      description,
+      schemaType: "LearningResource",
+      body: `<a class="seo-badge" href="/malazam/">بنك الملازم — تميزك</a><h1>${escapeHtml(item.name)}</h1><p>${escapeHtml(description)}</p><dl><dt>المادة</dt><dd>${escapeHtml(label)}</dd><dt>الموضوع</dt><dd>${escapeHtml(item.topic)}</dd><dt>نوع الملف</dt><dd>PDF</dd></dl><p>تحميل الملزمة متاح بعد تسجيل الدخول والتحقق من الاشتراك بقنوات تيليجرام المطلوبة.</p>${category ? `<a class="seo-cta" href="/malazam/${escapeHtml(category.slug)}/">تصفح ملازم ${escapeHtml(label)}</a>` : ""}`,
+    };
+  }),
 ];
 
 for (const page of pages) {
-  const relative = page.path.slice(1);
+  // URLs encode Arabic names; the web server decodes them before disk lookup.
+  const relative = decodeURIComponent(page.path.slice(1));
   const outputDir = path.join(distDir, relative);
   await mkdir(outputDir, { recursive: true });
   await writeFile(path.join(outputDir, "index.html"), buildHtml(page));
