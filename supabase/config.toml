@@ -70,3 +70,6 @@ verify_jwt = false
 
 [functions.english-reading-practice]
 verify_jwt = false
+
+[functions.malazam-download]
+verify_jwt = false

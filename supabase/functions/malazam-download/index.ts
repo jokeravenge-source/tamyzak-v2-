@@ -42,7 +42,10 @@ Deno.serve(async (req) => {
 
     const channels = await checkTelegramMembership(Number(verification.telegram_user_id), "malazam");
     const failed = channels.find((channel) => !channel.ok);
-    if (failed) return json({ error: "membership_check_failed", channels }, 503);
+    if (failed) {
+      const error = failed.error === "bot_not_channel_admin" ? "bot_not_channel_admin" : "membership_check_failed";
+      return json({ error, failedChannel: failed.channel, channels }, 503);
+    }
 
     const missingChannels = channels.filter((channel) => !channel.joined).map((channel) => channel.channel);
     if (missingChannels.length) {

@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { ArrowLeft, BookMarked, CheckCircle2, Download, FileText, Link2, Loader2, LockKeyhole, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeTelegramStart } from "@/lib/telegramStart";
+import { invokeMalazamDownload } from "@/lib/malazamDownload";
 import SeoHead from "@/components/SeoHead";
 import { malzamaPath, parseMalzamaId } from "@/lib/malazamLinks";
 import {
@@ -114,7 +115,11 @@ export default function MalazamLibrary() {
         return;
       }
 
-      const result = await supabase.functions.invoke("malazam-download", { body: { malzamaId: item.id } });
+      const result = await invokeMalazamDownload(item.id);
+      if (result.signedOut) {
+        setGate({ type: "auth" });
+        return;
+      }
       const payload = await responsePayload(result.data, result.error);
       const downloadUrl = typeof payload.downloadUrl === "string" ? payload.downloadUrl : null;
       if (downloadUrl) {
@@ -128,10 +133,20 @@ export default function MalazamLibrary() {
         setGate({ type: "auth" });
       } else if (code === "not_linked") {
         const linkResult = await invokeTelegramStart({ source: "malazam-download" });
-        setGate({ type: "link", botUrl: linkResult.data?.deepLink ?? null });
+        if (linkResult.signedOut) {
+          setGate({ type: "auth" });
+        } else if (linkResult.error || !linkResult.data?.deepLink) {
+          setGate({ type: "error", message: "تعذّر فتح بوت تميّزك حالياً. حاول مرة ثانية بعد قليل." });
+        } else {
+          setGate({ type: "link", botUrl: linkResult.data.deepLink });
+        }
       } else if (code === "not_joined") {
         const missingChannels = Array.isArray(payload.missingChannels) ? payload.missingChannels.map(String) : [];
         setGate({ type: "channels", missingChannels });
+      } else if (code === "bot_not_channel_admin") {
+        setGate({ type: "error", message: "بوت التحقق غير مهيّأ في إحدى القناتين حالياً. تم تحديد المشكلة، ويجب إضافة بوت تميّزك كمشرف في القناتين ثم المحاولة مجدداً." });
+      } else if (code === "too_many_requests" || code.toLowerCase().includes("too many")) {
+        setGate({ type: "error", message: "صارت محاولات كثيرة خلال دقيقة. انتظر دقيقة واحدة ثم جرّب مجدداً." });
       } else {
         setGate({ type: "error", message: "تعذّر التحقق من الاشتراك حالياً. حاول مرة ثانية بعد قليل." });
       }
