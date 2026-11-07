@@ -205,6 +205,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
     titleEn: "Study",
     titleAr: "الأدوات",
     items: [
+      { key: "malazam", labelEn: "Al Malazam", labelAr: "بنك الملازم", Icon: BookMarked },
       { key: "notes", labelEn: "Notes", labelAr: "ملاحظاتي", Icon: NotebookPen },
       { key: "adminNotes", labelEn: "Enrichments", labelAr: "الإثرائيات", Icon: BookOpen },
       { key: "summaries", labelEn: "Summaries", labelAr: "الملخصات", Icon: FileText },
@@ -274,6 +275,7 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
 
 // Study tools grid (bottom section)
 const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "malazam",    Icon: BookMarked },
   { key: "mcqBank",    Icon: Layers },
   { key: "mistakes",   Icon: AlertTriangle },
   { key: "videoNotes", Icon: Headphones },
@@ -288,6 +290,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
 
 // Icons for any tool that can show up in "recently used"
 const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className?: string }>>> = {
+  malazam: BookMarked,
   chemicalEquations: FlaskConical,
   videoNotes: Headphones,
   podcastTutor: Podcast,
@@ -419,6 +422,7 @@ function toolCategoryFor(key: string): "Review" | "Test" | "Organize" {
 
 const FEATURED_COPY = {
   en: {
+    malazam: { title: "Al Malazam", subtitle: "Read PDFs, download booklets and save your copies." },
     chemicalEquations: { title: "Chemical Equation", subtitle: "19 chemistry equations organized by topic, with a memory hint for each." },
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
     summaries: { title: "Notes & Summaries", subtitle: "Upload and browse approved notes." },
@@ -444,6 +448,7 @@ const FEATURED_COPY = {
     chemicalEquations: { title: "المعادلات الكيميائية", subtitle: "19 معادلة كيميائية مرتبة حسب الموضوع، مع تلميح لحفظ كل معادلة." },
     report: { title: "تقريري اليومي", subtitle: "ملاحظات ذكية ورابط متابعة لولي الأمر." },
     summaries: { title: "ملخصات", subtitle: "ارفع وتصفّح ملاحظات معتمدة." },
+    malazam: { title: "بنك الملازم", subtitle: "اقرأ ملفات PDF وحمّل الملازم واحفظ نسختك." },
     todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },
     missions: { title: "الفهرست", subtitle: "مواضيع الفصول لكل مادة." },
     mcq: { title: "مولّد الأسئلة", subtitle: "احصل على اختيارات من متعدد من أي ملف." },
@@ -1432,6 +1437,7 @@ const Basics = ({
 
             <div className="grid gap-2 rounded-[1.75rem] border border-[var(--tmz-line)] bg-card p-2 shadow-sm">
               {[
+                { key: "malazam", Icon: BookMarked, title: isRTL ? "بنك الملازم" : "Al Malazam", copy: isRTL ? "اقرأ واحفظ ملفات PDF" : "Read and save PDF booklets", action: () => navigate("malazam"), surface: "border-orange-200 bg-orange-50 hover:bg-orange-100/80", icon: "bg-orange-600 text-white" },
                 { key: "subjectsHub", Icon: Layers, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub"), surface: "border-sky-200 bg-sky-50 hover:bg-sky-100/80", icon: "bg-sky-600 text-white" },
                 { key: "mistakes", Icon: AlertTriangle, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${dueMistakes} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes"), surface: "border-amber-200 bg-amber-50 hover:bg-amber-100/80", icon: "bg-amber-400 text-amber-950" },
                 { key: "more", Icon: Search, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true), surface: "border-violet-200 bg-violet-50 hover:bg-violet-100/80", icon: "bg-violet-600 text-white" },
