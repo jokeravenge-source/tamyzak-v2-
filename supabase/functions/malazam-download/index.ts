@@ -60,11 +60,13 @@ Deno.serve(async (req) => {
 
     const { data: signed, error: signedError } = await admin.storage
       .from("malazam-files")
-      .createSignedUrl(item.file_path, 120, { download: safeDownloadName(item.name) });
+      .createSignedUrl(item.file_path, 120);
     if (signedError || !signed?.signedUrl) throw new Error(signedError?.message ?? "signed_url_failed");
+    // supabase-js double-encodes the download name, so append it once ourselves.
+    const downloadUrl = `${signed.signedUrl}&download=${encodeURIComponent(safeDownloadName(item.name))}`;
 
     await admin.from("malazam_downloads").insert({ malzama_id: item.id, user_id: auth.userId });
-    return json({ ok: true, downloadUrl: signed.signedUrl, expiresIn: 120 });
+    return json({ ok: true, downloadUrl, expiresIn: 120 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return json({ error: message }, 500);
