@@ -3,7 +3,7 @@ import { callTelegramGateway, verifyTamayzakBotConnection } from "./telegram-gat
 export const TELEGRAM_CHANNEL_GROUPS = {
   default: ["@Tamayuzak"],
   nadia: ["@nadiakhaleelalnuaimy"],
-  malazam: ["@a6th_DHS", "@sad6ths"],
+  malazam: ["@a6th_DHS"],
 } as const;
 
 export type TelegramChannelScope = keyof typeof TELEGRAM_CHANNEL_GROUPS;
