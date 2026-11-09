@@ -169,6 +169,13 @@
       "when": 1794075603127,
       "tag": "0023_fix_public_malazam_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794232800000,
+      "tag": "0024_ibn_al_baytar_day_pass",
+      "breakpoints": true
     }
   ]
 }

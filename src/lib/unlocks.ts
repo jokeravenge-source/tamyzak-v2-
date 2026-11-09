@@ -131,6 +131,12 @@ async function recentActivityStreak(userId: string): Promise<number> {
 export async function fetchUnlockedKeys(): Promise<FeatureKey[]> {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return [];
+  // A server-issued day pass bypasses point gates temporarily, without writing
+  // permanent user_feature_unlocks records or trusting a client-side code.
+  try {
+    const promo = await supabase.rpc("has_full_access_promo" as never);
+    if (!promo.error && promo.data === true) return ["mind_maps", "notebooks", "canvas", "math_tools_suite"];
+  } catch { /* Existing earned unlocks still work if the new RPC is unavailable. */ }
   const { data } = await supabase
     .from("user_feature_unlocks")
     .select("feature_key")

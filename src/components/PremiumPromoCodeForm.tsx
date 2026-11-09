@@ -3,7 +3,7 @@ import { KeyRound, Loader2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 
-type PromoResult = { ok?: boolean; reason?: "expired" | "invalid_code" | "unauthenticated" };
+type PromoResult = { ok?: boolean; expires_at?: string; reason?: "expired" | "invalid_code" | "unauthenticated" | "already_redeemed" };
 
 export default function PremiumPromoCodeForm({
   language,
@@ -15,11 +15,12 @@ export default function PremiumPromoCodeForm({
   const ar = language === "ar";
   const copy = ar ? {
     title: "فتح مجاني لوقت محدود",
-    description: "اكتب كلمة الحملة وافتح كل الأدوات لغاية الأحد 8 تشرين الثاني، الساعة 10 صباحاً بتوقيت بغداد.",
+    description: "اكتب كود الحملة. كود اليوم الكامل يفتح الميزات المدفوعة والأدوات لكل المواد لمدة 24 ساعة من أول تفعيل لحسابك، مرة واحدة فقط.",
     label: "كلمة الحملة",
     placeholder: "اكتب الكلمة هنا",
     empty: "اكتب كلمة الحملة أولاً.",
-    success: "تم فتح كل الأدوات لغاية صباح الأحد.",
+    success: "تم تفعيل صلاحيات الكود لحسابك.",
+    used: "استخدمت هذا الكود من قبل وانتهت مدته. إعادة إدخاله لا تبدأ يوماً جديداً.",
     expired: "انتهت مدة هذه الحملة.",
     signedOut: "سجّل الدخول أولاً حتى نفتح الأدوات لحسابك.",
     invalid: "الكلمة غير صحيحة. تأكد منها وحاول مرة ثانية.",
@@ -28,11 +29,12 @@ export default function PremiumPromoCodeForm({
     submitting: "جارٍ الفتح…",
   } : {
     title: "Limited-time free unlock",
-    description: "Enter the campaign code to unlock all tools until Sunday, November 8 at 10:00 AM Baghdad time.",
+    description: "Enter your campaign code. A full-day code unlocks paid features and study tools across all subjects for 24 hours from your account's first activation, once only.",
     label: "Campaign code",
     placeholder: "Enter the code here",
     empty: "Enter the campaign code first.",
-    success: "All tools are unlocked until Sunday morning.",
+    success: "Your campaign access is now active.",
+    used: "You already used this code and its access has ended. Entering it again does not start another day.",
     expired: "This campaign has ended.",
     signedOut: "Sign in first so we can unlock the tools for your account.",
     invalid: "The code is incorrect. Check it and try again.",
@@ -58,11 +60,13 @@ export default function PremiumPromoCodeForm({
       if (error) throw error;
       const result = (data ?? {}) as PromoResult;
       if (result.ok) {
-        setMessage({ kind: "success", text: copy.success });
+        const deadline = result.expires_at ? new Date(result.expires_at) : null;
+        const until = deadline && Number.isFinite(deadline.getTime()) ? deadline.toLocaleString(ar ? "ar-IQ" : "en-GB", { timeZone: "Asia/Baghdad" }) : null;
+        setMessage({ kind: "success", text: until ? `${copy.success} ${ar ? "صالح لغاية" : "Valid until"} ${until} ${ar ? "بتوقيت بغداد" : "Baghdad time"}.` : copy.success });
         onUnlocked();
         return;
       }
-      const text = result.reason === "expired"
+      const text = result.reason === "already_redeemed" ? copy.used : result.reason === "expired"
         ? copy.expired
         : result.reason === "unauthenticated"
           ? copy.signedOut

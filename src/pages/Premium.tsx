@@ -49,7 +49,7 @@ const copy = {
 
 export default function Premium({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
   const t = copy[language];
-  const { isPremium, loading: subLoading } = useSubscription();
+  const { isPremium, loading: subLoading, premiumExpiresAt } = useSubscription();
 
   useEffect(() => {
     if (subLoading) return;
@@ -120,11 +120,12 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
           {subLoading ? (
             <div className="h-12 rounded-xl bg-background/40 animate-pulse" />
           ) : isPremium ? (
-            <div className="relative rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-center">
+            <><div className="relative rounded-2xl border border-amber-400/40 bg-amber-500/10 p-4 text-center">
               <div className="inline-flex mb-2"><PremiumBadge size="md" /></div>
               <p className="font-semibold text-foreground">{t.active}</p>
               <p className="text-xs text-muted-foreground mt-1">{t.activeDesc}</p>
-            </div>
+              {premiumExpiresAt && <p className="mt-2 text-sm font-bold">{language === "ar" ? "صالح لغاية" : "Valid until"} {new Date(premiumExpiresAt).toLocaleString(language === "ar" ? "ar-IQ" : "en-GB", { timeZone: "Asia/Baghdad" })} {language === "ar" ? "بتوقيت بغداد" : "Baghdad time"}</p>}
+            </div><PremiumPromoCodeForm language={language} /></>
           ) : (
             <div className="space-y-2">
               <PremiumPromoCodeForm language={language} />
