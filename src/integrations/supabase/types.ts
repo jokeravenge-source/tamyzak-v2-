@@ -2500,7 +2500,9 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          duration_seconds: number | null
           expires_at: string
+          grants_full_access: boolean
           id: string
           is_active: boolean
           starts_at: string
@@ -2508,7 +2510,9 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          duration_seconds?: number | null
           expires_at: string
+          grants_full_access?: boolean
           id: string
           is_active?: boolean
           starts_at: string
@@ -2516,7 +2520,9 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          duration_seconds?: number | null
           expires_at?: string
+          grants_full_access?: boolean
           id?: string
           is_active?: boolean
           starts_at?: string
@@ -3926,6 +3932,7 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      has_full_access_promo: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3975,6 +3982,7 @@ export type Database = {
           votes: number
         }[]
       }
+      premium_access_status: { Args: never; Returns: Json }
       public_student_profile: { Args: { _user_id: string }; Returns: Json }
       record_mistake: {
         Args: {
