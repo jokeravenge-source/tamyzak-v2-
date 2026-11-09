@@ -10,6 +10,7 @@ import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
 import { edgeErrorMessage } from "@/lib/edgeError";
+import { readableMath } from "@/lib/readableMath";
 
 const copy = {
   en: {
@@ -441,7 +442,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
               title={t.parts}
               action={
                 <button
-                  onClick={() => { navigator.clipboard.writeText(notes); toast.success(t.copied); }}
+                  onClick={() => { navigator.clipboard.writeText(readableMath(notes)); toast.success(t.copied); }}
                   className="h-8 px-3 border border-border hover:border-foreground/50 text-[10px] font-semibold uppercase tracking-[0.18em] inline-flex items-center gap-1.5 rounded-md transition-colors"
                 >
                   <Copy className="w-3 h-3" />{t.copy}
@@ -469,7 +470,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                       </button>
                       {open && (
                         <div className="pb-5 px-2 -mx-2 whitespace-pre-wrap text-foreground/90 leading-relaxed text-sm">
-                          {p.notes}
+                          {readableMath(p.notes)}
                         </div>
                       )}
                     </div>
