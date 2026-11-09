@@ -19,6 +19,7 @@ export function useSubscription() {
   const [now, setNow] = useState(Date.now);
   // Admins and the owner account are entitled server-side without a subscription row.
   const [serverEntitled, setServerEntitled] = useState(false);
+  const [serverExpiresAt, setServerExpiresAt] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -31,20 +32,27 @@ export function useSubscription() {
     const fetchSub = async (uid: string) => {
       const version = ++requestVersion;
       try {
-        const [{ data, error }, entitlement] = await Promise.all([
+        const [{ data, error }, status] = await Promise.all([
           supabase.from("subscriptions").select("*")
             .eq("user_id", uid).eq("environment", env)
             .in("status", ["active", "trialing", "past_due"])
             .order("created_at", { ascending: false }),
-          supabase.rpc("can_use_premium_tools"),
+          // The RPC is introduced by the day-pass migration; tolerate the
+          // previous schema while frontend/database releases are being synced.
+          supabase.rpc("premium_access_status" as never) as unknown as PromiseLike<{ data: unknown; error: unknown }>,
         ]);
+        const details = !status.error && status.data && typeof status.data === "object" && !Array.isArray(status.data)
+          ? status.data as { is_premium?: boolean; expires_at?: string | null } : null;
+        const legacy = details ? null : await supabase.rpc("can_use_premium_tools");
         if (active && version === requestVersion) {
-          setServerEntitled(entitlement.error ? false : entitlement.data === true);
+          const validDeadline = details?.expires_at == null || Number.isFinite(Date.parse(details.expires_at));
+          setServerEntitled(details ? details.is_premium === true && validDeadline : !legacy?.error && legacy?.data === true);
+          setServerExpiresAt(details?.expires_at ?? null);
           setSub(error ? null : ((data as SubscriptionRow[] | null) ?? [])
             .find((row) => hasActivePremiumSubscription(row, env)) ?? null);
         }
       } catch {
-        if (active && version === requestVersion) { setSub(null); setServerEntitled(false); }
+        if (active && version === requestVersion) { setSub(null); setServerEntitled(false); setServerExpiresAt(null); }
       } finally {
         if (active && version === requestVersion) {
           setNow(Date.now());
@@ -59,6 +67,7 @@ export function useSubscription() {
       setUserId(uid);
       setSub(null);
       setServerEntitled(false);
+      setServerExpiresAt(null);
       setLoading(Boolean(uid));
       if (uid) {
         lastFetch = Date.now();
@@ -112,16 +121,18 @@ export function useSubscription() {
 
   // Re-lock an expired membership even when the student leaves the tab open.
   useEffect(() => {
-    if (!sub?.current_period_end) return;
-    const remaining = new Date(sub.current_period_end).getTime() - Date.now();
+    const deadlines = [sub?.current_period_end, serverExpiresAt].filter(Boolean).map((date) => Date.parse(date!)).filter((date) => Number.isFinite(date) && date > Date.now());
+    if (!deadlines.length) return;
+    const remaining = Math.min(...deadlines) - Date.now();
     if (!Number.isFinite(remaining) || remaining <= 0) return;
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(remaining, 2_147_483_647));
     return () => window.clearTimeout(timer);
-  }, [sub, now]);
+  }, [sub, serverExpiresAt, now]);
 
   return {
     subscription: sub,
-    isPremium: !loading && (serverEntitled || hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now)),
+    isPremium: !loading && ((serverEntitled && (serverExpiresAt === null || Date.parse(serverExpiresAt) > now)) || hasActivePremiumSubscription(sub, PREMIUM_ENVIRONMENT, now)),
+    premiumExpiresAt: serverEntitled ? serverExpiresAt : sub?.current_period_end ?? null,
     loading,
     userId,
   };

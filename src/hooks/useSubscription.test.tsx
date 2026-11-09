@@ -91,4 +91,32 @@ describe("subscription membership", () => {
     act(() => vi.advanceTimersByTime(1001));
     expect(result.current.isPremium).toBe(false);
   });
+  it("expires a server-verified day pass even when the original entitlement check was true", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-09T10:00:00Z"));
+    const ends = "2026-11-09T10:00:01Z";
+    mocks.order.mockResolvedValue({ data: [{ ...row, current_period_end: ends }], error: null });
+    mocks.rpc.mockResolvedValue({ data: { is_premium: true, expires_at: ends, full_access: true }, error: null });
+    const { result } = renderHook(useSubscription);
+    await act(async () => {});
+    expect(result.current.isPremium).toBe(true);
+    expect(result.current.premiumExpiresAt).toBe(ends);
+    act(() => vi.advanceTimersByTime(1001));
+    expect(result.current.isPremium).toBe(false);
+  });
+  it("preserves permanent server access after a separate short subscription expires", async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-09T10:00:00Z"));
+    mocks.order.mockResolvedValue({ data: [{ ...row, current_period_end: "2026-11-09T10:00:01Z" }], error: null });
+    mocks.rpc.mockResolvedValue({ data: { is_premium: true, expires_at: null }, error: null });
+    const { result } = renderHook(useSubscription);
+    await act(async () => {});
+    act(() => vi.advanceTimersByTime(1001));
+    expect(result.current.isPremium).toBe(true);
+    expect(result.current.premiumExpiresAt).toBeNull();
+  });
+  it("does not trust a malformed server deadline", async () => {
+    mocks.rpc.mockResolvedValue({ data: { is_premium: true, expires_at: "not-a-date" }, error: null });
+    const { result } = renderHook(useSubscription);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.isPremium).toBe(false);
+  });
 });

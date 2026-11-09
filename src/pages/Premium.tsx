@@ -49,7 +49,7 @@ const copy = {
 
 export default function Premium({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
   const t = copy[language];
-  const { isPremium, loading: subLoading } = useSubscription();
+  const { isPremium, loading: subLoading, premiumExpiresAt } = useSubscription();
 
   useEffect(() => {
     if (subLoading) return;
@@ -124,6 +124,7 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
               <div className="inline-flex mb-2"><PremiumBadge size="md" /></div>
               <p className="font-semibold text-foreground">{t.active}</p>
               <p className="text-xs text-muted-foreground mt-1">{t.activeDesc}</p>
+              {premiumExpiresAt && <p className="mt-2 text-sm font-bold">{language === "ar" ? "صالح لغاية" : "Valid until"} {new Date(premiumExpiresAt).toLocaleString(language === "ar" ? "ar-IQ" : "en-GB", { timeZone: "Asia/Baghdad" })} {language === "ar" ? "بتوقيت بغداد" : "Baghdad time"}</p>}
             </div>
           ) : (
             <div className="space-y-2">
