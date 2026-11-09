@@ -1,5 +1,6 @@
 -- One-time 24-hour full-access pass for Al-Manahil Al-Nafeesa students.
 -- Uses the rolling-pass infrastructure introduced by the Ibn Al-Baytar campaign.
+
 INSERT INTO public.premium_promo_codes
   (id, code, starts_at, expires_at, is_active, duration_seconds, grants_full_access)
 VALUES (
