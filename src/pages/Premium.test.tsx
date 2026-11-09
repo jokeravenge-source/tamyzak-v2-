@@ -26,5 +26,6 @@ describe("Premium activation", () => {
     render(<Premium language="en" onBack={vi.fn()} />);
     expect(screen.getByText("You're a Premium member")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Campaign code")).toBeInTheDocument();
   });
 });
