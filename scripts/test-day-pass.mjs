@@ -8,7 +8,10 @@ const db = new PGlite();
 const read = (name) => readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), "utf8");
 const migration = await read("20261109140000_ibn_al_baytar_day_pass.sql");
 const drizzle = await readFile(new URL("../drizzle/migrations/0024_ibn_al_baytar_day_pass.sql", import.meta.url), "utf8");
+const schoolMigration = await read("20261109153000_al_manahil_al_nafeesa_day_pass.sql");
+const schoolDrizzle = await readFile(new URL("../drizzle/migrations/0025_al_manahil_al_nafeesa_day_pass.sql", import.meta.url), "utf8");
 assert.equal(migration.replace(/^BEGIN;\n/m, "").replace(/\nCOMMIT;\s*$/, "\n").trim(), drizzle.trim());
+assert.equal(schoolMigration.replace(/^BEGIN;\n/m, "").replace(/\nCOMMIT;\s*$/, "\n").trim(), schoolDrizzle.trim());
 await db.exec(`
   CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
   CREATE SCHEMA auth;
@@ -26,14 +29,16 @@ await db.exec(`
 await db.exec(await read("20260526211433_922fc3fb-d83e-43f2-a768-6b8f3b809282.sql"));
 await db.exec(await read("20261105190000_premium_word_campaign.sql"));
 await db.exec(migration);
+await db.exec(schoolMigration);
 const A = "00000000-0000-4000-8000-000000000001";
 const B = "00000000-0000-4000-8000-000000000002";
+const C = "00000000-0000-4000-8000-000000000003";
 const OWNER = "00000000-0000-4000-8000-000000000098";
 const ADMIN = "00000000-0000-4000-8000-000000000099";
 const COURSE = "00000000-0000-4000-8000-000000000010";
 const DRAFT = "00000000-0000-4000-8000-000000000011";
 await db.query("INSERT INTO public.courses VALUES ($1,true),($2,false)", [COURSE,DRAFT]);
-for (const [id, email] of [[A,"a@example.test"],[B,"b@example.test"],[OWNER,"jokeravenge@gmail.com"],[ADMIN,"admin@example.test"]]) {
+for (const [id, email] of [[A,"a@example.test"],[B,"b@example.test"],[C,"c@example.test"],[OWNER,"jokeravenge@gmail.com"],[ADMIN,"admin@example.test"]]) {
   await db.query("INSERT INTO auth.users VALUES ($1,$2)", [id,email]);
 }
 async function user(uid) {
@@ -58,6 +63,16 @@ const pass = (await db.query("SELECT extract(epoch FROM current_period_end-curre
 assert.equal(pass.seconds, 86400);
 await assert.rejects(db.query("UPDATE public.subscriptions SET current_period_end=NULL"));
 await assert.rejects(db.query("SELECT * FROM public.premium_promo_codes"));
+await user(C);
+const schoolFirst = await redeem("  المناهل   النفيسة  ");
+assert.equal(schoolFirst.ok, true);
+assert.equal((await redeem("المناهل النفيسة")).expires_at, schoolFirst.expires_at);
+const schoolPass = (await db.query(
+  "SELECT extract(epoch FROM current_period_end-current_period_start)::int AS seconds, product_id FROM public.subscriptions WHERE user_id=$1",
+  [C],
+)).rows[0];
+assert.deepEqual(schoolPass, { seconds: 86400, product_id: "promo-full-access" });
+assert.equal((await status()).full_access, true);
 await user(B); assert.equal((await status()).is_premium, false);
 await db.exec("RESET ROLE");
 await db.query(`INSERT INTO public.subscriptions
@@ -90,5 +105,5 @@ for (const id of [OWNER, ADMIN]) { await user(id); assert.equal((await status())
 await db.exec("RESET ROLE; SET ROLE anon");
 await assert.rejects(db.query("SELECT public.redeem_premium_promo('ابن البيطار')"));
 await assert.rejects(db.query("SELECT public.premium_access_status()"));
-console.log("PASS: 24-hour deadline, idempotence, expired-code replay rejection, anonymous/private-table protections, full tool/course access, user isolation, and existing paid/admin/enrollment preservation.");
+console.log("PASS: Ibn Al-Baytar and Al-Manahil Al-Nafeesa 24-hour codes, deadlines, idempotence, replay rejection, access controls, and paid/admin/enrollment preservation.");
 await db.close();
