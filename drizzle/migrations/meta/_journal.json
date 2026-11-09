@@ -176,6 +176,13 @@
       "when": 1794232800000,
       "tag": "0024_ibn_al_baytar_day_pass",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794237280569,
+      "tag": "0025_ibn_al_baytar_day_pass",
+      "breakpoints": true
     }
   ]
 }
