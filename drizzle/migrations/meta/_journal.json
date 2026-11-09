@@ -183,6 +183,13 @@
       "when": 1794238200000,
       "tag": "0025_al_manahil_al_nafeesa_day_pass",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794240000000,
+      "tag": "0026_ruqayya_bint_al_hassan_day_pass",
+      "breakpoints": true
     }
   ]
 }
