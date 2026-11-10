@@ -190,6 +190,20 @@
       "when": 1794240000000,
       "tag": "0026_ruqayya_bint_al_hassan_day_pass",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794335087395,
+      "tag": "0027_admin_premium_coupons",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794335239144,
+      "tag": "0028_additional_study_room_delegates",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,8 @@
 - None.
 
 ## Done
+- Added admin Premium coupons with hours, days and calendar months; verified signed-in creation, redemption, repeat deadline, editing, disabling, reload and mobile layout. Test coupon removed.
+- Verified all three newly requested accounts have permission to take ownership of joined study rooms; preserved existing delegates.
 - Corrected the deployed mind map PDF request mismatch; a signed-in PDF upload returned 200 and rendered three nodes without runtime errors.
 - Made Live Battle free without Premium; policy tests pass and the signed-in direct link opens the battle controls. Broader navigation tests have pre-existing AI Tutor/mock failures.
 - Added admin-only persisted editing and removal for Ahmed Al-Nadawi decks; verified saves, student readback, deletion and reloads, then restored test content.

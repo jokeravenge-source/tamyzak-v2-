@@ -1,5 +1,7 @@
 # Project rules
 
+- Manage adjustable Premium coupons through the admin-verified `admin_premium_coupons` RPC; redeem via the existing promo flow and preserve issued subscription deadlines so edits affect only future redemptions. Calendar months use Baghdad time.
+
 - Mind map generation accepts extracted PDF text/page images, not a separate topic, and uses the server-only AI Gateway SDK to keep the deployed request contract aligned with the upload page.
 
 - Resolve Nadia lecture counts through `getNadiaLectureCount` in both teacher entry points so curriculum-specific limits remain consistent.
