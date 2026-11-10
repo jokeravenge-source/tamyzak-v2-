@@ -2500,7 +2500,10 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          duration_amount: number | null
+          duration_months: number | null
           duration_seconds: number | null
+          duration_unit: string | null
           expires_at: string
           grants_full_access: boolean
           id: string
@@ -2510,7 +2513,10 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          duration_amount?: number | null
+          duration_months?: number | null
           duration_seconds?: number | null
+          duration_unit?: string | null
           expires_at: string
           grants_full_access?: boolean
           id: string
@@ -2520,7 +2526,10 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          duration_amount?: number | null
+          duration_months?: number | null
           duration_seconds?: number | null
+          duration_unit?: string | null
           expires_at?: string
           grants_full_access?: boolean
           id?: string
@@ -3849,6 +3858,17 @@ export type Database = {
         Args: { _limit?: number; _user_id: string }
         Returns: Json
       }
+      admin_premium_coupons: {
+        Args: {
+          _action: string
+          _active?: boolean
+          _amount?: number
+          _code?: string
+          _id?: string
+          _unit?: string
+        }
+        Returns: Json
+      }
       answer_mcq_bank: {
         Args: { _choice_index: number; _question_id: string }
         Returns: Json
@@ -3912,6 +3932,10 @@ export type Database = {
         }[]
       }
       cleanup_inactive_study_room_members: { Args: never; Returns: number }
+      coupon_access_end: {
+        Args: { _amount: number; _start: string; _unit: string }
+        Returns: string
+      }
       create_study_challenge: {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
         Returns: string
