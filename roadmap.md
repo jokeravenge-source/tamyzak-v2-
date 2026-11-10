@@ -1,7 +1,7 @@
 # Task Roadmap
 
 ## In Progress
-- None.
+- Add admin Premium coupons with hours, days and calendar months; verify creation and redemption.
 
 ## Done
 - Corrected the deployed mind map PDF request mismatch; a signed-in PDF upload returned 200 and rendered three nodes without runtime errors.
