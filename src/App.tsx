@@ -29,6 +29,7 @@ const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminMalazamPortal = lazy(() => import("./pages/AdminMalazamPortal"));
+const AdminCouponsTab = lazy(() => import("./components/AdminCouponsTab"));
 const FrenchTeacherDashboard = lazy(() => import("./pages/FrenchTeacherDashboard"));
 const AdminAhmedFlashcardsReview = lazy(() => import("./pages/AdminAhmedFlashcardsReview"));
 const NadiaFlashcardsDashboard = lazy(() => import("./pages/NadiaFlashcardsDashboard"));
@@ -503,7 +504,7 @@ const StudentApp = () => {
     () => {
       if (typeof window === "undefined") return "student";
       // Hidden admin entry point: only reachable by typing the secret URL.
-      if ([ADMIN_PANEL_PATH, ADMIN_MALAZAM_PATH, `${ADMIN_PANEL_PATH}/french-flashcards`].includes(window.location.pathname.replace(/\/+$/, ""))) return "admin";
+      if ([ADMIN_PANEL_PATH, ADMIN_MALAZAM_PATH, `${ADMIN_PANEL_PATH}/coupons`, `${ADMIN_PANEL_PATH}/french-flashcards`].includes(window.location.pathname.replace(/\/+$/, ""))) return "admin";
       if (window.location.pathname.startsWith("/who-is-best")) return "guest";
       // Lecture deep links remain public without making every visitor choose
       // a role before entering the app.
@@ -1039,7 +1040,9 @@ const StudentApp = () => {
       ) : authRole === "admin" && !authed ? (
         <AdminLogin onAuthed={() => setAuthed(true)} onBack={exitSpecialRoute} />
       ) : authRole === "admin" && authed && isAdmin ? (
-        window.location.pathname.replace(/\/+$/, "") === ADMIN_MALAZAM_PATH ? (
+        window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/coupons` ? (
+          <main className="min-h-screen bg-background px-4 py-8 text-foreground"><div className="mx-auto max-w-5xl"><a href={ADMIN_PANEL_PATH} className="mb-6 inline-block text-sm text-primary">← لوحة الإدارة</a><AdminCouponsTab /></div></main>
+        ) : window.location.pathname.replace(/\/+$/, "") === ADMIN_MALAZAM_PATH ? (
           <AdminMalazamPortal onLogout={adminLogout} />
         ) : adminPreviewDay != null ? (
           <DailyGame

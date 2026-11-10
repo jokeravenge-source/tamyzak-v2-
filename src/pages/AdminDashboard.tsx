@@ -16,6 +16,8 @@ import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
 import AdminFrenchFlashcardsTab from "@/components/AdminFrenchFlashcardsTab";
 import AdminMalazamTab from "@/components/AdminMalazamTab";
+import AdminCouponsTab from "@/components/AdminCouponsTab";
+import { Button } from "@/components/ui/button";
 import WhoIsBest from "./WhoIsBest";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
@@ -36,7 +38,7 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest";
+  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest" | "coupons";
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "french-flashcards") {
       return "frenchFlashcards";
@@ -49,7 +51,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
     credits: "Credits", points: "Points", announcements: "Announcements", mistakes: "Common Mistakes",
-    teachers: "Our Teachers", whoIsBest: "Who Is Best",
+    teachers: "Our Teachers", whoIsBest: "Who Is Best", coupons: "Premium Coupons / أكواد Premium",
   };
   // Owner gate: only this email sees every tab. Other admins are moderators
   // and only see acceptance/review-related tabs (summaries pending, flashcards
@@ -71,7 +73,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     })();
   }, []);
   const MOD_TABS: Tab[] = ["pending", "flashcards", "usernames", "aifiles", "whoIsBest"];
-  const canSee = (t: Tab) => isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
+  const canSee = (t: Tab) => t === "coupons" || isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
   useEffect(() => {
     if (accessReady && !canSee(tab)) setTab(isFlashcardOnlyAdmin ? "flashcards" : "pending");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -795,6 +797,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           </select>
         </label>
         <div className="mb-6 hidden flex-wrap gap-2 border-b border-border xl:flex" role="group" aria-label="Dashboard sections">
+          <Button variant={tab === "coupons" ? "secondary" : "ghost"} onClick={() => setTab("coupons")}><KeyRound />Premium Coupons</Button>
           {canSee("pending") && (
             <button onClick={() => setTab("pending")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "pending" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Clock className="w-4 h-4 inline mr-1.5" />Summaries — Pending
@@ -892,7 +895,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           )}
         </div>
 
-        {tab === "whoIsBest" ? (
+        {tab === "coupons" ? (
+          <AdminCouponsTab />
+        ) : tab === "whoIsBest" ? (
           <WhoIsBest language="en" isAdmin onBack={() => setTab("pending")} />
         ) : tab === "teachers" ? (
           <AdminTeachersTab />
