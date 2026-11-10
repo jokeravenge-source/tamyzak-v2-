@@ -2,6 +2,7 @@
 
 ## In Progress
 - Add admin Premium coupons with hours, days and calendar months; verify creation and redemption.
+- Approve the three requested accounts to take ownership of joined study rooms.
 
 ## Done
 - Corrected the deployed mind map PDF request mismatch; a signed-in PDF upload returned 200 and rendered three nodes without runtime errors.
