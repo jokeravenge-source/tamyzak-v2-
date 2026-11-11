@@ -82,7 +82,15 @@ describe("Full video notes coverage", () => {
     expect(saved[0].cache_key).toBe("lecture123|ar|std|seg-v5-argon|0");
   });
 
+  it("gives each raw-video section a 10-minute window", async () => {
+    await handler(request({ url: "https://youtu.be/lecture123", language: "ar", segment: 1 }));
+    const content = modelRequest.messages[1].content;
+    const text = Array.isArray(content) ? content[0].text : content;
+    expect(text).toContain("from minute 10:00 to minute 20:00");
+  });
+
   it("rejects token-truncated output instead of showing it as complete notes", async () => {
+    finishReason = "length";
     const response = await handler(request({ transcript: "Entire lecture", language: "ar" }));
     expect(response.status).toBe(502);
     expect((await response.json()).retryable).toBe(false);
