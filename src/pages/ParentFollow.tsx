@@ -47,7 +47,7 @@ export default function ParentFollow({ token }: { token: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState<string>(() => sessionStorage.getItem(`pf_code_${token}`) ?? "");
-  const [unlocked, setUnlocked] = useState<boolean>(() => !!sessionStorage.getItem(`pf_code_${token}`));
+  const [unlocked, setUnlocked] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -81,9 +81,7 @@ export default function ParentFollow({ token }: { token: string }) {
       if (!res.ok || (d as any)?.error) {
         const reason = (d as any)?.error ?? `http_${res.status}`;
         if (reason === "code_required" || res.status === 401) {
-          sessionStorage.removeItem(`pf_code_${token}`);
-          setUnlocked(false);
-          setErr("Incorrect access code. Ask the student for the 6-digit code shown in their app.");
+          setErr("invalid_or_revoked");
         } else if (reason === "invalid_or_revoked" || res.status === 404) {
           setErr("invalid_or_revoked");
         } else if (res.status === 429) {
@@ -239,12 +237,6 @@ export default function ParentFollow({ token }: { token: string }) {
           <p className="text-muted-foreground text-sm">
             {err && err !== "invalid_or_revoked" ? err : "This follow-up link is invalid or has been revoked by the student."}
           </p>
-          <button
-            onClick={() => { sessionStorage.removeItem(`pf_code_${token}`); setErr(null); setUnlocked(false); }}
-            className="h-10 rounded-xl border border-border px-5 text-xs font-semibold hover:bg-muted"
-          >
-            Try another code
-          </button>
         </div>
       </main>
     );
