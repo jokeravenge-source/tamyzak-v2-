@@ -491,15 +491,22 @@ const StudentApp = () => {
   const [tgVerified, setTgVerified] = useState(false);
   const [tgLoading, setTgLoading] = useState(false);
   const CHANNEL_VERIFIED_STORAGE_KEY = "tg_channel_verified_v1";
-  // Mandatory @a6th_DHS membership, re-verified once per browser session.
-  const [channelVerified, _setChannelVerified] = useState<boolean>(
-    () => typeof window !== "undefined" && sessionStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) === "1",
-  );
+  // Mandatory @a6th_DHS membership; remembered for 3 days in localStorage so installed apps (where sessionStorage resets every launch) are not re-blocked by transient check failures.
+  const CHANNEL_VERIFIED_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+  const [channelVerified, _setChannelVerified] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const ts = Number(localStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) || 0);
+      return ts > 0 && Date.now() - ts < CHANNEL_VERIFIED_TTL_MS;
+    } catch { return false; }
+  });
   const setChannelVerified = (v: boolean) => {
     _setChannelVerified(v);
     if (typeof window !== "undefined") {
-      if (v) sessionStorage.setItem(CHANNEL_VERIFIED_STORAGE_KEY, "1");
-      else sessionStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
+      try {
+        if (v) localStorage.setItem(CHANNEL_VERIFIED_STORAGE_KEY, String(Date.now()));
+        else localStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
+      } catch { /* storage unavailable */ }
     }
   };
   const [authRole, setAuthRole] = useState<"student" | "admin" | "guest">(
