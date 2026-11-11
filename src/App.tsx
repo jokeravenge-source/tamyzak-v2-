@@ -491,13 +491,15 @@ const StudentApp = () => {
   const [tgVerified, setTgVerified] = useState(false);
   const [tgLoading, setTgLoading] = useState(false);
   const CHANNEL_VERIFIED_STORAGE_KEY = "tg_channel_verified_v1";
-  // "Join Tamayzak" channel gate is disabled for now: everyone counts as verified.
-  const [channelVerified, _setChannelVerified] = useState<boolean>(() => true);
+  // Mandatory @a6th_DHS membership, re-verified once per browser session.
+  const [channelVerified, _setChannelVerified] = useState<boolean>(
+    () => typeof window !== "undefined" && sessionStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) === "1",
+  );
   const setChannelVerified = (v: boolean) => {
     _setChannelVerified(v);
     if (typeof window !== "undefined") {
-      if (v) localStorage.setItem(CHANNEL_VERIFIED_STORAGE_KEY, "1");
-      else localStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
+      if (v) sessionStorage.setItem(CHANNEL_VERIFIED_STORAGE_KEY, "1");
+      else sessionStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
     }
   };
   const [authRole, setAuthRole] = useState<"student" | "admin" | "guest">(
