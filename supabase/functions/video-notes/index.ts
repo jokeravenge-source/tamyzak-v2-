@@ -424,7 +424,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 
     // One SDK-managed generation: never replay a potentially billed request on another model.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), transcriptText ? 60_000 : 140_000);
+    const timeout = setTimeout(() => controller.abort(), transcriptText ? 240_000 : 360_000);
     try {
       const payload = await generateChatCompletion({
         model: notesModel,
@@ -461,6 +461,12 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
         }
       }
     } catch (error) {
+      if (controller.signal.aborted) {
+        console.error("Video notes timed out");
+        return jsonResponse({ error: lang0 === "ar"
+          ? "المحاضرة طويلة جداً واستغرق تحليلها وقتاً أطول من المسموح. جرّب تقسيمها إلى أجزاء أقصر (مثلاً 30–40 دقيقة)."
+          : "This lecture took too long to analyze. Try splitting it into shorter parts (about 30–40 minutes).", retryable: false }, 504);
+      }
       if (error instanceof GatewayError) {
         console.error("Video notes generation failed", { code: error.code, status: error.httpStatus, ids: error.ids });
         lastGeminiError = { status: error.httpStatus ?? 500, payload: null };
