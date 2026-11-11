@@ -408,6 +408,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
     let notes = "";
+    let videoEnded = false;
 
     const segStart = segment * SEGMENT_MINUTES;
     const segEnd = segStart + SEGMENT_MINUTES;
@@ -449,8 +450,9 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
                 additionalProperties: false,
               },
             },
+            video_ended: { type: "boolean", description: "True when the video ends within the requested time range." },
           },
-PLACEHOLDER, additionalProperties: false,
+          required: ["parts", "video_ended"], additionalProperties: false,
         },
       },
     };
@@ -481,6 +483,7 @@ PLACEHOLDER, additionalProperties: false,
       const toolCall = payload.choices?.[0]?.message?.tool_calls?.find(call => call.type === "function" && call.function.name === "submit_video_notes");
       if (toolCall?.type === "function") {
         const args = JSON.parse(toolCall.function.arguments);
+        videoEnded = args?.video_ended === true || (Array.isArray(args?.parts) && args.parts.length === 0);
         if (Array.isArray(args?.parts) && args.parts.length) {
           const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
           const checkedParts = arabicEnglishCurriculum
@@ -541,14 +544,16 @@ PLACEHOLDER, additionalProperties: false,
       }, paymentRequired ? 402 : quota ? 429 : overloaded ? 503 : 500);
     }
 
+    const done = fullTranscript ? segment + 1 >= totalSegments : (videoEnded || segment >= 11);
     if (!notes.trim()) {
+      if (!fullTranscript && segment > 0 && videoEnded) return jsonResponse({ notes: "", parts: [], segment, totalSegments, done: true });
       return jsonResponse({ error: "Empty response from model", retryable: true }, 502);
     }
     if (cacheKey) {
       await cacheClient.from("video_notes_cache")
-        .upsert({ cache_key: cacheKey, notes, parts }).then(() => {}, (e) => console.error("cache save failed", e));
+        .upsert({ cache_key: cacheKey, notes, parts: { parts, done, totalSegments } }).then(() => {}, (e) => console.error("cache save failed", e));
     }
-    return jsonResponse({ notes, parts, transcript: transcriptText });
+    return jsonResponse({ notes, parts, segment, totalSegments, done, transcript: segment === 0 ? fullTranscript : undefined });
   } catch (e) {
     return jsonResponse({ error: String(e) }, 500);
   }
