@@ -1,6 +1,7 @@
 # Task Roadmap
 
 ## In Progress
+- Upgrade video-notes to the frontier video-capable model; deploy and run coverage regression checks.
 - Real-video notes verification awaits a Premium-enabled test account; the available signed-in account is blocked by the Premium screen.
 
 ## Done

@@ -18,7 +18,7 @@ beforeEach(() => {
   const query = {
     select: () => query,
     eq: (_key: string, value: string) => { cacheFilter = value; return query; },
-    maybeSingle: async () => ({ data: cacheFilter.endsWith("|full-v2") ? null : { notes: "Old incomplete notes", parts: [] } }),
+    maybeSingle: async () => ({ data: cacheFilter.endsWith("|full-v3-argon") ? null : { notes: "Old incomplete notes", parts: [] } }),
     upsert: async (row: any) => { saved.push(row); return { error: null }; },
   };
   const code = ts.transpileModule(readFileSync("supabase/functions/video-notes/index.ts", "utf8"), {
@@ -29,6 +29,13 @@ beforeEach(() => {
     console: { error: vi.fn() },
     Deno: { env: { get: (key: string) => key === "SUPADATA_API_KEY" || key === "GEMINI_API_KEY" ? undefined : "test" }, serve: (fn: typeof handler) => { handler = fn; } },
     require(name: string) {
+      if (name.includes("ai-gateway")) return {
+        GatewayError: class GatewayError extends Error {},
+        generateChatCompletion: async (payload: unknown) => {
+          modelRequest = payload;
+          return { choices: [{ finish_reason: finishReason, message: { tool_calls: [{ type: "function", function: { name: "submit_video_notes", arguments: JSON.stringify({ parts: [{ title: "Full lecture", notes: finalNotes }] }) } }] } }] };
+        },
+      };
       if (name.includes("supabase-js")) return { createClient: () => ({ from: () => query }) };
       if (name.endsWith("/auth.ts")) return { requireUser: async () => ({ ok: true, userId: "student" }) };
       if (name.endsWith("/guard.ts")) return { protect: async () => ({ ok: true }) };
@@ -50,6 +57,13 @@ const request = (body: Record<string, unknown>) => new Request("https://example.
 });
 
 describe("Full video notes coverage", () => {
+  it("uses the frontier video-capable model without an optional output cap", async () => {
+    await handler(request({ transcript: "Full lecture", language: "ar" }));
+    expect(modelRequest.model).toBe("google/gemini-4-argon");
+    expect(modelRequest).not.toHaveProperty("max_tokens");
+    expect(modelRequest).not.toHaveProperty("max_completion_tokens");
+  });
+
   it("passes the entire long transcript including its final chapter to generation", async () => {
     const transcript = "Opening. " + "Lecture detail. ".repeat(10000) + "FINAL_CHAPTER_INTEGRATION";
     const response = await handler(request({ transcript, language: "ar" }));
@@ -62,7 +76,7 @@ describe("Full video notes coverage", () => {
     const response = await handler(request({ url: "https://www.youtube.com/watch?v=lecture123", language: "ar" }));
     expect((await response.json()).notes).toContain(finalNotes);
     expect(saved).toHaveLength(1);
-    expect(saved[0].cache_key).toBe("lecture123|ar|std|full-v2");
+    expect(saved[0].cache_key).toBe("lecture123|ar|std|full-v3-argon");
   });
 
   it("rejects token-truncated output instead of showing it as complete notes", async () => {
