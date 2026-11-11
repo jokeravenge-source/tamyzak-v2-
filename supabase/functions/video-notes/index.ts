@@ -459,7 +459,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 
     // One SDK-managed generation: never replay a potentially billed request on another model.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), transcriptText ? 240_000 : 360_000);
+    const timeout = setTimeout(() => controller.abort(), transcriptText ? 150_000 : 240_000);
     try {
       const payload = await generateChatCompletion({
         model: notesModel,
