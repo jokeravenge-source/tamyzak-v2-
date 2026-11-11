@@ -1,7 +1,7 @@
 # Task Roadmap
 
 ## In Progress
-- None.
+- Correct video notes that omit the end of a lecture; verify transcript retention, old-cache bypass and truncated-output handling.
 
 ## Done
 - Added admin Premium coupons with hours, days and calendar months; verified signed-in creation, redemption, repeat deadline, editing, disabling, reload and mobile layout. Test coupon removed.
