@@ -2,6 +2,8 @@ import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { claimFeature } from "../_shared/entitlement.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import type {} from "./generated/models.d.ts";
+import { generateChatCompletion, GatewayError } from "npm:@lovable.dev/ai-gateway@0.1.11";
 import { hasArabicLectureQuestions } from "../_shared/lecture-question-language.ts";
 
 const corsHeaders = {
@@ -186,10 +188,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing url" }, 400);
     }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!LOVABLE_API_KEY && !GEMINI_API_KEY) {
-      return jsonResponse({ error: "No AI API key configured" }, 500);
-    }
 
     // YouTube page URLs are not video files and cannot be passed to Gemini as
     // fileData. Read the video's public captions first, then use Gemini to turn
@@ -234,7 +232,7 @@ Deno.serve(async (req) => {
     );
     const vid = url ? extractYouTubeId(url.trim()) : "";
     const cacheKey = runMode === "notes" && vid && !providedTranscript
-      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|full-v2`
+      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|full-v3-argon`
       : "";
     if (cacheKey) {
       const { data: cached } = await cacheClient
@@ -376,27 +374,16 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 
 لا تكتب أي شيء خارج هذه البنية. ${arabicEnglishCurriculum ? "استخدم العربية في الشرح العام، واستخدم الإنجليزية داخل أسماء المصطلحات الثنائية وفي نص أسئلة Review Questions فقط." : "لا تستخدم لغة غير العربية في الشرح (المصطلحات الإنجليزية مسموحة فقط بين قوسين)."}`}
 
-تقسيم إجباري: قسّم الفيديو كاملاً إلى أجزاء موضوعية متتابعة تشمل البداية والمنتصف والنهاية دون فجوات، ولا تفرض عدداً ثابتاً من الأجزاء. البنية أعلاه دليل تنظيم، وليست أقساماً يجب تكرارها كاملة في كل جزء؛ استخدم فقط الأقسام المناسبة للمحتوى لتوفير المساحة. لا تكرّر النظرة العامة أو الخلاصة بين الأجزاء. استخدم نقاطاً قصيرة، واجعل كامل استدعاء الأداة ضمن 3000 رمز إخراج بما فيه JSON. قبل التسليم تحقّق أن آخر موضوع وآخر مثال في المصدر موجودان في الملاحظات. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
-    // Try Lovable AI Gateway first (multiple models for fallback on quota/overload),
-    // then fall back to direct Gemini if available.
-    const transcriptModels = [
-      "google/gemini-3.1-flash-lite",
-      "google/gemini-3.1-flash-lite",
-      "google/gemini-3.8-flash",
-    ];
-    // Video requests are much slower and must not cascade through many models,
-    // otherwise the edge function reaches its wall-clock timeout.
-    const lovableModels = transcriptText
-      ? transcriptModels
-      : ["google/gemini-3.8-flash"];
-    const geminiDirectModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
+تقسيم إجباري: قسّم الفيديو كاملاً إلى أجزاء موضوعية متتابعة تشمل البداية والمنتصف والنهاية دون فجوات، ولا تفرض عدداً ثابتاً من الأجزاء. البنية أعلاه دليل تنظيم، وليست أقساماً يجب تكرارها كاملة في كل جزء؛ استخدم فقط الأقسام المناسبة للمحتوى لتوفير المساحة. لا تكرّر النظرة العامة أو الخلاصة بين الأجزاء. استخدم شرحاً واضحاً ومتكاملاً، وامنح كل موضوع وأمثلة الحل مساحة كافية دون حد مختصر مصطنع. قبل التسليم تحقّق أن آخر موضوع وآخر مثال في المصدر موجودان في الملاحظات. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
+    // Use the frontier video-capable model for both complete transcripts and videos.
+    const notesModel = "google/gemini-4-argon";
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
     let notes = "";
 
     const userPrompt = transcriptText
-      ? `Read the ENTIRE transcript through its final sentence before writing. Cover every topic from beginning to end in consecutive parts, including the final topic and worked example. Allocate the 3000-token total output budget across the whole lecture; compress wording, not source coverage. Do not repeat empty headings. Call submit_video_notes with all parts.\n\nTRANSCRIPT:\n${transcriptText}\n\nEND OF COMPLETE TRANSCRIPT. Check that your notes include the content immediately before this marker.`
-      : `Watch the ENTIRE YouTube video from start to finish. Cover all topics in consecutive parts, including the final topic and worked example. Allocate the 3000-token total output budget across the whole video; compress wording, not source coverage. Do not limit viewing to an opening segment. Call submit_video_notes with all parts.`;
+      ? `Read the ENTIRE transcript through its final sentence before writing. Cover every topic from beginning to end in consecutive parts, including the final topic and worked example. Give every topic and worked example enough detail; omit repetition, not source coverage. Do not repeat empty headings. Call submit_video_notes with all parts.\n\nTRANSCRIPT:\n${transcriptText}\n\nEND OF COMPLETE TRANSCRIPT. Check that your notes include the content immediately before this marker.`
+      : `Watch the ENTIRE YouTube video from start to finish. Cover all topics in consecutive parts, including the final topic and worked example. Give every topic and worked example enough detail; omit repetition, not source coverage. Do not limit viewing to an opening segment. Call submit_video_notes with all parts.`;
 
     const partsTool = {
       type: "function" as const,
@@ -435,143 +422,54 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
       },
     };
 
-    // 1) Lovable AI Gateway attempts
-    if (LOVABLE_API_KEY) {
-      for (const model of lovableModels) {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), transcriptText ? 60_000 : 140_000);
-          const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            signal: controller.signal,
-            headers: {
-              "Content-Type": "application/json",
-              "Lovable-API-Key": LOVABLE_API_KEY,
-              "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-            },
-            body: JSON.stringify({
-              model,
-              messages: transcriptText
-                ? [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt },
-                  ]
-                : [
-                    { role: "system", content: systemPrompt },
-                    {
-                      role: "user",
-                      content: [
-                        { type: "text", text: userPrompt },
-                        { type: "video_url", video_url: { url: url.trim() } },
-                      ],
-                    },
-                  ],
-              max_tokens: 3000,
-              tools: [partsTool],
-              tool_choice: { type: "function", function: { name: "submit_video_notes" } },
-            }),
-          }).finally(() => clearTimeout(timeout));
-          const text = await res.text();
-          const payload = parseJsonMaybe(text);
-          if (!res.ok) {
-            lastGeminiError = { status: res.status, payload, text, model: `lovable:${model}` };
-            console.error("Lovable AI error", res.status, model, text);
-            // 402 = workspace out of AI credits. Retrying other models won't help — stop immediately.
-            if (res.status === 402) break;
-            if (res.status === 429 || res.status === 503) continue;
-            break;
-          }
-          if (["length", "max_tokens", "MAX_TOKENS"].includes(payload?.choices?.[0]?.finish_reason)) {
-            return jsonResponse({ error: lang0 === "ar"
-              ? "توقفت الملاحظات قبل اكتمال الفيديو، لذلك لم يتم حفظها كملاحظات كاملة. جرّب تقسيم المحاضرة إلى أجزاء."
-              : "The notes stopped before covering the whole video and were not saved as complete. Try splitting the lecture into parts.", retryable: false }, 502);
-          }
-          const toolCall = payload?.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall?.function?.arguments) {
-            try {
-              const args = JSON.parse(toolCall.function.arguments);
-              if (Array.isArray(args?.parts) && args.parts.length) {
-                const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
-                const checkedParts = arabicEnglishCurriculum
-                  ? formatEnglishCurriculumParts(candidateParts, nadiaEnglishStyle)
-                  : candidateParts;
-                if (!checkedParts) {
-                  lastGeminiError = {
-                    status: 422,
-                    payload: { error: "Model returned Arabic review questions" },
-                    text,
-                    model: `lovable:${model}`,
-                  };
-                  console.error("Rejected notes with non-English review questions", model);
-                  continue;
-                }
-                parts = checkedParts;
-                notes = parts.map((p) => `# ${p.title}\n\n${p.notes}`).join("\n\n---\n\n");
-                break;
-              }
-            } catch (e) { console.error("parse tool args failed", e); }
-          }
-          const reply = payload?.choices?.[0]?.message?.content ?? "";
-          if (typeof reply === "string" && reply.trim()) {
-            notes = reply;
-            parts = [{ title: lang0 === "ar" ? "الملاحظات" : "Notes", notes: reply }];
-            break;
-          }
-          lastGeminiError = { status: 500, payload, text, model: `lovable:${model}` };
-        } catch (e) {
-          console.error("Lovable AI fetch failed", model, e);
-          const aborted = (e as Error)?.name === "AbortError";
-          lastGeminiError = { status: aborted ? 503 : 500, payload: null, text: String(e), model: `lovable:${model}` };
-        }
-      }
-    }
-
-    // 2) Direct Gemini fallback using the extracted transcript.
-    if (!notes.trim() && GEMINI_API_KEY && transcriptText && !arabicEnglishCurriculum) for (const model of geminiDirectModels) {
-      const userParts = [{ text: userPrompt }];
-      let geminiRes: Response | null = null;
-      let text = "";
-      let payload: any = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: "user", parts: userParts }],
-          }),
-        },
-        );
-        text = await geminiRes.text();
-        payload = parseJsonMaybe(text);
-        if (geminiRes.ok) break;
-        if (geminiRes.status === 503 || geminiRes.status === 429 || payload?.error?.status === "UNAVAILABLE" || payload?.error?.status === "RESOURCE_EXHAUSTED") {
-          await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
-          continue;
-        }
-        break;
-      }
-      if (!geminiRes || !geminiRes.ok) {
-        lastGeminiError = { status: geminiRes?.status ?? 0, payload, text, model };
-        console.error("Gemini error", geminiRes?.status, model, text);
-        // Try next model on overload/quota errors; otherwise stop.
-        if (geminiRes && (geminiRes.status === 429 || geminiRes.status === 503 || payload?.error?.status === "RESOURCE_EXHAUSTED" || payload?.error?.status === "UNAVAILABLE")) continue;
-        break;
-      }
-
-      if (payload?.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+    // One SDK-managed generation: never replay a potentially billed request on another model.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), transcriptText ? 60_000 : 140_000);
+    try {
+      const payload = await generateChatCompletion({
+        model: notesModel,
+        messages: transcriptText
+          ? [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }]
+          : [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: [
+                { type: "text", text: userPrompt },
+                { type: "video_url", video_url: { url: url.trim() } },
+              ] },
+            ],
+        tools: [partsTool],
+        tool_choice: { type: "function", function: { name: "submit_video_notes" } },
+      }, { signal: controller.signal });
+      if (["length", "max_tokens", "MAX_TOKENS"].includes(payload.choices?.[0]?.finish_reason || "")) {
         return jsonResponse({ error: lang0 === "ar"
-          ? "توقفت الملاحظات قبل اكتمال الفيديو. جرّب تقسيم المحاضرة إلى أجزاء."
-          : "The notes stopped before covering the whole video. Try splitting the lecture into parts.", retryable: false }, 502);
+          ? "توقفت الملاحظات قبل اكتمال الفيديو، لذلك لم يتم حفظها كملاحظات كاملة. جرّب تقسيم المحاضرة إلى أجزاء."
+          : "The notes stopped before covering the whole video and were not saved as complete. Try splitting the lecture into parts.", retryable: false }, 502);
       }
-      notes = payload?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? "").join("") ?? "";
-      if (notes.trim()) {
-        parts = [{ title: lang0 === "ar" ? "الملاحظات" : "Notes", notes }];
-        break;
+      const toolCall = payload.choices?.[0]?.message?.tool_calls?.find(call => call.type === "function" && call.function.name === "submit_video_notes");
+      if (toolCall?.type === "function") {
+        const args = JSON.parse(toolCall.function.arguments);
+        if (Array.isArray(args?.parts) && args.parts.length) {
+          const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
+          const checkedParts = arabicEnglishCurriculum
+            ? formatEnglishCurriculumParts(candidateParts, nadiaEnglishStyle)
+            : candidateParts;
+          if (!checkedParts) {
+            return jsonResponse({ error: "Could not generate English review questions. Please try again.", retryable: false }, 422);
+          }
+          parts = checkedParts;
+          notes = parts.map(p => `# ${p.title}\n\n${p.notes}`).join("\n\n---\n\n");
+        }
       }
-      lastGeminiError = { status: 500, payload, text, model };
+    } catch (error) {
+      if (error instanceof GatewayError) {
+        console.error("Video notes generation failed", { code: error.code, status: error.httpStatus, ids: error.ids });
+        lastGeminiError = { status: error.httpStatus ?? 500, payload: null };
+      } else {
+        console.error("Video notes response failed", String(error));
+        lastGeminiError = { status: 500, payload: null };
+      }
+    } finally {
+      clearTimeout(timeout);
     }
 
     if (!notes.trim() && lastGeminiError) {
