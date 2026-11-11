@@ -188,10 +188,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing url" }, 400);
     }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!LOVABLE_API_KEY && !GEMINI_API_KEY) {
-      return jsonResponse({ error: "No AI API key configured" }, 500);
-    }
 
     // YouTube page URLs are not video files and cannot be passed to Gemini as
     // fileData. Read the video's public captions first, then use Gemini to turn
