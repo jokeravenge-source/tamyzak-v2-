@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag, NotebookPen, Award } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trophy, Clock, Target, Brain, ListChecks, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -17,11 +17,6 @@ const T = {
     bySubject: "By subject", noActivity: "No study activity recorded for today yet — start a session!",
     coach: "AI Coach insights", summary: "Summary", strengths: "Strengths", weaknesses: "Work on this", plan: "Plan for tomorrow",
     exam: "Days to exam", noCoach: "Press refresh to get personalised AI feedback.",
-    parent: "Parent follow-up", parentDesc: "Share this link so a parent can view your progress (read-only).",
-    enable: "Enable parent link", revoke: "Revoke link", copy: "Copy link", copied: "Copied!",
-    accessCode: "Parent access code", accessCodeDesc: "Give your parent this 6-digit code. They'll need it after opening the link.",
-    regenCode: "Generate new code",
-    premiumOnly: "Premium only", premiumDesc: "Parent follow-up is a Premium feature. Upgrade to share your progress with a parent.", upgrade: "Upgrade to Premium",
     min: "min",
     companion: "Excellence Companion", companionDesc: "Plan your week or work through a problem with AI.",
     todoToday: "Today's to-do list", todoDone: "done", todoOf: "of",
@@ -29,7 +24,6 @@ const T = {
     todoAllDone: "All today's tasks are done. 🎉",
     goal: "Closeness to your goal", goalDesc: "Today's completion + days left to your exam.",
     complete: "complete",
-    parentFeedback: "Parent feedback", parentScore: "Parent score", parentNotes: "Latest notes", noParentNotes: "No notes from your parent yet.",
   },
   ar: {
     title: "تقريري اليومي", back: "رجوع",
@@ -39,11 +33,6 @@ const T = {
     bySubject: "حسب المادة", noActivity: "لا توجد جلسات اليوم — ابدأ جلسة دراسة!",
     coach: "ملاحظات المدرّب الذكي", summary: "الخلاصة", strengths: "نقاط قوتك", weaknesses: "ما تحتاج تحسينه", plan: "خطة الغد",
     exam: "أيام للامتحان", noCoach: "اضغط على تحديث للحصول على ملاحظات بالذكاء الاصطناعي.",
-    parent: "متابعة ولي الأمر", parentDesc: "شارك هذا الرابط ليتابع ولي الأمر تقدمك (للقراءة فقط).",
-    enable: "تفعيل رابط ولي الأمر", revoke: "إلغاء الرابط", copy: "نسخ الرابط", copied: "تم النسخ!",
-    accessCode: "رمز دخول ولي الأمر", accessCodeDesc: "أعطِ ولي أمرك هذا الرمز المكوّن من 6 أرقام. سيحتاجه بعد فتح الرابط.",
-    regenCode: "توليد رمز جديد",
-    premiumOnly: "للبريميوم فقط", premiumDesc: "متابعة ولي الأمر ميزة بريميوم. رقّ لمشاركة تقدمك مع ولي أمرك.", upgrade: "الترقية إلى البريميوم",
     min: "د",
     companion: "رفيق التميز", companionDesc: "نظّم أسبوعك أو حل مشكلتك مع الذكاء الاصطناعي.",
     todoToday: "قائمة مهام اليوم", todoDone: "مُنجز", todoOf: "من",
@@ -51,7 +40,6 @@ const T = {
     todoAllDone: "أنهيت كل مهام اليوم. 🎉",
     goal: "قربك من هدفك", goalDesc: "نسبة إنجاز اليوم + الأيام المتبقية للامتحان.",
     complete: "مكتمل",
-    parentFeedback: "متابعة ولي الأمر", parentScore: "تقييم ولي الأمر", parentNotes: "آخر الملاحظات", noParentNotes: "لا توجد ملاحظات من ولي الأمر بعد.",
   },
 } as const;
 
