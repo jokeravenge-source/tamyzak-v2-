@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, RefreshCw, Trophy, Clock, Target, Brain, ListChecks, Flag } from "lucide-react";
+import { ArrowLeft, RefreshCw, Share2, Trophy, Clock, Target, Brain, Copy, Check, Link2, ListChecks, Flag, NotebookPen, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -17,6 +17,11 @@ const T = {
     bySubject: "By subject", noActivity: "No study activity recorded for today yet — start a session!",
     coach: "AI Coach insights", summary: "Summary", strengths: "Strengths", weaknesses: "Work on this", plan: "Plan for tomorrow",
     exam: "Days to exam", noCoach: "Press refresh to get personalised AI feedback.",
+    parent: "Parent follow-up", parentDesc: "Share this link so a parent can view your progress (read-only).",
+    enable: "Enable parent link", revoke: "Revoke link", copy: "Copy link", copied: "Copied!",
+    accessCode: "Parent access code", accessCodeDesc: "Give your parent this 6-digit code. They'll need it after opening the link.",
+    regenCode: "Generate new code",
+    premiumOnly: "Premium only", premiumDesc: "Parent follow-up is a Premium feature. Upgrade to share your progress with a parent.", upgrade: "Upgrade to Premium",
     min: "min",
     companion: "Excellence Companion", companionDesc: "Plan your week or work through a problem with AI.",
     todoToday: "Today's to-do list", todoDone: "done", todoOf: "of",
@@ -24,6 +29,7 @@ const T = {
     todoAllDone: "All today's tasks are done. 🎉",
     goal: "Closeness to your goal", goalDesc: "Today's completion + days left to your exam.",
     complete: "complete",
+    parentFeedback: "Parent feedback", parentScore: "Parent score", parentNotes: "Latest notes", noParentNotes: "No notes from your parent yet.",
   },
   ar: {
     title: "تقريري اليومي", back: "رجوع",
@@ -33,6 +39,11 @@ const T = {
     bySubject: "حسب المادة", noActivity: "لا توجد جلسات اليوم — ابدأ جلسة دراسة!",
     coach: "ملاحظات المدرّب الذكي", summary: "الخلاصة", strengths: "نقاط قوتك", weaknesses: "ما تحتاج تحسينه", plan: "خطة الغد",
     exam: "أيام للامتحان", noCoach: "اضغط على تحديث للحصول على ملاحظات بالذكاء الاصطناعي.",
+    parent: "متابعة ولي الأمر", parentDesc: "شارك هذا الرابط ليتابع ولي الأمر تقدمك (للقراءة فقط).",
+    enable: "تفعيل رابط ولي الأمر", revoke: "إلغاء الرابط", copy: "نسخ الرابط", copied: "تم النسخ!",
+    accessCode: "رمز دخول ولي الأمر", accessCodeDesc: "أعطِ ولي أمرك هذا الرمز المكوّن من 6 أرقام. سيحتاجه بعد فتح الرابط.",
+    regenCode: "توليد رمز جديد",
+    premiumOnly: "للبريميوم فقط", premiumDesc: "متابعة ولي الأمر ميزة بريميوم. رقّ لمشاركة تقدمك مع ولي أمرك.", upgrade: "الترقية إلى البريميوم",
     min: "د",
     companion: "رفيق التميز", companionDesc: "نظّم أسبوعك أو حل مشكلتك مع الذكاء الاصطناعي.",
     todoToday: "قائمة مهام اليوم", todoDone: "مُنجز", todoOf: "من",
@@ -40,6 +51,7 @@ const T = {
     todoAllDone: "أنهيت كل مهام اليوم. 🎉",
     goal: "قربك من هدفك", goalDesc: "نسبة إنجاز اليوم + الأيام المتبقية للامتحان.",
     complete: "مكتمل",
+    parentFeedback: "متابعة ولي الأمر", parentScore: "تقييم ولي الأمر", parentNotes: "آخر الملاحظات", noParentNotes: "لا توجد ملاحظات من ولي الأمر بعد.",
   },
 } as const;
 
@@ -59,6 +71,11 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
   const [meta, setMeta] = useState<{ days_to_exam: number | null; daily_target_minutes: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [parentFeedback, setParentFeedback] = useState<{ score: number; notes: Array<{ id: string; note_text: string; created_at: string }> } | null>(null);
 
   const load = async (force = false) => {
     if (force) setRefreshing(true); else setLoading(true);
@@ -72,7 +89,75 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
     setRefreshing(false);
   };
 
-  useEffect(() => { load(false); }, []);
+  const loadToken = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const { data } = await supabase.from("parent_follow_links").select("token, enabled, revoked_at, access_code")
+      .eq("user_id", u.user.id).is("revoked_at", null).eq("enabled", true).maybeSingle();
+    setToken(data?.token ?? null);
+    setAccessCode((data as any)?.access_code ?? null);
+  };
+
+  const loadParentFeedback = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const [{ data: balances }, { data: notes }] = await Promise.all([
+      supabase.from("parent_student_score_balances").select("score, updated_at").eq("student_user_id", auth.user.id).order("updated_at", { ascending: false }).limit(1),
+      supabase.from("parent_student_notes").select("id, note_text, created_at").eq("student_user_id", auth.user.id).order("created_at", { ascending: false }).limit(5),
+    ]);
+    setParentFeedback({ score: balances?.[0]?.score ?? 5, notes: notes ?? [] });
+  };
+
+  useEffect(() => { load(false); loadToken(); loadParentFeedback(); }, []);
+
+  const enableLink = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const newToken = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "").slice(0, 32);
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    const { data: ins, error } = await supabase
+      .from("parent_follow_links")
+      .insert({ user_id: u.user.id, token: newToken, access_code: newCode })
+      .select("access_code")
+      .single();
+    if (error) { toast.error(error.message); return; }
+    setToken(newToken);
+    setAccessCode((ins as any)?.access_code ?? newCode);
+    toast.success(ar ? "تم التفعيل" : "Enabled");
+  };
+  const regenerateCode = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user || !token) return;
+    const newCode = String(Math.floor(100000 + Math.random() * 900000));
+    const { error } = await supabase.from("parent_follow_links")
+      .update({ access_code: newCode })
+      .eq("user_id", u.user.id).eq("token", token);
+    if (error) { toast.error(error.message); return; }
+    setAccessCode(newCode);
+    toast.success(ar ? "تم توليد رمز جديد" : "New code generated");
+  };
+  const revoke = async () => {
+    if (!token) return;
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase.from("parent_follow_links").update({ enabled: false, revoked_at: new Date().toISOString() }).eq("user_id", u.user.id).eq("token", token);
+    setToken(null);
+    setAccessCode(null);
+    toast.success(ar ? "تم الإلغاء" : "Revoked");
+  };
+  const copyLink = async () => {
+    if (!token) return;
+    const url = `${location.origin}/follow/${token}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  const copyCode = async () => {
+    if (!accessCode) return;
+    await navigator.clipboard.writeText(accessCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 1500);
+  };
 
   const focusedPct = meta && meta.daily_target_minutes
     ? Math.min(100, Math.round(((report?.focused_minutes ?? 0) / meta.daily_target_minutes) * 100))
@@ -233,6 +318,46 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
               )}
             </Panel>
 
+            {parentFeedback && (
+              <Panel icon={Award} title={t.parentFeedback}>
+                <div className="mb-5 flex items-center justify-between rounded-2xl bg-primary/10 p-4">
+                  <span className="text-sm font-bold">{t.parentScore}</span>
+                  <strong className="font-mono text-3xl text-primary">{parentFeedback.score}</strong>
+                </div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground"><NotebookPen className="h-4 w-4" />{t.parentNotes}</div>
+                {!parentFeedback.notes.length ? <p className="text-sm text-muted-foreground">{t.noParentNotes}</p> : (
+                  <ul className="space-y-2">{parentFeedback.notes.map((note) => <li key={note.id} className="rounded-xl border border-border/60 bg-muted/25 p-3"><p className="whitespace-pre-wrap text-sm">{note.note_text}</p><time className="mt-2 block text-[10px] text-muted-foreground">{new Date(note.created_at).toLocaleString()}</time></li>)}</ul>
+                )}
+              </Panel>
+            )}
+
+            {/* Parent link */}
+            <Panel icon={Share2} title={t.parent} subtitle={t.parentDesc}>
+              {!token ? (
+
+                <button
+                  onClick={enableLink}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/15 hover:opacity-90"
+                >
+                  <Link2 className="w-3.5 h-3.5" />{t.enable}
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 overflow-hidden rounded-xl border border-border bg-muted/30 p-3 font-mono text-xs">
+                    <span className="truncate">{location.origin}/follow/{token}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={copyLink} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground hover:opacity-90">
+                      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? t.copied : t.copy}
+                    </button>
+                    <button onClick={revoke} className="h-10 rounded-xl border border-destructive/30 bg-destructive/5 px-4 text-xs font-bold text-destructive hover:bg-destructive/10">
+                      {t.revoke}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </Panel>
           </div>
         )}
 
