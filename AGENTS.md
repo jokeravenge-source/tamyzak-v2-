@@ -3,6 +3,7 @@
 - Manage adjustable Premium coupons through the admin-verified `admin_premium_coupons` RPC; redeem via the existing promo flow and preserve issued subscription deadlines so edits affect only future redemptions. Calendar months use Baghdad time.
 
 - Mind map generation accepts extracted PDF text/page images, not a separate topic, and uses the server-only AI Gateway SDK to keep the deployed request contract aligned with the upload page.
+- Video notes must retain the complete transcript, version cache keys when coverage changes, and reject token-truncated output before saving; this prevents partial lectures being reused as complete notes.
 
 - Resolve Nadia lecture counts through `getNadiaLectureCount` in both teacher entry points so curriculum-specific limits remain consistent.
 - Keep the fixed study-room catalog in `pinnedStudyRooms` and derive session subjects from joined rooms, using a general session for rooms without a subject, so joining never requires a second curriculum choice.
