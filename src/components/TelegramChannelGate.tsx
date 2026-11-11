@@ -64,7 +64,17 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
     setChecking(true);
     if (!silent) setMessage(null);
     try {
-      const { data, error } = await supabase.functions.invoke<CheckResponse>("telegram-channel-check", { body: { scope: "dhs" } });
+      // Installed apps often resume with an expired token; refresh before checking.
+      const { data: sess } = await supabase.auth.getSession();
+      const exp = sess.session?.expires_at ?? 0;
+      if (!sess.session || exp * 1000 - Date.now() < 60_000) await supabase.auth.refreshSession();
+      const call = () => supabase.functions.invoke<CheckResponse>("telegram-channel-check", { body: { scope: "dhs" } });
+      let { data, error } = await call();
+      if (error || data?.error === "unauthenticated" || (data && !data.ok && data.error !== "not_linked")) {
+        if (data?.error === "unauthenticated") await supabase.auth.refreshSession();
+        await new Promise((r) => setTimeout(r, 800));
+        ({ data, error } = await call());
+      }
       if (error) throw error;
       if (data?.joined) return onVerified();
       if (data?.error && INFRA_ERRORS.has(data.error)) return onVerified();
