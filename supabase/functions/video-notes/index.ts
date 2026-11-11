@@ -220,8 +220,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Cap transcript size to stay well under model limits.
-    if (transcriptText.length > 120000) transcriptText = transcriptText.slice(0, 120000);
+    // Never silently remove the end of a lecture to fit the input budget.
+    if (transcriptText.length > 1_000_000) {
+      return jsonResponse({ error: lang0 === "ar"
+        ? "نص المحاضرة طويل جداً. قسّمه إلى أجزاء متتابعة للحصول على ملاحظات كاملة."
+        : "This lecture transcript is too long. Split it into consecutive parts to get complete notes.", retryable: false }, 413);
+    }
 
     // Cache: the same video is never paid for twice.
     const cacheClient = createClient(
@@ -230,7 +234,7 @@ Deno.serve(async (req) => {
     );
     const vid = url ? extractYouTubeId(url.trim()) : "";
     const cacheKey = runMode === "notes" && vid && !providedTranscript
-      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}`
+      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|full-v2`
       : "";
     if (cacheKey) {
       const { data: cached } = await cacheClient
@@ -321,12 +325,12 @@ NADIA ENGLISH CURRICULUM LANGUAGE RULES (mandatory, overriding conflicting instr
 `
       : "";
 
-    const systemPrompt = `أنت كاتب ملاحظات دراسية خبير ومتقن. مهمتك تحويل محتوى الفيديو إلى ملاحظات دراسية شاملة ومفصّلة جداً. ${nadiaEnglishStyle ? "Apply the mandatory Nadia English curriculum language rules below to all output, including headings and questions." : "اكتب باللغة العربية الفصحى دائماً (تَرجِم إذا لزم الأمر، بغض النظر عن لغة المصدر)."}
+    const systemPrompt = `أنت كاتب ملاحظات دراسية خبير ومتقن. مهمتك تحويل الفيديو بأكمله من بدايته حتى نهايته إلى ملاحظات دراسية موجزة وشاملة لجميع موضوعاته. ${nadiaEnglishStyle ? "Apply the mandatory Nadia English curriculum language rules below to all output, including headings and questions." : "اكتب باللغة العربية الفصحى دائماً (تَرجِم إذا لزم الأمر، بغض النظر عن لغة المصدر)."}
 ${curriculumLanguageRules}
 
 القواعد الصارمة:
-1) لا تختصر ولا تلخّص بشكل مخلّ. اذكر كل فكرة مهمة، وكل تعريف، وكل قاعدة، وكل خطوة، وكل استثناء، وكل ملاحظة جانبية ذكرها المتحدث.
-2) انقل جميع الأمثلة الواردة في الفيديو حرفياً مع شرحها خطوة بخطوة (الأرقام، المعادلات، الحالات، السيناريوهات، الأسماء، التواريخ، النِّسَب، القِيَم). لا تحذف أي مثال مهما بدا بسيطاً.
+1) اقرأ المصدر كاملاً أولاً وحدّد جميع موضوعاته بالترتيب، بما فيها موضوعات الربع الأخير والخاتمة. وزّع مساحة الملاحظات على جميع الموضوعات قبل التوسّع في أي منها. لا تستهلك المخرجات في شرح بداية الفيديو وتترك نهايته.
+2) اذكر الأفكار والتعريفات والقواعد والاستثناءات والأمثلة من جميع أجزاء الفيديو بإيجاز دون حذف موضوع كامل. احتفظ بأرقام الأمثلة ومعادلاتها وخطواتها الأساسية ونتائجها، واحذف التكرار والحشو فقط. تغطية الفيديو كاملاً أهم من التفصيل في جزء منه.
 2.أ) إذا كان المثال رياضياً أو علمياً: اكتب المعطيات، ثم القانون/الصيغة، ثم خطوات الحل، ثم النتيجة النهائية مع الوحدة.
 2.ب) الرياضيات والمعادلات: ممنوع منعاً باتاً استخدام LaTeX أو علامات $ أو أوامر مثل \\frac أو \\sqrt أو ^{ } أو _{ }. اكتب المعادلات نصاً عادياً مقروءاً بالرموز الموحدة فقط: x² و x³ و √x و ∛x و a/b و × و ÷ و ± و ≤ و ≥ و ≠ و ≈ و π و θ و ∞ و ∫ و Σ و sin(x) و log(x). ضع كل معادلة على سطر مستقل.
 3) ${nadiaEnglishStyle ? "Use source-backed English scientific terms in every part of the notes." : arabicEnglishCurriculum ? "اكتب كل مصطلح تقني بالاسم العربي ثم الاسم الإنجليزي المطابق للمصدر بين قوسين في كل ظهور، مثل: التمثيل الضوئي (Photosynthesis). لا تستخدم مرادفات أو مصطلحات من خارج نص المحاضرة ومنهج الأحياء." : "احتفظ بكل المصطلحات التقنية مع ذكر مقابلها بالإنجليزية بين قوسين عند أول ظهور، مثل: التمثيل الضوئي (Photosynthesis)."}
@@ -350,7 +354,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 فقرة 3–5 أسطر تشرح الموضوع وأهميته.
 
 ## 📚 المفاهيم الأساسية
-لكل مفهوم: عنوان فرعي + شرح مفصّل + لماذا هو مهم.
+لكل مفهوم: عنوان فرعي + شرح موجز واضح.
 
 ## 📖 التعريفات المهمة
 قائمة: **المصطلح:** التعريف الكامل كما ورد.
@@ -372,7 +376,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 
 لا تكتب أي شيء خارج هذه البنية. ${arabicEnglishCurriculum ? "استخدم العربية في الشرح العام، واستخدم الإنجليزية داخل أسماء المصطلحات الثنائية وفي نص أسئلة Review Questions فقط." : "لا تستخدم لغة غير العربية في الشرح (المصطلحات الإنجليزية مسموحة فقط بين قوسين)."}`}
 
-تقسيم إجباري: قسّم الفيديو إلى عدة أجزاء متتابعة (2 إلى 3 أجزاء فقط)، واكتب بإيجاز مركّز على ما يأتي بالامتحان، ولكل جزء أعد كامل البنية أعلاه (نظرة عامة، مفاهيم، تعريفات، قوانين، أمثلة، نقاط مهمة، خلاصة) خاصة بذلك الجزء فقط. ابدأ كل جزء بعنوان واضح يصف موضوعه. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
+تقسيم إجباري: قسّم الفيديو كاملاً إلى أجزاء موضوعية متتابعة تشمل البداية والمنتصف والنهاية دون فجوات، ولا تفرض عدداً ثابتاً من الأجزاء. البنية أعلاه دليل تنظيم، وليست أقساماً يجب تكرارها كاملة في كل جزء؛ استخدم فقط الأقسام المناسبة للمحتوى لتوفير المساحة. لا تكرّر النظرة العامة أو الخلاصة بين الأجزاء. استخدم نقاطاً قصيرة، واجعل كامل استدعاء الأداة ضمن 3000 رمز إخراج بما فيه JSON. قبل التسليم تحقّق أن آخر موضوع وآخر مثال في المصدر موجودان في الملاحظات. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
     // Try Lovable AI Gateway first (multiple models for fallback on quota/overload),
     // then fall back to direct Gemini if available.
     const transcriptModels = [
@@ -391,8 +395,8 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
     let notes = "";
 
     const userPrompt = transcriptText
-      ? `Here is the transcript of a YouTube video. Divide it into 2-3 sequential parts and write concise exam-focused notes for each part. Call submit_video_notes with the parts array.\n\nTRANSCRIPT:\n${transcriptText}`
-      : `Watch this YouTube video, split it into 2-3 sequential parts, and write concise exam-focused notes for each part. Call submit_video_notes.`;
+      ? `Read the ENTIRE transcript through its final sentence before writing. Cover every topic from beginning to end in consecutive parts, including the final topic and worked example. Allocate the 3000-token total output budget across the whole lecture; compress wording, not source coverage. Do not repeat empty headings. Call submit_video_notes with all parts.\n\nTRANSCRIPT:\n${transcriptText}\n\nEND OF COMPLETE TRANSCRIPT. Check that your notes include the content immediately before this marker.`
+      : `Watch the ENTIRE YouTube video from start to finish. Cover all topics in consecutive parts, including the final topic and worked example. Allocate the 3000-token total output budget across the whole video; compress wording, not source coverage. Do not limit viewing to an opening segment. Call submit_video_notes with all parts.`;
 
     const partsTool = {
       type: "function" as const,
@@ -477,6 +481,11 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
             if (res.status === 429 || res.status === 503) continue;
             break;
           }
+          if (["length", "max_tokens", "MAX_TOKENS"].includes(payload?.choices?.[0]?.finish_reason)) {
+            return jsonResponse({ error: lang0 === "ar"
+              ? "توقفت الملاحظات قبل اكتمال الفيديو، لذلك لم يتم حفظها كملاحظات كاملة. جرّب تقسيم المحاضرة إلى أجزاء."
+              : "The notes stopped before covering the whole video and were not saved as complete. Try splitting the lecture into parts.", retryable: false }, 502);
+          }
           const toolCall = payload?.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
             try {
@@ -552,6 +561,11 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
         break;
       }
 
+      if (payload?.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+        return jsonResponse({ error: lang0 === "ar"
+          ? "توقفت الملاحظات قبل اكتمال الفيديو. جرّب تقسيم المحاضرة إلى أجزاء."
+          : "The notes stopped before covering the whole video. Try splitting the lecture into parts.", retryable: false }, 502);
+      }
       notes = payload?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? "").join("") ?? "";
       if (notes.trim()) {
         parts = [{ title: lang0 === "ar" ? "الملاحظات" : "Notes", notes }];
