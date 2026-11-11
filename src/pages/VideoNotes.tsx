@@ -222,10 +222,14 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
       const maxAttempts = 4;
       let lastErr: any = null;
       let lastRetryAfter = 0;
+      let segment = 0;
+      let fullTranscript = "";
+      const allParts: Part[] = [];
+      const allNotes: string[] = [];
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        if (attempt === 1) setStatus({ kind: "working", message: t.working });
+        if (attempt === 1 && segment === 0) setStatus({ kind: "working", message: t.working });
         const { data, error } = await supabase.functions.invoke("video-notes", {
-          body: { url: url.trim(), language },
+          body: { url: url.trim(), language, segment, transcript: segment > 0 && fullTranscript ? fullTranscript : undefined },
         });
         let retryable = false;
         if (error) {
@@ -238,16 +242,30 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
           lastErr = new Error((data as any).message || (data as any).error);
           retryable = (data as any).retryable === true;
           lastRetryAfter = Number((data as any)?.retryAfter || 0);
-        } else if ((data as any)?.notes) {
-          setNotes((data as any).notes);
-          const ps = Array.isArray((data as any).parts) ? (data as any).parts as Part[] : [];
-          setParts(ps.length ? ps : [{ title: t.notes, notes: (data as any).notes }]);
-          setOpenIdx(0);
-          if (typeof (data as any).transcript === "string") setTranscript((data as any).transcript);
-          setStatus({ kind: "success" });
-          awardAction("video_to_notes", {});
+        } else if ((data as any)?.notes || (segment > 0 && (data as any)?.done)) {
+          const d = data as any;
+          if (d.notes) {
+            const ps = Array.isArray(d.parts) && d.parts.length ? d.parts as Part[] : [{ title: `${t.notes} ${segment + 1}`, notes: d.notes }];
+            allParts.push(...ps);
+            allNotes.push(d.notes);
+            setParts([...allParts]);
+            setNotes(allNotes.join("\n\n---\n\n"));
+            if (segment === 0) setOpenIdx(0);
+          }
+          if (typeof d.transcript === "string" && d.transcript) { fullTranscript = d.transcript; setTranscript(d.transcript); }
           lastErr = null;
-          break;
+          if (d.done || segment >= 11) {
+            setStatus({ kind: "success" });
+            awardAction("video_to_notes", {});
+            break;
+          }
+          segment++;
+          attempt = 0;
+          const total = Number(d.totalSegments) || 0;
+          setStatus({ kind: "working", message: language === "ar"
+            ? `تم القسم ${segment}${total ? ` من ${total}` : ""} — جاري تحضير القسم ${segment + 1}...`
+            : `Section ${segment}${total ? ` of ${total}` : ""} done — preparing section ${segment + 1}...` });
+          continue;
         } else {
           lastErr = new Error(t.failed);
         }
@@ -259,7 +277,11 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
           await new Promise((r) => setTimeout(r, delay));
         }
       }
-      if (lastErr) throw lastErr;
+      if (lastErr && allParts.length) {
+        // Keep the finished sections visible even if a later one failed.
+        toast.error(lastErr.message);
+        setStatus({ kind: "success" });
+      } else if (lastErr) throw lastErr;
     } catch (e: any) {
       console.error(e);
       const msg = e?.message || t.failed;

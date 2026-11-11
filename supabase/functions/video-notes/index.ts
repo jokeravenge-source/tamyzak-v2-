@@ -179,7 +179,10 @@ Deno.serve(async (req) => {
   const auth = await requireUser(req);
   if (!auth.ok) return new Response(JSON.stringify({ error: auth.error }), { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
-    const { url, language, mode, transcript: providedTranscript, count, adminGeneration, notesStyle } = await req.json();
+    const { url, language, mode, transcript: providedTranscript, count, adminGeneration, notesStyle, segment: rawSegment } = await req.json();
+    const segment = Math.max(0, Math.min(11, Math.floor(Number(rawSegment) || 0)));
+    const SEGMENT_MINUTES = 20;
+    const SEGMENT_CHARS = 25_000;
     const lang0 = language === "en" ? "en" : "ar";
     const nadiaEnglishStyle = lang0 === "en" && notesStyle === "nadia-english-arabic-explanations";
     const arabicEnglishCurriculum = lang0 === "en" && (notesStyle === "arabic-explanation-english-curriculum" || nadiaEnglishStyle);
@@ -211,7 +214,8 @@ Deno.serve(async (req) => {
         .eq("role", "admin")
         .maybeSingle();
       if (!adminRole) return jsonResponse({ error: "Forbidden." }, 403);
-    } else {
+    } else if (segment === 0) {
+      // Later segments continue the same paid generation started at segment 0.
       const ent = await claimFeature(req, "video-notes");
       if (!ent.ok) {
         return jsonResponse({ error: ent.error, upgrade: ent.status === 403 || ent.status === 429 }, ent.status);
@@ -225,6 +229,27 @@ Deno.serve(async (req) => {
         : "This lecture transcript is too long. Split it into consecutive parts to get complete notes.", retryable: false }, 413);
     }
 
+    // Split long lectures into consecutive sections so each request finishes in time.
+    const fullTranscript = transcriptText;
+    const transcriptChunks: string[] = [];
+    if (fullTranscript) {
+      let pos = 0;
+      while (pos < fullTranscript.length) {
+        let end = Math.min(fullTranscript.length, pos + SEGMENT_CHARS);
+        if (end < fullTranscript.length) {
+          const sp = fullTranscript.lastIndexOf(" ", end);
+          if (sp > pos + SEGMENT_CHARS * 0.8) end = sp;
+        }
+        transcriptChunks.push(fullTranscript.slice(pos, end).trim());
+        pos = end;
+      }
+    }
+    const totalSegments = fullTranscript ? transcriptChunks.length : 0;
+    if (runMode === "notes" && fullTranscript) {
+      if (segment >= transcriptChunks.length) return jsonResponse({ notes: "", parts: [], segment, totalSegments, done: true });
+      transcriptText = transcriptChunks[segment];
+    }
+
     // Cache: the same video is never paid for twice.
     const cacheClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
@@ -232,12 +257,15 @@ Deno.serve(async (req) => {
     );
     const vid = url ? extractYouTubeId(url.trim()) : "";
     const cacheKey = runMode === "notes" && vid && !providedTranscript
-      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|full-v3-argon`
+      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|seg-v4-argon|${segment}`
       : "";
     if (cacheKey) {
       const { data: cached } = await cacheClient
         .from("video_notes_cache").select("notes, parts").eq("cache_key", cacheKey).maybeSingle();
-      if (cached?.notes) return jsonResponse({ notes: cached.notes, parts: cached.parts, transcript: transcriptText, cached: true });
+      if (cached?.notes) {
+        const c: any = cached.parts;
+        return jsonResponse({ notes: cached.notes, parts: c?.parts ?? [], segment, totalSegments: c?.totalSegments ?? totalSegments, done: c?.done ?? true, transcript: segment === 0 ? fullTranscript : undefined, cached: true });
+      }
     }
 
     // ===== Flashcards mode (tool-call structured output) =====
@@ -251,7 +279,7 @@ Deno.serve(async (req) => {
       const n = Math.max(6, Math.min(40, Number(count) || 15));
       const langName = lang0 === "ar" ? "Arabic" : "English";
       const sys = `You generate concise study flashcards from a YouTube transcript. Produce exactly ${n} flashcards in ${langName}. Each card: a clear question on the front, and a complete but short answer on the back (1-3 sentences). Cover the most exam-worthy ideas, definitions, formulas, and examples. Use ONLY content present in the transcript. Return via the submit_flashcards tool.`;
-      const userMsg = `TRANSCRIPT:\n${transcriptText}\n\nGenerate ${n} flashcards.`;
+      const userMsg = `TRANSCRIPT:\n${fullTranscript}\n\nGenerate ${n} flashcards.`;
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -298,7 +326,7 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "No flashcards generated", retryable: true }, 502);
       }
       const parsed = JSON.parse(toolCall.function.arguments);
-      return jsonResponse({ cards: parsed.cards || [], transcript: transcriptText });
+      return jsonResponse({ cards: parsed.cards || [], transcript: fullTranscript });
     }
 
     const curriculumLanguageRules = nadiaEnglishStyle
@@ -380,10 +408,16 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
     let notes = "";
+    let videoEnded = false;
 
-    const userPrompt = transcriptText
+    const segStart = segment * SEGMENT_MINUTES;
+    const segEnd = segStart + SEGMENT_MINUTES;
+    const sectionNote = transcriptText
+      ? (totalSegments > 1 ? `\n\nSECTION ${segment + 1} OF ${totalSegments}: This transcript is one consecutive section of a longer lecture. Write notes for THIS section only, completely, from its first to its last sentence. ${segment > 0 ? "Do not write a general introduction for the whole lecture." : ""}` : "")
+      : `\n\nSECTION ${segment + 1}: Cover ONLY the part of the video from minute ${segStart}:00 to minute ${segEnd}:00 completely and in detail. Ignore content outside this time range. If the video ends before minute ${segEnd}, set video_ended to true. If the video is shorter than minute ${segStart}, return an empty parts array and video_ended true.`;
+    const userPrompt = (transcriptText
       ? `Read the ENTIRE transcript through its final sentence before writing. Cover every topic from beginning to end in consecutive parts, including the final topic and worked example. Give every topic and worked example enough detail; omit repetition, not source coverage. Do not repeat empty headings. Call submit_video_notes with all parts.\n\nTRANSCRIPT:\n${transcriptText}\n\nEND OF COMPLETE TRANSCRIPT. Check that your notes include the content immediately before this marker.`
-      : `Watch the ENTIRE YouTube video from start to finish. Cover all topics in consecutive parts, including the final topic and worked example. Give every topic and worked example enough detail; omit repetition, not source coverage. Do not limit viewing to an opening segment. Call submit_video_notes with all parts.`;
+      : `Watch the ENTIRE YouTube video from start to finish. Cover all topics in consecutive parts, including the final topic and worked example. Give every topic and worked example enough detail; omit repetition, not source coverage. Call submit_video_notes with all parts.`) + sectionNote;
 
     const partsTool = {
       type: "function" as const,
@@ -416,15 +450,16 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
                 additionalProperties: false,
               },
             },
+            video_ended: { type: "boolean", description: "True when the video ends within the requested time range." },
           },
-          required: ["parts"], additionalProperties: false,
+          required: ["parts", "video_ended"], additionalProperties: false,
         },
       },
     };
 
     // One SDK-managed generation: never replay a potentially billed request on another model.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), transcriptText ? 240_000 : 360_000);
+    const timeout = setTimeout(() => controller.abort(), transcriptText ? 150_000 : 240_000);
     try {
       const payload = await generateChatCompletion({
         model: notesModel,
@@ -448,6 +483,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
       const toolCall = payload.choices?.[0]?.message?.tool_calls?.find(call => call.type === "function" && call.function.name === "submit_video_notes");
       if (toolCall?.type === "function") {
         const args = JSON.parse(toolCall.function.arguments);
+        videoEnded = args?.video_ended === true || (Array.isArray(args?.parts) && args.parts.length === 0);
         if (Array.isArray(args?.parts) && args.parts.length) {
           const candidateParts = args.parts.filter((p: any) => p?.title && p?.notes);
           const checkedParts = arabicEnglishCurriculum
@@ -508,14 +544,16 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
       }, paymentRequired ? 402 : quota ? 429 : overloaded ? 503 : 500);
     }
 
+    const done = fullTranscript ? segment + 1 >= totalSegments : (videoEnded || segment >= 11);
     if (!notes.trim()) {
+      if (!fullTranscript && segment > 0 && videoEnded) return jsonResponse({ notes: "", parts: [], segment, totalSegments, done: true });
       return jsonResponse({ error: "Empty response from model", retryable: true }, 502);
     }
     if (cacheKey) {
       await cacheClient.from("video_notes_cache")
-        .upsert({ cache_key: cacheKey, notes, parts }).then(() => {}, (e) => console.error("cache save failed", e));
+        .upsert({ cache_key: cacheKey, notes, parts: { parts, done, totalSegments } }).then(() => {}, (e) => console.error("cache save failed", e));
     }
-    return jsonResponse({ notes, parts, transcript: transcriptText });
+    return jsonResponse({ notes, parts, segment, totalSegments, done, transcript: segment === 0 ? fullTranscript : undefined });
   } catch (e) {
     return jsonResponse({ error: String(e) }, 500);
   }

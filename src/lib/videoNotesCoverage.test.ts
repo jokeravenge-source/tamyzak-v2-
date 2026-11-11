@@ -18,7 +18,7 @@ beforeEach(() => {
   const query = {
     select: () => query,
     eq: (_key: string, value: string) => { cacheFilter = value; return query; },
-    maybeSingle: async () => ({ data: cacheFilter.endsWith("|full-v3-argon") ? null : { notes: "Old incomplete notes", parts: [] } }),
+    maybeSingle: async () => ({ data: cacheFilter.includes("|seg-v4-argon|") ? null : { notes: "Old incomplete notes", parts: [] } }),
     upsert: async (row: any) => { saved.push(row); return { error: null }; },
   };
   const code = ts.transpileModule(readFileSync("supabase/functions/video-notes/index.ts", "utf8"), {
@@ -64,19 +64,22 @@ describe("Full video notes coverage", () => {
     expect(modelRequest).not.toHaveProperty("max_completion_tokens");
   });
 
-  it("passes the entire long transcript including its final chapter to generation", async () => {
+  it("splits a long transcript into sections and the last section contains the final chapter", async () => {
     const transcript = "Opening. " + "Lecture detail. ".repeat(10000) + "FINAL_CHAPTER_INTEGRATION";
-    const response = await handler(request({ transcript, language: "ar" }));
-    expect(response.status).toBe(200);
-    expect(modelRequest.messages[1].content).toContain(transcript);
-    expect((await response.json()).transcript).toBe(transcript);
+    const first = await (await handler(request({ transcript, language: "ar", segment: 0 }))).json();
+    expect(first.totalSegments).toBe(7);
+    expect(first.done).toBe(false);
+    expect(first.transcript).toBe(transcript);
+    const last = await (await handler(request({ transcript, language: "ar", segment: 6 }))).json();
+    expect(last.done).toBe(true);
+    expect(modelRequest.messages[1].content).toContain("FINAL_CHAPTER_INTEGRATION");
   });
 
   it("does not reuse older partial video notes and caches the corrected result", async () => {
     const response = await handler(request({ url: "https://www.youtube.com/watch?v=lecture123", language: "ar" }));
     expect((await response.json()).notes).toContain(finalNotes);
     expect(saved).toHaveLength(1);
-    expect(saved[0].cache_key).toBe("lecture123|ar|std|full-v3-argon");
+    expect(saved[0].cache_key).toBe("lecture123|ar|std|seg-v4-argon|0");
   });
 
   it("rejects token-truncated output instead of showing it as complete notes", async () => {
