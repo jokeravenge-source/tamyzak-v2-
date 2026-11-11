@@ -83,7 +83,7 @@ describe("Full video notes coverage", () => {
   });
 
   it("gives each raw-video section a 10-minute window", async () => {
-    await handler(request({ url: "https://youtu.be/lecture123", language: "ar", segment: 1 }));
+    await handler(request({ url: "https://example.com/lecture.mp4", language: "ar", segment: 1 }));
     const content = modelRequest.messages[1].content;
     const text = Array.isArray(content) ? content[0].text : content;
     expect(text).toContain("from minute 10:00 to minute 20:00");
