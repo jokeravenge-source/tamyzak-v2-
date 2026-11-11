@@ -180,9 +180,9 @@ Deno.serve(async (req) => {
   if (!auth.ok) return new Response(JSON.stringify({ error: auth.error }), { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   try {
     const { url, language, mode, transcript: providedTranscript, count, adminGeneration, notesStyle, segment: rawSegment } = await req.json();
-    const segment = Math.max(0, Math.min(11, Math.floor(Number(rawSegment) || 0)));
-    const SEGMENT_MINUTES = 20;
-    const SEGMENT_CHARS = 25_000;
+    const segment = Math.max(0, Math.min(23, Math.floor(Number(rawSegment) || 0)));
+    const SEGMENT_MINUTES = 10;
+    const SEGMENT_CHARS = 12_000;
     const lang0 = language === "en" ? "en" : "ar";
     const nadiaEnglishStyle = lang0 === "en" && notesStyle === "nadia-english-arabic-explanations";
     const arabicEnglishCurriculum = lang0 === "en" && (notesStyle === "arabic-explanation-english-curriculum" || nadiaEnglishStyle);
