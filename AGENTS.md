@@ -4,7 +4,7 @@
 
 - Mind map generation accepts extracted PDF text/page images, not a separate topic, and uses the server-only AI Gateway SDK to keep the deployed request contract aligned with the upload page.
 - Video notes use a frontier video-capable model through the server-only AI Gateway SDK, without optional output caps or automatic cross-model replay, so upgraded notes retain detail without duplicate billed attempts.
-- Video notes must retain the complete transcript, version cache keys when coverage changes, and reject token-truncated output before saving; this prevents partial lectures being reused as complete notes.
+- Video notes are generated in consecutive sections (transcript chunks or time ranges) requested one by one by the page, version cache keys when coverage changes, and reject token-truncated output; this keeps each request within time limits without dropping lecture content.
 
 - Resolve Nadia lecture counts through `getNadiaLectureCount` in both teacher entry points so curriculum-specific limits remain consistent.
 - Keep the fixed study-room catalog in `pinnedStudyRooms` and derive session subjects from joined rooms, using a general session for rooms without a subject, so joining never requires a second curriculum choice.
