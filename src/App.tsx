@@ -129,7 +129,6 @@ import { useStudyBackHistory } from "@/hooks/useStudyBackHistory";
 import { isGuideToolKey } from "@/lib/guideTools";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
-const ParentFollow = lazy(() => import("./pages/ParentFollow"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
@@ -257,22 +256,6 @@ const App = () => {
         <TooltipProvider>
           <Suspense fallback={null}>
             <NadiaMinisterialQuestions />
-          </Suspense>
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Public parent follow-up route — intercept before any auth gating
-  const followMatch = typeof window !== "undefined" ? window.location.pathname.match(/^\/follow\/([A-Za-z0-9_-]+)/) : null;
-  if (followMatch) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Suspense fallback={null}>
-            <ParentFollow token={followMatch[1]} />
           </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
