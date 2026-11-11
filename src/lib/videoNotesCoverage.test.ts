@@ -18,7 +18,7 @@ beforeEach(() => {
   const query = {
     select: () => query,
     eq: (_key: string, value: string) => { cacheFilter = value; return query; },
-    maybeSingle: async () => ({ data: cacheFilter.includes("|seg-v4-argon|") ? null : { notes: "Old incomplete notes", parts: [] } }),
+    maybeSingle: async () => ({ data: cacheFilter.includes("|seg-v5-argon|") ? null : { notes: "Old incomplete notes", parts: [] } }),
     upsert: async (row: any) => { saved.push(row); return { error: null }; },
   };
   const code = ts.transpileModule(readFileSync("supabase/functions/video-notes/index.ts", "utf8"), {
@@ -67,10 +67,10 @@ describe("Full video notes coverage", () => {
   it("splits a long transcript into sections and the last section contains the final chapter", async () => {
     const transcript = "Opening. " + "Lecture detail. ".repeat(10000) + "FINAL_CHAPTER_INTEGRATION";
     const first = await (await handler(request({ transcript, language: "ar", segment: 0 }))).json();
-    expect(first.totalSegments).toBe(7);
+    expect(first.totalSegments).toBe(14);
     expect(first.done).toBe(false);
     expect(first.transcript).toBe(transcript);
-    const last = await (await handler(request({ transcript, language: "ar", segment: 6 }))).json();
+    const last = await (await handler(request({ transcript, language: "ar", segment: 13 }))).json();
     expect(last.done).toBe(true);
     expect(modelRequest.messages[1].content).toContain("FINAL_CHAPTER_INTEGRATION");
   });
@@ -79,7 +79,14 @@ describe("Full video notes coverage", () => {
     const response = await handler(request({ url: "https://www.youtube.com/watch?v=lecture123", language: "ar" }));
     expect((await response.json()).notes).toContain(finalNotes);
     expect(saved).toHaveLength(1);
-    expect(saved[0].cache_key).toBe("lecture123|ar|std|seg-v4-argon|0");
+    expect(saved[0].cache_key).toBe("lecture123|ar|std|seg-v5-argon|0");
+  });
+
+  it("gives each raw-video section a 10-minute window", async () => {
+    await handler(request({ url: "https://example.com/lecture.mp4", language: "ar", segment: 1 }));
+    const content = modelRequest.messages[1].content;
+    const text = Array.isArray(content) ? content[0].text : content;
+    expect(text).toContain("from minute 10:00 to minute 20:00");
   });
 
   it("rejects token-truncated output instead of showing it as complete notes", async () => {

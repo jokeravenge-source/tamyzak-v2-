@@ -254,7 +254,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
           }
           if (typeof d.transcript === "string" && d.transcript) { fullTranscript = d.transcript; setTranscript(d.transcript); }
           lastErr = null;
-          if (d.done || segment >= 11) {
+          if (d.done || segment >= 23) {
             setStatus({ kind: "success" });
             awardAction("video_to_notes", {});
             break;
