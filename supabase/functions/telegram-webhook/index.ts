@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
   if (text.startsWith("/start")) {
     const parts = text.split(/\s+/);
     token = parts[1] ?? null;
+  } else if (/^[a-f0-9]{48}$/i.test(text.trim())) {
+    // Students can paste their link code directly when the deep link drops it.
+    token = text.trim();
   }
 
   // Find the verification row. Prefer match by token (new link); fall back to telegram_user_id (re-check).

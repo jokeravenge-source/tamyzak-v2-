@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, Link2, Loader2, LogOut, RefreshCw, Send } from "lucide-react";
 import { invokeTelegramStart } from "@/lib/telegramStart";
-import { tamayzakBotLink } from "@/lib/tamayzakTelegram";
+import { TAMAYZAK_BOT_URL, tamayzakBotLink } from "@/lib/tamayzakTelegram";
 import type { AppLanguage } from "./LanguageGate";
 
 export const DHS_CHANNEL = "a6th_DHS";
@@ -23,6 +23,10 @@ const T = {
     notLinked: "لازم تربط حساب تلغرام أولاً (الخطوة ٢) حتى نكدر نتأكد من اشتراكك.",
     unavailable: "تعذّر التحقق هسه. حاول مرة ثانية بعد شوية.",
     signOut: "تسجيل الخروج",
+    codeHint: "إذا البوت انفتح بدون ما يكول «تم الربط بنجاح»، انسخ هذا الكود وأرسله للبوت:",
+    copy: "نسخ الكود",
+    copied: "تم النسخ ✓",
+    openBot: "افتح البوت",
   },
   en: {
     title: "Join the 6th D'H'S channel to use Tamayzak",
@@ -39,6 +43,10 @@ const T = {
     notLinked: "Connect your Telegram account first (step 2) so we can verify your membership.",
     unavailable: "Couldn't verify right now. Please try again shortly.",
     signOut: "Sign out",
+    codeHint: "If the bot opened without saying “linked successfully”, copy this code and send it to the bot:",
+    copy: "Copy code",
+    copied: "Copied ✓",
+    openBot: "Open the bot",
   },
 } as const;
 
@@ -54,10 +62,15 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [botLink, setBotLink] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const prepareLink = useCallback(async () => {
     const res = await invokeTelegramStart({ source: "dhs-gate" });
-    setBotLink(res.error ? null : tamayzakBotLink(res.data));
+    const link = res.error ? null : tamayzakBotLink(res.data);
+    setBotLink(link);
+    const tok = link?.split("start=")[1] ?? null;
+    setCode(tok && /^[a-f0-9]{48}$/i.test(tok) ? tok : null);
   }, []);
 
   const verify = useCallback(async (silent = false) => {
@@ -94,6 +107,12 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
   }, [onVerified, prepareLink, t]);
 
   useEffect(() => { void verify(true); }, [verify]);
+  // While waiting for the bot link, re-check quietly so the gate opens by itself.
+  useEffect(() => {
+    if (linked !== false) return;
+    const id = window.setInterval(() => { if (document.visibilityState === "visible") void verify(true); }, 6000);
+    return () => window.clearInterval(id);
+  }, [linked, verify]);
   useEffect(() => {
     const onFocus = () => { if (document.visibilityState === "visible") void verify(true); };
     document.addEventListener("visibilitychange", onFocus);
@@ -133,6 +152,18 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 font-bold text-primary hover:bg-primary/15">
               <Link2 className="size-4" />{t.link}
             </a>
+          )}
+          {linked === false && code && (
+            <div className="rounded-xl border border-border bg-muted/50 p-3 text-xs leading-5 text-foreground">
+              <p className="mb-2">{t.codeHint}</p>
+              <p dir="ltr" className="mb-2 select-all break-all rounded-lg bg-background p-2 font-mono text-[11px]">{code}</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ } }}
+                  className="flex-1 rounded-lg bg-primary px-3 py-2 font-bold text-primary-foreground">{copied ? t.copied : t.copy}</button>
+                <a href={TAMAYZAK_BOT_URL} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 rounded-lg border border-primary/30 px-3 py-2 text-center font-bold text-primary">{t.openBot}</a>
+              </div>
+            </div>
           )}
           <button type="button" disabled={checking} onClick={() => void verify(false)}
             className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background font-bold text-foreground hover:border-primary/40 disabled:opacity-60">
