@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
     );
     const vid = url ? extractYouTubeId(url.trim()) : "";
     const cacheKey = runMode === "notes" && vid && !providedTranscript
-      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|seg-v4-argon|${segment}`
+      ? `${vid}|${lang0}|${nadiaEnglishStyle ? "nadia-en-labels" : arabicEnglishCurriculum ? "encur" : "std"}|seg-v5-argon|${segment}`
       : "";
     if (cacheKey) {
       const { data: cached } = await cacheClient
@@ -500,8 +500,8 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
       if (controller.signal.aborted) {
         console.error("Video notes timed out");
         return jsonResponse({ error: lang0 === "ar"
-          ? "المحاضرة طويلة جداً واستغرق تحليلها وقتاً أطول من المسموح. جرّب تقسيمها إلى أجزاء أقصر (مثلاً 30–40 دقيقة)."
-          : "This lecture took too long to analyze. Try splitting it into shorter parts (about 30–40 minutes).", retryable: false }, 504);
+          ? "المحاضرة طويلة جداً واستغرق تحليلها وقتاً أطول من المسموح. جرّب تقسيمها إلى أجزاء أقصر."
+          : "This lecture took too long to analyze. Try splitting it into shorter parts.", retryable: false }, 504);
       }
       if (error instanceof GatewayError) {
         console.error("Video notes generation failed", { code: error.code, status: error.httpStatus, ids: error.ids });
@@ -544,7 +544,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
       }, paymentRequired ? 402 : quota ? 429 : overloaded ? 503 : 500);
     }
 
-    const done = fullTranscript ? segment + 1 >= totalSegments : (videoEnded || segment >= 11);
+    const done = fullTranscript ? segment + 1 >= totalSegments : (videoEnded || segment >= 23);
     if (!notes.trim()) {
       if (!fullTranscript && segment > 0 && videoEnded) return jsonResponse({ notes: "", parts: [], segment, totalSegments, done: true });
       return jsonResponse({ error: "Empty response from model", retryable: true }, 502);
