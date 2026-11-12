@@ -1,0 +1,37 @@
+.flight-cabin {
+  overflow: hidden;
+  border: 3px solid #27304f;
+  border-radius: 1.75rem;
+  background: #f7f6ec;
+  color: #27304f;
+}
+.flight-cabin-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid #27304f1c; }
+.flight-cabin-eyebrow { display: flex; align-items: center; gap: .4rem; color: #506f88; font-size: .6rem; font-weight: 800; letter-spacing: .2em; }
+.flight-cabin-heading h2 { margin-top: .25rem; font-size: clamp(1.15rem, 3vw, 1.6rem); font-weight: 800; line-height: 1.3; }
+.flight-seat-badge { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding: .35rem .75rem; border: 1px solid #27304f25; border-radius: .75rem; background: #ebeff0; font-size: .6rem; font-weight: 700; }
+.flight-seat-badge b { font-size: 1rem; letter-spacing: .08em; }
+.flight-cabin-scene { display: block; width: 100%; height: auto; }
+.flight-cabin-footer { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: -1px; padding: 1rem 1.25rem; background: #273f58; color: #f6f6ec; }
+.flight-cabin-student { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+.flight-cabin-status-icon { display: grid; place-items: center; flex-shrink: 0; width: 2.3rem; height: 2.3rem; border: 1px solid #d8eab433; border-radius: .75rem; background: #d8eab41a; color: #d9eabd; }
+.flight-cabin-student strong, .flight-cabin-student span:not(.flight-cabin-status-icon) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flight-cabin-student strong { font-size: .85rem; }
+.flight-cabin-student div > span { margin-top: .15rem; color: #c7d9d9; font-size: .65rem; }
+.flight-cabin-route { flex-shrink: 0; max-width: 47%; text-align: end; }
+.flight-cabin-route > span { display: block; overflow-wrap: anywhere; font-size: .65rem; color: #c7d9d9; }
+.flight-cabin-route b { font-size: 1.3rem; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.flight-cabin-caption { padding: .7rem 1rem; text-align: center; font-size: .7rem; font-weight: 600; color: #557086; }
+@keyframes flight-clouds { from { transform: translateX(-55px); } to { transform: translateX(210px); } }
+@keyframes flight-turn-page { 0%, 65%, 100% { transform: scaleX(1); opacity: 0; } 75% { transform: scaleX(.2); opacity: .85; } 85% { transform: scaleX(-1); opacity: .8; } 95% { transform: scaleX(-1); opacity: 0; } }
+.flight-window-clouds { animation: flight-clouds 26s linear infinite; }
+.flight-book-page { transform-box: fill-box; transform-origin: left center; animation: flight-turn-page 14s ease-in-out infinite; }
+.flight-cabin-still .flight-window-clouds, .flight-cabin-still .flight-book-page { animation-play-state: paused; }
+@media (max-width: 420px) {
+  .flight-cabin-heading { padding: .9rem 1rem; }
+  .flight-cabin-footer { gap: .5rem; padding: .85rem .75rem; }
+  .flight-cabin-student { gap: .4rem; }
+  .flight-cabin-student strong { max-width: 8rem; font-size: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flight-window-clouds, .flight-book-page { animation: none; }
+}

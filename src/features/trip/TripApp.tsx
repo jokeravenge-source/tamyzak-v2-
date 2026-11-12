@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Plane, Stamp } from "lucide-react";
 import { BoardingPass } from "./BoardingPass";
+import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import { TRIP_INTRO_MS, TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
-import { COUNTRIES, getCountry, searchCountries, type Country } from "./countries";
+import { getCountry, type Country } from "./countries";
+import { DESTINATIONS, destinationCity, getDestination, searchDestinations } from "./destinations";
+import { FlightCabin } from "./FlightCabin";
 import { formatDuration, formatKm } from "./geo";
 import { Globe } from "./Globe";
 import { DICTS, type Lang } from "./i18n";
@@ -24,6 +27,9 @@ export interface TripAppProps {
   language?: Lang;
   /** Student name printed on earned visas. */
   studentName?: string;
+  /** The same saved character and accessories used in the student's profile. */
+  studentGender?: Gender | null;
+  studentCharacter?: Partial<CharacterTraits> | null;
 }
 
 function useNow(active: boolean) {
@@ -43,13 +49,14 @@ const btn = "trip-shadow inline-flex min-h-12 items-center justify-center gap-2 
 const btnPrimary = `${btn} bg-trip-sun text-trip-ink hover:brightness-105`;
 const btnSecondary = `${btn} bg-trip-cloud text-trip-ink`;
 
-export function TripApp({ studentId = "local-student", repository, onBackToStudying, onExit, language, studentName }: TripAppProps) {
+export function TripApp({ studentId = "local-student", repository, onBackToStudying, onExit, language, studentName, studentGender, studentCharacter }: TripAppProps) {
   const [lang, setLang] = useState<Lang>(language ?? "en");
   const t = DICTS[lang];
   const repoRef = useRef<JourneyRepository | null>(repository ?? null);
   const [journeys, setJourneys] = useState<Journey[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [phase, setPhase] = useState<Phase>("home");
+  const [flightView, setFlightView] = useState<"cabin" | "map">("cabin");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
@@ -112,9 +119,9 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     try { localStorage.setItem("tamayzak.trip.lang", lang); } catch { /* ignore */ }
   }, [lang]);
 
-  const results = useMemo(() => searchCountries(query), [query]);
+  const results = useMemo(() => searchDestinations(query), [query]);
   const plan = selected ? planTrip(selected) : null;
-  const selCountry = selected ? getCountry(selected) : undefined;
+  const selDestination = selected ? getDestination(selected) : undefined;
   const cname = (c: Country) => (lang === "ar" ? c.nameAr : c.name);
 
   async function getTicket() {
@@ -123,9 +130,10 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     setCreating(true);
     setCreateError(false);
     try {
-      const { journey } = await repo().create(studentId, plan.country.alpha2);
+      const { journey } = await repo().create(studentId, plan.destination.id);
       await reload();
       setViewingId(journey.id);
+      setFlightView("cabin");
       setPhase("launching");
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       setTimeout(() => setPhase("ticket"), reduce ? 600 : TRIP_INTRO_MS);
@@ -137,7 +145,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     }
   }
 
-  const openJourney = (j: Journey) => { setViewingId(j.id); setPhase("ticket"); };
+  const openJourney = (j: Journey) => { setViewingId(j.id); setFlightView("cabin"); setPhase("ticket"); };
   const goHome = () => { setPhase("home"); setSelected(null); setQuery(""); };
 
   const header = (
@@ -182,11 +190,23 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     const s = journeyState(viewing, now);
     body = (
       <div className="flex flex-col gap-4">
-        <div className="mx-auto aspect-square w-full max-w-[18rem]">
-          <Globe mode={s.arrived ? "landed" : "flight"} progress={s.progress}
-            destination={{ lat: viewing.destLat, lng: viewing.destLng }}
-            label={`${TRIP_ORIGIN.city} → ${viewing.destCity}`} />
+        <div role="group" aria-label={t.flightView} className="mx-auto flex rounded-2xl border-2 border-trip-ink/25 bg-trip-cream p-1">
+          {(["cabin", "map"] as const).map((view) => (
+            <button key={view} type="button" aria-pressed={flightView === view} onClick={() => setFlightView(view)}
+              className={`min-h-11 rounded-xl px-5 text-sm font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring ${flightView === view ? "bg-trip-ink text-white" : "text-trip-ink"}`}>
+              {view === "cabin" ? t.cabin : t.flightMap}
+            </button>
+          ))}
         </div>
+        {flightView === "cabin" ? (
+          <FlightCabin journey={viewing} now={now} lang={lang} studentName={visaStudentName} gender={studentGender} character={studentCharacter} />
+        ) : (
+          <div className="mx-auto aspect-square w-full max-w-[22rem]">
+            <Globe mode={s.arrived ? "landed" : "flight"} progress={s.progress}
+              destination={{ lat: viewing.destLat, lng: viewing.destLng }}
+              label={`${TRIP_ORIGIN.city} → ${viewing.destCity}`} />
+          </div>
+        )}
         <BoardingPass journey={viewing} now={now} t={t} lang={lang} />
         {!s.arrived && (
           s.paused ? (
@@ -217,7 +237,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         </div>
         <h2 className="trip-rise font-display text-4xl font-bold">{t.arrivedTitle}</h2>
         <p className="mt-2 font-display text-2xl font-bold">{t.welcome} {c ? `${c.flag} ${cname(c)}` : viewing.destCountryName}!</p>
-        <p className="font-bold">{viewing.destCity}</p>
+        <p className="font-bold">{lang === "ar" ? viewing.destCityAr ?? viewing.destCity : viewing.destCity}</p>
         <p className="mt-2">{t.arrivedMsg}</p>
         <div className="mt-6 w-full max-w-xl">
           <StudyVisa journey={viewing} studentName={visaStudentName} lang={lang} t={t} />
@@ -253,23 +273,23 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         )}
       </section>
     );
-  } else if (phase === "preview" && selCountry) {
+  } else if (phase === "preview" && selDestination) {
     body = (
       <div className="flex flex-col gap-4">
         <div className="mx-auto aspect-square w-full max-w-[17rem]">
-          <Globe mode="flight" progress={0} destination={selCountry} label={`${TRIP_ORIGIN.city} → ${selCountry.capital}`} />
+          <Globe mode="flight" progress={0} destination={selDestination} label={`${TRIP_ORIGIN.city} → ${selDestination.city}`} />
         </div>
         <section className="trip-shadow trip-rise rounded-3xl border-[3px] bg-trip-cream p-5">
           <div className="flex items-center gap-3">
-            <span className="text-5xl" aria-hidden>{selCountry.flag}</span>
+            <span className="text-5xl" aria-hidden>{selDestination.country.flag}</span>
             <div>
-              <h2 className="font-display text-2xl font-bold leading-tight">{cname(selCountry)}</h2>
-              <p className="font-bold text-muted-foreground">{selCountry.capital}</p>
+              <h2 className="font-display text-2xl font-bold leading-tight">{destinationCity(selDestination, lang)}</h2>
+              <p className="font-bold text-muted-foreground">{cname(selDestination.country)} {selDestination.airportCode && <span dir="ltr">({selDestination.airportCode})</span>}</p>
             </div>
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-3">
             <div><dt className="text-xs font-extrabold text-muted-foreground">{t.from}</dt><dd className="font-bold">{lang === "ar" ? `${TRIP_ORIGIN.cityAr}، ${TRIP_ORIGIN.countryAr}` : "Baghdad, Iraq"} (BGW)</dd></div>
-            <div><dt className="text-xs font-extrabold text-muted-foreground">{t.to}</dt><dd className="font-bold">{selCountry.capital}, {cname(selCountry)}</dd></div>
+            <div><dt className="text-xs font-extrabold text-muted-foreground">{t.to}</dt><dd className="font-bold">{destinationCity(selDestination, lang)}, {cname(selDestination.country)}</dd></div>
             {plan?.ok && <>
               <div><dt className="text-xs font-extrabold text-muted-foreground">{t.distance}</dt><dd className="font-display text-xl font-bold">{formatKm(plan.distanceKm)} km</dd></div>
               <div><dt className="text-xs font-extrabold text-muted-foreground">{t.speed}</dt><dd className="font-display text-xl font-bold">{formatKm(TRIP_VIRTUAL_SPEED_KMH)} km/h</dd></div>
@@ -296,7 +316,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         <label className="sr-only" htmlFor="trip-search">{t.searchLabel}</label>
         <input id="trip-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.search} autoComplete="off"
           className="trip-shadow-sm min-h-12 rounded-2xl border-[3px] bg-trip-cloud px-4 text-lg font-semibold placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring" />
-        <p className="text-sm font-bold" aria-live="polite">{results.length} / {COUNTRIES.length}</p>
+        <p className="text-sm font-bold" aria-live="polite">{results.length} / {DESTINATIONS.length}</p>
         {results.length === 0 ? (
           <div className="rounded-2xl border-[3px] border-dashed bg-trip-cream p-6 text-center">
             <p className="font-display text-xl font-bold">🧭 {t.noResults} “{query}”</p>
@@ -304,13 +324,13 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           </div>
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={t.destinations}>
-            {results.map((c) => (
-              <li key={c.alpha2}>
-                <button onClick={() => { setSelected(c.alpha2); setPhase("preview"); }}
+            {results.map((destination) => (
+              <li key={destination.id}>
+                <button onClick={() => { setSelected(destination.id); setPhase("preview"); }}
                   className="trip-shadow-sm flex h-full w-full flex-col items-start gap-1 rounded-2xl border-[3px] bg-trip-cream p-3 text-start transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring">
-                  <span className="text-3xl" aria-hidden>{c.flag}</span>
-                  <span className="font-display text-base font-bold leading-tight">{cname(c)}</span>
-                  <span className="text-xs font-semibold text-muted-foreground">{c.capital}</span>
+                  <span className="text-3xl" aria-hidden>{destination.country.flag}</span>
+                  <span className="font-display text-base font-bold leading-tight">{destinationCity(destination, lang)}</span>
+                  <span className="text-xs font-semibold text-muted-foreground">{cname(destination.country)} {destination.airportCode && <span dir="ltr">· {destination.airportCode}</span>}</span>
                 </button>
               </li>
             ))}
@@ -360,7 +380,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
                       className="trip-shadow-sm flex w-full items-center gap-3 rounded-2xl border-[3px] bg-trip-cream p-3 text-start focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring">
                       <span className="text-3xl" aria-hidden>{c?.flag}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block font-display font-bold">{j.destCity}, {c ? cname(c) : j.destCountryName}</span>
+                        <span className="block font-display font-bold">{lang === "ar" ? j.destCityAr ?? j.destCity : j.destCity}, {c ? cname(c) : j.destCountryName}</span>
                         <span className="block text-xs font-semibold text-muted-foreground">
                           {formatKm(j.distanceKm)} km · {formatDuration(j.durationSec, lang)} · {t.started} {new Date(j.startedAt).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB")}
                         </span>

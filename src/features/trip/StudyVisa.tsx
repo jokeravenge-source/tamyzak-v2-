@@ -29,7 +29,8 @@ export function StudyVisa({
   const countryName = country
     ? lang === "ar" ? country.nameAr : country.name
     : journey.destCountryName;
-  const destinationCode = country?.alpha3 ?? journey.destCountryCode;
+  const destinationCode = journey.destAirportCode ?? country?.alpha3 ?? journey.destCountryCode;
+  const city = lang === "ar" ? journey.destCityAr ?? journey.destCity : journey.destCity;
   const issueDate = new Date(journey.arrivalAt).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB", {
     day: "2-digit",
     month: "short",
@@ -77,7 +78,7 @@ export function StudyVisa({
 
         <dl className="grid grid-cols-2 gap-x-5 gap-y-4">
           <VisaField label={t.visaFrom} value={lang === "ar" ? TRIP_ORIGIN.cityAr : TRIP_ORIGIN.city} />
-          <VisaField label={t.visaDestination} value={`${journey.destCity}, ${countryName}`} />
+          <VisaField label={t.visaDestination} value={`${city}, ${countryName}`} />
           <VisaField label={t.visaIssued} value={issueDate} />
           <VisaField label={t.visaNumber} value={visaNumber} />
           <VisaField label={t.distance} value={`${formatKm(journey.distanceKm)} km`} />
@@ -87,7 +88,7 @@ export function StudyVisa({
         <div className="mt-6 flex items-end justify-between gap-4 border-t-2 border-dashed border-trip-ink/25 pt-4">
           <div className="flex items-center gap-2 text-xs font-bold text-trip-ink/65">
             <MapPin className="h-4 w-4" aria-hidden />
-            <span>{journey.destCity}</span>
+            <span>{city}</span>
             <CalendarDays className="ms-1 h-4 w-4" aria-hidden />
             <span>{issueDate}</span>
           </div>
