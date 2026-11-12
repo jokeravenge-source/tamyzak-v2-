@@ -27,6 +27,9 @@ const T = {
     copy: "نسخ الكود",
     copied: "تم النسخ ✓",
     openBot: "افتح البوت",
+    linkedAs: "البوت مربوط بحساب تلغرام:",
+    wrongAccount: "إذا هذا مو الحساب اللي اشتركت بيه بالقناة، اشترك بالقناة من هذا الحساب أو اربط حسابك الصحيح:",
+    relink: "اربط حساب تلغرام آخر",
   },
   en: {
     title: "Join the 6th D'H'S channel to use Tamayzak",
@@ -47,11 +50,14 @@ const T = {
     copy: "Copy code",
     copied: "Copied ✓",
     openBot: "Open the bot",
+    linkedAs: "The bot is linked to Telegram account:",
+    wrongAccount: "If this isn't the account you joined the channel with, join from this account or link the right one:",
+    relink: "Link a different Telegram account",
   },
 } as const;
 
 type Props = { language: AppLanguage; onVerified: () => void };
-type CheckResponse = { ok?: boolean; joined?: boolean; error?: string };
+type CheckResponse = { ok?: boolean; joined?: boolean; error?: string; telegramAccount?: { username?: string | null; name?: string | null } };
 // Server/bot configuration problems must not lock every student out.
 const INFRA_ERRORS = new Set(["bot_not_channel_admin", "wrong_bot_connection", "telegram_not_configured", "telegram_gateway_unavailable"]);
 
@@ -64,6 +70,7 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [account, setAccount] = useState<string | null>(null);
 
   const prepareLink = useCallback(async () => {
     const res = await invokeTelegramStart({ source: "dhs-gate" });
@@ -98,6 +105,8 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
         return;
       }
       setLinked(true);
+      const acc = data?.telegramAccount;
+      setAccount(acc ? [acc.name, acc.username ? `@${acc.username}` : null].filter(Boolean).join(" ") || null : null);
       if (!silent) setMessage(data?.ok ? t.notJoined : t.unavailable);
     } catch {
       if (!silent) setMessage(t.unavailable);
@@ -152,6 +161,26 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 font-bold text-primary hover:bg-primary/15">
               <Link2 className="size-4" />{t.link}
             </a>
+          )}
+          {linked === true && account && (
+            <div className="rounded-xl border border-border bg-muted/50 p-3 text-xs leading-5 text-foreground">
+              <p>{t.linkedAs} <b dir="ltr">{account}</b></p>
+              <p className="mt-1 text-muted-foreground">{t.wrongAccount}</p>
+              {(
+                <button type="button" onClick={async () => {
+                    const win = window.open("", "_blank");
+                    const res = await invokeTelegramStart({ source: "dhs-gate", action: "relink" });
+                    const link = res.error ? null : tamayzakBotLink(res.data);
+                    if (link) { if (win) win.location.href = link; else window.location.href = link; } else win?.close();
+                    setLinked(false); setAccount(null); setBotLink(link);
+                    const tok = link?.split("start=")[1] ?? null;
+                    setCode(tok && /^[a-f0-9]{48}$/i.test(tok) ? tok : null);
+                  }}
+                  className="mt-2 flex min-h-10 items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 font-bold text-primary">
+                  <Link2 className="size-4" />{t.relink}
+                </button>
+              )}
+            </div>
           )}
           {linked === false && code && (
             <div className="rounded-xl border border-border bg-muted/50 p-3 text-xs leading-5 text-foreground">

@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: row } = await admin
       .from("telegram_verifications")
-      .select("telegram_user_id, verified")
+      .select("telegram_user_id, telegram_username, verified")
       .eq("user_id", auth.userId)
       .maybeSingle();
 
@@ -69,6 +69,10 @@ Deno.serve(async (req) => {
       scope,
       missingChannels,
       channels,
+      telegramAccount: missingChannels.length ? {
+        username: row.telegram_username ?? null,
+        name: (channels as Array<{ firstName?: string }>)[0]?.firstName ?? null,
+      } : undefined,
     });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : String(err) }, 500);

@@ -26,4 +26,25 @@ if (typeof window !== "undefined" && /SamsungBrowser/i.test(navigator.userAgent)
   if (document.body) show();
   else document.addEventListener("DOMContentLoaded", show);
 }
+
+// iPhone/iPad: Telegram's in-app browser breaks sign-in — hand the page to Safari.
+if (typeof window !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent)
+  && (/Telegram/i.test(navigator.userAgent) || typeof (window as unknown as { TelegramWebviewProxy?: unknown }).TelegramWebviewProxy !== "undefined")) {
+  const target = window.location.href.replace(/^https:\/\//, "x-safari-https://");
+  window.location.href = target;
+  const show = () => {
+    if (document.getElementById("ios-safari-gate")) return;
+    const gate = document.createElement("div");
+    gate.id = "ios-safari-gate";
+    gate.setAttribute("dir", "rtl");
+    gate.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:hsl(var(--background));color:hsl(var(--foreground));font-family:inherit";
+    gate.innerHTML = `
+      <div style="font-size:22px;font-weight:800">افتح تميزك في Safari</div>
+      <div style="font-size:14px;opacity:.75;max-width:340px">متصفح تلغرام لا يدعم كل ميزات المنصة. اضغط الزر، وإذا ما اشتغل اضغط ⋯ ثم «فتح في Safari».</div>
+      <a href="${target}" style="display:inline-block;padding:14px 28px;border-radius:999px;font-weight:800;font-size:16px;text-decoration:none;background:hsl(var(--primary));color:hsl(var(--primary-foreground))">فتح في Safari</a>
+      <div style="font-size:12px;opacity:.6">Open Tamayzak in Safari</div>`;
+    document.body.appendChild(gate);
+  };
+  if (document.body) show(); else document.addEventListener("DOMContentLoaded", show);
+}
 export {};
