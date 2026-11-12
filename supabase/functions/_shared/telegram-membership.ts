@@ -16,6 +16,7 @@ export type TelegramChannelCheck = {
   status?: string;
   error?: string;
   actualBotUsername?: string | null;
+  firstName?: string;
 };
 
 const MEMBER_STATUSES = new Set(["creator", "administrator", "member"]);
@@ -75,10 +76,10 @@ export async function checkTelegramMembership(
         };
       }
 
-      const member = (data as { result?: { status?: string; is_member?: boolean } }).result;
+      const member = (data as { result?: { status?: string; is_member?: boolean; user?: { first_name?: string } } }).result;
       const status = member?.status;
       const joined = !!status && (MEMBER_STATUSES.has(status) || (status === "restricted" && member?.is_member === true));
-      return { channel, ok: true, joined, status };
+      return { channel, ok: true, joined, status, firstName: member?.user?.first_name };
     }),
   );
 }
