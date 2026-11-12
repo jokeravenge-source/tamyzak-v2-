@@ -493,7 +493,10 @@ const StudentApp = () => {
   const CHANNEL_VERIFIED_STORAGE_KEY = "tg_channel_verified_v1";
   // Mandatory @a6th_DHS membership; remembered for 3 days in localStorage so installed apps (where sessionStorage resets every launch) are not re-blocked by transient check failures.
   const CHANNEL_VERIFIED_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+  // Force-join is switched off for now: set CHANNEL_GATE_ENABLED to true to bring it back.
+  const CHANNEL_GATE_ENABLED = false;
   const [channelVerified, _setChannelVerified] = useState<boolean>(() => {
+    if (!CHANNEL_GATE_ENABLED) return true;
     if (typeof window === "undefined") return false;
     try {
       const ts = Number(localStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) || 0);
