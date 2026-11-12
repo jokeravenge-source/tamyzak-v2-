@@ -204,6 +204,13 @@
       "when": 1794335239144,
       "tag": "0028_additional_study_room_delegates",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794528000000,
+      "tag": "0029_study_flight_rooms",
+      "breakpoints": true
     }
   ]
 }

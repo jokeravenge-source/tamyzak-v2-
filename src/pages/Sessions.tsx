@@ -33,6 +33,7 @@ import { TripApp } from "@/features/trip/TripApp";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import StudyChallengeHub from "@/components/StudyChallengeHub";
 import { createCloudRepository } from "@/features/trip/cloudRepository";
+import { FlightInvitations } from "@/features/trip/FlightFriends";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 import {
   matchingPomodoroPreset,
@@ -538,6 +539,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [board, setBoard] = useState<{ name: string; points: number }[]>([]);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const flightRepository = useMemo(() => userId ? createCloudRepository() : undefined, [userId]);
   const [displayName, setDisplayName] = useState("");
   const [flightCharacter, setFlightCharacter] = useState<Partial<CharacterTraits> | null>(null);
   const [flightGender, setFlightGender] = useState<Gender | null>(null);
@@ -1282,6 +1284,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">{choices.description}</p>
           </header>
 
+          {flightRepository && <div className="mb-6"><FlightInvitations repository={flightRepository} lang={language} onAccepted={() => setEntryMode("flight")} /></div>}
           <section aria-label={choices.title} className="grid gap-4 md:grid-cols-2 md:gap-6">
             <button onClick={() => setEntryMode("challenge")} className="group relative min-h-[16rem] overflow-hidden rounded-[2rem] border border-violet-400/40 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-start text-white shadow-[0_26px_80px_-42px_rgba(124,58,237,0.95)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_30px_85px_-38px_rgba(124,58,237,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:col-span-2 md:p-8">
               <div aria-hidden="true" className="absolute -end-8 -top-16 h-52 w-52 rounded-full border-[34px] border-white/10" />
@@ -1329,7 +1332,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     return (
       <TripApp
         studentId={userId ?? "local-student"}
-        repository={userId ? createCloudRepository() : undefined}
+        key={userId ?? "local-student"}
+        repository={flightRepository}
         studentName={displayName || (language === "ar" ? "طالب تميزك" : "Tamayzak Student")}
         studentGender={flightGender}
         studentCharacter={flightCharacter}
