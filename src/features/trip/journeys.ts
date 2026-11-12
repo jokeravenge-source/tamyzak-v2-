@@ -1,5 +1,5 @@
 import { TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
-import { getCountry } from "./countries";
+import { getDestination } from "./destinations";
 import { geodesicKm, isValidCoord, tripDurationSeconds } from "./geo";
 
 export type JourneyStatus = "in_flight" | "arrived";
@@ -12,6 +12,10 @@ export interface Journey {
   destCountryCode: string;
   destCountryName: string;
   destCity: string;
+  /** Optional on older saved capital-city journeys. */
+  destinationId?: string;
+  destCityAr?: string;
+  destAirportCode?: string;
   destLat: number;
   destLng: number;
   distanceKm: number;
@@ -38,15 +42,15 @@ export function journeyState(j: Journey, now: number) {
   return { remainingSec: remainingMs / 1000, progress, arrived: remainingMs === 0, paused };
 }
 
-export function planTrip(countryCode: string, speedKmh = TRIP_VIRTUAL_SPEED_KMH) {
-  const c = getCountry(countryCode);
+export function planTrip(destinationId: string, speedKmh = TRIP_VIRTUAL_SPEED_KMH) {
+  const c = getDestination(destinationId);
   if (!c) return { ok: false as const, error: "unknown_country" };
   if (!isValidCoord(c)) return { ok: false as const, error: "invalid_coords" };
   const distanceKm = geodesicKm(TRIP_ORIGIN, c);
   const durationSec = tripDurationSeconds(distanceKm, speedKmh);
   if (!Number.isFinite(distanceKm) || !Number.isFinite(durationSec)) return { ok: false as const, error: "invalid" };
-  if (distanceKm < 1) return { ok: false as const, error: "same_place", country: c };
-  return { ok: true as const, country: c, distanceKm, durationSec, speedKmh };
+  if (distanceKm < 1) return { ok: false as const, error: "same_place", country: c.country };
+  return { ok: true as const, country: c.country, destination: c, distanceKm, durationSec, speedKmh };
 }
 
 /**
@@ -57,7 +61,7 @@ export function planTrip(countryCode: string, speedKmh = TRIP_VIRTUAL_SPEED_KMH)
 export interface JourneyRepository {
   list(studentId: string): Promise<Journey[]>;
   /** Must refuse to create a second in-flight journey; returns the active one instead. */
-  create(studentId: string, countryCode: string, now?: number): Promise<{ journey: Journey; created: boolean }>;
+  create(studentId: string, destinationId: string, now?: number): Promise<{ journey: Journey; created: boolean }>;
   markArrivalSeen(studentId: string, id: string, now?: number): Promise<void>;
   /** Stop at a station: freeze the in-flight clock. */
   pause(studentId: string, id: string, now?: number): Promise<void>;
@@ -102,11 +106,11 @@ export function createLocalRepository(storage: Pick<Storage, "getItem" | "setIte
         .filter((j) => j.studentId === studentId)
         .sort((a, b) => b.startedAt - a.startedAt);
     },
-    async create(studentId, countryCode, now = Date.now()) {
+    async create(studentId, destinationId, now = Date.now()) {
       const all = resolve(readAll(), now);
       const active = all.find((j) => j.studentId === studentId && j.status === "in_flight");
       if (active) return { journey: active, created: false };
-      const plan = planTrip(countryCode);
+      const plan = planTrip(destinationId);
       if (!plan.ok) throw new Error(plan.error);
       const durationMs = Math.round(plan.durationSec * 1000);
       const journey: Journey = {
@@ -116,9 +120,12 @@ export function createLocalRepository(storage: Pick<Storage, "getItem" | "setIte
         originLng: TRIP_ORIGIN.lng,
         destCountryCode: plan.country.alpha2,
         destCountryName: plan.country.name,
-        destCity: plan.country.capital,
-        destLat: plan.country.lat,
-        destLng: plan.country.lng,
+        destinationId: plan.destination.id,
+        destCity: plan.destination.city,
+        destCityAr: plan.destination.cityAr,
+        destAirportCode: plan.destination.airportCode,
+        destLat: plan.destination.lat,
+        destLng: plan.destination.lng,
         distanceKm: plan.distanceKm,
         speedKmh: plan.speedKmh,
         durationSec: plan.durationSec,

@@ -30,6 +30,7 @@ import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { TripApp } from "@/features/trip/TripApp";
+import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import StudyChallengeHub from "@/components/StudyChallengeHub";
 import { createCloudRepository } from "@/features/trip/cloudRepository";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
@@ -538,6 +539,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [flightCharacter, setFlightCharacter] = useState<Partial<CharacterTraits> | null>(null);
+  const [flightGender, setFlightGender] = useState<Gender | null>(null);
   const [challengeInviteCount, setChallengeInviteCount] = useState(0);
   const [pomodoro, setPomodoro] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
@@ -905,7 +908,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       const u = data.user;
       if (!u) return;
       setUserId(u.id);
-      const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", u.id).maybeSingle();
+      const { data: prof } = await supabase.from("profiles").select("display_name,gender,character").eq("user_id", u.id).maybeSingle();
+      setFlightCharacter((prof?.character as Partial<CharacterTraits> | null) ?? null);
+      setFlightGender(prof?.gender === "female" ? "female" : "male");
       if (prof?.display_name) setDisplayName(prof.display_name);
       else {
         const fallback = u.email?.split("@")[0] ?? "Student";
@@ -1326,6 +1331,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         studentId={userId ?? "local-student"}
         repository={userId ? createCloudRepository() : undefined}
         studentName={displayName || (language === "ar" ? "طالب تميزك" : "Tamayzak Student")}
+        studentGender={flightGender}
+        studentCharacter={flightCharacter}
         language={language}
         onExit={() => setEntryMode(null)}
         onBackToStudying={() => setEntryMode(null)}

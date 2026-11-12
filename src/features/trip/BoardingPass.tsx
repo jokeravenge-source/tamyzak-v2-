@@ -20,7 +20,8 @@ export function BoardingPass({ journey, now, t, lang }: { journey: Journey; now:
   const pct = Math.round(s.progress * 1000) / 10;
   const fmt = (ms: number) =>
     new Date(ms).toLocaleString(lang === "ar" ? "ar-IQ" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
-  const destCode = country?.alpha3 ?? journey.destCountryCode;
+  const destCode = journey.destAirportCode ?? country?.alpha3 ?? journey.destCountryCode;
+  const city = lang === "ar" ? journey.destCityAr ?? journey.destCity : journey.destCity;
 
   return (
     <article
@@ -48,13 +49,13 @@ export function BoardingPass({ journey, now, t, lang }: { journey: Journey; now:
           </div>
           <div className="text-end">
             <div className="font-display text-4xl font-bold">{destCode}</div>
-            <div className="text-xs font-bold">{flagEmoji(journey.destCountryCode)} {journey.destCity.toUpperCase()}</div>
+            <div className="text-xs font-bold">{flagEmoji(journey.destCountryCode)} {city.toUpperCase()}</div>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
           <Field label={t.from} value={`${lang === "ar" ? TRIP_ORIGIN.cityAr : TRIP_ORIGIN.city}, ${lang === "ar" ? TRIP_ORIGIN.countryAr : TRIP_ORIGIN.country}`} />
-          <Field label={t.to} value={`${journey.destCity}, ${countryName}`} />
+          <Field label={t.to} value={`${city}, ${countryName}`} />
           <Field label={t.distance} value={`${formatKm(journey.distanceKm)} km`} />
           <Field label={t.speed} value={`${formatKm(journey.speedKmh)} km/h`} />
           <Field label={t.departure} value={fmt(journey.startedAt)} />
