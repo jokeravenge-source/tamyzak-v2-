@@ -10,6 +10,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { getCuratedTeacherLectureNote } from "@/data/teacherLectureNotes";
 import { getNadiaArabicLectureNoteSourceKeys } from "@/data/nadiaLectureNoteSources";
 import { getNadiaTopicTitle, type NadiaChapterNumber } from "@/data/nadiaTeacherContent";
+import { getNadiaYouTubeLectures, NADIA_YOUTUBE_VERIFIED_AT } from "@/data/nadiaYouTubeLectures";
 import { hasArabicLectureQuestions } from "../../supabase/functions/_shared/lecture-question-language";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -27,6 +28,8 @@ type LectureVideo = {
   approved: boolean;
   created_at: string;
   note_source_ids?: string[];
+  source_title?: string;
+  remaining_coverage?: string;
 };
 
 type PrettyBlock = {
@@ -217,6 +220,7 @@ export default function TeacherLectureVideos({
   const [playingVideo, setPlayingVideo] = useState<LectureVideo | null>(null);
   const [openingNoteId, setOpeningNoteId] = useState<string | null>(null);
   const noteRequest = useRef(0);
+  const videoRequest = useRef(0);
   const curatedNote = useMemo(
     () => getCuratedTeacherLectureNote(teacherId, topicKey),
     [teacherId, topicKey],
@@ -229,6 +233,7 @@ export default function TeacherLectureVideos({
   );
 
   const load = async () => {
+    const request = ++videoRequest.current;
     setLoading(true);
     const { data, error } = await supabase
       .from("teacher_topic_videos")
@@ -236,9 +241,25 @@ export default function TeacherLectureVideos({
       .eq("teacher_id", teacherId)
       .eq("topic_key", topicKey)
       .order("created_at", { ascending: false });
+    if (request !== videoRequest.current) return;
     if (error) toast.error(error.message);
-    else {
-      const savedVideos = (data ?? []) as unknown as LectureVideo[];
+    {
+      const savedVideos = (error ? [] : data ?? []) as unknown as LectureVideo[];
+      const hasSavedVideo = savedVideos.some((video) => video.approved && /^[\w-]{11}$/.test(video.video_id ?? ""));
+      const sourceVideos: LectureVideo[] = hasSavedVideo ? [] : getNadiaYouTubeLectures(teacherId, topicKey).map((source) => ({
+        id: `curated:youtube:${topicKey}:${source.videoId}`,
+        teacher_id: teacherId,
+        topic_key: topicKey,
+        youtube_url: `https://www.youtube.com/watch?v=${source.videoId}`,
+        video_id: source.videoId,
+        title: source.title,
+        source_title: source.title,
+        remaining_coverage: source.remainingCoverage,
+        transcript: null,
+        notes_parts: [],
+        approved: true,
+        created_at: NADIA_YOUTUBE_VERIFIED_AT,
+      }));
       const curatedVideo: LectureVideo[] = curatedNote ? [{
         id: `curated:${teacherId}:${topicKey}`,
         teacher_id: teacherId,
@@ -296,16 +317,23 @@ export default function TeacherLectureVideos({
       }
 
       const rows = curatedNote && savedVideos.length ? savedVideos.map((row) => ({ ...row, notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }] })) : [...curatedVideo, ...savedVideos, ...arabicFallbackVideo];
-      setVideos(englishTopicTitle ? rows.map((row) => ({ ...row, title: englishTopicTitle, notes_parts: row.notes_parts.map((part, index) => ({ ...part, title: row.notes_parts.length === 1 ? englishTopicTitle : `${englishTopicTitle} — Section ${index + 1}` })) })) : rows);
+      if (request !== videoRequest.current) return;
+      const withSources = [...sourceVideos, ...rows];
+      setVideos(englishTopicTitle ? withSources.map((row) => ({ ...row, title: englishTopicTitle, notes_parts: row.notes_parts.map((part, index) => ({ ...part, title: row.notes_parts.length === 1 ? englishTopicTitle : `${englishTopicTitle} — Section ${index + 1}` })) })) : withSources);
     }
     setLoading(false);
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [teacherId, topicKey, curatedNote, arabicFallbackTopicKeys]);
+  useEffect(() => {
+    void load();
+    return () => { videoRequest.current++; };
+    /* eslint-disable-next-line */
+  }, [teacherId, topicKey, curatedNote, arabicFallbackTopicKeys]);
 
   useEffect(() => {
     noteRequest.current++;
     setOpeningNoteId(null);
     setOpenVideo(null);
+    setPlayingVideo(null);
     return () => { noteRequest.current++; };
   }, [teacherId, topicKey, contentLanguage]);
 
@@ -368,7 +396,10 @@ export default function TeacherLectureVideos({
         <AdminAddVideo
           teacherId={teacherId} topicKey={topicKey} language={language} contentLanguage={contentLanguage} T={T}
           onCancel={() => setShowAdd(false)}
-          onSaved={(row) => { setVideos((v) => [row, ...v]); setShowAdd(false); }}
+          onSaved={(row) => {
+            setVideos((videos) => [row, ...videos.filter((video) => !row.approved || !row.video_id || !video.id.startsWith("curated:youtube:"))]);
+            setShowAdd(false);
+          }}
         />
       )}
 
@@ -443,6 +474,12 @@ export default function TeacherLectureVideos({
               </div>
               <div className="p-3">
                 <p className="font-semibold text-sm truncate">{v.title || v.youtube_url}</p>
+                {v.source_title && v.source_title !== v.title && (
+                  <p className="mt-1 text-xs text-muted-foreground" dir="auto">{v.source_title}</p>
+                )}
+                {v.remaining_coverage && (
+                  <p className="mt-2 text-xs leading-relaxed text-amber-700 dark:text-amber-300" dir="ltr">{v.remaining_coverage}</p>
+                )}
                 <div className="mt-2 flex items-center gap-2">
                   {v.notes_parts?.some((part) => part.notes?.trim()) && (
                     <button
