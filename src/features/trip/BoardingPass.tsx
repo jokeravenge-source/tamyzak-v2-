@@ -3,6 +3,7 @@ import { getCountry, flagEmoji } from "./countries";
 import { formatClock, formatDuration, formatKm } from "./geo";
 import type { Dict, Lang } from "./i18n";
 import { journeyState, type Journey } from "./journeys";
+import { FLIGHT_COPY } from "./flightCopy";
 
 function Field({ label, value, big }: { label: string; value: string; big?: boolean }) {
   return (
@@ -85,7 +86,7 @@ export function BoardingPass({ journey, now, t, lang }: { journey: Journey; now:
         <div>
           <div className="text-[11px] font-extrabold tracking-wider text-muted-foreground">{t.status}</div>
           <div className={`mt-1 inline-block rounded-full border-2 px-3 py-0.5 font-display font-bold ${s.arrived ? "bg-trip-land" : "bg-trip-sky-deep text-primary-foreground"}`}>
-            {s.arrived ? t.arrived : s.paused ? t.onBreak : t.inFlight}
+            {s.arrived ? t.arrived : s.paused ? t.onBreak : s.stage ? FLIGHT_COPY[lang][s.stage.kind] : t.inFlight}
           </div>
         </div>
         <p className="rounded-xl border-2 border-dashed bg-trip-cream p-2 text-center text-sm font-bold">{t.reminder}</p>

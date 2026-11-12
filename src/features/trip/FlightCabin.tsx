@@ -4,7 +4,7 @@ import { CharacterAvatar, type CharacterTraits, type Gender } from "@/components
 import { TRIP_ORIGIN } from "./config";
 import { formatClock } from "./geo";
 import { DICTS, type Lang } from "./i18n";
-import { journeyState, type Journey } from "./journeys";
+import { journeyState, type FlightPassenger, type Journey } from "./journeys";
 import "./flight-cabin.css";
 
 function CabinReader({ id, x, y, gender, traits, primary = false }: {
@@ -58,19 +58,25 @@ function CabinReader({ id, x, y, gender, traits, primary = false }: {
   );
 }
 
-export function FlightCabin({ journey, now, studentName, gender = "male", character, lang }: {
+export function FlightCabin({ journey, now, studentName, gender = "male", character, lang, friends = [], studentSeat = 0 }: {
   journey: Journey;
   now: number;
   studentName: string;
   gender?: Gender | null;
   character?: Partial<CharacterTraits> | null;
   lang: Lang;
+  friends?: FlightPassenger[];
+  studentSeat?: number;
 }) {
   const id = `cabin-${useId().replace(/:/g, "")}`;
   const t = DICTS[lang];
   const state = journeyState(journey, now);
   const city = lang === "ar" ? journey.destCityAr ?? journey.destCity : journey.destCity;
   const sceneDescription = `${studentName} — ${t.cabinDescription}`;
+  const travelers = [{ userId: "self", displayName: studentName, gender, character, seatNumber: studentSeat },
+    ...friends.filter((person) => person.status === "accepted").slice(0, 10)];
+  const sceneHeight = 510 + (Math.ceil(travelers.length / 3) - 1) * 280;
+  const seatLabel = (seat: number) => `${12 + Math.floor(seat / 3)}${["A", "B", "C"][seat % 3]}`;
   return (
     <section className={`flight-cabin trip-shadow ${state.paused || state.arrived ? "flight-cabin-still" : ""}`} aria-label={t.cabin}>
       <div className="flight-cabin-heading">
@@ -78,11 +84,11 @@ export function FlightCabin({ journey, now, studentName, gender = "male", charac
           <p className="flight-cabin-eyebrow"><Plane size={13} aria-hidden /> TAMAYZAK AIR</p>
           <h2>{t.cabinTitle}</h2>
         </div>
-        <span className="flight-seat-badge"><span>{t.yourSeat}</span><b dir="ltr">12B</b></span>
+        <span className="flight-seat-badge"><span>{t.yourSeat}</span><b dir="ltr">{seatLabel(studentSeat)}</b></span>
       </div>
-      <svg className="flight-cabin-scene" viewBox="0 0 960 510" role="img" aria-labelledby={`${id}-title ${id}-desc`}>
+      <svg className="flight-cabin-scene" viewBox={`0 0 960 ${sceneHeight}`} role="img" aria-labelledby={`${id}-title ${id}-desc`}>
         <title id={`${id}-title`}>{t.cabinTitle}</title>
-        <desc id={`${id}-desc`}>{sceneDescription}</desc>
+        <desc id={`${id}-desc`}>{sceneDescription} {travelers.map((person) => person.displayName).join(", ")}</desc>
         <defs>
           <linearGradient id={`${id}-wall`} x2="0" y2="1"><stop stopColor="#f7f4e9" /><stop offset="1" stopColor="#dce8eb" /></linearGradient>
           <linearGradient id={`${id}-sky`} x2="0" y2="1"><stop stopColor="#82c5e4" /><stop offset="1" stopColor="#e0f2f3" /></linearGradient>
@@ -90,7 +96,7 @@ export function FlightCabin({ journey, now, studentName, gender = "male", charac
           <linearGradient id={`${id}-light`}><stop stopColor="#fff3c8" stopOpacity="0" /><stop offset=".5" stopColor="#fff3c8" /><stop offset="1" stopColor="#fff3c8" stopOpacity="0" /></linearGradient>
         </defs>
         <g aria-hidden="true">
-          <path d="M0 0H960V510H0Z" fill={`url(#${id}-wall)`} />
+          <path d={`M0 0H960V${sceneHeight}H0Z`} fill={`url(#${id}-wall)`} />
           <path d="M-20 71Q480-83 980 71V96Q480-42-20 96Z" fill="#e2e6e0" stroke="#bdccd0" strokeWidth="3" />
           {[32, 330, 628].map((x) => <path key={x} d={`M${x} 28Q${x + 140} 0 ${x + 285} 28L${x + 277} 80Q${x + 144} 59 ${x + 7} 80Z`} fill="#f9f6ec" stroke="#c7d2d2" strokeWidth="3" />)}
           <path d="M8 106Q480 58 952 106" fill="none" stroke={`url(#${id}-light)`} strokeWidth="8" />
@@ -108,15 +114,19 @@ export function FlightCabin({ journey, now, studentName, gender = "male", charac
               </g>
             </g>
           ))}
-          <path d="M0 321Q480 357 960 321V510H0Z" fill="#bfced2" />
-          <path d="M0 406Q480 364 960 406V510H0Z" fill={`url(#${id}-floor)`} />
-          <path d="M318 404L271 510M644 404L692 510" stroke="#bfd5da" strokeWidth="3" opacity=".5" />
+          <path d={`M0 321Q480 357 960 321V${sceneHeight}H0Z`} fill="#bfced2" />
+          <path d={`M0 406Q480 364 960 406V${sceneHeight}H0Z`} fill={`url(#${id}-floor)`} />
+          <path d={`M318 404L271 ${sceneHeight}M644 404L692 ${sceneHeight}`} stroke="#bfd5da" strokeWidth="3" opacity=".5" />
           <path d="M0 323Q480 359 960 323" fill="none" stroke="#a6b9bf" strokeWidth="5" />
-          <CabinReader id={`${id}-left`} x={100} y={238} gender="female" traits={{ variant: 2, skin: "#ffe6d5" }} />
-          <CabinReader id={`${id}-student`} x={385} y={222} gender={gender ?? "male"} traits={character} primary />
-          <CabinReader id={`${id}-right`} x={670} y={238} gender="male" traits={{ variant: 4, skin: "#f1cfc5" }} />
-          <rect x="411" y="193" width="138" height="27" rx="13.5" fill="#fff8df" stroke="#c8aa60" strokeWidth="1.5" />
-          <text x="480" y="211" textAnchor="middle" fill="#405064" fontSize="12" fontWeight="800">12B · {t.you}</text>
+          {travelers.map((person, index) => {
+            const x = travelers.length === 1 ? 385 : travelers.length === 2 ? [242, 528][index] : index < 3 ? [385, 100, 670][index] : [100, 385, 670][index % 3];
+            const y = 222 + Math.floor(index / 3) * 280;
+            return <g key={person.userId} data-seat={person.seatNumber}>
+              <CabinReader id={`${id}-reader-${index}`} x={x} y={y} gender={person.gender ?? "male"} traits={person.character} primary={index === 0} />
+              <rect x={x + 6} y={y - 30} width="178" height="27" rx="13.5" fill={index === 0 ? "#fff8df" : "#f6fbfc"} stroke="#c8aa60" strokeWidth="1.5" />
+              <text x={x + 95} y={y - 12} textAnchor="middle" fill="#405064" fontSize="12" fontWeight="800">{seatLabel(person.seatNumber)} · {index === 0 ? t.you : person.displayName.slice(0, 18)}</text>
+            </g>;
+          })}
         </g>
       </svg>
       <div className="flight-cabin-footer">

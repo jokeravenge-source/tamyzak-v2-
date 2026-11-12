@@ -1,6 +1,12 @@
 import { TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
 import { getDestination } from "./destinations";
 import { geodesicKm, isValidCoord, tripDurationSeconds } from "./geo";
+import { currentFlightStage, flightItinerary, journeyDestinationKey, type FlightStage } from "./itinerary";
+import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
+
+export type FlightPassenger = { userId: string; displayName: string; gender: Gender | null; character: Partial<CharacterTraits> | null; status: "pending" | "accepted" | "declined"; seatNumber: number };
+export type FlightInvitation = { flightId: string; hostName: string; city: string; cityAr?: string; arrivalAt: number };
+export type FlightStudent = { userId: string; displayName: string; gender?: Gender | null; character?: Partial<CharacterTraits> | null };
 
 export type JourneyStatus = "in_flight" | "arrived";
 
@@ -29,17 +35,34 @@ export interface Journey {
   pausedAt?: number | null;
   /** Total time already spent at stations (ms). arrivalAt includes it. */
   pausedMs?: number;
+  itinerary?: FlightStage[];
+  stopover?: { city: string; cityAr?: string; airportCode?: string; lat: number; lng: number };
+  hostId?: string;
+  passengers?: FlightPassenger[];
+  visaSoldAt?: number | null;
+  canSell?: boolean;
+  legacy?: boolean;
+  clockOffsetMs?: number;
 }
 
 /** Timestamp-derived state. Timestamps are the single source of truth. */
 export function journeyState(j: Journey, now: number) {
+  now += j.clockOffsetMs ?? 0;
   const paused = j.pausedAt != null;
   const eff = paused ? j.pausedAt! : now;
   const pausedMs = j.pausedMs ?? 0;
   const total = Math.max(0, j.arrivalAt - j.startedAt - pausedMs);
   const remainingMs = Math.max(0, j.arrivalAt - eff);
   const progress = total === 0 ? 1 : Math.min(1, Math.max(0, (eff - j.startedAt - pausedMs) / total));
-  return { remainingSec: remainingMs / 1000, progress, arrived: remainingMs === 0, paused };
+  const elapsedSec = Math.max(0, (eff - j.startedAt - pausedMs) / 1000);
+  let begins = 0, flownSec = 0, cruiseSec = 0;
+  for (const stage of j.itinerary ?? []) {
+    if (stage.kind === "cruise") { cruiseSec += stage.durationSec; flownSec += Math.min(stage.durationSec, Math.max(0, elapsedSec - begins)); }
+    begins += stage.durationSec;
+  }
+  return { remainingSec: remainingMs / 1000, progress, arrived: remainingMs === 0, paused, elapsedSec,
+    routeProgress: cruiseSec > 0 ? flownSec / cruiseSec : progress,
+    stage: currentFlightStage(j.itinerary, elapsedSec) };
 }
 
 export function planTrip(destinationId: string, speedKmh = TRIP_VIRTUAL_SPEED_KMH) {
@@ -47,10 +70,12 @@ export function planTrip(destinationId: string, speedKmh = TRIP_VIRTUAL_SPEED_KM
   if (!c) return { ok: false as const, error: "unknown_country" };
   if (!isValidCoord(c)) return { ok: false as const, error: "invalid_coords" };
   const distanceKm = geodesicKm(TRIP_ORIGIN, c);
-  const durationSec = tripDurationSeconds(distanceKm, speedKmh);
+  const schedule = flightItinerary(c);
+  const durationSec = speedKmh === TRIP_VIRTUAL_SPEED_KMH ? schedule.durationSec : tripDurationSeconds(distanceKm, speedKmh);
   if (!Number.isFinite(distanceKm) || !Number.isFinite(durationSec)) return { ok: false as const, error: "invalid" };
   if (distanceKm < 1) return { ok: false as const, error: "same_place", country: c.country };
-  return { ok: true as const, country: c.country, destination: c, distanceKm, durationSec, speedKmh };
+  return { ok: true as const, country: c.country, destination: c, distanceKm: speedKmh === TRIP_VIRTUAL_SPEED_KMH ? schedule.distanceKm : distanceKm, durationSec, speedKmh,
+    itinerary: schedule.itinerary, stopover: schedule.stopover };
 }
 
 /**
@@ -59,6 +84,7 @@ export function planTrip(destinationId: string, speedKmh = TRIP_VIRTUAL_SPEED_KM
  * your backend (scoped to the authenticated student) and pass it to TripApp.
  */
 export interface JourneyRepository {
+  accountBacked?: boolean;
   list(studentId: string): Promise<Journey[]>;
   /** Must refuse to create a second in-flight journey; returns the active one instead. */
   create(studentId: string, destinationId: string, now?: number): Promise<{ journey: Journey; created: boolean }>;
@@ -67,6 +93,11 @@ export interface JourneyRepository {
   pause(studentId: string, id: string, now?: number): Promise<void>;
   /** Leave the station: continue, pushing arrival back by the break length. */
   resume(studentId: string, id: string, now?: number): Promise<void>;
+  searchStudents?(query: string): Promise<FlightStudent[]>;
+  invite?(flightId: string, userId: string): Promise<void>;
+  invitations?(): Promise<FlightInvitation[]>;
+  respondInvitation?(flightId: string, accept: boolean): Promise<void>;
+  sellVisa?(studentId: string, id: string): Promise<{ points: number }>;
 }
 
 const KEY = "tamayzak.trip.journeys.v1";
@@ -112,6 +143,7 @@ export function createLocalRepository(storage: Pick<Storage, "getItem" | "setIte
       if (active) return { journey: active, created: false };
       const plan = planTrip(destinationId);
       if (!plan.ok) throw new Error(plan.error);
+      if (all.some((j) => j.studentId === studentId && journeyDestinationKey(j) === plan.destination.id)) throw new Error("city_already_visited");
       const durationMs = Math.round(plan.durationSec * 1000);
       const journey: Journey = {
         id: uid(),
@@ -135,6 +167,11 @@ export function createLocalRepository(storage: Pick<Storage, "getItem" | "setIte
         arrivalSeenAt: null,
         pausedAt: null,
         pausedMs: 0,
+        itinerary: plan.itinerary,
+        ...(plan.stopover ? { stopover: plan.stopover } : {}),
+        hostId: studentId,
+        passengers: [],
+        canSell: false,
       };
       all.push(journey);
       writeAll(all);

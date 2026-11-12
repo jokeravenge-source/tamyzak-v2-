@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Stamp } from "lucide-react";
+import { ArrowLeft, Globe2, Plane, Stamp } from "lucide-react";
+import { toast } from "sonner";
 import { BoardingPass } from "./BoardingPass";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import { TRIP_INTRO_MS, TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
@@ -11,8 +12,13 @@ import { Globe } from "./Globe";
 import { DICTS, type Lang } from "./i18n";
 import { createLocalRepository, journeyState, planTrip, type Journey, type JourneyRepository } from "./journeys";
 import { StudyVisa } from "./StudyVisa";
+import { FlightFriends, FlightInvitations } from "./FlightFriends";
+import { FlightItinerary, RestLounge } from "./FlightItinerary";
+import { WorldPassport } from "./WorldPassport";
+import { journeyDestinationKey } from "./itinerary";
+import { FLIGHT_COPY, flightError } from "./flightCopy";
 
-type Phase = "home" | "select" | "preview" | "launching" | "ticket" | "arrived" | "visas";
+type Phase = "home" | "select" | "preview" | "launching" | "ticket" | "arrived" | "visas" | "world";
 
 export interface TripAppProps {
   /** The authenticated student's id from the host app. */
@@ -52,24 +58,29 @@ const btnSecondary = `${btn} bg-trip-cloud text-trip-ink`;
 export function TripApp({ studentId = "local-student", repository, onBackToStudying, onExit, language, studentName, studentGender, studentCharacter }: TripAppProps) {
   const [lang, setLang] = useState<Lang>(language ?? "en");
   const t = DICTS[lang];
+  const copy = FLIGHT_COPY[lang];
   const repoRef = useRef<JourneyRepository | null>(repository ?? null);
   const [journeys, setJourneys] = useState<Journey[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("home");
   const [flightView, setFlightView] = useState<"cabin" | "map">("cabin");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const creatingRef = useRef(false);
-  const now = useNow(phase === "ticket" || phase === "home");
+  const reloadSequence = useRef(0);
+  const now = useNow(phase === "ticket" || phase === "home" || phase === "world" || phase === "visas");
 
   const repo = () => (repoRef.current ??= createLocalRepository());
 
   const reload = useCallback(async () => {
+    const request = ++reloadSequence.current;
     const list = await repo().list(studentId);
-    setJourneys(list);
+    if (request === reloadSequence.current) { setJourneys(list); setLoadError(null); }
     return list;
   }, [studentId]);
 
@@ -84,21 +95,33 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     reload()
       .then((list) => {
         const unseen = list.find((j) => j.status === "arrived" && !j.arrivalSeenAt);
-        const active = list.find((j) => j.status === "in_flight");
+        const active = list.find((j) => !j.legacy && j.status === "in_flight");
         if (unseen) { setViewingId(unseen.id); setPhase("arrived"); }
         else if (active) { setViewingId(active.id); setPhase("ticket"); }
       })
-      .catch(() => setLoadError(true));
+      .catch((error) => setLoadError(flightError(error, lang)));
   }, [reload, language]);
+
+  useEffect(() => {
+    if (!repo().accountBacked) return;
+    const refresh = () => {
+      if (document.visibilityState !== "hidden") void reload().then(() => setOperationError(null)).catch((error) => setOperationError(flightError(error, lang)));
+    };
+    const interval = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [reload, lang]);
 
   useEffect(() => {
     if (language) setLang(language);
   }, [language]);
 
   const viewing = journeys?.find((j) => j.id === viewingId) ?? null;
-  const activeJourney = journeys?.find((j) => j.status === "in_flight" && (j.pausedAt != null || now < j.arrivalAt)) ?? null;
+  const activeJourney = journeys?.find((j) => !j.legacy && !journeyState(j, now).arrived) ?? null;
   const completedJourneys = journeys?.filter((j) => journeyState(j, now).arrived) ?? [];
   const visaStudentName = studentName?.trim() || (lang === "ar" ? "طالب تميزك" : "Tamayzak Student");
+  const bookedCities = new Set((journeys ?? []).map(journeyDestinationKey));
 
   // Arrival: the moment timestamps say so, resolve once.
   useEffect(() => {
@@ -109,8 +132,8 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   }, [phase, viewing, now]);
 
   useEffect(() => {
-    if (phase === "arrived" && viewing && !viewing.arrivalSeenAt) {
-      repo().markArrivalSeen(studentId, viewing.id).then(reload);
+    if (phase === "arrived" && viewing && !viewing.arrivalSeenAt && !viewing.legacy) {
+      repo().markArrivalSeen(studentId, viewing.id).then(reload).catch((error) => setOperationError(flightError(error, lang)));
     }
   }, [phase, viewing, reload, studentId]);
 
@@ -128,7 +151,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     if (creatingRef.current || !plan?.ok) return;
     creatingRef.current = true;
     setCreating(true);
-    setCreateError(false);
+    setCreateError(null);
     try {
       const { journey } = await repo().create(studentId, plan.destination.id);
       await reload();
@@ -137,8 +160,8 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
       setPhase("launching");
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       setTimeout(() => setPhase("ticket"), reduce ? 600 : TRIP_INTRO_MS);
-    } catch {
-      setCreateError(true);
+    } catch (error) {
+      setCreateError(flightError(error, lang));
     } finally {
       creatingRef.current = false;
       setCreating(false);
@@ -147,6 +170,28 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
 
   const openJourney = (j: Journey) => { setViewingId(j.id); setFlightView("cabin"); setPhase("ticket"); };
   const goHome = () => { setPhase("home"); setSelected(null); setQuery(""); };
+
+  const flightAction = async (action: "pause" | "resume", journey: Journey) => {
+    if (busyAction) return;
+    setBusyAction(action);
+    try { await repo()[action](studentId, journey.id); await reload(); setOperationError(null); }
+    catch (error) { setOperationError(flightError(error, lang)); }
+    finally { setBusyAction(null); }
+  };
+  const sellVisa = async (journey: Journey) => {
+    const repository = repo();
+    if (!repository.sellVisa || busyAction || !window.confirm(copy.sellConfirm)) return;
+    setBusyAction(`sell:${journey.id}`);
+    try { const result = await repository.sellVisa(studentId, journey.id); await reload(); toast.success(result.points === 100 ? copy.earned : copy.sold); }
+    catch (error) { toast.error(flightError(error, lang)); }
+    finally { setBusyAction(null); }
+  };
+  const visa = (journey: Journey) => <div className="w-full space-y-3" key={journey.id}>
+    {journey.visaSoldAt ? <div className="rounded-2xl border-2 border-trip-ink/20 bg-trip-cream p-4 text-start"><p className="font-black">{lang === "ar" ? journey.destCityAr ?? journey.destCity : journey.destCity}</p><p className="mt-1 text-sm font-bold text-emerald-800">✓ {copy.sold}</p><p className="mt-2 text-xs leading-6">{copy.once}</p></div> : <>
+      <StudyVisa journey={journey} studentName={visaStudentName} lang={lang} t={t} />
+      {repo().sellVisa && journey.canSell ? <button disabled={busyAction !== null} onClick={() => void sellVisa(journey)} className={`${btnPrimary} w-full text-base`}>{busyAction === `sell:${journey.id}` ? copy.selling : copy.sell}</button> : <p className="rounded-xl bg-white/60 p-3 text-xs leading-6">{journey.legacy ? copy.legacy : copy.account}</p>}
+    </>}
+  </div>;
 
   const header = (
     <header className="flex items-center justify-between gap-3">
@@ -177,7 +222,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   if (journeys === null && !loadError) {
     body = <p className="py-20 text-center font-bold" role="status">{t.loading}</p>;
   } else if (loadError) {
-    body = <p className="py-20 text-center font-bold" role="alert">{t.error}</p>;
+    body = <p className="py-20 text-center font-bold" role="alert">{loadError}</p>;
   } else if (phase === "launching" && viewing) {
     body = (
       <div className="flex flex-col items-center py-6" role="status" aria-live="polite">
@@ -188,6 +233,9 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     );
   } else if (phase === "ticket" && viewing) {
     const s = journeyState(viewing, now);
+    const friends = (viewing.passengers ?? []).filter((person) => person.userId !== studentId && person.status === "accepted");
+    const mySeat = viewing.passengers?.find((person) => person.userId === studentId)?.seatNumber ?? 0;
+    const isHost = !viewing.hostId || viewing.hostId === studentId;
     body = (
       <div className="flex flex-col gap-4">
         <div role="group" aria-label={t.flightView} className="mx-auto flex rounded-2xl border-2 border-trip-ink/25 bg-trip-cream p-1">
@@ -198,27 +246,32 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
             </button>
           ))}
         </div>
-        {flightView === "cabin" ? (
-          <FlightCabin journey={viewing} now={now} lang={lang} studentName={visaStudentName} gender={studentGender} character={studentCharacter} />
+        {flightView === "cabin" ? s.paused || s.stage?.kind === "rest" ? (
+          <RestLounge lang={lang} city={s.paused ? lang === "ar" ? "استراحة داخل الطائرة" : "Onboard study lounge" : lang === "ar" ? s.stage?.cityAr ?? s.stage?.city ?? viewing.stopover?.cityAr ?? viewing.destCity : s.stage?.city ?? viewing.stopover?.city ?? viewing.destCity} studentName={visaStudentName} gender={studentGender} character={studentCharacter} friends={friends} />
+        ) : (
+          <FlightCabin journey={viewing} now={now} lang={lang} studentName={visaStudentName} gender={studentGender} character={studentCharacter} friends={friends} studentSeat={mySeat} />
         ) : (
           <div className="mx-auto aspect-square w-full max-w-[22rem]">
-            <Globe mode={s.arrived ? "landed" : "flight"} progress={s.progress}
+            <Globe mode={s.arrived ? "landed" : "flight"} progress={s.routeProgress} via={viewing.stopover}
               destination={{ lat: viewing.destLat, lng: viewing.destLng }}
               label={`${TRIP_ORIGIN.city} → ${viewing.destCity}`} />
           </div>
         )}
         <BoardingPass journey={viewing} now={now} t={t} lang={lang} />
-        {!s.arrived && (
+        <FlightItinerary stages={viewing.itinerary} elapsedSec={s.elapsedSec} lang={lang} />
+        {!s.arrived && !viewing.legacy && <FlightFriends journey={viewing} repository={repo()} studentId={studentId} lang={lang} onChanged={reload} />}
+        {!s.arrived && !viewing.legacy && isHost && (
           s.paused ? (
             <div className="trip-shadow rounded-2xl border-[3px] bg-trip-sun/40 p-4 text-center" role="status">
               <p className="font-display text-xl font-bold">☕ {t.atStation}</p>
               <p className="text-sm font-semibold">{t.atStationMsg}</p>
-              <button className={`${btnPrimary} mt-3 w-full`} onClick={() => repo().resume(studentId, viewing.id).then(reload)}>{t.continueTrip}</button>
+              <button disabled={busyAction !== null} className={`${btnPrimary} mt-3 w-full`} onClick={() => void flightAction("resume", viewing)}>{t.continueTrip}</button>
             </div>
           ) : (
-            <button className={btnSecondary} onClick={() => repo().pause(studentId, viewing.id).then(reload)}>☕ {t.takeBreak}</button>
+            <button disabled={busyAction !== null} className={btnSecondary} onClick={() => void flightAction("pause", viewing)}>☕ {t.takeBreak}</button>
           )
         )}
+        {!isHost && !s.arrived && <p className="text-center text-xs font-semibold">{copy.hostControls}</p>}
         <p className="text-center text-xs font-semibold text-muted-foreground">{t.distanceNote}</p>
       </div>
     );
@@ -240,7 +293,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         <p className="font-bold">{lang === "ar" ? viewing.destCityAr ?? viewing.destCity : viewing.destCity}</p>
         <p className="mt-2">{t.arrivedMsg}</p>
         <div className="mt-6 w-full max-w-xl">
-          <StudyVisa journey={viewing} studentName={visaStudentName} lang={lang} t={t} />
+          {visa(viewing)}
         </div>
         <div className="mt-6 flex w-full max-w-sm flex-col gap-3">
           <button className={btnSecondary} onClick={() => setPhase("visas")}><Stamp className="h-5 w-5" aria-hidden /> {t.visaCollection}</button>
@@ -262,7 +315,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         {completedJourneys.length > 0 ? (
           <div className="grid gap-6">
             {completedJourneys.map((journey) => (
-              <StudyVisa key={journey.id} journey={journey} studentName={visaStudentName} lang={lang} t={t} />
+              visa(journey)
             ))}
           </div>
         ) : (
@@ -273,11 +326,13 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         )}
       </section>
     );
+  } else if (phase === "world") {
+    body = <WorldPassport journeys={journeys ?? []} now={now} lang={lang} onChoose={(id) => { setSelected(id); setCreateError(null); setPhase("preview"); }} />;
   } else if (phase === "preview" && selDestination) {
     body = (
       <div className="flex flex-col gap-4">
         <div className="mx-auto aspect-square w-full max-w-[17rem]">
-          <Globe mode="flight" progress={0} destination={selDestination} label={`${TRIP_ORIGIN.city} → ${selDestination.city}`} />
+          <Globe mode="flight" progress={0} destination={selDestination} via={plan?.ok ? plan.stopover : undefined} label={`${TRIP_ORIGIN.city} → ${selDestination.city}`} />
         </div>
         <section className="trip-shadow trip-rise rounded-3xl border-[3px] bg-trip-cream p-5">
           <div className="flex items-center gap-3">
@@ -299,14 +354,16 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           <p className="mt-3 text-xs font-semibold text-muted-foreground">{t.distanceNote} {t.speedNote}</p>
           <p className="mt-2 font-bold">🎟️ {t.free0}</p>
           {plan && !plan.ok && <p role="alert" className="mt-3 rounded-xl bg-trip-coral/30 p-2 font-bold">{plan.error === "same_place" ? t.sameplace : t.error}</p>}
-          {createError && <p role="alert" className="mt-3 rounded-xl bg-trip-coral/30 p-2 font-bold">{t.error}</p>}
+          {createError && <p role="alert" className="mt-3 rounded-xl bg-trip-coral/30 p-2 font-bold">{createError}</p>}
+          {bookedCities.has(selDestination.id) && <p className="mt-3 rounded-xl bg-trip-sun/40 p-2 text-sm font-bold">{copy.visitedError}</p>}
           {activeJourney && <p className="mt-3 rounded-xl bg-trip-sun/40 p-2 text-sm font-bold">{t.activeTrip} — {activeJourney.destCity}</p>}
-          <button className={`${btnPrimary} mt-4 w-full`} disabled={!plan?.ok || creating} aria-busy={creating}
+          <button className={`${btnPrimary} mt-4 w-full`} disabled={!plan?.ok || creating || (!activeJourney && bookedCities.has(selDestination.id))} aria-busy={creating}
             onClick={activeJourney ? () => openJourney(activeJourney) : getTicket}>
             {activeJourney ? t.resume : creating ? t.creating : t.getTicket}
           </button>
           <button className="mt-3 w-full text-sm font-bold underline" onClick={() => setPhase("select")}>{t.change}</button>
         </section>
+        {plan?.ok && <FlightItinerary stages={plan.itinerary} lang={lang} preview />}
       </div>
     );
   } else if (phase === "select") {
@@ -326,11 +383,12 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={t.destinations}>
             {results.map((destination) => (
               <li key={destination.id}>
-                <button onClick={() => { setSelected(destination.id); setPhase("preview"); }}
-                  className="trip-shadow-sm flex h-full w-full flex-col items-start gap-1 rounded-2xl border-[3px] bg-trip-cream p-3 text-start transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring">
+                <button disabled={bookedCities.has(destination.id)} onClick={() => { setSelected(destination.id); setCreateError(null); setPhase("preview"); }}
+                  className="trip-shadow-sm flex h-full w-full flex-col items-start gap-1 rounded-2xl border-[3px] bg-trip-cream p-3 text-start transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring disabled:opacity-55 disabled:hover:translate-y-0">
                   <span className="text-3xl" aria-hidden>{destination.country.flag}</span>
                   <span className="font-display text-base font-bold leading-tight">{destinationCity(destination, lang)}</span>
                   <span className="text-xs font-semibold text-muted-foreground">{cname(destination.country)} {destination.airportCode && <span dir="ltr">· {destination.airportCode}</span>}</span>
+                  {bookedCities.has(destination.id) && <span className="text-[10px] font-black">{completedJourneys.some((journey) => journeyDestinationKey(journey) === destination.id) ? copy.visited : copy.reserved}</span>}
                 </button>
               </li>
             ))}
@@ -341,6 +399,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   } else {
     body = (
       <div className="flex flex-col gap-6">
+        <FlightInvitations repository={repo()} lang={lang} onAccepted={async (id) => { const list = await reload(); const journey = list.find((row) => row.id === id); if (journey) openJourney(journey); }} />
         <section className="flex flex-col items-center text-center">
           <div className="aspect-square w-full max-w-[20rem]"><Globe mode="idle" label="TRIP globe" /></div>
           <h1 className="font-display text-6xl font-bold tracking-tight">TRIP</h1>
@@ -355,10 +414,12 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           )}
           <button className={`${btnSecondary} mt-3 w-full max-w-xs`} onClick={() => setPhase("visas")}>
             <Stamp className="h-5 w-5" aria-hidden /> {t.visaCollection}
-            {completedJourneys.length > 0 && (
-              <span className="rounded-full bg-trip-sky-deep px-2 py-0.5 text-xs text-white">{completedJourneys.length}</span>
+            {completedJourneys.filter((journey) => !journey.visaSoldAt).length > 0 && (
+              <span className="rounded-full bg-trip-sky-deep px-2 py-0.5 text-xs text-white">{completedJourneys.filter((journey) => !journey.visaSoldAt).length}</span>
             )}
           </button>
+          <button className={`${btnSecondary} mt-3 w-full max-w-xs text-base`} onClick={() => setPhase("world")}><Globe2 className="h-5 w-5" />{copy.world}</button>
+          <p className="mt-4 max-w-md text-xs font-bold leading-6 text-trip-ink/65">{copy.once}</p>
           <div className="mt-4 w-full max-w-xs">
             <label className="sr-only" htmlFor="trip-home-search">{t.searchLabel}</label>
             <input id="trip-home-search" type="search" placeholder={t.search} value={query}
@@ -405,6 +466,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="trip-world min-h-screen bg-trip-sky text-trip-ink">
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-12 pt-4">
         {header}
+        {operationError && <p role="alert" className="rounded-xl bg-trip-coral/25 p-3 text-sm font-bold">{operationError}</p>}
         {body}
       </main>
     </div>

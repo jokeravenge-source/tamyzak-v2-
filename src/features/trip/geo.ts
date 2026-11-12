@@ -91,6 +91,15 @@ export function interpolateGreatCircle(a: LatLng, b: LatLng, t: number): LatLng 
   return toLatLng([k1 * va[0] + k2 * vb[0], k1 * va[1] + k2 * vb[1], k1 * va[2] + k2 * vb[2]]);
 }
 
+/** Follow both legs of the simulated route, rather than cutting past its stop. */
+export function interpolateFlightRoute(a: LatLng, b: LatLng, t: number, via?: LatLng | null): LatLng {
+  if (!via || !isValidCoord(via)) return interpolateGreatCircle(a, b, t);
+  const first = geodesicKm(a, via), second = geodesicKm(via, b);
+  const split = first / (first + second);
+  if (split <= 0 || split >= 1) return interpolateGreatCircle(a, b, t);
+  return t <= split ? interpolateGreatCircle(a, via, t / split) : interpolateGreatCircle(via, b, (t - split) / (1 - split));
+}
+
 /**
  * Orthographic projection centred on `center`. Returns x/y in [-1,1]
  * (multiply by radius) and `visible` = on the front hemisphere.

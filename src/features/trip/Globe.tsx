@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { TRIP_ORIGIN } from "./config";
 import { COUNTRIES } from "./countries";
-import { interpolateGreatCircle, isValidCoord, orthographic, type LatLng } from "./geo";
+import { interpolateFlightRoute, interpolateGreatCircle, isValidCoord, orthographic, type LatLng } from "./geo";
 
 const S = 300, C = 150, R = 118;
 
@@ -37,15 +37,17 @@ function projectPath(points: LatLng[], center: LatLng, lift: (i: number) => numb
 
 export type GlobeMode = "idle" | "orbit" | "flight" | "landed";
 
-export function Globe({ destination, progress = 0, mode = "idle", label }: {
+export function Globe({ destination, progress = 0, mode = "idle", label, via }: {
   destination?: LatLng | null;
   progress?: number;
   mode?: GlobeMode;
   label: string;
+  via?: LatLng | null;
 }) {
   const dest = destination && isValidCoord(destination) ? destination : null;
   const destinationLat = dest?.lat ?? null;
   const destinationLng = dest?.lng ?? null;
+  const viaLat = via?.lat ?? null, viaLng = via?.lng ?? null;
   const center = useMemo<LatLng>(
     () => (destinationLat != null && destinationLng != null
       ? interpolateGreatCircle(TRIP_ORIGIN, { lat: destinationLat, lng: destinationLng }, 0.5)
@@ -77,10 +79,11 @@ export function Globe({ destination, progress = 0, mode = "idle", label }: {
   const route = useMemo(() => {
     if (destinationLat == null || destinationLng == null) return null;
     const routeDestination = { lat: destinationLat, lng: destinationLng };
-    const pts = Array.from({ length: N + 1 }, (_, i) => interpolateGreatCircle(TRIP_ORIGIN, routeDestination, i / N));
+    const stop = viaLat == null || viaLng == null ? undefined : { lat: viaLat, lng: viaLng };
+    const pts = Array.from({ length: N + 1 }, (_, i) => interpolateFlightRoute(TRIP_ORIGIN, routeDestination, i / N, stop));
     const lift = (i: number) => 1 + 0.13 * Math.sin((Math.PI * i) / N);
     return { pts, lift, d: projectPath(pts, center, lift) };
-  }, [destinationLat, destinationLng, center]);
+  }, [destinationLat, destinationLng, center, viaLat, viaLng]);
 
   const at = (p: LatLng, k = 1) => {
     const q = orthographic(p, center);
@@ -93,9 +96,9 @@ export function Globe({ destination, progress = 0, mode = "idle", label }: {
   if (route && (mode === "flight" || mode === "landed")) {
     const f = mode === "landed" ? 1 : Math.min(1, Math.max(0, progress));
     const i = f * N;
-    const p = interpolateGreatCircle(TRIP_ORIGIN, dest!, f);
-    const pn = interpolateGreatCircle(TRIP_ORIGIN, dest!, Math.min(1, f + 0.01));
-    const pp = interpolateGreatCircle(TRIP_ORIGIN, dest!, Math.max(0, f - 0.01));
+    const p = interpolateFlightRoute(TRIP_ORIGIN, dest!, f, via);
+    const pn = interpolateFlightRoute(TRIP_ORIGIN, dest!, Math.min(1, f + 0.01), via);
+    const pp = interpolateFlightRoute(TRIP_ORIGIN, dest!, Math.max(0, f - 0.01), via);
     const a = at(f >= 0.99 ? pp : p, route.lift(i)), b = at(f >= 0.99 ? p : pn, route.lift(i));
     const pos = at(p, route.lift(i));
     plane = { x: pos.x, y: pos.y, angle: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI };

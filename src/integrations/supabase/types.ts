@@ -3793,6 +3793,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      study_flights_action: {
+        Args: { _action: string; _flight_id?: string; _destination_id?: string; _invitee_id?: string; _accept?: boolean }
+        Returns: Json
+      }
       adjust_parent_student_score: {
         Args: { _delta: number; _link_id: string; _student_user_id: string }
         Returns: number
