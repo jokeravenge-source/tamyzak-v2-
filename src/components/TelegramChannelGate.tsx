@@ -107,7 +107,6 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
       setLinked(true);
       const acc = data?.telegramAccount;
       setAccount(acc ? [acc.name, acc.username ? `@${acc.username}` : null].filter(Boolean).join(" ") || null : null);
-      if (data?.ok) void prepareLink();
       if (!silent) setMessage(data?.ok ? t.notJoined : t.unavailable);
     } catch {
       if (!silent) setMessage(t.unavailable);
@@ -167,11 +166,19 @@ export default function TelegramChannelGate({ language, onVerified }: Props) {
             <div className="rounded-xl border border-border bg-muted/50 p-3 text-xs leading-5 text-foreground">
               <p>{t.linkedAs} <b dir="ltr">{account}</b></p>
               <p className="mt-1 text-muted-foreground">{t.wrongAccount}</p>
-              {botLink && (
-                <a href={botLink} target="_blank" rel="noopener noreferrer"
+              {(
+                <button type="button" onClick={async () => {
+                    const win = window.open("", "_blank");
+                    const res = await invokeTelegramStart({ source: "dhs-gate", action: "relink" });
+                    const link = res.error ? null : tamayzakBotLink(res.data);
+                    if (link) { if (win) win.location.href = link; else window.location.href = link; } else win?.close();
+                    setLinked(false); setAccount(null); setBotLink(link);
+                    const tok = link?.split("start=")[1] ?? null;
+                    setCode(tok && /^[a-f0-9]{48}$/i.test(tok) ? tok : null);
+                  }}
                   className="mt-2 flex min-h-10 items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 font-bold text-primary">
                   <Link2 className="size-4" />{t.relink}
-                </a>
+                </button>
               )}
             </div>
           )}
