@@ -2944,6 +2944,7 @@ export type Database = {
           creator_id: string
           ends_at: string
           id: string
+          is_public: boolean
           starts_at: string
           status: string
           title: string
@@ -2954,6 +2955,7 @@ export type Database = {
           creator_id: string
           ends_at: string
           id?: string
+          is_public?: boolean
           starts_at?: string
           status?: string
           title: string
@@ -2964,6 +2966,7 @@ export type Database = {
           creator_id?: string
           ends_at?: string
           id?: string
+          is_public?: boolean
           starts_at?: string
           status?: string
           title?: string

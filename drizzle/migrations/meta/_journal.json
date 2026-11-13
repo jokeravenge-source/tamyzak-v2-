@@ -218,6 +218,13 @@
       "when": 1794565464372,
       "tag": "0030_apply_pending_study_flight_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794573453921,
+      "tag": "0031_public_study_challenges",
+      "breakpoints": true
     }
   ]
 }
