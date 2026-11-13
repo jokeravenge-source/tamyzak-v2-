@@ -2971,6 +2971,133 @@ export type Database = {
         }
         Relationships: []
       }
+      study_flight_members: {
+        Row: {
+          flight_id: string
+          seat_number: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          flight_id: string
+          seat_number: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          flight_id?: string
+          seat_number?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_flight_members_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "study_flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_flight_routes: {
+        Row: {
+          destination_id: string
+          plan: Json
+        }
+        Insert: {
+          destination_id: string
+          plan: Json
+        }
+        Update: {
+          destination_id?: string
+          plan?: Json
+        }
+        Relationships: []
+      }
+      study_flight_visits: {
+        Row: {
+          arrival_seen_at: string | null
+          destination_id: string
+          flight_id: string | null
+          legacy_data: Json | null
+          sold_at: string | null
+          user_id: string
+        }
+        Insert: {
+          arrival_seen_at?: string | null
+          destination_id: string
+          flight_id?: string | null
+          legacy_data?: Json | null
+          sold_at?: string | null
+          user_id: string
+        }
+        Update: {
+          arrival_seen_at?: string | null
+          destination_id?: string
+          flight_id?: string | null
+          legacy_data?: Json | null
+          sold_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_flight_visits_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "study_flight_routes"
+            referencedColumns: ["destination_id"]
+          },
+          {
+            foreignKeyName: "study_flight_visits_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "study_flights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_flights: {
+        Row: {
+          arrival_at: string
+          destination_id: string
+          id: string
+          owner_id: string
+          paused_at: string | null
+          paused_ms: number
+          plan: Json
+          started_at: string
+        }
+        Insert: {
+          arrival_at: string
+          destination_id: string
+          id?: string
+          owner_id: string
+          paused_at?: string | null
+          paused_ms?: number
+          plan: Json
+          started_at?: string
+        }
+        Update: {
+          arrival_at?: string
+          destination_id?: string
+          id?: string
+          owner_id?: string
+          paused_at?: string | null
+          paused_ms?: number
+          plan?: Json
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_flights_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "study_flight_routes"
+            referencedColumns: ["destination_id"]
+          },
+        ]
+      }
       study_room_bans: {
         Row: {
           banned_by: string
@@ -3793,10 +3920,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      study_flights_action: {
-        Args: { _action: string; _flight_id?: string; _destination_id?: string; _invitee_id?: string; _accept?: boolean }
-        Returns: Json
-      }
       adjust_parent_student_score: {
         Args: { _delta: number; _link_id: string; _student_user_id: string }
         Returns: number
@@ -4046,6 +4169,18 @@ export type Database = {
         Returns: undefined
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      study_flight_inbox_internal: { Args: { _uid: string }; Returns: Json }
+      study_flight_snapshot_internal: { Args: { _uid: string }; Returns: Json }
+      study_flights_action: {
+        Args: {
+          _accept?: boolean
+          _action: string
+          _destination_id?: string
+          _flight_id?: string
+          _invitee_id?: string
+        }
+        Returns: Json
+      }
       take_study_room_ownership: { Args: { _room: string }; Returns: undefined }
     }
     Enums: {
