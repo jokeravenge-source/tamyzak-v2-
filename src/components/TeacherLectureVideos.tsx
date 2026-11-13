@@ -267,6 +267,7 @@ export default function TeacherLectureVideos({
         youtube_url: "",
         video_id: null,
         title: curatedNote.title,
+        remaining_coverage: curatedNote.remainingCoverage,
         transcript: null,
         notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }],
         approved: true,
@@ -316,7 +317,7 @@ export default function TeacherLectureVideos({
         }
       }
 
-      const rows = curatedNote && savedVideos.length ? savedVideos.map((row) => ({ ...row, notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }] })) : [...curatedVideo, ...savedVideos, ...arabicFallbackVideo];
+      const rows = curatedNote && savedVideos.length ? savedVideos.map((row) => ({ ...row, remaining_coverage: curatedNote.remainingCoverage, notes_parts: [{ title: curatedNote.title, notes: curatedNote.notes }] })) : [...curatedVideo, ...savedVideos, ...arabicFallbackVideo];
       if (request !== videoRequest.current) return;
       const withSources = [...sourceVideos, ...rows];
       setVideos(englishTopicTitle ? withSources.map((row) => ({ ...row, title: englishTopicTitle, notes_parts: row.notes_parts.map((part, index) => ({ ...part, title: row.notes_parts.length === 1 ? englishTopicTitle : `${englishTopicTitle} — Section ${index + 1}` })) })) : withSources);

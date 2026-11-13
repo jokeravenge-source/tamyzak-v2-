@@ -41,6 +41,15 @@ describe("Nadia's supplemental YouTube lectures", () => {
     <TeacherLectureVideos teacherId="nadia-al-nuaimy" topicKey={topicKey} language="en" contentLanguage={topicKey.includes("-ar-") ? "ar" : "en"} isAdmin={isAdmin} />,
   );
 
+  it("opens the supplied chapter 3 notes without an AI request and keeps the source gap visible", async () => {
+    renderTopic("nadia-en-ch3-lec25-study");
+    expect(await screen.findByText(/Source coverage is partial/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open notes" }));
+    expect(await screen.findByText("What Remains Uncovered")).toBeInTheDocument();
+    expect(screen.getByText("What is oviparity?")).toBeInTheDocument();
+    expect(backend.invoke).not.toHaveBeenCalled();
+  });
+
   it("plays the verified lecture alongside existing notes without generating or changing them", async () => {
     const topicKey = "nadia-en-ch1-lec18-study";
     backend.rows.push(row(topicKey, englishNotes));
