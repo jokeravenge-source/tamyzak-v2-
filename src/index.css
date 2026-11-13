@@ -70,6 +70,7 @@
 /* ============ Global UX polish ============ */
 html {
   scroll-behavior: smooth;
+  scroll-padding-bottom: var(--nav-safe);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   color-scheme: only light;

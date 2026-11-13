@@ -1349,7 +1349,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   if (!subject) {
     return (
-    <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
+    <main className="relative min-h-screen w-full min-w-0 overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
         <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute top-[36rem] -start-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-5xl">
@@ -1399,43 +1399,43 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const adjustedPreviewSeconds = validRemoval ? seconds - removeMinutesNumber * 60 : seconds;
 
   return (
-    <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
+    <main className="relative min-h-screen w-full min-w-0 overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
       <div aria-hidden="true" className="pointer-events-none absolute -top-28 -end-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-      <div className="relative max-w-4xl mx-auto">
+      <div className="relative mx-auto w-full min-w-0 max-w-4xl">
         <button onClick={onBack} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/80 px-3 text-sm font-semibold text-muted-foreground backdrop-blur hover:text-foreground">
           <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} /> {language === "ar" ? "رجوع" : "Back"}
         </button>
         <header className={`mb-6 rounded-[2rem] border p-5 shadow-sm ${activeTint.card}`}>
-          <div className="flex items-center gap-4">
+          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
             <span className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${activeTint.icon}`}><ActiveSubjectIcon className="h-6 w-6" /></span>
-            <div className="min-w-0 flex-1"><h1 className="truncate text-2xl font-black md:text-3xl">{joinedRoomName ?? (language === "ar" ? subj.ar : subj.en)}</h1><p className="mt-0.5 text-sm text-muted-foreground">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
-            {started && <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${phase === "rest" ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${phase === "rest" ? "animate-pulse bg-sky-500" : running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{phase === "rest" ? L.restPhase : running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
+            <div className="min-w-0 flex-1"><h1 className="text-2xl font-black [overflow-wrap:anywhere] md:text-3xl">{joinedRoomName ?? (language === "ar" ? subj.ar : subj.en)}</h1><p className="mt-0.5 text-sm text-muted-foreground [overflow-wrap:anywhere]">{displayName}</p>{mission.trim() && <p className="mt-1 truncate text-xs font-medium text-primary">{mission}</p>}</div>
+            {started && <span className={`col-span-2 inline-flex max-w-full items-center justify-self-start sm:col-span-1 gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${phase === "rest" ? "bg-sky-500/15 text-sky-600 dark:text-sky-300" : running ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" : "bg-amber-500/15 text-amber-600 dark:text-amber-300"}`}><span className={`h-2 w-2 rounded-full ${phase === "rest" ? "animate-pulse bg-sky-500" : running ? "animate-pulse bg-emerald-500" : "bg-amber-500"}`} />{phase === "rest" ? L.restPhase : running ? (language === "ar" ? "يدرس الآن" : "Focusing") : (language === "ar" ? "متوقف مؤقتاً" : "Paused")}</span>}
           </div>
         </header>
 
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
         <PrivateStudyRooms language={language} subject={subject === "general" ? null : subject} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
-        <div className="space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
-          <div className="py-5 text-center">
+        <div className="min-w-0 space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-3 sm:p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
+          <div className="min-w-0 py-5 text-center [container-type:inline-size]">
             <p className={`mb-2 text-xs font-bold uppercase tracking-[0.18em] ${phase === "rest" ? "text-sky-600 dark:text-sky-300" : "text-muted-foreground"}`}>{started ? (pomodoro ? (phase === "rest" ? L.restPhase : running ? L.workPhase : L.pause) : running ? L.workPhase : L.pause) : (language === "ar" ? "جاهز للبدء" : "Ready to focus")}</p>
-            <div dir="ltr" className="font-mono text-5xl font-black tracking-tight text-foreground md:text-7xl">{fmt(mainTimer.seconds)}</div>
+            <div role="timer" aria-label={language === "ar" ? "وقت الجلسة" : "Session timer"} dir="ltr" className="max-w-full whitespace-nowrap font-mono text-[min(4.5rem,15cqw)] font-black tabular-nums tracking-tight text-foreground">{fmt(mainTimer.seconds)}</div>
             <div className="mx-auto mt-5 max-w-md"><div className="mb-1.5 flex justify-between text-[10px] text-muted-foreground"><span>{started && pomodoro ? (phase === "rest" ? L.restPhase : L.workPhase) : (language === "ar" ? "التقدم نحو الساعة القادمة" : "Progress to next hour")}</span><span>{Math.floor(started && pomodoro ? pomodoroProgress : nextHourProgress)}%</span></div><div className="h-2 overflow-hidden rounded-full bg-foreground/10"><div className={`h-full rounded-full transition-all ${phase === "rest" && pomodoro ? "bg-gradient-to-r from-sky-500 to-cyan-300" : "bg-gradient-to-r from-primary to-cyan-400"}`} style={{ width: `${started && pomodoro ? pomodoroProgress : nextHourProgress}%` }} /></div></div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:justify-center">
             {!started ? (
-              <Button size="lg" onClick={startSession} className="h-12 min-w-40 gap-2 rounded-xl text-base shadow-lg shadow-primary/20"><Play className="w-5 h-5" /> {L.start}</Button>
+              <Button size="lg" onClick={startSession} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal rounded-xl py-3 text-base shadow-lg shadow-primary/20 sm:w-auto"><Play className="w-5 h-5" /> {L.start}</Button>
             ) : (
               <>
                 {phase === "rest" && pomodoro ? (
-                  <Button size="lg" variant="secondary" onClick={skipPomodoroRest} className="gap-2"><SkipForward className="w-4 h-4" /> {L.skipBreak}</Button>
+                  <Button size="lg" variant="secondary" onClick={skipPomodoroRest} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><SkipForward className="w-4 h-4" /> {L.skipBreak}</Button>
                 ) : running ? (
-                  <Button size="lg" variant="secondary" onClick={() => setRunning(false)} className="gap-2"><Pause className="w-4 h-4" /> {L.pause}</Button>
+                  <Button size="lg" variant="secondary" onClick={() => setRunning(false)} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Pause className="w-4 h-4" /> {L.pause}</Button>
                 ) : (
-                  <Button size="lg" onClick={resumeSession} className="gap-2"><Play className="w-4 h-4" /> {L.resume}</Button>
+                  <Button size="lg" onClick={resumeSession} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Play className="w-4 h-4" /> {L.resume}</Button>
                 )}
-                <Button size="lg" variant="destructive" onClick={requestSave} className="gap-2"><Square className="w-4 h-4" /> {L.stop}</Button>
-                <Button size="lg" variant="outline" onClick={() => setDiscardOpen(true)} className="gap-2"><Trash2 className="w-4 h-4" /> {L.discard}</Button>
+                <Button size="lg" variant="destructive" onClick={requestSave} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Square className="w-4 h-4" /> {L.stop}</Button>
+                <Button size="lg" variant="outline" onClick={() => setDiscardOpen(true)} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Trash2 className="w-4 h-4" /> {L.discard}</Button>
               </>
             )}
           </div>
@@ -1453,7 +1453,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               onClick={togglePomodoro}
               disabled={started}
               aria-pressed={pomodoro}
-              className={`flex h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold text-white shadow-sm transition ${pomodoro ? "border-red-500 bg-red-600 hover:bg-red-700" : "border-slate-500 bg-slate-600 hover:bg-slate-700"} ${started ? "cursor-not-allowed opacity-80" : ""}`}
+              className={`flex min-h-12 min-w-0 flex-wrap items-center justify-center gap-2 py-3 rounded-xl border px-4 text-sm font-bold text-white shadow-sm transition ${pomodoro ? "border-red-500 bg-red-600 hover:bg-red-700" : "border-slate-500 bg-slate-600 hover:bg-slate-700"} ${started ? "cursor-not-allowed opacity-80" : ""}`}
             >
               <Coffee className="h-4 w-4" />
               <span>{L.pomodoro}</span>
@@ -1463,7 +1463,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
               type="button"
               onClick={() => setSessionMenuOpen((value) => !value)}
               aria-expanded={sessionMenuOpen}
-              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 text-sm font-bold text-primary transition hover:bg-primary/15"
+              className="flex min-h-12 min-w-0 flex-wrap items-center justify-center gap-2 rounded-xl border border-primary/30 py-3 bg-primary/10 px-4 text-sm font-bold text-primary transition hover:bg-primary/15"
             >
               <Menu className="h-4 w-4" />
               {sessionMenuOpen ? L.hideMenu : L.sessionMenu}

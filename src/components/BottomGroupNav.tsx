@@ -57,6 +57,7 @@ const BottomGroupNav = ({
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const navVisible = useNavVisibility();
   const isRtl = language === "ar";
   const overflowIsActive = active === "sessions" || active === "account";
@@ -66,6 +67,26 @@ const BottomGroupNav = ({
     document.documentElement.classList.add("has-study-nav");
     return () => document.documentElement.classList.remove("has-study-nav");
   }, []);
+
+  // Match the actual bar height, including larger text and device safe areas.
+  // Reserve this space once on the body so the final controls can scroll clear.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const previous = root.style.getPropertyValue("--nav-safe");
+    const measure = () => root.style.setProperty("--nav-safe", `${Math.ceil(nav.getBoundingClientRect().height + 16)}px`);
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(nav);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+      if (previous) root.style.setProperty("--nav-safe", previous);
+      else root.style.removeProperty("--nav-safe");
+    };
+  }, [portalRoot]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -100,6 +121,7 @@ const BottomGroupNav = ({
 
   const navigation = (
     <div
+      ref={navRef}
       className="pointer-events-none fixed inset-x-0 z-[35] flex justify-center px-3 transition-transform duration-300 ease-out"
       style={{
         bottom: 0,
