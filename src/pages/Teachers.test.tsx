@@ -59,6 +59,29 @@ beforeEach(() => {
 });
 
 describe("Nadia teacher hub", () => {
+  it("shows the supplied English Chapter 1 bank alongside existing questions", async () => {
+    backend.mcqs.push({
+      id: "existing", teacher_id: "nadia-al-nuaimy", topic_key: "nadia-en-ch1-lec1-exam",
+      title: "Existing admin questions", questions: [{ question: "An existing question", choices: ["A", "B", "C", "D"], answer_index: 0 }],
+      created_at: "2026-10-12T00:00:00Z",
+    });
+    render(<NadiaLectureWorkspace language="en" curriculum="en" chapter={1} lecture={1} initialTab="mcq" isAdmin={false} />);
+    expect(await screen.findByText("Existing admin questions")).toBeInTheDocument();
+    expect(screen.getAllByText("Introduction to the Cell")).toHaveLength(2);
+    expect(screen.queryByText(/Anas|Raad/)).not.toBeInTheDocument();
+    expect(screen.getByText("11 questions")).toBeInTheDocument();
+  });
+
+  it("offers the supplied bank when no saved bank exists, and keeps it out of Arabic", async () => {
+    const view = render(<NadiaLectureWorkspace language="en" curriculum="en" chapter={1} lecture={12} initialTab="mcq" isAdmin={false} />);
+    expect(await screen.findByText("5 questions")).toBeInTheDocument();
+    expect(screen.getAllByText("Centrosome and Kinetosome")).toHaveLength(2);
+    view.unmount();
+    render(<NadiaLectureWorkspace language="ar" curriculum="ar" chapter={1} lecture={12} initialTab="mcq" isAdmin={false} />);
+    expect(await screen.findByText("لا توجد أسئلة تدريبية لهذا الموضوع بعد.")).toBeInTheDocument();
+    expect(screen.queryByText(/Anas Raad/)).not.toBeInTheDocument();
+  });
+
   it.each([
     ["ar", "المنهج العربي"],
     ["en", "المنهج الإنجليزي"],
