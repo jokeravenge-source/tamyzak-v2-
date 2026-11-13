@@ -1430,14 +1430,14 @@ const Basics = ({
                   <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
                   </span>
-                  <span className="mt-0.5 block text-[10px] leading-4 opacity-80 line-clamp-2 sm:mt-1 sm:text-sm sm:leading-6">
+                  <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
                     {isRTL
                       ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
                       : "Answer the challenge questions faster than your friends"}
                   </span>
                 </span>
                 <ArrowRight
-                  className={`h-3.5 w-3.5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 sm:h-5 sm:w-5 ${isRTL ? "rotate-180" : ""}`}
+                  className={`hidden h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 sm:block ${isRTL ? "rotate-180" : ""}`}
                   aria-hidden="true"
                 />
               </motion.button>
@@ -1464,14 +1464,14 @@ const Basics = ({
                   <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
                   </span>
-                  <span className="mt-0.5 block text-[10px] leading-4 opacity-80 line-clamp-2 sm:mt-1 sm:text-sm sm:leading-6">
+                  <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
                     {isRTL
                       ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
                       : "The limited-edition hoodie — order from Houdini on Instagram"}
                   </span>
                 </span>
                 <Instagram
-                  className="h-3.5 w-3.5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110 sm:h-5 sm:w-5"
+                  className="hidden h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110 sm:block"
                   aria-hidden="true"
                 />
               </motion.a>
