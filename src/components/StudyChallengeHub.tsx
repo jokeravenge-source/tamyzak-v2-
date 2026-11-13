@@ -45,6 +45,7 @@ const COPY = {
     created: "Challenge created and invitations sent", accepted: "Challenge accepted",
     declined: "Invitation declined", cancelledToast: "Challenge cancelled",
     pendingFriends: "invited friends have not answered yet", recorded: "Saved Sessions time",
+    publicTitle: "Public challenge", publicDesc: "Open to every student — the leaderboard ranks who studies the most this week.", join: "Join the challenge", joined: "You joined the challenge",
   },
   ar: {
     eyebrow: "ادرس ويا أصدقائك", title: "تحديات الأصدقاء",
@@ -64,6 +65,7 @@ const COPY = {
     created: "تم إنشاء التحدي وإرسال الدعوات", accepted: "تم قبول التحدي",
     declined: "تم رفض الدعوة", cancelledToast: "تم إلغاء التحدي",
     pendingFriends: "أصدقاء مدعوين بعدهم ما جاوبوا", recorded: "وقت الجلسات المحفوظ",
+    publicTitle: "تحدي عام", publicDesc: "مفتوح لكل الطلاب — لوحة الترتيب تعرض أكثر الطلاب دراسة هذا الأسبوع.", join: "انضم للتحدي", joined: "انضممت للتحدي",
   },
 } as const;
 
@@ -203,6 +205,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
     return () => window.clearTimeout(timer);
   }, [createOpen, query, selected, userId]);
 
+  const openPublic = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "open"), [challenges, now]);
   const incoming = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "invited"), [challenges, now]);
   const active = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "active"), [challenges, now]);
   const finished = useMemo(() => challenges.filter((challenge) => ["completed", "cancelled"].includes(challengePhase(challenge, now))), [challenges, now]);
@@ -212,7 +215,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
     const { error } = await supabase.rpc("respond_study_challenge", { _challenge_id: challengeId, _accept: accept });
     setBusyId(null);
     if (error) { toast.error(error.message); return; }
-    toast.success(accept ? t.accepted : t.declined);
+    toast.success(accept ? (challenges.find((c) => c.id === challengeId)?.myStatus === "open" ? t.joined : t.accepted) : t.declined);
     await load();
   };
 
@@ -266,6 +269,8 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
           <div className="grid place-items-center py-24"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-8">
+            {openPublic.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2><div className="grid gap-4">{openPublic.map((challenge) => <div key={challenge.id} className="space-y-3"><div className="rounded-[1.5rem] border border-amber-400/40 bg-card p-5 shadow-sm"><h3 className="font-black">{challenge.title}</h3><p className="mt-1 text-sm text-muted-foreground">{t.publicDesc}</p><p className="mt-1 text-xs text-muted-foreground">{t.timeLeft}: {remainingLabel(challenge.endsAt, language, now)}</p><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="mt-4 w-full gap-2 rounded-xl">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}{t.join}</Button></div><ChallengeCard challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} /></div>)}</div></section>}
+
             {incoming.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><UserPlus className="h-5 w-5 text-violet-600" />{t.incoming}<span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs text-violet-700 dark:text-violet-300">{incoming.length}</span></h2><div className="grid gap-3 md:grid-cols-2">{incoming.map((challenge) => <article key={challenge.id} className="rounded-[1.5rem] border border-violet-500/25 bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-600 text-white"><Swords className="h-5 w-5" /></span><div><h3 className="font-black">{challenge.title}</h3><p className="mt-1 text-xs text-muted-foreground">{challenge.creatorName} {t.invitedBy} · {remainingLabel(challenge.endsAt, language, now)}</p></div></div><div className="mt-4 flex gap-2"><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="flex-1 gap-1.5 rounded-xl">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{t.accept}</Button><Button onClick={() => respond(challenge.id, false)} disabled={busyId === challenge.id} variant="outline" className="flex-1 gap-1.5 rounded-xl"><X className="h-4 w-4" />{t.decline}</Button></div></article>)}</div></section>}
 
             {active.length > 0 && <section><div className="mb-3 flex items-end justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-black"><Clock3 className="h-5 w-5 text-emerald-600" />{t.active}</h2><span className="text-xs font-semibold text-muted-foreground">{t.refresh}</span></div><div className="grid gap-4">{active.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
