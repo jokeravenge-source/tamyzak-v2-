@@ -1427,7 +1427,7 @@ const Basics = ({
                   className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
                 />
                 <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
+                  <span className="block text-sm font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
                   </span>
                   <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
@@ -1461,7 +1461,7 @@ const Basics = ({
                   className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
                 />
                 <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
+                  <span className="block text-sm font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
                   </span>
                   <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
