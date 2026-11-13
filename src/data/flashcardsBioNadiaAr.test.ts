@@ -123,12 +123,43 @@ describe("Arabic Nadia Al-Nuaimi Biology decks", () => {
     expect(flashcardsBioCh5NadiaAr[214].a).toBe("AGA CAC CTG.");
   });
 
-  it("keeps every numeric value aligned with the Chapter 5 English source", () => {
+  it("keeps unaudited numeric values aligned with the Chapter 5 English source", () => {
     const numericTokens = (value: string) => value.match(/\d+(?:\.\d+)?/g) ?? [];
+    // Card 76 restores the Arabic source's explicit 50/50 genotype ratio.
+    // The English answer remains the shorter original wording.
+    const independentlyAuditedCards = new Set([76]);
 
     flashcardsBioCh5NadiaEn.forEach((card, index) => {
+      if (independentlyAuditedCards.has(index + 1)) return;
       expect(numericTokens(`${flashcardsBioCh5NadiaAr[index].q} ${flashcardsBioCh5NadiaAr[index].a}`))
         .toEqual(numericTokens(`${card.q} ${card.a}`));
     });
+  });
+
+  it("preserves the distinction between replicated DNA and the time of replication", () => {
+    expect(flashcardsBioCh1NadiaAr[85].q).toContain("يكون DNA متضاعفاً");
+    expect(flashcardsBioCh1NadiaAr[85].q).not.toContain("يتضاعف DNA");
+    expect(flashcardsBioCh1NadiaAr[85].a).toContain("الدور القلادي");
+  });
+
+  it("corrects the phage-tail roles and the haploid fourth nucleus", () => {
+    expect(flashcardsBioCh3NadiaAr[38].q).toContain("تحليل جدار البكتيريا");
+    expect(flashcardsBioCh3NadiaAr[38].a).toContain("إنزيم يفرز من ذنب الفايروس");
+    expect(flashcardsBioCh3NadiaAr[52].a).toBe("أحادية المجموعة الكروموسومية (ن).");
+  });
+
+  it("limits the endosperm example and includes water entry through the seed micropyle", () => {
+    expect(flashcardsBioCh3NadiaAr[225].q).toContain("الباقلاء والفاصوليا");
+    expect(flashcardsBioCh3NadiaAr[225].q).not.toContain("ذوات الفلقتين");
+    expect(flashcardsBioCh3NadiaAr[138].q).toContain("البويض والبذرة");
+    expect(flashcardsBioCh3NadiaAr[138].a).toContain("دخول الماء عند الإنبات");
+  });
+
+  it("restores the source date and labels the backcross definition correctly", () => {
+    expect(flashcardsBioCh4NadiaAr[11].a).toContain("1677");
+    expect(flashcardsBioCh5NadiaAr[74].q).toBe("عرّف التضريب الرجعي؟");
+    expect(flashcardsBioCh5NadiaAr[74].a).toContain("(F1) مع أحد أبويه");
+    expect(flashcardsBioCh5NadiaAr[75].a).toContain("50% TT");
+    expect(flashcardsBioCh5NadiaAr[75].a).toContain("50% Tt");
   });
 });
