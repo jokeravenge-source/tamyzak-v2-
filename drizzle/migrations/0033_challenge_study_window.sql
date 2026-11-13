@@ -1,0 +1,2 @@
+COMMENT ON FUNCTION public.get_my_study_challenges() IS
+  'Ranks saved study time within the challenge window, merging overlapping sessions. Legacy sessions use saved-at minus capped duration as their inferred start.';
