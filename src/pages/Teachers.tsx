@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
 import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
+import { appendNadiaEnglishChapter1SuppliedMcqs } from "@/data/nadiaEnglishChapter1SuppliedMcqs";
 import {
   getNadiaEnglishBuiltInMcqSet,
   isNadiaBuiltInMcqSet,
@@ -1289,9 +1290,12 @@ function NadiaLectureMcqBank({
         const builtInSet = curriculum === "en"
           ? getNadiaEnglishBuiltInMcqSet(chapter, lecture)
           : null;
-        setSets(savedSets.length > 0
+        const baseSets = savedSets.length > 0
           ? savedSets
-          : (builtInSet ? [builtInSet as MCQSet] : []));
+          : (builtInSet ? [builtInSet as MCQSet] : []);
+        setSets(curriculum === "en"
+          ? appendNadiaEnglishChapter1SuppliedMcqs(chapter, lecture, baseSets)
+          : baseSets);
       }
       setLoading(false);
     })();
