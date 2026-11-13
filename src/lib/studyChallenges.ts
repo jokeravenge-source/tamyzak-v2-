@@ -13,13 +13,15 @@ export type StudyChallenge = {
   startsAt: string;
   endsAt: string;
   status: "active" | "cancelled";
-  myStatus: "pending" | "accepted" | "declined";
+  myStatus: "pending" | "accepted" | "declined" | "open";
+  isPublic?: boolean;
   participants: StudyChallengeParticipant[];
 };
 
 export function challengePhase(challenge: StudyChallenge, now = Date.now()) {
   if (challenge.status === "cancelled") return "cancelled" as const;
   if (new Date(challenge.endsAt).getTime() <= now) return "completed" as const;
+  if (challenge.myStatus === "open") return "open" as const;
   if (challenge.myStatus === "pending") return "invited" as const;
   return "active" as const;
 }

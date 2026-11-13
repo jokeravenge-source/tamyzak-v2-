@@ -1412,7 +1412,7 @@ const Basics = ({
               <motion.button
                 type="button"
                 dir="ltr"
-                onClick={() => navigate("challenge")}
+                onClick={() => { try { sessionStorage.setItem("tmz:sessions-entry", "challenge"); } catch { /* ignore */ } navigate("sessions"); }}
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.99 }}
                 aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}

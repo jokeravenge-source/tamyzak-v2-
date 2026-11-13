@@ -529,7 +529,10 @@ const T = {
 const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
-  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | null>(null);
+  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | null>(() => {
+    try { if (sessionStorage.getItem("tmz:sessions-entry") === "challenge") { sessionStorage.removeItem("tmz:sessions-entry"); return "challenge"; } } catch { /* ignore */ }
+    return null;
+  });
   const [subject, setSubject] = useState<string | null>(null);
   const [mission, setMission] = useState("");
   const [seconds, setSeconds] = useState(0);
