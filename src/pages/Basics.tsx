@@ -1405,7 +1405,7 @@ const Basics = ({
               list; each card keeps its own color and shows 3D icon left, text right. */}
           <div className="mb-5 -mx-4 sm:mx-0">
             <div
-              className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               role="group"
               aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
             >
@@ -1416,7 +1416,7 @@ const Basics = ({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.99 }}
                 aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-                className="group flex min-w-[280px] shrink-0 grow-0 basis-[86vw] snap-start items-center gap-4 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-5 text-start text-white shadow-[0_24px_50px_-28px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_28px_60px_-26px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:basis-[calc(50%_-_0.5rem)] sm:p-6"
+                className="group flex min-w-0 shrink-0 grow-0 basis-[calc(50%_-_0.375rem)] snap-start items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
               >
                 <img
                   src={challenge3dIcon}
@@ -1424,13 +1424,13 @@ const Basics = ({
                   width={816}
                   height={816}
                   loading="lazy"
-                  className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+                  className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
                 />
                 <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                  <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
                   </span>
-                  <span className="mt-1 block text-sm leading-6 opacity-80">
+                  <span className="mt-0.5 block text-[10px] leading-4 opacity-80 line-clamp-2 sm:mt-1 sm:text-sm sm:leading-6">
                     {isRTL
                       ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
                       : "Answer the challenge questions faster than your friends"}
@@ -1450,7 +1450,7 @@ const Basics = ({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.99 }}
                 aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
-                className="group flex min-w-[280px] shrink-0 grow-0 basis-[86vw] snap-start items-center gap-4 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-5 text-start text-white shadow-[0_24px_50px_-28px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_28px_60px_-26px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:basis-[calc(50%_-_0.5rem)] sm:p-6"
+                className="group flex min-w-0 shrink-0 grow-0 basis-[calc(50%_-_0.375rem)] snap-start items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
               >
                 <img
                   src={houdiniHoodieIcon}
@@ -1458,13 +1458,13 @@ const Basics = ({
                   width={816}
                   height={816}
                   loading="lazy"
-                  className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+                  className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
                 />
                 <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                  <span className="block text-[13px] font-black leading-tight tracking-tight sm:text-2xl">
                     {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
                   </span>
-                  <span className="mt-1 block text-sm leading-6 opacity-80">
+                  <span className="mt-0.5 block text-[10px] leading-4 opacity-80 line-clamp-2 sm:mt-1 sm:text-sm sm:leading-6">
                     {isRTL
                       ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
                       : "The limited-edition hoodie — order from Houdini on Instagram"}
