@@ -27,7 +27,6 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
-import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
 import challenge3dIcon from "@/assets/challenge-3d-icon.png";
 import houdiniHoodieIcon from "@/assets/houdini-hoodie-icon.png";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
@@ -1478,7 +1477,6 @@ const Basics = ({
             </div>
           </div>
 
-          <NewFeatureAnnouncement language={language} />
           <TelegramLinkCard language={language} source="home" variant="home" />
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
