@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
@@ -89,6 +89,7 @@ export default function PrivateStudyRooms({
   timerStarted?: boolean;
 }) {
   const ar = language === "ar";
+  const formId = useId();
   const [userId, setUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("Student");
   const [room, setRoom] = useState<Room | null>(null);
@@ -596,7 +597,7 @@ export default function PrivateStudyRooms({
 
   if (!room) {
     return (
-      <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
+      <section className="mx-auto mb-8 w-full min-w-0 max-w-3xl rounded-2xl border border-primary/30 bg-secondary/90 p-3 sm:p-5" dir={ar ? "rtl" : "ltr"}>
         <div className="flex items-center gap-2 mb-1 text-primary font-semibold">
           <DoorOpen className="w-4 h-4" /> <span>{L.title}</span>
         </div>
@@ -608,7 +609,7 @@ export default function PrivateStudyRooms({
           {publicRooms.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border px-4 py-3 text-center text-xs text-muted-foreground">{L.noPublicRooms}</p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
               {publicRooms.filter((r) => !PINNED_STUDY_ROOMS.some((p) => p.code === r.code)).map((publicRoom) => (
                 <button
                   key={publicRoom.id}
@@ -625,29 +626,31 @@ export default function PrivateStudyRooms({
             </div>
           )}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-primary/20 bg-background/40 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">{L.visibility}</span>
-              <div className="flex rounded-lg bg-muted p-1 text-xs">
-                <button type="button" onClick={() => setRoomVisibility("private")} className={`flex items-center gap-1 rounded-md px-2 py-1 ${roomVisibility === "private" ? "bg-background font-bold shadow-sm" : "text-muted-foreground"}`}><Lock className="h-3 w-3" />{L.privateRoom}</button>
-                <button type="button" onClick={() => setRoomVisibility("public")} className={`flex items-center gap-1 rounded-md px-2 py-1 ${roomVisibility === "public" ? "bg-primary font-bold text-primary-foreground shadow-sm" : "text-muted-foreground"}`}><Globe2 className="h-3 w-3" />{L.publicRoom}</button>
+        <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="min-w-0 rounded-xl border border-primary/20 bg-background/40 p-3">
+            <div className="mb-3 space-y-2">
+              <span id={`${formId}-visibility`} className="block text-xs font-semibold text-muted-foreground">{L.visibility}</span>
+              <div role="group" aria-labelledby={`${formId}-visibility`} className="grid min-w-0 grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm">
+                <button type="button" aria-pressed={roomVisibility === "private"} onClick={() => setRoomVisibility("private")} className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 [overflow-wrap:anywhere] ${roomVisibility === "private" ? "bg-background font-bold shadow-sm" : "text-muted-foreground"}`}><Lock className="h-4 w-4 shrink-0" />{L.privateRoom}</button>
+                <button type="button" aria-pressed={roomVisibility === "public"} onClick={() => setRoomVisibility("public")} className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 [overflow-wrap:anywhere] ${roomVisibility === "public" ? "bg-primary font-bold text-primary-foreground shadow-sm" : "text-muted-foreground"}`}><Globe2 className="h-4 w-4 shrink-0" />{L.publicRoom}</button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder={L.roomName}
-                className="flex-1 min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-sm" />
+            <div className="grid min-w-0 gap-2">
+              <label htmlFor={`${formId}-name`} className="text-xs font-semibold text-muted-foreground">{L.roomName}</label>
+              <input id={`${formId}-name`} value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder={L.roomName}
+                className="min-h-11 w-full min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-base" />
               <button onClick={createRoom} disabled={busy}
-                className="rounded-xl bg-primary text-primary-foreground px-3 py-2 text-sm font-medium flex items-center gap-1 disabled:opacity-50">
-                <Plus className="w-4 h-4" /> {L.create}
+                className="flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground [overflow-wrap:anywhere] disabled:opacity-50">
+                <Plus className="h-4 w-4 shrink-0" /> {L.create}
               </button>
             </div>
           </div>
-          <div className="flex gap-2 self-end rounded-xl border border-primary/20 bg-background/40 p-3">
-            <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={L.enterCode}
-              className="flex-1 min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-sm font-mono tracking-widest" />
+          <div className="grid min-w-0 content-start gap-2 rounded-xl border border-primary/20 bg-background/40 p-3">
+            <label htmlFor={`${formId}-code`} className="text-xs font-semibold text-muted-foreground">{L.code}</label>
+            <input id={`${formId}-code`} dir="ltr" autoCapitalize="characters" autoCorrect="off" spellCheck={false} value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={L.enterCode}
+              className="min-h-11 w-full min-w-0 rounded-xl bg-background/60 border border-primary/30 px-3 py-2 text-base font-mono tracking-widest" />
             <button onClick={joinRoom} disabled={busy}
-              className="rounded-xl border border-primary/50 px-3 py-2 text-sm font-medium">{L.join}</button>
+              className="min-h-11 w-full min-w-0 rounded-xl border border-primary/50 px-3 py-2 text-sm font-semibold [overflow-wrap:anywhere]">{L.join}</button>
           </div>
         </div>
         {children && <div className="mt-5 pt-5 border-t border-white/10">{children}</div>}
@@ -656,7 +659,7 @@ export default function PrivateStudyRooms({
   }
 
   return (
-    <section className="max-w-3xl mx-auto mb-8 rounded-2xl border border-primary/30 bg-secondary/90 p-5" dir={ar ? "rtl" : "ltr"}>
+    <section className="mx-auto mb-8 w-full min-w-0 max-w-3xl rounded-2xl border border-primary/30 bg-secondary/90 p-3 sm:p-5" dir={ar ? "rtl" : "ltr"}>
       {pinnedRooms}
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <DoorOpen className="w-4 h-4 text-primary" />

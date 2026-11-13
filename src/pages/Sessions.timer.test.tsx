@@ -51,7 +51,7 @@ describe("the session's one visible timer", () => {
     expect(screen.getByRole("heading", { name: "شلون تريد تدرس اليوم؟" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /الانضمام للغرف/ }));
     await act(async () => {});
-    const mainClock = container.querySelector(".text-5xl")!;
+    const mainClock = screen.getByRole("timer", { name: "وقت الجلسة" });
     expect(mainClock.textContent).toBe("00:49:40");
     expect(mainClock.getAttribute("dir")).toBe("ltr");
     expect(screen.queryByText(/إجمالي وقت الدراسة/)).toBeNull();

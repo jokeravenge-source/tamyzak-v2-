@@ -98,30 +98,30 @@ function ChallengeCard({
   const [open, setOpen] = useState(phase !== "completed");
 
   return (
-    <article className={`overflow-hidden rounded-[1.5rem] border bg-card shadow-sm ${isFinished ? "border-amber-400/40" : "border-border"}`}>
-      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-3 p-4 text-start hover:bg-secondary/40 sm:p-5" aria-expanded={open}>
+    <article className={`w-full min-w-0 rounded-[1.5rem] border bg-card shadow-sm ${isFinished ? "border-amber-400/40" : "border-border"}`}>
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full min-w-0 items-start gap-3 p-4 text-start hover:bg-secondary/40 sm:p-5" aria-expanded={open}>
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${isFinished ? "bg-amber-500 text-slate-950" : "bg-violet-600 text-white"}`}>
           {isFinished ? <Trophy className="h-5 w-5" /> : <Swords className="h-5 w-5" />}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-black text-foreground">{challenge.title}</span>
+          <span className="block whitespace-normal font-black leading-relaxed text-foreground [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></span>
           <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><UsersRound className="h-3.5 w-3.5" />{standings.length} {t.participants}</span>
             {!isFinished && <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{remainingLabel(challenge.endsAt, language, now)}</span>}
           </span>
         </span>
         {standings[0] && <span className="hidden max-w-40 truncate rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 sm:block">#{1} {standings[0].displayName}</span>}
-        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="border-t border-border p-4 sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-secondary/45 px-4 py-3">
+        <div className="min-w-0 border-t border-border p-4 sm:p-5">
+          <div className="mb-4 grid min-w-0 grid-cols-1 gap-3 rounded-2xl bg-secondary/45 px-4 py-3 sm:grid-cols-2">
             <div>
               <p className="text-xs font-semibold text-muted-foreground">{phase === "cancelled" ? t.cancelled : isFinished ? (tied ? t.tied : t.winner) : t.leader}</p>
-              <p className="mt-0.5 flex items-center gap-1.5 font-black"><Crown className="h-4 w-4 text-amber-500" />{standings[0]?.displayName ?? "—"}</p>
+              <p className="mt-0.5 flex min-w-0 items-start gap-1.5 font-black"><Crown className="mt-1 h-4 w-4 shrink-0 text-amber-500" /><bdi className="min-w-0 [overflow-wrap:anywhere]">{standings[0]?.displayName ?? "—"}</bdi></p>
             </div>
-            <div className="text-end">
+            <div className="min-w-0 sm:text-end">
               <p className="text-xs font-semibold text-muted-foreground">{isFinished ? t.recorded : t.timeLeft}</p>
               <p className="mt-0.5 font-mono font-black">{isFinished ? formatStudySeconds(standings[0]?.totalSeconds ?? 0, language) : remainingLabel(challenge.endsAt, language, now)}</p>
             </div>
@@ -132,10 +132,10 @@ function ChallengeCard({
               const progress = Math.max(participant.totalSeconds > 0 ? 4 : 0, (participant.totalSeconds / maxSeconds) * 100);
               return (
                 <li key={participant.userId} className="rounded-2xl border border-border/70 bg-background/55 p-3">
-                  <div className="flex items-center gap-3">
+                  <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-black ${index === 0 ? "bg-amber-500 text-slate-950" : "bg-secondary text-muted-foreground"}`}>{index + 1}</span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-bold">{participant.displayName}{participant.userId === userId && <span className="ms-1 text-xs text-primary">({t.you})</span>}</span>
-                    <span className="font-mono text-sm font-black text-violet-700 dark:text-violet-300">{formatStudySeconds(participant.totalSeconds, language)}</span>
+                    <span className="min-w-0 text-sm font-bold [overflow-wrap:anywhere]">{participant.displayName}{participant.userId === userId && <span className="ms-1 text-xs text-primary">({t.you})</span>}</span>
+                    <span className="col-start-2 min-w-0 font-mono text-sm font-black text-violet-700 dark:text-violet-300 sm:col-start-auto">{formatStudySeconds(participant.totalSeconds, language)}</span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-cyan-400 transition-[width]" style={{ width: `${progress}%` }} /></div>
                 </li>
@@ -247,18 +247,18 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
+    <main className="relative min-h-screen w-full min-w-0 overflow-x-clip px-4 py-6 md:py-12" dir={dir}>
       <div aria-hidden="true" className="pointer-events-none absolute -end-24 -top-24 h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
-      <div className="relative mx-auto max-w-5xl">
+      <div className="relative mx-auto w-full min-w-0 max-w-5xl">
         <button onClick={onBack} className="mb-5 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card/85 px-3 text-sm font-semibold text-muted-foreground shadow-sm hover:text-foreground">
           <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} />{language === "ar" ? "رجوع" : "Back"}
         </button>
 
         <header className="mb-7 overflow-hidden rounded-[2rem] border border-violet-500/20 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-white shadow-[0_28px_80px_-44px_rgba(124,58,237,0.95)] md:p-9">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl">
+            <div className="min-w-0 max-w-2xl">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black"><Swords className="h-3.5 w-3.5" />{t.eyebrow}</span>
-              <h1 className="mt-4 text-3xl font-black tracking-tight md:text-5xl">{t.title}</h1>
+              <h1 className="mt-4 text-3xl font-black tracking-tight [overflow-wrap:anywhere] md:text-5xl">{t.title}</h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-white/80 md:text-base">{t.description}</p>
             </div>
             <Button onClick={() => setCreateOpen(true)} className="h-12 shrink-0 gap-2 rounded-xl bg-white px-5 font-black text-violet-700 hover:bg-white/90"><Plus className="h-4 w-4" />{t.create}</Button>
@@ -268,14 +268,14 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
         {loading ? (
           <div className="grid place-items-center py-24"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
         ) : (
-          <div className="space-y-8">
-            {openPublic.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2><div className="grid gap-4">{openPublic.map((challenge) => <div key={challenge.id} className="space-y-3"><div className="rounded-[1.5rem] border border-amber-400/40 bg-card p-5 shadow-sm"><h3 className="font-black">{challenge.title}</h3><p className="mt-1 text-sm text-muted-foreground">{t.publicDesc}</p><p className="mt-1 text-xs text-muted-foreground">{t.timeLeft}: {remainingLabel(challenge.endsAt, language, now)}</p><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="mt-4 w-full gap-2 rounded-xl">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}{t.join}</Button></div><ChallengeCard challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} /></div>)}</div></section>}
+          <div className="min-w-0 space-y-8">
+            {openPublic.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{openPublic.map((challenge) => <div key={challenge.id} className="min-w-0 space-y-3"><div className="min-w-0 rounded-[1.5rem] border border-amber-400/40 bg-card p-5 shadow-sm"><h3 className="min-w-0 font-black leading-relaxed [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></h3><p className="mt-1 text-sm text-muted-foreground">{t.publicDesc}</p><p className="mt-1 text-xs text-muted-foreground">{t.timeLeft}: {remainingLabel(challenge.endsAt, language, now)}</p><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="mt-4 h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal rounded-xl py-3">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}{t.join}</Button></div><ChallengeCard challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} /></div>)}</div></section>}
 
-            {incoming.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><UserPlus className="h-5 w-5 text-violet-600" />{t.incoming}<span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs text-violet-700 dark:text-violet-300">{incoming.length}</span></h2><div className="grid gap-3 md:grid-cols-2">{incoming.map((challenge) => <article key={challenge.id} className="rounded-[1.5rem] border border-violet-500/25 bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-600 text-white"><Swords className="h-5 w-5" /></span><div><h3 className="font-black">{challenge.title}</h3><p className="mt-1 text-xs text-muted-foreground">{challenge.creatorName} {t.invitedBy} · {remainingLabel(challenge.endsAt, language, now)}</p></div></div><div className="mt-4 flex gap-2"><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="flex-1 gap-1.5 rounded-xl">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{t.accept}</Button><Button onClick={() => respond(challenge.id, false)} disabled={busyId === challenge.id} variant="outline" className="flex-1 gap-1.5 rounded-xl"><X className="h-4 w-4" />{t.decline}</Button></div></article>)}</div></section>}
+            {incoming.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><UserPlus className="h-5 w-5 text-violet-600" />{t.incoming}<span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs text-violet-700 dark:text-violet-300">{incoming.length}</span></h2><div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">{incoming.map((challenge) => <article key={challenge.id} className="min-w-0 rounded-[1.5rem] border border-violet-500/25 bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-600 text-white"><Swords className="h-5 w-5" /></span><div className="min-w-0 flex-1"><h3 className="min-w-0 font-black leading-relaxed [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></h3><p className="mt-1 text-xs text-muted-foreground [overflow-wrap:anywhere]">{challenge.creatorName} {t.invitedBy} · {remainingLabel(challenge.endsAt, language, now)}</p></div></div><div className="mt-4 flex gap-2"><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="h-auto min-h-11 min-w-0 flex-1 gap-1.5 whitespace-normal rounded-xl py-2">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{t.accept}</Button><Button onClick={() => respond(challenge.id, false)} disabled={busyId === challenge.id} variant="outline" className="h-auto min-h-11 min-w-0 flex-1 gap-1.5 whitespace-normal rounded-xl py-2"><X className="h-4 w-4" />{t.decline}</Button></div></article>)}</div></section>}
 
-            {active.length > 0 && <section><div className="mb-3 flex items-end justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-black"><Clock3 className="h-5 w-5 text-emerald-600" />{t.active}</h2><span className="text-xs font-semibold text-muted-foreground">{t.refresh}</span></div><div className="grid gap-4">{active.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
+            {active.length > 0 && <section><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-black"><Clock3 className="h-5 w-5 text-emerald-600" />{t.active}</h2><span className="text-xs font-semibold text-muted-foreground">{t.refresh}</span></div><div className="grid min-w-0 grid-cols-1 gap-4">{active.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
 
-            {finished.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.finished}</h2><div className="grid gap-4">{finished.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
+            {finished.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.finished}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{finished.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
 
             {challenges.length === 0 && <section className="rounded-[2rem] border border-dashed border-border bg-card/65 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><UsersRound className="h-7 w-7" /></span><p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">{t.empty}</p><Button onClick={() => setCreateOpen(true)} className="mt-5 gap-2 rounded-xl"><Plus className="h-4 w-4" />{t.create}</Button></section>}
           </div>
@@ -287,7 +287,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
           <DialogHeader><DialogTitle className="text-xl font-black">{t.create}</DialogTitle><DialogDescription>{t.startNow}</DialogDescription></DialogHeader>
           <div className="space-y-5 pt-2">
             <label className="block"><span className="mb-2 block text-sm font-bold">{t.titleLabel}</span><Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.titlePlaceholder} maxLength={80} /></label>
-            <fieldset><legend className="mb-2 text-sm font-bold">{t.duration}</legend><div className="grid grid-cols-4 gap-2">{DURATIONS.map((days) => <button key={days} type="button" onClick={() => setDuration(days)} aria-pressed={duration === days} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${duration === days ? "border-violet-600 bg-violet-600 text-white" : "border-border bg-card hover:border-violet-400"}`}>{days}<span className="ms-1 text-xs font-semibold">{days === 1 ? t.oneDay : t.days}</span></button>)}</div></fieldset>
+            <fieldset><legend className="mb-2 text-sm font-bold">{t.duration}</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{DURATIONS.map((days) => <button key={days} type="button" onClick={() => setDuration(days)} aria-pressed={duration === days} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${duration === days ? "border-violet-600 bg-violet-600 text-white" : "border-border bg-card hover:border-violet-400"}`}>{days}<span className="ms-1 text-xs font-semibold">{days === 1 ? t.oneDay : t.days}</span></button>)}</div></fieldset>
             <div><p className="mb-2 text-sm font-bold">{t.friends}</p><div className="relative"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.search} className="ps-9" />{searching && <Loader2 className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}</div>
               {query.trim().length >= 2 && <div className="mt-2 overflow-hidden rounded-xl border border-border">{results.length ? results.map((friend) => <button key={friend.user_id} type="button" onClick={() => { if (selected.length < 20) { setSelected((current) => [...current, friend]); setQuery(""); } }} className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-start last:border-0 hover:bg-secondary"><span className="grid h-8 w-8 place-items-center rounded-full bg-violet-500/10 text-xs font-black text-violet-700">{friend.display_name.slice(0, 1).toUpperCase()}</span><span className="text-sm font-bold">{friend.display_name}</span><Plus className="ms-auto h-4 w-4 text-muted-foreground" /></button>) : !searching && <p className="px-3 py-4 text-center text-sm text-muted-foreground">{t.noResults}</p>}</div>}
               {selected.length > 0 && <div className="mt-3"><p className="mb-2 text-xs font-semibold text-muted-foreground">{t.selected}: {selected.length}</p><div className="flex flex-wrap gap-2">{selected.map((friend) => <button key={friend.user_id} type="button" onClick={() => setSelected((current) => current.filter((item) => item.user_id !== friend.user_id))} className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-700 dark:text-violet-300">{friend.display_name}<X className="h-3.5 w-3.5" /></button>)}</div></div>}
