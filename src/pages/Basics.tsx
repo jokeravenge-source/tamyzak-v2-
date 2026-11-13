@@ -6,7 +6,7 @@ import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
   X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
   Globe, Trophy, Target, HelpCircle, Headphones, Podcast, Lightbulb, Sparkles,
-  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
+  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock, Instagram,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
 import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
@@ -29,6 +29,7 @@ import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import NewFeatureAnnouncement from "@/components/NewFeatureAnnouncement";
 import challenge3dIcon from "@/assets/challenge-3d-icon.png";
+import houdiniHoodieIcon from "@/assets/houdini-hoodie-icon.png";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
@@ -1400,6 +1401,79 @@ const Basics = ({
             </button>
           </header>
 
+          {/* Join the challenge + Buy from Houdini — horizontal cards, 3D icon
+              on the left, text on the right, background follows the theme. */}
+          <div className="mb-5 grid gap-4">
+            <motion.button
+              type="button"
+              dir="ltr"
+              onClick={() => navigate("challenge")}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.99 }}
+              aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
+              className="group flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-start shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.8)] transition-shadow hover:shadow-[0_28px_60px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+              style={{ background: "var(--gradient-primary)", color: "hsl(var(--primary-foreground))" }}
+            >
+              <img
+                src={challenge3dIcon}
+                alt=""
+                width={816}
+                height={816}
+                loading="lazy"
+                className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+              />
+              <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
+                <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                  {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
+                </span>
+                <span className="mt-1 block text-sm leading-6 opacity-80">
+                  {isRTL
+                    ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
+                    : "Answer the challenge questions faster than your friends"}
+                </span>
+              </span>
+              <ArrowRight
+                className={`h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </motion.button>
+
+            <motion.a
+              href="https://www.instagram.com/houdini_st0re/"
+              target="_blank"
+              rel="noopener noreferrer"
+              dir="ltr"
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.99 }}
+              aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
+              className="group flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-start shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.8)] transition-shadow hover:shadow-[0_28px_60px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
+              style={{ background: "var(--gradient-primary)", color: "hsl(var(--primary-foreground))" }}
+            >
+              <img
+                src={houdiniHoodieIcon}
+                alt=""
+                width={816}
+                height={816}
+                loading="lazy"
+                className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+              />
+              <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
+                <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                  {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
+                </span>
+                <span className="mt-1 block text-sm leading-6 opacity-80">
+                  {isRTL
+                    ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
+                    : "The limited-edition hoodie — order from Houdini on Instagram"}
+                </span>
+              </span>
+              <Instagram
+                className="h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110"
+                aria-hidden="true"
+              />
+            </motion.a>
+          </div>
+
           <NewFeatureAnnouncement language={language} />
           <TelegramLinkCard language={language} source="home" variant="home" />
 
@@ -1451,42 +1525,6 @@ const Basics = ({
               ))}
             </div>
           </section>
-
-          {/* Join the challenge — horizontal card, 3D icon on the left,
-              text on the right, background follows the student's theme. */}
-          <motion.button
-            type="button"
-            dir="ltr"
-            onClick={() => navigate("challenge")}
-            whileHover={{ y: -3 }}
-            whileTap={{ scale: 0.99 }}
-            aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-            className="group mt-5 flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-start shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.8)] transition-shadow hover:shadow-[0_28px_60px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-            style={{ background: "var(--gradient-primary)", color: "hsl(var(--primary-foreground))" }}
-          >
-            <img
-              src={challenge3dIcon}
-              alt=""
-              width={816}
-              height={816}
-              loading="lazy"
-              className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
-            />
-            <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-              <span className="block text-xl font-black tracking-tight sm:text-2xl">
-                {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-              </span>
-              <span className="mt-1 block text-sm leading-6 opacity-80">
-                {isRTL
-                  ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
-                  : "Answer the challenge questions faster than your friends"}
-              </span>
-            </span>
-            <ArrowRight
-              className={`h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
-              aria-hidden="true"
-            />
-          </motion.button>
 
           <ChapterProgressCircles language={language} onPracticeTopic={onPracticeTopic} />
           <section className="mt-6 grid grid-cols-3 divide-x divide-x-reverse divide-[var(--tmz-line)] rounded-2xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] p-3 sm:p-4" aria-label={isRTL ? "ملخص التقدم" : "Progress summary"}>
