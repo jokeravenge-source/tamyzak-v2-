@@ -1437,7 +1437,7 @@ const Basics = ({
                   </span>
                 </span>
                 <ArrowRight
-                  className={`h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 sm:h-5 sm:w-5 ${isRTL ? "rotate-180" : ""}`}
                   aria-hidden="true"
                 />
               </motion.button>
@@ -1471,7 +1471,7 @@ const Basics = ({
                   </span>
                 </span>
                 <Instagram
-                  className="h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110"
+                  className="h-3.5 w-3.5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110 sm:h-5 sm:w-5"
                   aria-hidden="true"
                 />
               </motion.a>
