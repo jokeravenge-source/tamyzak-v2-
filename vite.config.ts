@@ -57,6 +57,19 @@ export default defineConfig(({ mode }) => ({
     headers: { ...securityHeaders, "Content-Security-Policy": CSP_PROD },
   },
   plugins: [react(), mcpPlugin(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return "vendor-react";
+          if (id.includes("@supabase")) return "vendor-supabase";
+          if (id.includes("framer-motion")) return "vendor-motion";
+          return undefined;
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
