@@ -1401,77 +1401,81 @@ const Basics = ({
             </button>
           </header>
 
-          {/* Join the challenge + Buy from Houdini — horizontal cards, 3D icon
-              on the left, text on the right, background follows the theme. */}
-          <div className="mb-5 grid gap-4">
-            <motion.button
-              type="button"
-              dir="ltr"
-              onClick={() => navigate("challenge")}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.99 }}
-              aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-              className="group flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-start shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.8)] transition-shadow hover:shadow-[0_28px_60px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-              style={{ background: "var(--gradient-primary)", color: "hsl(var(--primary-foreground))" }}
+          {/* Join the challenge + Buy from Houdini — horizontally scrollable
+              list; each card keeps its own color and shows 3D icon left, text right. */}
+          <div className="mb-5 -mx-4 sm:mx-0">
+            <div
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              role="group"
+              aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
             >
-              <img
-                src={challenge3dIcon}
-                alt=""
-                width={816}
-                height={816}
-                loading="lazy"
-                className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
-              />
-              <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                <span className="block text-xl font-black tracking-tight sm:text-2xl">
-                  {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
+              <motion.button
+                type="button"
+                dir="ltr"
+                onClick={() => navigate("challenge")}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.99 }}
+                aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
+                className="group flex min-w-[280px] shrink-0 grow-0 basis-[86vw] snap-start items-center gap-4 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-5 text-start text-white shadow-[0_24px_50px_-28px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_28px_60px_-26px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:basis-[calc(50%_-_0.5rem)] sm:p-6"
+              >
+                <img
+                  src={challenge3dIcon}
+                  alt=""
+                  width={816}
+                  height={816}
+                  loading="lazy"
+                  className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+                />
+                <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
+                  <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                    {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 opacity-80">
+                    {isRTL
+                      ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
+                      : "Answer the challenge questions faster than your friends"}
+                  </span>
                 </span>
-                <span className="mt-1 block text-sm leading-6 opacity-80">
-                  {isRTL
-                    ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
-                    : "Answer the challenge questions faster than your friends"}
-                </span>
-              </span>
-              <ArrowRight
-                className={`h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
-                aria-hidden="true"
-              />
-            </motion.button>
+                <ArrowRight
+                  className={`h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 ${isRTL ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                />
+              </motion.button>
 
-            <motion.a
-              href="https://www.instagram.com/houdini_st0re/"
-              target="_blank"
-              rel="noopener noreferrer"
-              dir="ltr"
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.99 }}
-              aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
-              className="group flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] p-5 text-start shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.8)] transition-shadow hover:shadow-[0_28px_60px_-26px_hsl(var(--primary)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-6"
-              style={{ background: "var(--gradient-primary)", color: "hsl(var(--primary-foreground))" }}
-            >
-              <img
-                src={houdiniHoodieIcon}
-                alt=""
-                width={816}
-                height={816}
-                loading="lazy"
-                className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
-              />
-              <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                <span className="block text-xl font-black tracking-tight sm:text-2xl">
-                  {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
+              <motion.a
+                href="https://www.instagram.com/houdini_st0re/"
+                target="_blank"
+                rel="noopener noreferrer"
+                dir="ltr"
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.99 }}
+                aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
+                className="group flex min-w-[280px] shrink-0 grow-0 basis-[86vw] snap-start items-center gap-4 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-5 text-start text-white shadow-[0_24px_50px_-28px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_28px_60px_-26px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:basis-[calc(50%_-_0.5rem)] sm:p-6"
+              >
+                <img
+                  src={houdiniHoodieIcon}
+                  alt=""
+                  width={816}
+                  height={816}
+                  loading="lazy"
+                  className="h-16 w-16 shrink-0 drop-shadow-[0_12px_20px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
+                />
+                <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
+                  <span className="block text-xl font-black tracking-tight sm:text-2xl">
+                    {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 opacity-80">
+                    {isRTL
+                      ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
+                      : "The limited-edition hoodie — order from Houdini on Instagram"}
+                  </span>
                 </span>
-                <span className="mt-1 block text-sm leading-6 opacity-80">
-                  {isRTL
-                    ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
-                    : "The limited-edition hoodie — order from Houdini on Instagram"}
-                </span>
-              </span>
-              <Instagram
-                className="h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110"
-                aria-hidden="true"
-              />
-            </motion.a>
+                <Instagram
+                  className="h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110"
+                  aria-hidden="true"
+                />
+              </motion.a>
+            </div>
           </div>
 
           <NewFeatureAnnouncement language={language} />
