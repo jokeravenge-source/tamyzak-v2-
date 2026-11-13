@@ -558,6 +558,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   }, []);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  // Every 2 hours of running study time, ask whether the student is still studying.
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const nextCheckInRef = useRef(0);
   const [editingSaveTime, setEditingSaveTime] = useState(false);
   const [minutesToRemove, setMinutesToRemove] = useState("");
   const wasRunningBeforeSaveRef = useRef(false);
@@ -955,6 +958,25 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [running]);
+
+  useEffect(() => {
+    const CHECK_EVERY = 2 * 60 * 60;
+    if (!running) return;
+    if (nextCheckInRef.current <= seconds - CHECK_EVERY || nextCheckInRef.current === 0) {
+      nextCheckInRef.current = (Math.floor(seconds / CHECK_EVERY) + 1) * CHECK_EVERY;
+    }
+    if (seconds >= nextCheckInRef.current && !checkInOpen) {
+      nextCheckInRef.current = (Math.floor(seconds / CHECK_EVERY) + 1) * CHECK_EVERY;
+      setCheckInOpen(true);
+    }
+  }, [seconds, running, checkInOpen]);
+
+  // No answer within 5 minutes means the student left: pause the timer.
+  useEffect(() => {
+    if (!checkInOpen) return;
+    const id = window.setTimeout(() => { setRunning(false); setCheckInOpen(false); }, 5 * 60 * 1000);
+    return () => clearTimeout(id);
+  }, [checkInOpen]);
 
   // Recompute elapsed when tab regains focus
   useEffect(() => {
@@ -1594,6 +1616,20 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           )}
         </section>
       </div>
+      <AlertDialog open={checkInOpen}>
+        <AlertDialogContent dir={dir}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-xl">{language === "ar" ? "هل ما زلت تدرس؟ 📚" : "Are you still studying? 📚"}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {language === "ar" ? "مرّت ساعتان على دراستك. إذا لم تجب خلال 5 دقائق سيتوقف المؤقت تلقائياً." : "You've studied for 2 more hours. If you don't answer within 5 minutes, the timer pauses automatically."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:justify-center">
+            <AlertDialogCancel onClick={() => { setRunning(false); setCheckInOpen(false); }}>{language === "ar" ? "لا، أوقف المؤقت" : "No, pause timer"}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setCheckInOpen(false)}>{language === "ar" ? "نعم، ما زلت أدرس" : "Yes, still studying"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={saveOpen} onOpenChange={(open) => { if (!open) cancelSave(); }}>
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
