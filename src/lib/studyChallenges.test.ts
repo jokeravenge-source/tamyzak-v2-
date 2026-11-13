@@ -30,3 +30,37 @@ describe("study friend challenges", () => {
     expect(remainingLabel(challenge.endsAt, "en", Date.parse("2026-10-30T00:00:00.000Z"))).toBe("2d 0h");
   });
 });
+
+
+describe("challenge elapsed-time limits", () => {
+  const recent: StudyChallenge = {
+    ...challenge,
+    startsAt: "2026-11-13T12:00:00Z",
+    endsAt: "2026-11-20T12:00:00Z",
+    participants: [
+      { userId: "k", displayName: "Koki", status: "accepted", totalSeconds: 43200 },
+      { userId: "v", displayName: "Valid", status: "accepted", totalSeconds: 900 },
+    ],
+  };
+
+  it("removes excess from an old response while preserving valid time", () => {
+    const standings = acceptedStandings(recent, Date.parse("2026-11-13T12:30:00Z"));
+    expect(standings.map((p) => p.totalSeconds)).toEqual([1800, 900]);
+    expect(recent.participants[0].totalSeconds).toBe(43200);
+  });
+
+  it("does not allow study time before the start or beyond the final challenge duration", () => {
+    expect(acceptedStandings(recent, Date.parse("2026-11-13T11:59:00Z"))[0].totalSeconds).toBe(0);
+    const ended = { ...recent, endsAt: "2026-11-13T13:00:00Z" };
+    expect(acceptedStandings(ended, Date.parse("2026-11-14T12:00:00Z"))[0].totalSeconds).toBe(3600);
+  });
+
+  it("handles invalid totals and dates without displaying impossible times", () => {
+    const invalid = { ...recent, participants: [
+      { ...recent.participants[0], totalSeconds: Number.POSITIVE_INFINITY },
+      { ...recent.participants[1], totalSeconds: -20 },
+    ] };
+    expect(acceptedStandings(invalid).map((p) => p.totalSeconds)).toEqual([0, 0]);
+    expect(acceptedStandings({ ...recent, startsAt: "invalid" })[0].totalSeconds).toBe(0);
+  });
+});

@@ -225,6 +225,13 @@
       "when": 1794573453921,
       "tag": "0031_public_study_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794593793030,
+      "tag": "0032_challenge_study_window",
+      "breakpoints": true
     }
   ]
 }

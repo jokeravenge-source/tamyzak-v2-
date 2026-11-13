@@ -26,9 +26,21 @@ export function challengePhase(challenge: StudyChallenge, now = Date.now()) {
   return "active" as const;
 }
 
-export function acceptedStandings(challenge: StudyChallenge) {
+export function acceptedStandings(challenge: StudyChallenge, now = Date.now()) {
+  const startsAt = Date.parse(challenge.startsAt);
+  const endsAt = Math.min(Date.parse(challenge.endsAt), now);
+  const elapsedSeconds = Number.isFinite(startsAt) && Number.isFinite(endsAt)
+    ? Math.max(0, Math.floor((endsAt - startsAt) / 1000))
+    : 0;
   return challenge.participants
     .filter((participant) => participant.status === "accepted")
+    // Keep old/cached RPC responses within the physically possible window too.
+    .map((participant) => ({
+      ...participant,
+      totalSeconds: Number.isFinite(participant.totalSeconds)
+        ? Math.min(elapsedSeconds, Math.max(0, Math.floor(participant.totalSeconds)))
+        : 0,
+    }))
     .sort((a, b) => b.totalSeconds - a.totalSeconds || a.displayName.localeCompare(b.displayName));
 }
 

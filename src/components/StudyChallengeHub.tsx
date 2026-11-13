@@ -88,7 +88,7 @@ function ChallengeCard({
 }) {
   const t = COPY[language];
   const phase = challengePhase(challenge, now);
-  const standings = acceptedStandings(challenge);
+  const standings = acceptedStandings(challenge, now);
   const pendingCount = challenge.participants.filter((participant) => participant.status === "pending").length;
   const maxSeconds = Math.max(1, standings[0]?.totalSeconds ?? 0);
   const isCreator = challenge.creatorId === userId;
