@@ -1,335 +1,336 @@
--- Each owned visa earns 100 points once; active flight time joins study history.
-ALTER TABLE public.study_flight_visits ADD COLUMN visa_awarded_at timestamptz;
-ALTER TABLE public.study_flights ADD COLUMN study_legacy_paused_ms bigint NOT NULL DEFAULT 0;
-UPDATE public.study_flights SET study_legacy_paused_ms = paused_ms;
-ALTER TABLE public.study_flight_members ADD COLUMN accepted_at timestamptz;
-UPDATE public.study_flight_members m SET accepted_at=f.started_at FROM public.study_flights f
-WHERE f.id=m.flight_id AND m.status='accepted';
-
-CREATE TABLE public.study_flight_breaks (
-  flight_id text NOT NULL REFERENCES public.study_flights(id),
-  starts_at timestamptz NOT NULL, ends_at timestamptz NOT NULL,
-  PRIMARY KEY(flight_id, starts_at), CHECK(ends_at >= starts_at)
-);
-CREATE TABLE public.study_flight_study_credits (
-  session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
-  destination_id text NOT NULL, period tstzrange NOT NULL,
-  CHECK(NOT isempty(period) AND NOT lower_inf(period) AND NOT upper_inf(period)),
-  FOREIGN KEY(user_id,destination_id) REFERENCES public.study_flight_visits(user_id,destination_id)
-);
-CREATE INDEX study_flight_credits_user_idx ON public.study_flight_study_credits(user_id);
-ALTER TABLE public.study_flight_breaks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.study_flight_study_credits ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.study_flight_breaks, public.study_flight_study_credits FROM PUBLIC, anon, authenticated;
-GRANT ALL ON public.study_flight_breaks, public.study_flight_study_credits TO service_role;
-ALTER TABLE public.study_sessions ADD COLUMN study_periods tstzmultirange;
-ALTER TABLE public.study_sessions ADD COLUMN flight_credit_id uuid UNIQUE REFERENCES public.study_flight_study_credits(session_id);
-CREATE INDEX IF NOT EXISTS study_sessions_user_time_idx ON public.study_sessions(user_id,created_at);
-
-CREATE FUNCTION public.track_study_flight_clock() RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-BEGIN
-  IF TG_TABLE_NAME='study_flight_members' THEN
-    IF NEW.status='accepted' AND (TG_OP='INSERT' OR OLD.status IS DISTINCT FROM 'accepted') THEN NEW.accepted_at:=now(); END IF;
-  ELSIF OLD.paused_at IS NOT NULL AND NEW.paused_at IS NULL THEN
-    INSERT INTO public.study_flight_breaks VALUES(OLD.id,OLD.paused_at,now()) ON CONFLICT DO NOTHING;
-  END IF;
-  RETURN NEW;
-END $$;
-CREATE TRIGGER study_flight_member_clock BEFORE INSERT OR UPDATE ON public.study_flight_members
-FOR EACH ROW EXECUTE FUNCTION public.track_study_flight_clock();
-CREATE TRIGGER study_flight_break_clock BEFORE UPDATE ON public.study_flights
-FOR EACH ROW EXECUTE FUNCTION public.track_study_flight_clock();
-
-CREATE FUNCTION public.study_flight_periods_internal(_uid uuid,_destination text) RETURNS tstzmultirange
-LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE v public.study_flight_visits%ROWTYPE; f public.study_flights%ROWTYPE;
-  plan jsonb; starts timestamptz; finishes timestamptz; joined timestamptz;
-  available tstzmultirange; breaks tstzmultirange; result tstzmultirange:='{}';
-  w tstzrange; stage jsonb; cursor_sec double precision:=0; stage_sec double precision;
-  width_sec double precision; lo double precision; hi double precision; stage_offset double precision;
-  legacy_sec double precision;
-BEGIN
-  SELECT * INTO v FROM public.study_flight_visits WHERE user_id=_uid AND destination_id=_destination;
-  IF NOT FOUND THEN RETURN result; END IF;
-  IF v.flight_id IS NULL THEN
-    -- Frozen migration snapshots, never new browser-authored clocks.
-    IF jsonb_typeof(v.legacy_data->'arrivalAt') IS DISTINCT FROM 'number' OR jsonb_typeof(v.legacy_data->'startedAt') IS DISTINCT FROM 'number'
-      OR v.legacy_data->>'pausedAt' IS NOT NULL THEN RETURN result; END IF;
-    finishes:=to_timestamp((v.legacy_data->>'arrivalAt')::double precision/1000);
-    IF finishes>now() THEN RETURN result; END IF;
-    SELECT r.plan INTO plan FROM public.study_flight_routes r WHERE r.destination_id=_destination;
-    legacy_sec:=greatest(0,least(coalesce((v.legacy_data->>'durationSec')::double precision,0),
-      (plan->>'durationSec')::double precision,
-      extract(epoch FROM finishes-to_timestamp((v.legacy_data->>'startedAt')::double precision/1000))
-        -coalesce((v.legacy_data->>'pausedMs')::double precision,0)/1000));
-    IF legacy_sec>=1 THEN result:=tstzmultirange(tstzrange(finishes-make_interval(secs=>floor(legacy_sec)),finishes,'[)')); END IF;
-    RETURN result;
-  END IF;
-  SELECT * INTO f FROM public.study_flights WHERE id=v.flight_id;
-  plan:=f.plan; starts:=f.started_at;
-  finishes:=least(now(),f.arrival_at,coalesce(f.paused_at,now()));
-  joined:=starts;
-  IF f.owner_id<>_uid THEN
-    SELECT accepted_at INTO joined FROM public.study_flight_members WHERE flight_id=f.id AND user_id=_uid AND status='accepted';
-    IF joined IS NULL THEN RETURN result; END IF;
-  END IF;
-  IF finishes<=starts THEN RETURN result; END IF;
-  available:=tstzmultirange(tstzrange(starts,finishes,'[)'));
-  SELECT coalesce(range_agg(tstzrange(b.starts_at,b.ends_at,'[)')),'{}') INTO breaks FROM public.study_flight_breaks b WHERE b.flight_id=f.id;
-  -- Old aggregate pauses lack individual timestamps; reserve that known duration.
-  IF f.study_legacy_paused_ms>0 THEN breaks:=breaks+tstzmultirange(tstzrange(starts,least(finishes,starts+make_interval(secs=>f.study_legacy_paused_ms/1000.0)),'[)')); END IF;
-  available:=available-breaks;
-  FOR w IN SELECT unnest(available) LOOP
-    width_sec:=extract(epoch FROM upper(w)-lower(w)); stage_offset:=0;
-    FOR stage IN SELECT value FROM jsonb_array_elements(plan->'itinerary') LOOP
-      stage_sec:=(stage->>'durationSec')::double precision;
-      IF stage->>'kind'<>'rest' THEN
-        lo:=greatest(cursor_sec,stage_offset); hi:=least(cursor_sec+width_sec,stage_offset+stage_sec);
-        IF hi>lo THEN
-          result:=result+tstzmultirange(tstzrange(
-            greatest(joined,lower(w)+make_interval(secs=>lo-cursor_sec)),
-            greatest(joined,lower(w)+make_interval(secs=>hi-cursor_sec)),'[)'));
-        END IF;
-      END IF;
-      stage_offset:=stage_offset+stage_sec;
-    END LOOP;
-    cursor_sec:=cursor_sec+width_sec;
-  END LOOP;
-  RETURN result;
-END $$;
-
-CREATE OR REPLACE FUNCTION public.validate_flight_visa_points() RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-BEGIN
-  IF NEW.source='trip_visa' AND (NEW.points<>100 OR NOT EXISTS(
-    SELECT 1 FROM public.study_flight_visits v LEFT JOIN public.study_flights f ON f.id=v.flight_id
-    WHERE v.user_id=NEW.user_id AND v.destination_id=NEW.ref_id AND (
-      (f.id IS NOT NULL AND f.paused_at IS NULL AND f.arrival_at<=now()) OR
-      (v.flight_id IS NULL AND v.legacy_data->>'pausedAt' IS NULL
-        AND jsonb_typeof(v.legacy_data->'arrivalAt')='number' AND (v.legacy_data->>'arrivalAt')::numeric<=extract(epoch FROM now())*1000)
-    )
-  )) THEN RAISE EXCEPTION 'unverified_flight_visa'; END IF;
-  RETURN NEW;
-END $$;
-
--- Verify server receipts; do not count an overlapping saved timer twice.
-CREATE FUNCTION public.validate_flight_study_session() RETURNS trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE receipt public.study_flight_study_credits%ROWTYPE; covered tstzmultirange; remaining tstzmultirange;
-BEGIN
-  PERFORM pg_advisory_xact_lock(hashtextextended('study-flight-user:'||NEW.user_id::text,0));
-  IF NEW.flight_credit_id IS NOT NULL THEN
-    SELECT * INTO receipt FROM public.study_flight_study_credits WHERE session_id=NEW.flight_credit_id;
-    IF NOT FOUND OR NEW.id<>receipt.session_id OR NEW.user_id<>receipt.user_id OR NEW.points<>0
-      OR NEW.created_at<>upper(receipt.period)
-      OR NEW.duration_seconds<>floor(extract(epoch FROM upper(receipt.period)-lower(receipt.period))) THEN
-      RAISE EXCEPTION 'unverified_flight_study';
-    END IF;
-    NEW.study_periods:=tstzmultirange(receipt.period);
-  ELSIF NEW.duration_seconds>0 THEN
-    SELECT coalesce(range_agg(prior.period),'{}') INTO covered FROM (
-      SELECT c.period FROM public.study_flight_study_credits c WHERE c.user_id=NEW.user_id
-      UNION ALL
-      SELECT unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(s.created_at-make_interval(secs=>s.duration_seconds),s.created_at,'[)'))))
-      FROM public.study_sessions s WHERE s.user_id=NEW.user_id AND s.id<>NEW.id AND s.duration_seconds>0
-    ) prior WHERE prior.period && tstzrange(NEW.created_at-make_interval(secs=>NEW.duration_seconds),NEW.created_at,'[)');
-    remaining:=tstzmultirange(tstzrange(NEW.created_at-make_interval(secs=>NEW.duration_seconds),NEW.created_at,'[)'))-covered;
-    NEW.study_periods:=remaining;
-    SELECT coalesce(floor(sum(extract(epoch FROM upper(p)-lower(p)))),0)::integer INTO NEW.duration_seconds FROM unnest(remaining) p;
-  ELSE NEW.study_periods:='{}';
-  END IF;
-  RETURN NEW;
-END $$;
-CREATE TRIGGER validate_flight_study_session BEFORE INSERT OR UPDATE ON public.study_sessions
-FOR EACH ROW EXECUTE FUNCTION public.validate_flight_study_session();
-
-CREATE FUNCTION public.sync_study_flight_account_internal(_uid uuid) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE v record; periods tstzmultirange; covered tstzmultirange; w tstzrange;
-  stamp timestamptz; until_at timestamptz; chunk_start timestamptz; sid uuid; added_points integer:=0; added_seconds integer:=0; earned uuid;
-BEGIN
-  PERFORM pg_advisory_xact_lock(hashtextextended('study-flight-user:'||_uid::text,0));
-  FOR v IN SELECT vis.*, f.arrival_at, f.paused_at FROM public.study_flight_visits vis
-    LEFT JOIN public.study_flights f ON f.id=vis.flight_id WHERE vis.user_id=_uid ORDER BY vis.destination_id LOOP
-    IF v.visa_awarded_at IS NULL AND (
-      (v.flight_id IS NOT NULL AND v.paused_at IS NULL AND v.arrival_at<=now()) OR
-      (v.flight_id IS NULL AND v.legacy_data->>'pausedAt' IS NULL
-        AND jsonb_typeof(v.legacy_data->'arrivalAt')='number' AND (v.legacy_data->>'arrivalAt')::numeric<=extract(epoch FROM now())*1000)
-    ) THEN
-      earned:=NULL;
-      INSERT INTO public.user_points(user_id,source,points,ref_id) VALUES(_uid,'trip_visa',100,v.destination_id)
-      ON CONFLICT DO NOTHING RETURNING id INTO earned;
-      IF earned IS NOT NULL THEN added_points:=added_points+100; END IF;
-      UPDATE public.study_flight_visits SET visa_awarded_at=now() WHERE user_id=_uid AND destination_id=v.destination_id;
-    END IF;
-    periods:=public.study_flight_periods_internal(_uid,v.destination_id);
-    SELECT coalesce(range_agg(p.period),'{}') INTO covered
-      FROM public.study_sessions s CROSS JOIN LATERAL unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(s.created_at-make_interval(secs=>s.duration_seconds),s.created_at,'[)')))) p(period)
-      WHERE s.user_id=_uid AND s.duration_seconds>0;
-    periods:=periods-covered;
-    SELECT coalesce(range_agg(c.period),'{}') INTO covered FROM public.study_flight_study_credits c WHERE c.user_id=_uid;
-    periods:=periods-covered;
-    FOR w IN SELECT unnest(periods) LOOP
-      stamp:=lower(w);
-      WHILE stamp+interval '1 second'<=upper(w) LOOP
-        -- Extend a contiguous receipt rather than create one history row per poll.
-        SELECT c.session_id,lower(c.period) INTO sid,chunk_start
-          FROM public.study_flight_study_credits c JOIN public.study_sessions s ON s.id=c.session_id
-          WHERE c.user_id=_uid AND c.destination_id=v.destination_id AND upper(c.period)=stamp
-            AND upper(c.period)-lower(c.period)<interval '12 hours'
-          LIMIT 1 FOR UPDATE OF c;
-        IF FOUND THEN
-          until_at:=least(upper(w),chunk_start+interval '12 hours');
-          until_at:=stamp+make_interval(secs=>floor(extract(epoch FROM until_at-stamp)));
-          UPDATE public.study_flight_study_credits SET period=tstzrange(chunk_start,until_at,'[)') WHERE session_id=sid;
-          UPDATE public.study_sessions SET duration_seconds=extract(epoch FROM until_at-chunk_start)::integer,created_at=until_at WHERE id=sid;
-        ELSE
-          until_at:=least(upper(w),stamp+interval '12 hours');
-          until_at:=stamp+make_interval(secs=>floor(extract(epoch FROM until_at-stamp)));
-          INSERT INTO public.study_flight_study_credits(user_id,destination_id,period)
-            VALUES(_uid,v.destination_id,tstzrange(stamp,until_at,'[)')) RETURNING session_id INTO sid;
-          INSERT INTO public.study_sessions(id,user_id,subject,mission,duration_seconds,points,mission_completed,created_at,flight_credit_id)
-            VALUES(sid,_uid,'general','Study flight · '||v.destination_id,extract(epoch FROM until_at-stamp)::integer,0,true,until_at,sid);
-        END IF;
-        added_seconds:=added_seconds+extract(epoch FROM until_at-stamp)::integer;
-        stamp:=until_at;
-      END LOOP;
-    END LOOP;
-  END LOOP;
-  RETURN jsonb_build_object('pointsAdded',added_points,'studySecondsAdded',added_seconds);
-END $$;
-
-CREATE FUNCTION public.sync_my_study_flights() RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'authentication_required'; END IF;
-  RETURN public.sync_study_flight_account_internal(auth.uid());
-END $$;
-
-CREATE OR REPLACE FUNCTION public.study_flight_snapshot_internal(_uid uuid) RETURNS jsonb
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
-  SELECT jsonb_build_object('userId', _uid, 'serverNow', extract(epoch FROM now())*1000,
-    'journeys', coalesce((SELECT jsonb_agg(q.data ORDER BY (q.data->>'startedAt')::numeric DESC) FROM (
-      SELECT f.plan || jsonb_build_object(
-        'id', f.id, 'studentId', _uid, 'hostId', f.owner_id,
-        'startedAt', extract(epoch FROM f.started_at)*1000,
-        'arrivalAt', extract(epoch FROM f.arrival_at)*1000,
-        'pausedAt', extract(epoch FROM f.paused_at)*1000, 'pausedMs', f.paused_ms,
-        'arrivalSeenAt', extract(epoch FROM v.arrival_seen_at)*1000,
-        'status', CASE WHEN f.paused_at IS NULL AND f.arrival_at <= now() THEN 'arrived' ELSE 'in_flight' END,
-        'visaSoldAt', extract(epoch FROM v.sold_at)*1000, 'visaAwardedAt', extract(epoch FROM v.visa_awarded_at)*1000, 'canSell', false, 'legacy', false,
-        'passengers', CASE WHEN f.paused_at IS NULL AND f.arrival_at <= now() THEN '[]'::jsonb ELSE (
-          SELECT coalesce(jsonb_agg(jsonb_build_object('userId', people.user_id,
-            'displayName', coalesce(p.display_name, 'Student'), 'gender', p.gender,
-            'character', p.character, 'status', people.status, 'seatNumber', people.seat_number
-          ) ORDER BY people.seat_number), '[]'::jsonb)
-          FROM (SELECT f.owner_id AS user_id, 'accepted'::text AS status, 0 AS seat_number
-            UNION ALL SELECT m.user_id, m.status, m.seat_number FROM public.study_flight_members m
-            WHERE m.flight_id = f.id AND (m.status = 'accepted' OR f.owner_id = _uid)) people
-          LEFT JOIN public.profiles p ON p.user_id = people.user_id
-        ) END
-      ) AS data
-      FROM public.study_flight_visits v JOIN public.study_flights f ON f.id = v.flight_id
-      WHERE v.user_id = _uid
-      UNION ALL
-      SELECT v.legacy_data || jsonb_build_object('studentId', _uid, 'destinationId', v.destination_id,
-        'legacy', true, 'canSell', false, 'visaAwardedAt', extract(epoch FROM v.visa_awarded_at)*1000, 'visaSoldAt', null, 'passengers', '[]'::jsonb)
-      FROM public.study_flight_visits v WHERE v.user_id = _uid AND v.legacy_data IS NOT NULL
-    ) q), '[]'::jsonb),
-    'invitations', public.study_flight_inbox_internal(_uid));
-$$;
-
-
-ALTER FUNCTION public.study_flights_action(text,text,text,uuid,boolean) RENAME TO study_flights_action_v1;
-REVOKE ALL ON FUNCTION public.study_flights_action_v1(text,text,text,uuid,boolean) FROM PUBLIC,anon,authenticated;
-CREATE FUNCTION public.study_flights_action(_action text,_flight_id text DEFAULT NULL,_destination_id text DEFAULT NULL,_invitee_id uuid DEFAULT NULL,_accept boolean DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE result jsonb; synced jsonb;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'authentication_required'; END IF;
-  IF _action='sell' THEN
-    -- Backward-compatible old clients: points are already automatic; keep the visa.
-    IF NOT EXISTS(SELECT 1 FROM public.study_flight_visits WHERE user_id=auth.uid() AND flight_id=_flight_id) THEN RAISE EXCEPTION 'visa_not_redeemable'; END IF;
-    PERFORM public.sync_study_flight_account_internal(auth.uid());
-    RETURN jsonb_build_object('points',0);
-  END IF;
-  result:=public.study_flights_action_v1(_action,_flight_id,_destination_id,_invitee_id,_accept);
-  IF _action<>'inbox' THEN synced:=public.sync_study_flight_account_internal(auth.uid()); END IF;
-  IF _action='state' THEN RETURN public.study_flight_snapshot_internal(auth.uid()) || jsonb_build_object('accountChanges',synced); END IF;
-  RETURN result;
-END $$;
-REVOKE ALL ON FUNCTION public.track_study_flight_clock(), public.study_flight_periods_internal(uuid,text), public.validate_flight_study_session(), public.sync_study_flight_account_internal(uuid) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.sync_my_study_flights(), public.study_flights_action(text,text,text,uuid,boolean) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.sync_my_study_flights(), public.study_flights_action(text,text,text,uuid,boolean) TO authenticated;
-
--- Existing visas and already-earned flight study time are credited now, not only
--- when a student next opens the tool. Existing trip_visa awards deduplicate.
-DO $$ DECLARE account_id uuid; BEGIN
-  FOR account_id IN SELECT DISTINCT user_id FROM public.study_flight_visits LOOP
-    PERFORM public.sync_study_flight_account_internal(account_id);
-  END LOOP;
-END $$;
-
--- Preserve exact flight/break intervals in challenge standings too.
-CREATE OR REPLACE FUNCTION public.get_my_study_challenges()
-RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, auth AS $$
-  with mine as (
-    select c.*, me.status as my_status, coalesce(cp.display_name, 'Student') as creator_name
-    from public.study_challenges c
-    join public.study_challenge_members me on me.challenge_id = c.id and me.user_id = auth.uid()
-    left join public.profiles cp on cp.user_id = c.creator_id
-    where me.status <> 'declined'
-    union all
-    select c.*, 'open'::text as my_status, coalesce(cp.display_name, 'Student') as creator_name
-    from public.study_challenges c
-    left join public.profiles cp on cp.user_id = c.creator_id
-    where c.is_public and c.status = 'active' and c.ends_at > now()
-      and not exists (select 1 from public.study_challenge_members m where m.challenge_id = c.id and m.user_id = auth.uid())
-  ), session_intervals as (
-    -- New flight and normal sessions retain exact credited intervals.
-    -- Only older rows need the saved-at minus duration estimate.
-    select m.challenge_id, m.user_id,
-      greatest(c.starts_at, lower(p.period)) as study_start,
-      least(upper(p.period), c.ends_at, now()) as study_end
-    from public.study_challenge_members m
-    join mine c on c.id = m.challenge_id
-    join public.study_sessions s on s.user_id = m.user_id
-    cross join lateral unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(
-      s.created_at-make_interval(secs=>greatest(0,least(s.duration_seconds,43200))),s.created_at,'[)')))) p(period)
-    where m.status = 'accepted' and s.created_at <= now()
-      and s.created_at > c.starts_at and s.duration_seconds > 0
-  ), session_ranges as (
-    -- A second device or duplicate save must not award the same seconds twice.
-    select challenge_id, user_id,
-      range_agg(tstzrange(study_start, study_end, '[)')) as studied
-    from session_intervals
-    where study_end > study_start
-    group by challenge_id, user_id
-  ), participant_totals as (
-    select m.challenge_id, m.user_id, m.status,
-      coalesce(p.display_name, 'Student') as display_name,
-      coalesce((select floor(sum(extract(epoch from upper(study_period) - lower(study_period))))
-        from unnest(r.studied) as study_period), 0)::bigint as total_seconds
-    from public.study_challenge_members m
-    join mine c on c.id = m.challenge_id
-    left join public.profiles p on p.user_id = m.user_id
-    left join session_ranges r on r.challenge_id = m.challenge_id and r.user_id = m.user_id
-    where m.status <> 'declined'
-  )
-  select coalesce(jsonb_agg(jsonb_build_object(
-      'id', c.id, 'title', c.title, 'creatorId', c.creator_id, 'creatorName', c.creator_name,
-      'startsAt', c.starts_at, 'endsAt', c.ends_at, 'status', c.status, 'myStatus', c.my_status,
-      'isPublic', c.is_public,
-      'participants', (select coalesce(jsonb_agg(jsonb_build_object(
-          'userId', pt.user_id, 'displayName', pt.display_name, 'status', pt.status, 'totalSeconds', pt.total_seconds
-        ) order by case when pt.status = 'accepted' then 0 else 1 end, pt.total_seconds desc, pt.display_name asc), '[]'::jsonb)
-        from participant_totals pt where pt.challenge_id = c.id)
-    ) order by case when c.is_public and c.status = 'active' and c.ends_at > now() then 0 when c.my_status = 'pending' then 1 when c.status = 'active' and c.ends_at > now() then 2 else 3 end, c.ends_at desc), '[]'::jsonb)
-  from mine c;
-$$;
-REVOKE ALL ON FUNCTION public.get_my_study_challenges() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_my_study_challenges() TO authenticated;
-
-COMMENT ON FUNCTION public.get_my_study_challenges() IS
-  'Ranks saved study time within the challenge window, merging overlapping sessions. Legacy sessions use saved-at minus capped duration as their inferred start.';
+-- The content of this migration cannot be applied: parts of it already exist in the database (column study_flight_visits.visa_awarded_at), so it fails partway. It is superseded by an idempotent re-application.
+-- -- Each owned visa earns 100 points once; active flight time joins study history.
+-- ALTER TABLE public.study_flight_visits ADD COLUMN visa_awarded_at timestamptz;
+-- ALTER TABLE public.study_flights ADD COLUMN study_legacy_paused_ms bigint NOT NULL DEFAULT 0;
+-- UPDATE public.study_flights SET study_legacy_paused_ms = paused_ms;
+-- ALTER TABLE public.study_flight_members ADD COLUMN accepted_at timestamptz;
+-- UPDATE public.study_flight_members m SET accepted_at=f.started_at FROM public.study_flights f
+-- WHERE f.id=m.flight_id AND m.status='accepted';
+-- 
+-- CREATE TABLE public.study_flight_breaks (
+--   flight_id text NOT NULL REFERENCES public.study_flights(id),
+--   starts_at timestamptz NOT NULL, ends_at timestamptz NOT NULL,
+--   PRIMARY KEY(flight_id, starts_at), CHECK(ends_at >= starts_at)
+-- );
+-- CREATE TABLE public.study_flight_study_credits (
+--   session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
+--   destination_id text NOT NULL, period tstzrange NOT NULL,
+--   CHECK(NOT isempty(period) AND NOT lower_inf(period) AND NOT upper_inf(period)),
+--   FOREIGN KEY(user_id,destination_id) REFERENCES public.study_flight_visits(user_id,destination_id)
+-- );
+-- CREATE INDEX study_flight_credits_user_idx ON public.study_flight_study_credits(user_id);
+-- ALTER TABLE public.study_flight_breaks ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.study_flight_study_credits ENABLE ROW LEVEL SECURITY;
+-- REVOKE ALL ON public.study_flight_breaks, public.study_flight_study_credits FROM PUBLIC, anon, authenticated;
+-- GRANT ALL ON public.study_flight_breaks, public.study_flight_study_credits TO service_role;
+-- ALTER TABLE public.study_sessions ADD COLUMN study_periods tstzmultirange;
+-- ALTER TABLE public.study_sessions ADD COLUMN flight_credit_id uuid UNIQUE REFERENCES public.study_flight_study_credits(session_id);
+-- CREATE INDEX IF NOT EXISTS study_sessions_user_time_idx ON public.study_sessions(user_id,created_at);
+-- 
+-- CREATE FUNCTION public.track_study_flight_clock() RETURNS trigger
+-- LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- BEGIN
+--   IF TG_TABLE_NAME='study_flight_members' THEN
+--     IF NEW.status='accepted' AND (TG_OP='INSERT' OR OLD.status IS DISTINCT FROM 'accepted') THEN NEW.accepted_at:=now(); END IF;
+--   ELSIF OLD.paused_at IS NOT NULL AND NEW.paused_at IS NULL THEN
+--     INSERT INTO public.study_flight_breaks VALUES(OLD.id,OLD.paused_at,now()) ON CONFLICT DO NOTHING;
+--   END IF;
+--   RETURN NEW;
+-- END $$;
+-- CREATE TRIGGER study_flight_member_clock BEFORE INSERT OR UPDATE ON public.study_flight_members
+-- FOR EACH ROW EXECUTE FUNCTION public.track_study_flight_clock();
+-- CREATE TRIGGER study_flight_break_clock BEFORE UPDATE ON public.study_flights
+-- FOR EACH ROW EXECUTE FUNCTION public.track_study_flight_clock();
+-- 
+-- CREATE FUNCTION public.study_flight_periods_internal(_uid uuid,_destination text) RETURNS tstzmultirange
+-- LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- DECLARE v public.study_flight_visits%ROWTYPE; f public.study_flights%ROWTYPE;
+--   plan jsonb; starts timestamptz; finishes timestamptz; joined timestamptz;
+--   available tstzmultirange; breaks tstzmultirange; result tstzmultirange:='{}';
+--   w tstzrange; stage jsonb; cursor_sec double precision:=0; stage_sec double precision;
+--   width_sec double precision; lo double precision; hi double precision; stage_offset double precision;
+--   legacy_sec double precision;
+-- BEGIN
+--   SELECT * INTO v FROM public.study_flight_visits WHERE user_id=_uid AND destination_id=_destination;
+--   IF NOT FOUND THEN RETURN result; END IF;
+--   IF v.flight_id IS NULL THEN
+--     -- Frozen migration snapshots, never new browser-authored clocks.
+--     IF jsonb_typeof(v.legacy_data->'arrivalAt') IS DISTINCT FROM 'number' OR jsonb_typeof(v.legacy_data->'startedAt') IS DISTINCT FROM 'number'
+--       OR v.legacy_data->>'pausedAt' IS NOT NULL THEN RETURN result; END IF;
+--     finishes:=to_timestamp((v.legacy_data->>'arrivalAt')::double precision/1000);
+--     IF finishes>now() THEN RETURN result; END IF;
+--     SELECT r.plan INTO plan FROM public.study_flight_routes r WHERE r.destination_id=_destination;
+--     legacy_sec:=greatest(0,least(coalesce((v.legacy_data->>'durationSec')::double precision,0),
+--       (plan->>'durationSec')::double precision,
+--       extract(epoch FROM finishes-to_timestamp((v.legacy_data->>'startedAt')::double precision/1000))
+--         -coalesce((v.legacy_data->>'pausedMs')::double precision,0)/1000));
+--     IF legacy_sec>=1 THEN result:=tstzmultirange(tstzrange(finishes-make_interval(secs=>floor(legacy_sec)),finishes,'[)')); END IF;
+--     RETURN result;
+--   END IF;
+--   SELECT * INTO f FROM public.study_flights WHERE id=v.flight_id;
+--   plan:=f.plan; starts:=f.started_at;
+--   finishes:=least(now(),f.arrival_at,coalesce(f.paused_at,now()));
+--   joined:=starts;
+--   IF f.owner_id<>_uid THEN
+--     SELECT accepted_at INTO joined FROM public.study_flight_members WHERE flight_id=f.id AND user_id=_uid AND status='accepted';
+--     IF joined IS NULL THEN RETURN result; END IF;
+--   END IF;
+--   IF finishes<=starts THEN RETURN result; END IF;
+--   available:=tstzmultirange(tstzrange(starts,finishes,'[)'));
+--   SELECT coalesce(range_agg(tstzrange(b.starts_at,b.ends_at,'[)')),'{}') INTO breaks FROM public.study_flight_breaks b WHERE b.flight_id=f.id;
+--   -- Old aggregate pauses lack individual timestamps; reserve that known duration.
+--   IF f.study_legacy_paused_ms>0 THEN breaks:=breaks+tstzmultirange(tstzrange(starts,least(finishes,starts+make_interval(secs=>f.study_legacy_paused_ms/1000.0)),'[)')); END IF;
+--   available:=available-breaks;
+--   FOR w IN SELECT unnest(available) LOOP
+--     width_sec:=extract(epoch FROM upper(w)-lower(w)); stage_offset:=0;
+--     FOR stage IN SELECT value FROM jsonb_array_elements(plan->'itinerary') LOOP
+--       stage_sec:=(stage->>'durationSec')::double precision;
+--       IF stage->>'kind'<>'rest' THEN
+--         lo:=greatest(cursor_sec,stage_offset); hi:=least(cursor_sec+width_sec,stage_offset+stage_sec);
+--         IF hi>lo THEN
+--           result:=result+tstzmultirange(tstzrange(
+--             greatest(joined,lower(w)+make_interval(secs=>lo-cursor_sec)),
+--             greatest(joined,lower(w)+make_interval(secs=>hi-cursor_sec)),'[)'));
+--         END IF;
+--       END IF;
+--       stage_offset:=stage_offset+stage_sec;
+--     END LOOP;
+--     cursor_sec:=cursor_sec+width_sec;
+--   END LOOP;
+--   RETURN result;
+-- END $$;
+-- 
+-- CREATE OR REPLACE FUNCTION public.validate_flight_visa_points() RETURNS trigger
+-- LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- BEGIN
+--   IF NEW.source='trip_visa' AND (NEW.points<>100 OR NOT EXISTS(
+--     SELECT 1 FROM public.study_flight_visits v LEFT JOIN public.study_flights f ON f.id=v.flight_id
+--     WHERE v.user_id=NEW.user_id AND v.destination_id=NEW.ref_id AND (
+--       (f.id IS NOT NULL AND f.paused_at IS NULL AND f.arrival_at<=now()) OR
+--       (v.flight_id IS NULL AND v.legacy_data->>'pausedAt' IS NULL
+--         AND jsonb_typeof(v.legacy_data->'arrivalAt')='number' AND (v.legacy_data->>'arrivalAt')::numeric<=extract(epoch FROM now())*1000)
+--     )
+--   )) THEN RAISE EXCEPTION 'unverified_flight_visa'; END IF;
+--   RETURN NEW;
+-- END $$;
+-- 
+-- -- Verify server receipts; do not count an overlapping saved timer twice.
+-- CREATE FUNCTION public.validate_flight_study_session() RETURNS trigger
+-- LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- DECLARE receipt public.study_flight_study_credits%ROWTYPE; covered tstzmultirange; remaining tstzmultirange;
+-- BEGIN
+--   PERFORM pg_advisory_xact_lock(hashtextextended('study-flight-user:'||NEW.user_id::text,0));
+--   IF NEW.flight_credit_id IS NOT NULL THEN
+--     SELECT * INTO receipt FROM public.study_flight_study_credits WHERE session_id=NEW.flight_credit_id;
+--     IF NOT FOUND OR NEW.id<>receipt.session_id OR NEW.user_id<>receipt.user_id OR NEW.points<>0
+--       OR NEW.created_at<>upper(receipt.period)
+--       OR NEW.duration_seconds<>floor(extract(epoch FROM upper(receipt.period)-lower(receipt.period))) THEN
+--       RAISE EXCEPTION 'unverified_flight_study';
+--     END IF;
+--     NEW.study_periods:=tstzmultirange(receipt.period);
+--   ELSIF NEW.duration_seconds>0 THEN
+--     SELECT coalesce(range_agg(prior.period),'{}') INTO covered FROM (
+--       SELECT c.period FROM public.study_flight_study_credits c WHERE c.user_id=NEW.user_id
+--       UNION ALL
+--       SELECT unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(s.created_at-make_interval(secs=>s.duration_seconds),s.created_at,'[)'))))
+--       FROM public.study_sessions s WHERE s.user_id=NEW.user_id AND s.id<>NEW.id AND s.duration_seconds>0
+--     ) prior WHERE prior.period && tstzrange(NEW.created_at-make_interval(secs=>NEW.duration_seconds),NEW.created_at,'[)');
+--     remaining:=tstzmultirange(tstzrange(NEW.created_at-make_interval(secs=>NEW.duration_seconds),NEW.created_at,'[)'))-covered;
+--     NEW.study_periods:=remaining;
+--     SELECT coalesce(floor(sum(extract(epoch FROM upper(p)-lower(p)))),0)::integer INTO NEW.duration_seconds FROM unnest(remaining) p;
+--   ELSE NEW.study_periods:='{}';
+--   END IF;
+--   RETURN NEW;
+-- END $$;
+-- CREATE TRIGGER validate_flight_study_session BEFORE INSERT OR UPDATE ON public.study_sessions
+-- FOR EACH ROW EXECUTE FUNCTION public.validate_flight_study_session();
+-- 
+-- CREATE FUNCTION public.sync_study_flight_account_internal(_uid uuid) RETURNS jsonb
+-- LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- DECLARE v record; periods tstzmultirange; covered tstzmultirange; w tstzrange;
+--   stamp timestamptz; until_at timestamptz; chunk_start timestamptz; sid uuid; added_points integer:=0; added_seconds integer:=0; earned uuid;
+-- BEGIN
+--   PERFORM pg_advisory_xact_lock(hashtextextended('study-flight-user:'||_uid::text,0));
+--   FOR v IN SELECT vis.*, f.arrival_at, f.paused_at FROM public.study_flight_visits vis
+--     LEFT JOIN public.study_flights f ON f.id=vis.flight_id WHERE vis.user_id=_uid ORDER BY vis.destination_id LOOP
+--     IF v.visa_awarded_at IS NULL AND (
+--       (v.flight_id IS NOT NULL AND v.paused_at IS NULL AND v.arrival_at<=now()) OR
+--       (v.flight_id IS NULL AND v.legacy_data->>'pausedAt' IS NULL
+--         AND jsonb_typeof(v.legacy_data->'arrivalAt')='number' AND (v.legacy_data->>'arrivalAt')::numeric<=extract(epoch FROM now())*1000)
+--     ) THEN
+--       earned:=NULL;
+--       INSERT INTO public.user_points(user_id,source,points,ref_id) VALUES(_uid,'trip_visa',100,v.destination_id)
+--       ON CONFLICT DO NOTHING RETURNING id INTO earned;
+--       IF earned IS NOT NULL THEN added_points:=added_points+100; END IF;
+--       UPDATE public.study_flight_visits SET visa_awarded_at=now() WHERE user_id=_uid AND destination_id=v.destination_id;
+--     END IF;
+--     periods:=public.study_flight_periods_internal(_uid,v.destination_id);
+--     SELECT coalesce(range_agg(p.period),'{}') INTO covered
+--       FROM public.study_sessions s CROSS JOIN LATERAL unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(s.created_at-make_interval(secs=>s.duration_seconds),s.created_at,'[)')))) p(period)
+--       WHERE s.user_id=_uid AND s.duration_seconds>0;
+--     periods:=periods-covered;
+--     SELECT coalesce(range_agg(c.period),'{}') INTO covered FROM public.study_flight_study_credits c WHERE c.user_id=_uid;
+--     periods:=periods-covered;
+--     FOR w IN SELECT unnest(periods) LOOP
+--       stamp:=lower(w);
+--       WHILE stamp+interval '1 second'<=upper(w) LOOP
+--         -- Extend a contiguous receipt rather than create one history row per poll.
+--         SELECT c.session_id,lower(c.period) INTO sid,chunk_start
+--           FROM public.study_flight_study_credits c JOIN public.study_sessions s ON s.id=c.session_id
+--           WHERE c.user_id=_uid AND c.destination_id=v.destination_id AND upper(c.period)=stamp
+--             AND upper(c.period)-lower(c.period)<interval '12 hours'
+--           LIMIT 1 FOR UPDATE OF c;
+--         IF FOUND THEN
+--           until_at:=least(upper(w),chunk_start+interval '12 hours');
+--           until_at:=stamp+make_interval(secs=>floor(extract(epoch FROM until_at-stamp)));
+--           UPDATE public.study_flight_study_credits SET period=tstzrange(chunk_start,until_at,'[)') WHERE session_id=sid;
+--           UPDATE public.study_sessions SET duration_seconds=extract(epoch FROM until_at-chunk_start)::integer,created_at=until_at WHERE id=sid;
+--         ELSE
+--           until_at:=least(upper(w),stamp+interval '12 hours');
+--           until_at:=stamp+make_interval(secs=>floor(extract(epoch FROM until_at-stamp)));
+--           INSERT INTO public.study_flight_study_credits(user_id,destination_id,period)
+--             VALUES(_uid,v.destination_id,tstzrange(stamp,until_at,'[)')) RETURNING session_id INTO sid;
+--           INSERT INTO public.study_sessions(id,user_id,subject,mission,duration_seconds,points,mission_completed,created_at,flight_credit_id)
+--             VALUES(sid,_uid,'general','Study flight · '||v.destination_id,extract(epoch FROM until_at-stamp)::integer,0,true,until_at,sid);
+--         END IF;
+--         added_seconds:=added_seconds+extract(epoch FROM until_at-stamp)::integer;
+--         stamp:=until_at;
+--       END LOOP;
+--     END LOOP;
+--   END LOOP;
+--   RETURN jsonb_build_object('pointsAdded',added_points,'studySecondsAdded',added_seconds);
+-- END $$;
+-- 
+-- CREATE FUNCTION public.sync_my_study_flights() RETURNS jsonb
+-- LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- BEGIN
+--   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'authentication_required'; END IF;
+--   RETURN public.sync_study_flight_account_internal(auth.uid());
+-- END $$;
+-- 
+-- CREATE OR REPLACE FUNCTION public.study_flight_snapshot_internal(_uid uuid) RETURNS jsonb
+-- LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
+--   SELECT jsonb_build_object('userId', _uid, 'serverNow', extract(epoch FROM now())*1000,
+--     'journeys', coalesce((SELECT jsonb_agg(q.data ORDER BY (q.data->>'startedAt')::numeric DESC) FROM (
+--       SELECT f.plan || jsonb_build_object(
+--         'id', f.id, 'studentId', _uid, 'hostId', f.owner_id,
+--         'startedAt', extract(epoch FROM f.started_at)*1000,
+--         'arrivalAt', extract(epoch FROM f.arrival_at)*1000,
+--         'pausedAt', extract(epoch FROM f.paused_at)*1000, 'pausedMs', f.paused_ms,
+--         'arrivalSeenAt', extract(epoch FROM v.arrival_seen_at)*1000,
+--         'status', CASE WHEN f.paused_at IS NULL AND f.arrival_at <= now() THEN 'arrived' ELSE 'in_flight' END,
+--         'visaSoldAt', extract(epoch FROM v.sold_at)*1000, 'visaAwardedAt', extract(epoch FROM v.visa_awarded_at)*1000, 'canSell', false, 'legacy', false,
+--         'passengers', CASE WHEN f.paused_at IS NULL AND f.arrival_at <= now() THEN '[]'::jsonb ELSE (
+--           SELECT coalesce(jsonb_agg(jsonb_build_object('userId', people.user_id,
+--             'displayName', coalesce(p.display_name, 'Student'), 'gender', p.gender,
+--             'character', p.character, 'status', people.status, 'seatNumber', people.seat_number
+--           ) ORDER BY people.seat_number), '[]'::jsonb)
+--           FROM (SELECT f.owner_id AS user_id, 'accepted'::text AS status, 0 AS seat_number
+--             UNION ALL SELECT m.user_id, m.status, m.seat_number FROM public.study_flight_members m
+--             WHERE m.flight_id = f.id AND (m.status = 'accepted' OR f.owner_id = _uid)) people
+--           LEFT JOIN public.profiles p ON p.user_id = people.user_id
+--         ) END
+--       ) AS data
+--       FROM public.study_flight_visits v JOIN public.study_flights f ON f.id = v.flight_id
+--       WHERE v.user_id = _uid
+--       UNION ALL
+--       SELECT v.legacy_data || jsonb_build_object('studentId', _uid, 'destinationId', v.destination_id,
+--         'legacy', true, 'canSell', false, 'visaAwardedAt', extract(epoch FROM v.visa_awarded_at)*1000, 'visaSoldAt', null, 'passengers', '[]'::jsonb)
+--       FROM public.study_flight_visits v WHERE v.user_id = _uid AND v.legacy_data IS NOT NULL
+--     ) q), '[]'::jsonb),
+--     'invitations', public.study_flight_inbox_internal(_uid));
+-- $$;
+-- 
+-- 
+-- ALTER FUNCTION public.study_flights_action(text,text,text,uuid,boolean) RENAME TO study_flights_action_v1;
+-- REVOKE ALL ON FUNCTION public.study_flights_action_v1(text,text,text,uuid,boolean) FROM PUBLIC,anon,authenticated;
+-- CREATE FUNCTION public.study_flights_action(_action text,_flight_id text DEFAULT NULL,_destination_id text DEFAULT NULL,_invitee_id uuid DEFAULT NULL,_accept boolean DEFAULT NULL)
+-- RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+-- DECLARE result jsonb; synced jsonb;
+-- BEGIN
+--   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'authentication_required'; END IF;
+--   IF _action='sell' THEN
+--     -- Backward-compatible old clients: points are already automatic; keep the visa.
+--     IF NOT EXISTS(SELECT 1 FROM public.study_flight_visits WHERE user_id=auth.uid() AND flight_id=_flight_id) THEN RAISE EXCEPTION 'visa_not_redeemable'; END IF;
+--     PERFORM public.sync_study_flight_account_internal(auth.uid());
+--     RETURN jsonb_build_object('points',0);
+--   END IF;
+--   result:=public.study_flights_action_v1(_action,_flight_id,_destination_id,_invitee_id,_accept);
+--   IF _action<>'inbox' THEN synced:=public.sync_study_flight_account_internal(auth.uid()); END IF;
+--   IF _action='state' THEN RETURN public.study_flight_snapshot_internal(auth.uid()) || jsonb_build_object('accountChanges',synced); END IF;
+--   RETURN result;
+-- END $$;
+-- REVOKE ALL ON FUNCTION public.track_study_flight_clock(), public.study_flight_periods_internal(uuid,text), public.validate_flight_study_session(), public.sync_study_flight_account_internal(uuid) FROM PUBLIC,anon,authenticated;
+-- REVOKE ALL ON FUNCTION public.sync_my_study_flights(), public.study_flights_action(text,text,text,uuid,boolean) FROM PUBLIC,anon;
+-- GRANT EXECUTE ON FUNCTION public.sync_my_study_flights(), public.study_flights_action(text,text,text,uuid,boolean) TO authenticated;
+-- 
+-- -- Existing visas and already-earned flight study time are credited now, not only
+-- -- when a student next opens the tool. Existing trip_visa awards deduplicate.
+-- DO $$ DECLARE account_id uuid; BEGIN
+--   FOR account_id IN SELECT DISTINCT user_id FROM public.study_flight_visits LOOP
+--     PERFORM public.sync_study_flight_account_internal(account_id);
+--   END LOOP;
+-- END $$;
+-- 
+-- -- Preserve exact flight/break intervals in challenge standings too.
+-- CREATE OR REPLACE FUNCTION public.get_my_study_challenges()
+-- RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, auth AS $$
+--   with mine as (
+--     select c.*, me.status as my_status, coalesce(cp.display_name, 'Student') as creator_name
+--     from public.study_challenges c
+--     join public.study_challenge_members me on me.challenge_id = c.id and me.user_id = auth.uid()
+--     left join public.profiles cp on cp.user_id = c.creator_id
+--     where me.status <> 'declined'
+--     union all
+--     select c.*, 'open'::text as my_status, coalesce(cp.display_name, 'Student') as creator_name
+--     from public.study_challenges c
+--     left join public.profiles cp on cp.user_id = c.creator_id
+--     where c.is_public and c.status = 'active' and c.ends_at > now()
+--       and not exists (select 1 from public.study_challenge_members m where m.challenge_id = c.id and m.user_id = auth.uid())
+--   ), session_intervals as (
+--     -- New flight and normal sessions retain exact credited intervals.
+--     -- Only older rows need the saved-at minus duration estimate.
+--     select m.challenge_id, m.user_id,
+--       greatest(c.starts_at, lower(p.period)) as study_start,
+--       least(upper(p.period), c.ends_at, now()) as study_end
+--     from public.study_challenge_members m
+--     join mine c on c.id = m.challenge_id
+--     join public.study_sessions s on s.user_id = m.user_id
+--     cross join lateral unnest(coalesce(s.study_periods,tstzmultirange(tstzrange(
+--       s.created_at-make_interval(secs=>greatest(0,least(s.duration_seconds,43200))),s.created_at,'[)')))) p(period)
+--     where m.status = 'accepted' and s.created_at <= now()
+--       and s.created_at > c.starts_at and s.duration_seconds > 0
+--   ), session_ranges as (
+--     -- A second device or duplicate save must not award the same seconds twice.
+--     select challenge_id, user_id,
+--       range_agg(tstzrange(study_start, study_end, '[)')) as studied
+--     from session_intervals
+--     where study_end > study_start
+--     group by challenge_id, user_id
+--   ), participant_totals as (
+--     select m.challenge_id, m.user_id, m.status,
+--       coalesce(p.display_name, 'Student') as display_name,
+--       coalesce((select floor(sum(extract(epoch from upper(study_period) - lower(study_period))))
+--         from unnest(r.studied) as study_period), 0)::bigint as total_seconds
+--     from public.study_challenge_members m
+--     join mine c on c.id = m.challenge_id
+--     left join public.profiles p on p.user_id = m.user_id
+--     left join session_ranges r on r.challenge_id = m.challenge_id and r.user_id = m.user_id
+--     where m.status <> 'declined'
+--   )
+--   select coalesce(jsonb_agg(jsonb_build_object(
+--       'id', c.id, 'title', c.title, 'creatorId', c.creator_id, 'creatorName', c.creator_name,
+--       'startsAt', c.starts_at, 'endsAt', c.ends_at, 'status', c.status, 'myStatus', c.my_status,
+--       'isPublic', c.is_public,
+--       'participants', (select coalesce(jsonb_agg(jsonb_build_object(
+--           'userId', pt.user_id, 'displayName', pt.display_name, 'status', pt.status, 'totalSeconds', pt.total_seconds
+--         ) order by case when pt.status = 'accepted' then 0 else 1 end, pt.total_seconds desc, pt.display_name asc), '[]'::jsonb)
+--         from participant_totals pt where pt.challenge_id = c.id)
+--     ) order by case when c.is_public and c.status = 'active' and c.ends_at > now() then 0 when c.my_status = 'pending' then 1 when c.status = 'active' and c.ends_at > now() then 2 else 3 end, c.ends_at desc), '[]'::jsonb)
+--   from mine c;
+-- $$;
+-- REVOKE ALL ON FUNCTION public.get_my_study_challenges() FROM PUBLIC;
+-- GRANT EXECUTE ON FUNCTION public.get_my_study_challenges() TO authenticated;
+-- 
+-- COMMENT ON FUNCTION public.get_my_study_challenges() IS
+--   'Ranks saved study time within the challenge window, merging overlapping sessions. Legacy sessions use saved-at minus capped duration as their inferred start.';
