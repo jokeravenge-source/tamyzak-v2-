@@ -51,24 +51,23 @@ describe("study flight cabin", () => {
     view.unmount();
   });
 
-  it("sells an arrived account visa once and leaves its city in the passport", async () => {
+  it("shows automatic visa points while keeping the visa in the passport", async () => {
     const values=new Map<string,string>();
     const local=createLocalRepository({getItem:key=>values.get(key)??null,setItem:(key,value)=>{values.set(key,value);}});
     const {journey}=await local.create("student-1","AE:dubai",Date.now()-30_000_000);
-    const saved={...journey,status:"arrived" as const,arrivalSeenAt:1,canSell:true};
+    const saved={...journey,status:"arrived" as const,arrivalSeenAt:1,canSell:false,visaAwardedAt:Date.now()};
     const sellVisa=vi.fn(async()=>{saved.visaSoldAt=Date.now();return{points:100};});
     const repository={...local,accountBacked:true,list:async()=>[{...saved}],sellVisa};
-    const confirm=vi.spyOn(window,"confirm").mockReturnValue(true);
     const view=render(<TripApp studentId="student-1" repository={repository} language="en"/>);
     fireEvent.click(await screen.findByRole("button",{name:/VISA COLLECTION/}));
-    fireEvent.click(screen.getByRole("button",{name:"Sell visa for 100 points"}));
-    expect(await screen.findByText("✓ Visa sold · 100 points")).toBeInTheDocument();
-    expect(sellVisa).toHaveBeenCalledOnce();
+    expect(await screen.findByText("✓ 100 points credited for this visa — you keep it")).toBeInTheDocument();
+    expect(sellVisa).not.toHaveBeenCalled();
+    expect(screen.getByRole("article",{name:"STUDY VISA"})).toBeInTheDocument();
     expect(screen.queryByRole("button",{name:"Sell visa for 100 points"})).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button",{name:"Back"}));
     fireEvent.click(screen.getByRole("button",{name:"Your world travel map"}));
     fireEvent.change(await screen.findByLabelText("Search cities"),{target:{value:"Dubai"}});
     expect(await screen.findByRole("button",{name:"Dubai — Visited"})).toBeInTheDocument();
-    view.unmount();confirm.mockRestore();
+    view.unmount();
   });
 });

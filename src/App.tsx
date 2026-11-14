@@ -1,3 +1,4 @@
+import { useFlightStudySync } from "./hooks/useFlightStudySync";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner, toast } from "@/components/ui/sonner";
@@ -483,6 +484,7 @@ const StudentApp = () => {
     applyTheme(getInitialTheme());
   }, []);
   const [authed, setAuthed] = useState(() => hasPersistedAuthSession());
+  useFlightStudySync(authed);
   const [authLoading, setAuthLoading] = useState(() => !hasPersistedAuthSession());
   // Guests browsing Nadia's bank can open the sign-in / sign-up page from the banner.
   const [nadiaAuthOpen, setNadiaAuthOpen] = useState(false);

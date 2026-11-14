@@ -9,8 +9,11 @@ export function createCloudRepository(): JourneyRepository {
     return data as unknown as T;
   }
   const list = async (studentId: string) => {
-    const state = await action<{ userId: string; serverNow: number; journeys: Journey[] }>("state");
+    const state = await action<{ userId: string; serverNow: number; journeys: Journey[]; accountChanges?: { pointsAdded: number; studySecondsAdded: number } }>("state");
     if (state.userId !== studentId) throw new Error("authentication_required");
+    if (state.accountChanges && (state.accountChanges.pointsAdded > 0 || state.accountChanges.studySecondsAdded > 0)) {
+      window.dispatchEvent(new Event("app:progress-updated"));
+    }
     const clockOffsetMs = Number(state.serverNow) - Date.now();
     return state.journeys.map((journey) => ({ ...journey, clockOffsetMs }));
   };

@@ -239,6 +239,13 @@
       "when": 1794594154540,
       "tag": "0033_challenge_study_window",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794604647190,
+      "tag": "0034_flight_visa_rewards_and_study_time",
+      "breakpoints": true
     }
   ]
 }

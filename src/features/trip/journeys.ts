@@ -40,6 +40,7 @@ export interface Journey {
   hostId?: string;
   passengers?: FlightPassenger[];
   visaSoldAt?: number | null;
+  visaAwardedAt?: number | null;
   canSell?: boolean;
   legacy?: boolean;
   clockOffsetMs?: number;

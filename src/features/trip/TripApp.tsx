@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Globe2, Plane, Stamp } from "lucide-react";
-import { toast } from "sonner";
 import { BoardingPass } from "./BoardingPass";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import { TRIP_INTRO_MS, TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
@@ -178,19 +177,14 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     catch (error) { setOperationError(flightError(error, lang)); }
     finally { setBusyAction(null); }
   };
-  const sellVisa = async (journey: Journey) => {
-    const repository = repo();
-    if (!repository.sellVisa || busyAction || !window.confirm(copy.sellConfirm)) return;
-    setBusyAction(`sell:${journey.id}`);
-    try { const result = await repository.sellVisa(studentId, journey.id); await reload(); toast.success(result.points === 100 ? copy.earned : copy.sold); }
-    catch (error) { toast.error(flightError(error, lang)); }
-    finally { setBusyAction(null); }
-  };
   const visa = (journey: Journey) => <div className="w-full space-y-3" key={journey.id}>
-    {journey.visaSoldAt ? <div className="rounded-2xl border-2 border-trip-ink/20 bg-trip-cream p-4 text-start"><p className="font-black">{lang === "ar" ? journey.destCityAr ?? journey.destCity : journey.destCity}</p><p className="mt-1 text-sm font-bold text-emerald-800">✓ {copy.sold}</p><p className="mt-2 text-xs leading-6">{copy.once}</p></div> : <>
-      <StudyVisa journey={journey} studentName={visaStudentName} lang={lang} t={t} />
-      {repo().sellVisa && journey.canSell ? <button disabled={busyAction !== null} onClick={() => void sellVisa(journey)} className={`${btnPrimary} w-full text-base`}>{busyAction === `sell:${journey.id}` ? copy.selling : copy.sell}</button> : <p className="rounded-xl bg-white/60 p-3 text-xs leading-6">{journey.legacy ? copy.legacy : copy.account}</p>}
-    </>}
+    <StudyVisa journey={journey} studentName={visaStudentName} lang={lang} t={t} />
+    <p className="rounded-xl bg-white/70 p-3 text-sm font-bold text-emerald-900">
+      {repo().accountBacked
+        ? journey.visaAwardedAt || journey.visaSoldAt ? `✓ ${copy.visaAwarded}` : copy.visaAutomatic
+        : copy.account}
+    </p>
+    <p className="text-xs leading-6">{copy.once}</p>
   </div>;
 
   const header = (
@@ -259,6 +253,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
         )}
         <BoardingPass journey={viewing} now={now} t={t} lang={lang} />
         <FlightItinerary stages={viewing.itinerary} elapsedSec={s.elapsedSec} lang={lang} />
+        {repo().accountBacked && <p className="rounded-xl bg-trip-cream p-3 text-sm font-bold text-trip-ink">{copy.studyTime}</p>}
         {!s.arrived && !viewing.legacy && <FlightFriends journey={viewing} repository={repo()} studentId={studentId} lang={lang} onChanged={reload} />}
         {!s.arrived && !viewing.legacy && isHost && (
           s.paused ? (
@@ -414,12 +409,12 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           )}
           <button className={`${btnSecondary} mt-3 w-full max-w-xs`} onClick={() => setPhase("visas")}>
             <Stamp className="h-5 w-5" aria-hidden /> {t.visaCollection}
-            {completedJourneys.filter((journey) => !journey.visaSoldAt).length > 0 && (
-              <span className="rounded-full bg-trip-sky-deep px-2 py-0.5 text-xs text-white">{completedJourneys.filter((journey) => !journey.visaSoldAt).length}</span>
+            {completedJourneys.length > 0 && (
+              <span className="rounded-full bg-trip-sky-deep px-2 py-0.5 text-xs text-white">{completedJourneys.length}</span>
             )}
           </button>
           <button className={`${btnSecondary} mt-3 w-full max-w-xs text-base`} onClick={() => setPhase("world")}><Globe2 className="h-5 w-5" />{copy.world}</button>
-          <p className="mt-4 max-w-md text-xs font-bold leading-6 text-trip-ink/65">{copy.once}</p>
+          <p className="mt-4 max-w-md text-xs font-bold leading-6 text-trip-ink/65">{copy.visaAutomatic} {copy.once}</p>
           <div className="mt-4 w-full max-w-xs">
             <label className="sr-only" htmlFor="trip-home-search">{t.searchLabel}</label>
             <input id="trip-home-search" type="search" placeholder={t.search} value={query}

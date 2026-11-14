@@ -3244,6 +3244,8 @@ export type Database = {
       }
       study_sessions: {
         Row: {
+          study_periods: unknown | null
+          flight_credit_id: string | null
           created_at: string
           duration_seconds: number
           id: string
@@ -3254,6 +3256,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          study_periods?: unknown | null
+          flight_credit_id?: string | null
           created_at?: string
           duration_seconds?: number
           id?: string
@@ -3264,6 +3268,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          study_periods?: unknown | null
+          flight_credit_id?: string | null
           created_at?: string
           duration_seconds?: number
           id?: string
@@ -4082,6 +4088,7 @@ export type Database = {
       get_home_dashboard_stats: { Args: never; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
+      sync_my_study_flights: { Args: never; Returns: Json }
       has_active_premium: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean

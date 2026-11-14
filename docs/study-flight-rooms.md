@@ -33,3 +33,29 @@ node scripts/test-trip-flights.mjs /absolute/path/to/@electric-sql/pglite/dist/i
 ```
 
 The integration checks cover unauthenticated/cross-account access, private helper access, direct clock/ledger edits, arrival validation, fake point awards, eleven invitations, acceptance/decline, a passenger’s clock, break accounting, one-time point awards, permanent city uniqueness after selling, and preservation of legacy souvenirs.
+
+## Automatic visa rewards and study hours (0034)
+
+Each completed account visa now awards **100 points automatically**, without selling or removing it. Migration `0034_flight_visa_rewards_and_study_time` backfills existing completed visas, including frozen legacy snapshots. Previously sold visas already paid under the same `(user_id, trip_visa, destination_id)` reference are not paid twice. Pending destinations are not visas yet and earn no points until arrival. The account visit rule remains once per city.
+
+Flight study time is saved into `study_sessions`, for current and completed flights, so existing study totals and challenge rankings include it. Server timestamps, membership acceptance time, the itinerary's lounge stages, and host break intervals determine credited time. Lounge stops and manual breaks are excluded. A durable private receipt ledger and an account transaction lock prevent duplicated credit across tabs, retries, ordinary timers and flight timers. Continuous receipts are extended between polls, with new rows only across gaps or after 12 hours. Exact credited intervals are stored server-side for challenge ranking; clients cannot manufacture receipt IDs or trusted time spans. Flight history rows have zero extra ordinary session points: the visa reward is 100 points.
+
+New friends earn time only after their acceptance timestamp. Pre-update memberships and aggregate historical pauses lack exact timestamps: existing accepted membership uses the recorded flight start, and known old pause duration is reserved from the beginning of the old flight. Frozen legacy hours are bounded by both their saved elapsed duration and the server route duration. These are historical estimates; no new browser-authored legacy claims are accepted.
+
+While signed in, the main app synchronizes on opening, returning to the foreground, and every minute while visible. The flight page also synchronizes through its existing state refresh. Progress listeners are notified when points or study hours change. A finished journey while offline is settled using server time on the next account sync. The migration performs the first backfill for all existing accounts; a student does not need to reopen the flight tool to receive that initial credit. No background scheduler is required, and time is never credited beyond arrival.
+
+Apply **one** equivalent migration through the active deployment runner:
+
+- `drizzle/migrations/0034_flight_visa_rewards_and_study_time.sql` (registered in the journal).
+- `supabase/migrations/20261114010000_flight_visa_rewards_and_study_time.sql`.
+
+This update requires the flight schema from 0029/0030 and the challenge schema from 0031. Publishing frontend files alone does not award existing points or install time accounting. Guests keep the local preview without account points or study-hour credit. Older clients' sell requests remain safe but return no second reward and no longer remove the visa.
+
+Validation:
+
+```sh
+node scripts/test-flight-rewards.mjs /absolute/path/to/@electric-sql/pglite/dist/index.js
+npm test -- src/features/trip src/lib/studyChallenges.test.ts src/hooks/useFlightStudySync.test.ts
+npx tsc --noEmit -p tsconfig.app.json
+npm run build
+```
