@@ -1,20 +1,72 @@
 import {act,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import MutamayizChat from './MutamayizChat';
-import {assistantSnapshot,setAssistantOwner} from '@/lib/mutamayizConversation';
+import {assistantSnapshot,newAssistantConversation,setAssistantOwner,updateAssistant} from '@/lib/mutamayizConversation';
 import {getISOWeek,WEEKLY_LEARNING_KEY} from '@/lib/weeklyLearning';
-const backend=vi.hoisted(()=>({invoke:vi.fn(),getUser:vi.fn(),onAuthStateChange:vi.fn(),unsubscribe:vi.fn(),pullTodos:vi.fn(),pushTodos:vi.fn(),authListener:null as null|((e:string,s:unknown)=>void)}));
+const backend=vi.hoisted(()=>({invoke:vi.fn(),getUser:vi.fn(),onAuthStateChange:vi.fn(),unsubscribe:vi.fn(),pullTodos:vi.fn(),pushTodos:vi.fn(),readFile:vi.fn(),authListener:null as null|((e:string,s:unknown)=>void)}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{functions:{invoke:backend.invoke},auth:{getUser:backend.getUser,onAuthStateChange:backend.onAuthStateChange}}}));
 vi.mock('@/lib/todosSync',()=>({getISOWeek:()=> '2026-W46',pullTodos:backend.pullTodos,pushTodos:backend.pushTodos}));
 vi.mock('@/components/WeeklyWeaknessIntake',()=>({default:()=> <div>Weakness intake</div>}));
+vi.mock('@/lib/mutamayizFile',()=>({readAssistantFile:backend.readFile}));
 beforeEach(()=>{
- localStorage.clear();sessionStorage.clear();setAssistantOwner(null);backend.invoke.mockReset();backend.getUser.mockResolvedValue({data:{user:{id:'student'}}});backend.pushTodos.mockClear().mockResolvedValue(undefined);backend.pullTodos.mockReset().mockResolvedValue(null);
+ localStorage.clear();sessionStorage.clear();setAssistantOwner(null);backend.invoke.mockReset();backend.readFile.mockReset();backend.getUser.mockResolvedValue({data:{user:{id:'student'}}});backend.pushTodos.mockClear().mockResolvedValue(true);backend.pullTodos.mockReset().mockResolvedValue(null);
  backend.onAuthStateChange.mockImplementation((cb)=>{backend.authListener=cb;return{data:{subscription:{unsubscribe:backend.unsubscribe}}};});
 
 });
 afterEach(()=>vi.restoreAllMocks());
 const send=async(text:string)=>{const input=await screen.findByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());await act(async()=>{fireEvent.change(input,{target:{value:text}});fireEvent.click(screen.getByRole('button',{name:'إرسال'}));});};
 describe('single Mutamayiz conversation',()=>{
+ it('clears unsent personal text when another student signs in',async()=>{
+  const view=render(<MutamayizChat language="ar"/>);
+  const input=screen.getByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());
+  fireEvent.change(input,{target:{value:'private unsent text'}});
+  act(()=>backend.authListener?.('SIGNED_IN',{user:{id:'second-student'}}));
+  expect(input).toHaveValue('');expect(assistantSnapshot().owner).toBe('second-student');view.unmount();
+ });
+ it('offers a retry instead of confirming success when plan synchronization fails',async()=>{
+  backend.pushTodos.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+  backend.invoke.mockResolvedValue({data:{reply:'```plan\n{"tasks":[{"day":"السبت","text":"مراجعة الرنين"}]}\n```'},error:null});
+  const view=render(<MutamayizChat language="ar"/>);await send('رتبلي جدول');
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'أوافق على الخطة وأضيفها لمهامي'})));
+  expect(screen.queryByRole('button',{name:'الخطة انضافت لمهامك'})).not.toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('مزامنة');
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'أوافق على الخطة وأضيفها لمهامي'})));
+  expect(screen.getByRole('button',{name:'الخطة انضافت لمهامك'})).toBeDisabled();
+  expect(JSON.parse(localStorage.getItem('app_todos_v1')!)).toHaveLength(1);view.unmount();
+ });
+ it('discards a file that finishes reading after another entry point starts a new conversation',async()=>{
+  let finish!:(value:string)=>void;backend.readFile.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
+  fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['lesson'],'lesson.txt')]}});
+  act(()=>newAssistantConversation('student'));
+  await act(async()=>finish('old conversation file'));
+  expect(assistantSnapshot().file).toBeNull();view.unmount();
+ });
+ it('does not write a previous account profile after its plan sync completes late',async()=>{
+  let finish!:(value:boolean)=>void;backend.pushTodos.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
+  backend.invoke.mockResolvedValue({data:{reply:'```plan\n{"tasks":[{"day":"السبت","text":"مراجعة الرنين"}]}\n```'},error:null});
+  const view=render(<MutamayizChat language="ar"/>);await send('رتبلي جدول');
+  act(()=>updateAssistant('student',state=>({...state,profile:{isoWeek:getISOWeek(),subject:'physics',chapterKey:'ch3',chapterNumber:3,topicKey:'resonance',topicEn:'Resonance',topicAr:'الرنين',weaknessText:'old profile',updatedAt:''}})));
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'أوافق على الخطة وأضيفها لمهامي'})));
+  await waitFor(()=>expect(backend.pushTodos).toHaveBeenCalledOnce());
+  act(()=>backend.authListener?.('SIGNED_IN',{user:{id:'second-student'}}));
+  localStorage.setItem(WEEKLY_LEARNING_KEY,JSON.stringify({owner:'second-student'}));
+  await act(async()=>finish(true));
+  expect(JSON.parse(localStorage.getItem(WEEKLY_LEARNING_KEY)!)).toEqual({owner:'second-student'});view.unmount();
+ });
+ it('approves a shared plan only once when two entry points are open',async()=>{
+  backend.invoke.mockResolvedValue({data:{reply:'```plan\n{"tasks":[{"day":"السبت","text":"مراجعة الرنين"}]}\n```'},error:null});
+  const initial=render(<MutamayizChat language="ar"/>);await send('رتبلي جدول');initial.unmount();
+  let finish!:(value:boolean)=>void;backend.pushTodos.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
+  const view=render(<><MutamayizChat language="ar"/><MutamayizChat language="ar"/></>);
+  await waitFor(()=>screen.getAllByRole('textbox').forEach(input=>expect(input).toBeEnabled()));
+  const buttons=screen.getAllByRole('button',{name:'أوافق على الخطة وأضيفها لمهامي'});
+  await act(async()=>{fireEvent.click(buttons[0]);fireEvent.click(buttons[1]);});
+  expect(backend.pushTodos).toHaveBeenCalledOnce();
+  await act(async()=>finish(true));
+  expect(screen.getAllByRole('button',{name:'الخطة انضافت لمهامك'})).toHaveLength(2);
+  expect(JSON.parse(localStorage.getItem('app_todos_v1')!)).toHaveLength(1);view.unmount();
+ });
  it('carries the personalized planning shortcut through an asynchronous auth check',async()=>{
   let authenticated!:(result:unknown)=>void;
   backend.getUser.mockImplementationOnce(()=>new Promise(resolve=>{authenticated=resolve;}));

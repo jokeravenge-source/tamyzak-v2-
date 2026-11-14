@@ -19,10 +19,10 @@ export function getISOWeek(d = new Date()): string {
   return `${date.getUTCFullYear()}-W${weekNo}`;
 }
 
-export async function pushTodos(items: SyncedTodo[], expectedUserId?: string) {
+export async function pushTodos(items: SyncedTodo[], expectedUserId?: string): Promise<boolean> {
   try {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user || (expectedUserId && u.user.id !== expectedUserId)) return;
+    if (!u.user || (expectedUserId && u.user.id !== expectedUserId)) return false;
 
     // Parent-authored task text/day is authoritative. A student's device may
     // still hold an older local copy when it toggles completion; preserve the
@@ -33,7 +33,7 @@ export async function pushTodos(items: SyncedTodo[], expectedUserId?: string) {
       .eq("user_id", u.user.id)
       .maybeSingle();
     // An assistant plan adds tasks; never replace an account copy we could not read.
-    if (expectedUserId && readError) return;
+    if (expectedUserId && readError) return false;
     const remoteItems = Array.isArray(current?.items) ? (current.items as unknown as SyncedTodo[]) : [];
     const remoteById = new Map(remoteItems.map((item) => [String(item.id), item]));
     const safeItems = items.map((item) => {
@@ -53,10 +53,11 @@ export async function pushTodos(items: SyncedTodo[], expectedUserId?: string) {
     const outgoingItems = expectedUserId
       ? [...remoteItems.filter((item) => !sentIds.has(String(item.id))), ...safeItems]
       : safeItems;
-    await supabase.from("student_todos").upsert(
+    const { error: writeError } = await supabase.from("student_todos").upsert(
       { user_id: u.user.id, items: outgoingItems as unknown as never, week_key: getISOWeek(), updated_at: new Date().toISOString() },
       { onConflict: "user_id" },
     );
+    if (writeError) return false;
     // Notify any parent dashboard listening on this user's channel.
     try {
       const ch = supabase.channel(`todos:${u.user.id}`);
@@ -64,7 +65,8 @@ export async function pushTodos(items: SyncedTodo[], expectedUserId?: string) {
       await ch.send({ type: "broadcast", event: "todos-changed", payload: { at: Date.now() } });
       await supabase.removeChannel(ch);
     } catch { /* noop */ }
-  } catch { /* noop */ }
+    return true;
+  } catch { return false; }
 }
 
 export async function pullTodos(expectedUserId?: string): Promise<SyncedTodo[] | null> {

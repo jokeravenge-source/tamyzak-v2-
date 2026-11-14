@@ -12,7 +12,9 @@ All student chat entry points now mount `MutamayizChat`: the center navigation b
 
 ## Plans and support
 
-Plans contain at most 35 validated weekday/task pairs. The student sees the tasks before approval. Approval adds tasks to the existing account/local list, preserves parent-authored tasks, avoids repeated approval, and syncs through the existing task/profile contracts. Conversation changes alone do not write tasks.
+Plans contain at most 35 validated weekday/task pairs. The student sees the tasks before approval. Approval adds tasks to the existing account/local list, preserves parent-authored tasks, avoids repeated approval across entry points, and syncs through the existing task/profile contracts. A failed account write leaves the local plan in place, explains that synchronization failed, and allows a retry without duplicate tasks. Conversation changes alone do not write tasks. An unrelated JSON example before a plan does not prevent extraction of the plan.
+
+Account changes also clear unsent personal drafts. Late file reads and task/profile saves are scoped to the original account and conversation, so they cannot change a new chat or another student's context.
 
 Emotional support is empathetic study support, without diagnosis, medication advice, claims to be a clinician, or promises of absolute confidentiality. Immediate danger takes priority over studying, with guidance toward a trusted person and local professional/emergency help, without fabricated phone numbers.
 

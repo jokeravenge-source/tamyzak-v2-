@@ -3,11 +3,11 @@ export const MUTAMAYIZ_NAME = "متميز";
 export type PlanTask = { day: string; text: string };
 const DAYS = new Set(["السبت","الأحد","الاحد","الإثنين","الاثنين","الثلاثاء","الأربعاء","الاربعاء","الخميس","الجمعة","Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday","Friday"]);
 export function extractAssistantPlan(text: string): PlanTask[] | null {
-  const block = text.match(/```(?:json|plan)\s*([\s\S]*?)```/i);
-  if (!block) return null;
-  try {
+  for (const block of text.matchAll(/```(?:json|plan)\s*([\s\S]*?)```/gi)) {
+   try {
     const parsed = JSON.parse(block[1]);
-    if (!Array.isArray(parsed?.tasks) || !parsed.tasks.length || parsed.tasks.length > 35) return null;
+    if (!Array.isArray(parsed?.tasks)) continue;
+    if (!parsed.tasks.length || parsed.tasks.length > 35) return null;
     const tasks: PlanTask[] = []; const seen = new Set<string>();
     for (const task of parsed.tasks) {
       if (!task || typeof task.day !== "string" || !DAYS.has(task.day.trim()) || typeof task.text !== "string" || !task.text.trim() || task.text.length > 600) return null;
@@ -15,7 +15,9 @@ export function extractAssistantPlan(text: string): PlanTask[] | null {
       if (!seen.has(key)) { seen.add(key); tasks.push({ day: task.day.trim(), text: task.text.trim() }); }
     }
     return tasks;
-  } catch { return null; }
+   } catch { /* An unrelated JSON example must not hide a later study plan. */ }
+  }
+  return null;
 }
 export function stripAssistantPlan(text: string) {
   return text.replace(/```plan\s*[\s\S]*?```/gi, "")

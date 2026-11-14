@@ -23,6 +23,11 @@ describe('Mutamayiz contracts',()=>{
   setAssistantOwner('B');expect(assistantSnapshot().messages).toEqual([]);expect(assistantSnapshot().file).toBeNull();
   updateAssistant('A',s=>({...s,messages:[{id:'stale',role:'assistant',content:'late response'}]}));expect(assistantSnapshot().messages).toEqual([]);
  });
+ it('finds a study plan after an unrelated JSON example in the same explanation',()=>{
+  const reply='Example:\n```json\n{"energy":"J"}\n```\nPlan:\n```plan\n{"tasks":[{"day":"Friday","text":"Review energy units"}]}\n```';
+  expect(extractAssistantPlan(reply)).toEqual([{day:'Friday',text:'Review energy units'}]);
+  expect(stripAssistantPlan(reply)).toContain('"energy":"J"');
+ });
  it('increments the epoch when a new conversation is requested',()=>{
   setAssistantOwner('A');const epoch=assistantSnapshot().epoch;newAssistantConversation('A');expect(assistantSnapshot().epoch).toBeGreaterThan(epoch);
  });

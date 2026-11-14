@@ -32,8 +32,13 @@ describe("approved assistant task sync", () => {
 
   it("does not overwrite cloud tasks when the account copy cannot be read", async () => {
     api.read.mockResolvedValue({ data: null, error: new Error("offline") });
-    await pushTodos([{ id: "new", text: "Task", done: false }], "student");
+    expect(await pushTodos([{ id: "new", text: "Task", done: false }], "student")).toBe(false);
     expect(api.upsert).not.toHaveBeenCalled();
+  });
+
+  it("reports a rejected database write so the assistant can offer synchronization again", async () => {
+    api.upsert.mockResolvedValue({ error: new Error("write rejected") });
+    expect(await pushTodos([{ id: "new", text: "Task", done: false }], "student")).toBe(false);
   });
 
   it("does not transfer one account's approved plan to another account", async () => {

@@ -19,7 +19,7 @@ const copy = {
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
     approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٥ ميغابايت.",
-    error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.",
+    error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.", syncError: "انحفظت الخطة على جهازك، لكن تعذّرت مزامنة الحساب. اضغط اعتماد الخطة للمحاولة مرة ثانية.",
   },
   en: {
     subtitle: "Your questions, problems, study plan and everything in Tamayzak.",
@@ -27,7 +27,7 @@ const copy = {
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
     approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 15 MB.",
-    error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.",
+    error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.", syncError: "Plan saved on this device. Account sync failed; approve the plan again to retry.",
   },
 };
 
@@ -40,18 +40,23 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
   const [input, setInput] = useState("");
   const [fileBusy, setFileBusy] = useState(false);
   const [intake, setIntake] = useState(false);
-  const [approving, setApproving] = useState(false);
   const [notice, setNotice] = useState("");
   const upload = useRef<HTMLInputElement>(null), scroll = useRef<HTMLDivElement>(null);
   const ownerRef = useRef<string | null>(null);
   const scheduleRequested = useRef(false);
+  const uploadOperation = useRef(0);
   const active = authReady && owner !== null && conversation.owner === owner;
   const messages = active ? conversation.messages : [];
   const busy = active && conversation.busy;
+  const approving = active && conversation.approvingPlan !== null;
   useEffect(() => {
     let live = true, revision = 0;
     const apply = (id: string | null) => {
       if (!live) return;
+      if (ownerRef.current !== null && ownerRef.current !== id) {
+        setInput(""); setIntake(false); setNotice(""); setFileBusy(false);
+        scheduleRequested.current = false; uploadOperation.current++;
+      }
       ownerRef.current = id; setAssistantOwner(id); setOwner(id); setAuthReady(true);
       if (id && scheduleRequested.current) {
         updateAssistant(id, state => ({ ...state, profile: readWeeklyLearningProfile() }));
@@ -61,7 +66,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const started = revision;
     void supabase.auth.getUser().then(({ data }) => { if (revision === started) apply(data.user?.id ?? null); }).catch(() => { if (revision === started) apply(null); });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { revision++; apply(session?.user.id ?? null); });
-    return () => { live = false; data.subscription.unsubscribe(); };
+    return () => { live = false; uploadOperation.current++; data.subscription.unsubscribe(); };
   }, []);
   useEffect(() => { scroll.current?.scrollTo?.({ top: scroll.current.scrollHeight, behavior: "smooth" }); }, [messages, busy]);
   useEffect(() => {
@@ -107,29 +112,40 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     }, { onConflict: "user_id,iso_week" });
   };
   const approve = async () => {
-    if (!owner || !plan || !lastAssistant || approved || approving) return;
-    setApproving(true); setNotice("");
+    const state = assistantSnapshot();
+    if (!owner || !plan || !lastAssistant || approved || state.owner !== owner || state.approvingPlan) return;
+    const epoch = state.epoch, planId = lastAssistant.id;
+    const currentConversation = () => assistantSnapshot().owner === owner && assistantSnapshot().epoch === epoch;
+    updateAssistant(owner, current => ({ ...current, approvingPlan: planId })); setNotice("");
     try {
-      const { data } = await supabase.auth.getUser(); if (data.user?.id !== owner || assistantSnapshot().owner !== owner) throw new Error("account_changed");
+      const { data } = await supabase.auth.getUser(); if (data.user?.id !== owner || !currentConversation()) throw new Error("account_changed");
       const week = getISOWeek(); let previous: SyncedTodo[] = [];
       try { const rows = JSON.parse(localStorage.getItem("app_todos_v1") || "[]"); if (Array.isArray(rows)) previous = rows.filter(row => row && typeof row.id === "string" && typeof row.text === "string"); } catch { /* empty */ }
       const remote = await pullTodos(owner);
       const account = await supabase.auth.getUser();
-      if (account.data.user?.id !== owner || assistantSnapshot().owner !== owner) throw new Error("account_changed");
+      if (account.data.user?.id !== owner || !currentConversation()) throw new Error("account_changed");
       if (remote) { const ids = new Set(remote.map(task => task.id)); previous = [...remote, ...previous.filter(task => !ids.has(task.id))]; }
       const additions = plan.filter(task => !previous.some(existing => existing.text === task.text && existing.day === task.day))
         .map(task => ({ ...task, id: crypto.randomUUID(), done: false }));
       const merged = [...previous, ...additions];
       localStorage.setItem("app_todos_week_v1", week); localStorage.setItem("app_todos_v1", JSON.stringify(merged)); localStorage.removeItem("app_todos_celebrated_v1");
-      window.dispatchEvent(new Event("app:todos-changed")); await pushTodos(merged, owner);
-      updateAssistant(owner, current => ({ ...current, approved: [...current.approved, lastAssistant.id] }));
-      if (conversation.profile) { const updated = { ...conversation.profile, planTasks: plan, updatedAt: new Date().toISOString() }; saveWeeklyLearningProfile(updated); void persistProfile(updated, owner).catch(() => {}); }
-    } catch { setNotice(t.approveError); } finally { setApproving(false); }
+      window.dispatchEvent(new Event("app:todos-changed")); const synced = await pushTodos(merged, owner);
+      if (!currentConversation()) return;
+      if (!synced) { setNotice(t.syncError); return; }
+      updateAssistant(owner, current => ({ ...current, approved: [...current.approved, planId] }));
+      const profile = assistantSnapshot().profile;
+      if (profile) { const updated = { ...profile, planTasks: plan, updatedAt: new Date().toISOString() }; updateAssistant(owner, current => ({ ...current, profile: updated })); saveWeeklyLearningProfile(updated); void persistProfile(updated, owner).catch(() => {}); }
+    } catch { if (currentConversation()) setNotice(t.approveError); }
+    finally { updateAssistant(owner, current => current.epoch === epoch && current.approvingPlan === planId ? { ...current, approvingPlan: null } : current); }
   };
   const attach = async (file: File) => {
-    if (!owner) return; const scope = owner; setFileBusy(true); setNotice("");
-    try { const text = await readAssistantFile(file); if (!text.trim()) throw new Error("empty_file"); if (ownerRef.current === scope) updateAssistant(scope, state => ({ ...state, file: { name: file.name, text } })); }
-    catch { setNotice(t.fileError); } finally { setFileBusy(false); if (upload.current) upload.current.value = ""; }
+    if (!owner) return;
+    const scope = owner, epoch = assistantSnapshot().epoch, operation = ++uploadOperation.current;
+    const currentConversation = () => operation === uploadOperation.current && ownerRef.current === scope && assistantSnapshot().owner === scope && assistantSnapshot().epoch === epoch;
+    setFileBusy(true); setNotice("");
+    try { const text = await readAssistantFile(file); if (!text.trim()) throw new Error("empty_file"); if (currentConversation()) updateAssistant(scope, state => ({ ...state, file: { name: file.name, text } })); }
+    catch { if (currentConversation()) setNotice(t.fileError); }
+    finally { if (operation === uploadOperation.current) { setFileBusy(false); if (upload.current) upload.current.value = ""; } }
   };
   const openTool = (key: string) => onOpenTool ? onOpenTool(key) : window.dispatchEvent(new CustomEvent("app:mutamayiz-open-tool", { detail: { key } }));
   return <main dir={ar ? "rtl" : "ltr"} className={`mx-auto flex w-full min-w-0 max-w-3xl flex-col bg-background text-foreground ${embedded ? "h-full min-h-0" : "h-[100dvh] min-h-0"}`}>
