@@ -246,6 +246,13 @@
       "when": 1794604647190,
       "tag": "0034_flight_visa_rewards_and_study_time",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794655559481,
+      "tag": "0035_flight_visa_rewards_and_study_time_idempotent",
+      "breakpoints": true
     }
   ]
 }
