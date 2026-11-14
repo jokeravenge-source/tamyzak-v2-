@@ -23,7 +23,7 @@ const T = {
     regenCode: "Generate new code",
     premiumOnly: "Premium only", premiumDesc: "Parent follow-up is a Premium feature. Upgrade to share your progress with a parent.", upgrade: "Upgrade to Premium",
     min: "min",
-    companion: "Excellence Companion", companionDesc: "Plan your week or work through a problem with AI.",
+    companion: "متميز", companionDesc: "Plan your week or work through a problem with AI.",
     todoToday: "Today's to-do list", todoDone: "done", todoOf: "of",
     todoRemaining: "Remaining today", todoEmpty: "No tasks scheduled for today.",
     todoAllDone: "All today's tasks are done. 🎉",
@@ -45,7 +45,7 @@ const T = {
     regenCode: "توليد رمز جديد",
     premiumOnly: "للبريميوم فقط", premiumDesc: "متابعة ولي الأمر ميزة بريميوم. رقّ لمشاركة تقدمك مع ولي أمرك.", upgrade: "الترقية إلى البريميوم",
     min: "د",
-    companion: "رفيق التميز", companionDesc: "نظّم أسبوعك أو حل مشكلتك مع الذكاء الاصطناعي.",
+    companion: "متميز", companionDesc: "نظّم أسبوعك أو حل مشكلتك مع الذكاء الاصطناعي.",
     todoToday: "قائمة مهام اليوم", todoDone: "مُنجز", todoOf: "من",
     todoRemaining: "المتبقي اليوم", todoEmpty: "لا توجد مهام مجدوَلة لليوم.",
     todoAllDone: "أنهيت كل مهام اليوم. 🎉",
@@ -366,7 +366,7 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
           <ProgressStats language={language} />
         </div>
 
-        {/* Excellence Companion — kept here per product spec, framed like the rest */}
+        {/* متميز — shared assistant conversation */}
         <div className="mt-8 overflow-hidden rounded-[2rem] border border-border bg-card/80 p-5 shadow-sm">
           <ExcellenceCompanion language={language} embedded />
         </div>

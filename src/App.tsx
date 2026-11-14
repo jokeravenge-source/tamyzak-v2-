@@ -8,7 +8,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 const Index = lazy(() => import("./pages/Index.tsx"));
 const Chapters = lazy(() => import("./pages/Chapters.tsx"));
 import NotFound from "./pages/NotFound.tsx";
-import { useState, Suspense } from "react";
+import { useState, useCallback, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
 import Subjects, {
@@ -66,7 +66,7 @@ const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"))
 const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
 const UsageIntroGate = lazy(() => import("./components/UsageIntroGate"));
 
-const GuideChat = lazy(() => import("./pages/GuideChat"));
+const MutamayizChat = lazy(() => import("./pages/MutamayizChat"));
 
 const FeatureUnlocks = lazy(() => import("./pages/FeatureUnlocks"));
 import { ensureDailyLogin, fetchUnlockedKeys, isGatedMenu, type FeatureKey } from "@/lib/unlocks";
@@ -100,7 +100,6 @@ const PlanePerpendicularityCriterionPage = lazy(() => import("./pages/PlanePerpe
 const UniquePerpendicularPlanePage = lazy(() => import("./pages/UniquePerpendicularPlanePage"));
 const IntersectionPerpendicularResultPage = lazy(() => import("./pages/IntersectionPerpendicularResultPage"));
 const TextToVideo = lazy(() => import("./pages/TextToVideo"));
-const SubjectTutor = lazy(() => import("./pages/SubjectTutor"));
 const PhysicsLaws = lazy(() => import("./pages/PhysicsLaws"));
 const PhysicsQuickMcq = lazy(() => import("./pages/PhysicsQuickMcq"));
 const PhysicsProblemSolver = lazy(() => import("./pages/PhysicsProblemSolver"));
@@ -135,7 +134,6 @@ const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import { PaymentTestModeBanner } from "./components/PaymentTestModeBanner";
 const SearchFAB = lazy(() => import("./components/SearchFAB"));
-const ExcellenceCompanion = lazy(() => import("./components/ExcellenceCompanion"));
 // Optional global widget: if its file can't load (stale deploy), render nothing instead of blanking the app.
 const WeaknessCheckInAgent = lazy(() =>
   import("./components/WeaknessCheckInAgent").catch(() =>
@@ -780,7 +778,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
   });
-  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
@@ -887,7 +885,7 @@ const StudentApp = () => {
     localStorage.removeItem(MENU_STORAGE_KEY);
   };
   const { isPremium, loading: subscriptionLoading } = useSubscription();
-  const chooseMenu = (choice: MenuChoice) => {
+  const chooseMenu = useCallback((choice: MenuChoice) => {
     if (choice !== "mcqBank") setPracticeReturnTarget(null);
     logFirstFeatureTouch(choice);
     recordToolUse(choice);
@@ -902,7 +900,7 @@ const StudentApp = () => {
     if (choice !== "unlocks") setUnlockHighlight(null);
     localStorage.setItem(MENU_STORAGE_KEY, choice);
     setMenuChoice(choice);
-  };
+  }, [unlockedKeys, isPremium]);
   // Deep-link support: ?menu=courses (or any other MenuChoice) opens that section directly.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -973,7 +971,20 @@ const StudentApp = () => {
     window.history.replaceState({}, "", "/");
     chooseMenu("subjectsHub");
   };
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [mutamayizOpen, setMutamayizOpen] = useState(false);
+  useEffect(() => {
+    const openTool = (event: Event) => {
+      const key = (event as CustomEvent<{ key?: string }>).detail?.key;
+      if (key && isGuideToolKey(key)) { setMutamayizOpen(false); chooseMenu(key as MenuChoice); }
+    };
+    const open = () => setMutamayizOpen(true);
+    window.addEventListener("app:mutamayiz-open-tool", openTool);
+    window.addEventListener("app:open-mutamayiz", open);
+    const schedule = () => { try { sessionStorage.setItem("companion:autoSchedule", "1"); } catch { /* optional shortcut */ } setMutamayizOpen(true); };
+    window.addEventListener("app:companion-auto-schedule", schedule);
+    return () => { window.removeEventListener("app:mutamayiz-open-tool", openTool); window.removeEventListener("app:open-mutamayiz", open); window.removeEventListener("app:companion-auto-schedule", schedule); };
+  }, [chooseMenu]);
+
   const exitSpecialRoute = () => {
     window.history.replaceState({}, "", "/");
     setAuthRole("student");
@@ -1000,20 +1011,20 @@ const StudentApp = () => {
           onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
         />
         {authed && language && authRole !== "admin" && channelVerified && (
-          <UsageIntroGate language={language} onNeedHelp={() => setGuideOpen(true)} />
+          <UsageIntroGate language={language} onNeedHelp={() => setMutamayizOpen(true)} />
         )}
-      {guideOpen && language && (
+      {mutamayizOpen && language && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-background">
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>}>
-            <GuideChat
+            <MutamayizChat
               language={language}
-              onBack={() => setGuideOpen(false)}
+              onBack={() => setMutamayizOpen(false)}
               onOpenTool={(key) => {
                 if (!isGuideToolKey(key)) {
                   toast.error(language === "ar" ? "هذه الميزة غير متاحة حالياً." : "This feature is not available right now.");
                   return;
                 }
-                setGuideOpen(false);
+                setMutamayizOpen(false);
                 chooseMenu(key);
               }}
             />
@@ -1037,7 +1048,7 @@ const StudentApp = () => {
           language={language}
           active={(menuChoice as any) ?? "basics"}
           onSelect={(k) => chooseMenu(k as MenuChoice)}
-          onGuide={() => setGuideOpen(true)}
+          onGuide={() => setMutamayizOpen(true)}
         />
       )}
       </Suspense>
@@ -1126,15 +1137,8 @@ const StudentApp = () => {
         <LanguageGate onSelect={setLanguage} />
       ) : authRole !== "admin" && !channelVerified && !isNadiaMinisterialRoute && !(typeof window !== "undefined" && window.location.pathname.startsWith("/flashcards")) ? (
         <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
-      ) : menuChoice === "subjectTutor" ? (
-        <main dir={language === "ar" ? "rtl" : "ltr"} className="flex min-h-screen items-center justify-center bg-background px-4 pb-28">
-          <section className="w-full max-w-md rounded-[1.75rem] border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">
-            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-2xl" aria-hidden="true">🔒</span>
-            <h1 className="mt-5 text-2xl font-black text-foreground">{language === "ar" ? "المعلم الذكي مقفل مؤقتاً" : "AI Tutor is temporarily locked"}</h1>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">{language === "ar" ? "نعمل على تحسين التجربة. راح نرجّعه للطلاب قريباً." : "We are improving the experience and will make it available again soon."}</p>
-            <button type="button" onClick={backToBasics} className="mt-6 min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90">{language === "ar" ? "العودة للرئيسية" : "Back to home"}</button>
-          </section>
-        </main>
+      ) : ["mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "") ? (
+        <div className="h-[calc(100dvh-var(--nav-safe,7rem))]"><MutamayizChat embedded language={language} onBack={resetMenu} onOpenTool={(key) => { if (isGuideToolKey(key)) chooseMenu(key as MenuChoice); }} /></div>
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
         <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
       ) : !menuChoice || menuChoice === "basics" ? (
@@ -1284,18 +1288,6 @@ const StudentApp = () => {
         <ChallengePage language={language} onBack={resetMenu} isAdmin={isAdmin} />
       ) : menuChoice === "joinTamayzak" ? (
         <JoinTamayzak language={language} onBack={resetMenu} />
-      ) : menuChoice === "companion" || menuChoice === "psych" ? (
-        <main className="min-h-screen bg-background pb-28">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
-            <button
-              onClick={resetMenu}
-              className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card text-sm font-medium hover:bg-secondary transition-colors mb-6"
-            >
-              {language === "ar" ? "رجوع" : "Back"}
-            </button>
-            <ExcellenceCompanion language={language} embedded />
-          </div>
-        </main>
       ) : menuChoice === "premium" ? (
         <Premium language={language} onBack={resetMenu} />
       ) : menuChoice === "more" ? (

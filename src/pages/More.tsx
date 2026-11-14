@@ -191,11 +191,11 @@ const GROUPS: Group[] = [
         "راجع تقدّمك الدراسي."
       ],
       [
-        "companion",
-        "Study companion",
-        "رفيق النجاح",
-        "Get help planning your study.",
-        "مساعدة في التخطيط لدراستك."
+        "mutamayiz",
+        "متميز",
+        "متميز",
+        "Questions, problems, emotional support, planning and website tools.",
+        "أسئلتك ومشاكلك ودعمك النفسي وجدولك ودليلك للموقع."
       ]
     ]
   ],

@@ -16,7 +16,7 @@ export const CUSTOMIZABLE_STUDY_TOOLS = [
   { key: "videoNotes", en: "Video Notes", ar: "ملاحظات الفيديو" },
   { key: "textToVideo", en: "Text to Video", ar: "نص إلى فيديو" },
   { key: "youtube", en: "YouTube Player", ar: "مشغّل يوتيوب" },
-  { key: "companion", en: "Success Companion", ar: "رفيق النجاح" },
+  { key: "mutamayiz", en: "متميز", ar: "متميز" },
   { key: "liveBattle", en: "Live Battle", ar: "المعركة المباشرة" },
 ] as const;
 
@@ -29,14 +29,14 @@ export function getHiddenStudyTools(): Set<string> {
   try {
     const parsed = JSON.parse(localStorage.getItem(STUDY_TOOL_VISIBILITY_KEY) || "[]");
     if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.filter((key): key is string => typeof key === "string" && validKeys.has(key)));
+    return new Set(parsed.map((key) => key === "companion" ? "mutamayiz" : key).filter((key): key is string => typeof key === "string" && validKeys.has(key)));
   } catch {
     return new Set();
   }
 }
 
 export function saveHiddenStudyTools(hidden: Set<string>) {
-  const cleaned = [...hidden].filter((key) => validKeys.has(key));
+  const cleaned = [...hidden].map((key) => key === "companion" ? "mutamayiz" : key).filter((key) => validKeys.has(key));
   if (cleaned.length === 0) localStorage.removeItem(STUDY_TOOL_VISIBILITY_KEY);
   else localStorage.setItem(STUDY_TOOL_VISIBILITY_KEY, JSON.stringify(cleaned));
   window.dispatchEvent(new Event(STUDY_TOOL_VISIBILITY_EVENT));

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { STUDENT_TOOLS } from "../../supabase/functions/_shared/mutamayizTools";
 import { GUIDE_TOOL_KEYS, isGuideToolKey } from "./guideTools";
 
 describe("guide tool destinations", () => {
@@ -18,16 +17,7 @@ describe("guide tool destinations", () => {
   });
 
   it("matches the destinations advertised by the guide function", () => {
-    const source = readFileSync(
-      join(process.cwd(), "supabase/functions/guide-chat/index.ts"),
-      "utf8",
-    );
-    const catalog = source.match(/const TOOLS = `\n([\s\S]*?)\n`;/)?.[1] ?? "";
-    const functionKeys = catalog
-      .split("\n")
-      .map((line) => line.match(/^([a-zA-Z][a-zA-Z0-9_-]*)\s+—/)?.[1])
-      .filter((key): key is string => Boolean(key));
-
+    const functionKeys = STUDENT_TOOLS.map(tool => tool.key);
     expect(functionKeys).toEqual([...GUIDE_TOOL_KEYS]);
   });
 });

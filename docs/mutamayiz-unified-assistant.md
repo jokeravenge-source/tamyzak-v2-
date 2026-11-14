@@ -1,0 +1,29 @@
+# متميز — unified student assistant
+
+All student chat entry points now mount `MutamayizChat`: the center navigation button, home card, subject cards, daily-report panel, and legacy `companion`, `psych`, and `subjectTutor` menu links. The only displayed assistant name is **متميز**, including the English interface. It combines personal problem solving, emotional support, study planning, scientific explanations, and navigation without a mode switch or a new conversation.
+
+## Request and state contract
+
+- The UI calls the existing authenticated `excellence-companion` function with `mode: "unified"`. Legacy schedule/problem/psych requests use the same system prompt. The structured `weakness` intake remains an internal contract for personalized practice, with the same assistant identity.
+- The old `guide-chat` and `psych-chat` functions forward to that endpoint, carrying the user's authorization. They no longer maintain a separate persona, save support conversations, or forward personal messages to Telegram.
+- One in-memory, account-scoped conversation is shared by mounted entry points. Sign-out/account changes clear messages and attachments. New conversations invalidate late replies. Personal chat text is not written to local storage or a chat-history table.
+- PDF/TXT/MD attachments are read locally, with a 15 MiB file limit and an 80,000-character text context limit. Scanned PDFs without extractable text produce a clear error. File text and learning profiles are untrusted user data, never system instructions.
+- The shared student-tool catalog controls both the model's descriptions and the frontend's button allowlist. Unknown/admin markers cannot become navigation buttons; responses have at most three tool buttons. Existing premium/points checks still apply to the destination tools.
+
+## Plans and support
+
+Plans contain at most 35 validated weekday/task pairs. The student sees the tasks before approval. Approval adds tasks to the existing account/local list, preserves parent-authored tasks, avoids repeated approval, and syncs through the existing task/profile contracts. Conversation changes alone do not write tasks.
+
+Emotional support is empathetic study support, without diagnosis, medication advice, claims to be a clinician, or promises of absolute confidentiality. Immediate danger takes priority over studying, with guidance toward a trusted person and local professional/emergency help, without fabricated phone numbers.
+
+## Release
+
+No database migration or new frontend secret is required. Deploy the frontend **and** the updated `excellence-companion`, `guide-chat`, and `psych-chat` functions, including their shared modules. A GitHub commit alone does not prove the live edge functions were redeployed. Existing server AI credentials remain server-side.
+
+Validation:
+
+```sh
+npm test -- src/lib/mutamayiz.test.ts src/lib/mutamayizEdge.test.ts src/lib/mutamayizLegacy.test.ts src/lib/mutamayizTodos.test.ts src/pages/MutamayizChat.test.tsx src/lib/guideTools.test.ts src/components/BottomGroupNav.test.tsx
+npx tsc --noEmit -p tsconfig.app.json
+npm run build
+```

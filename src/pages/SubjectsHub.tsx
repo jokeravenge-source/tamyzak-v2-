@@ -31,7 +31,7 @@ type Tool = {
 type ToolGroup = "learn" | "practice" | "revise";
 
 const toolGroup = (key: Tool["key"]): ToolGroup => {
-  if (["malazam", "biologySchemes", "physicsSchemes", "subjectTutor", "frenchConjugator", "physicsLaws", "atomAtlas"].includes(key)) return "learn";
+  if (["malazam", "biologySchemes", "physicsSchemes", "mutamayiz", "frenchConjugator", "physicsLaws", "atomAtlas"].includes(key)) return "learn";
   if (["flashcards", "ministerialBank", "englishVerbForms", "englishEssays", "poemsChecker", "hadithChecker", "islamicSurahs"].includes(key)) return "revise";
   return "practice";
 };
@@ -47,7 +47,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "physics", en: "Physics", ar: "الفيزياء", Icon: Atom,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "physicsActivities", en: "Activities", ar: "الأنشطة", Icon: Boxes },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "physicsProblemSolver", en: "Problem Solver", ar: "حل المسائل", Icon: Calculator },
@@ -64,7 +64,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "chemistry", en: "Chemistry", ar: "الكيمياء", Icon: FlaskConical,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "atomAtlas", en: "Atom Atlas", ar: "أطلس الذرة", Icon: Atom, free: true,
         descEn: "Explore all 118 elements, atoms, molecules, terms and lessons.", descAr: "استكشف العناصر الـ118 والذرات والجزيئات والمصطلحات والدروس." },
       { key: "chemistryExperiments", en: "Chemistry Experiment", ar: "تجربة الكيمياء", Icon: FlaskConical },
@@ -80,7 +80,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "biology", en: "Biology", ar: "الأحياء", Icon: Leaf,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "ministerialBank", en: "Ministerial Questions", ar: "الأسئلة الوزارية", Icon: ScrollText },
       { key: "biologySchemes", en: "Schemes", ar: "مخططات", Icon: Images, free: true,
@@ -102,7 +102,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "english", en: "English", ar: "الإنجليزية", Icon: BookOpen,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "englishEssays", en: "English Compositions", ar: "إنشاءات الإنكليزي", Icon: PenLine },
       { key: "englishIsqat", en: "Word Drops (Isqatat)", ar: "الإسقاطات", Icon: MousePointerClick },
@@ -115,7 +115,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "french", en: "French", ar: "الفرنسية", Icon: LangIcon,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "frenchSynonyms", en: "Synonyms", ar: "المرادفات", Icon: MousePointerClick },
       { key: "frenchAntonyms", en: "Antonyms", ar: "المعاكسات", Icon: MousePointerClick },
@@ -128,7 +128,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "arabic", en: "Arabic", ar: "العربية", Icon: BookOpen,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "ministerialBank", en: "Ministerial Bank", ar: "بنك الوزاريات", Icon: ScrollText },
       { key: "poemsChecker", en: "Poems Checker", ar: "قصائد الأدب", Icon: ScrollText },
@@ -139,7 +139,7 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
   {
     code: "islamic", en: "Islamic", ar: "التربية الإسلامية", Icon: Moon,
     tools: [
-      { key: "subjectTutor", en: "AI Tutor", ar: "المعلم الذكي", Icon: Bot, disabled: true },
+      { key: "mutamayiz", en: "متميز", ar: "متميز", Icon: Bot },
       { key: "examGenerator", en: "Full Exam Generator", ar: "توليد امتحان كامل", Icon: GraduationCap },
       { key: "islamicSurahs", en: "Islamic Surahs", ar: "سور إسلامية", Icon: Moon },
       { key: "hadithChecker", en: "Hadith Checker", ar: "فاحص الأحاديث", Icon: Moon },

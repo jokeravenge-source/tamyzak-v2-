@@ -225,13 +225,13 @@ const BottomGroupNav = ({
                   onGuide();
                 }}
                 whileTap={{ scale: 0.93 }}
-                aria-label={isRtl ? "افتح المرشد" : "Open guide"}
+                aria-label={isRtl ? "افتح متميز" : "Open متميز"}
                 className="group relative -mt-7 flex min-h-[4.25rem] flex-col items-center justify-end gap-1 rounded-2xl pb-1 text-[10px] font-extrabold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 <span className="absolute top-0 grid h-12 w-12 place-items-center rounded-[1.1rem] border-4 border-card bg-primary text-primary-foreground shadow-[0_12px_30px_-12px_hsl(var(--primary)/0.9)] transition-transform duration-200 group-hover:-translate-y-0.5">
                   <Bot className="h-[21px] w-[21px]" aria-hidden="true" />
                 </span>
-                <span>{isRtl ? "المرشد" : "Guide"}</span>
+                <span>{"متميز"}</span>
               </motion.button>
 
               {PRIMARY_NAV_ITEMS.slice(2).map(({ key, labelAr, labelEn, Icon }) => {

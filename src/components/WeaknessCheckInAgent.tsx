@@ -28,7 +28,7 @@ const PLANNED_WEEK_KEY = "app_companion_planned_week_v2";
 const copy = {
   ar: {
     title: "خل نحدد نقاط ضعفك",
-    subtitle: "رفيق التميز يجمع نتائجك ويا رأيك حتى يرتب تدريبك.",
+    subtitle: "متميز يجمع نتائجك ويا رأيك حتى يرتب تدريبك.",
     detected: "نقاط تحتاج تقوية",
     empty: "بعد ما عندي إجابات كافية، فخل نحددها من كلامك.",
     placeholder: "اكتب المادة أو الفصل اللي تحس يحتاج تقوية…",
@@ -45,7 +45,7 @@ const copy = {
   },
   en: {
     title: "Let’s identify your weak areas",
-    subtitle: "Tamayzak combines your results with what you tell the study agent.",
+    subtitle: "متميز combines your results with the weak points you confirm.",
     detected: "Areas to strengthen",
     empty: "There are not enough answers yet, so let’s identify them from your experience.",
     placeholder: "Tell me which subject or chapter feels difficult…",

@@ -19,19 +19,21 @@ export function getISOWeek(d = new Date()): string {
   return `${date.getUTCFullYear()}-W${weekNo}`;
 }
 
-export async function pushTodos(items: SyncedTodo[]) {
+export async function pushTodos(items: SyncedTodo[], expectedUserId?: string) {
   try {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
+    if (!u.user || (expectedUserId && u.user.id !== expectedUserId)) return;
 
     // Parent-authored task text/day is authoritative. A student's device may
     // still hold an older local copy when it toggles completion; preserve the
     // parent's latest edit while accepting the student's `done` state.
-    const { data: current } = await supabase
+    const { data: current, error: readError } = await supabase
       .from("student_todos")
       .select("items")
       .eq("user_id", u.user.id)
       .maybeSingle();
+    // An assistant plan adds tasks; never replace an account copy we could not read.
+    if (expectedUserId && readError) return;
     const remoteItems = Array.isArray(current?.items) ? (current.items as unknown as SyncedTodo[]) : [];
     const remoteById = new Map(remoteItems.map((item) => [String(item.id), item]));
     const safeItems = items.map((item) => {
@@ -47,8 +49,12 @@ export async function pushTodos(items: SyncedTodo[]) {
         updated_at: remote.updated_at,
       };
     });
+    const sentIds = new Set(safeItems.map((item) => String(item.id)));
+    const outgoingItems = expectedUserId
+      ? [...remoteItems.filter((item) => !sentIds.has(String(item.id))), ...safeItems]
+      : safeItems;
     await supabase.from("student_todos").upsert(
-      { user_id: u.user.id, items: safeItems as unknown as never, week_key: getISOWeek(), updated_at: new Date().toISOString() },
+      { user_id: u.user.id, items: outgoingItems as unknown as never, week_key: getISOWeek(), updated_at: new Date().toISOString() },
       { onConflict: "user_id" },
     );
     // Notify any parent dashboard listening on this user's channel.
@@ -61,10 +67,10 @@ export async function pushTodos(items: SyncedTodo[]) {
   } catch { /* noop */ }
 }
 
-export async function pullTodos(): Promise<SyncedTodo[] | null> {
+export async function pullTodos(expectedUserId?: string): Promise<SyncedTodo[] | null> {
   try {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return null;
+    if (!u.user || (expectedUserId && u.user.id !== expectedUserId)) return null;
     const { data, error } = await supabase
       .from("student_todos")
       .select("items")

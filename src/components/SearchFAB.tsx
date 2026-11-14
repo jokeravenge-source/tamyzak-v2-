@@ -17,6 +17,7 @@ type Entry = {
 };
 
 const ENTRIES: Entry[] = [
+  { key: "mutamayiz", en: { title: "متميز", desc: "One assistant for questions, problems, support, planning and website tools" }, ar: { title: "متميز", desc: "مساعدك لأسئلتك ومشاكلك ودعمك النفسي وجدولك وأدوات الموقع" }, keywords: ["mutamayiz", "ai", "assistant", "support", "planner", "guide", "متميز", "ذكاء اصطناعي", "دعم نفسي", "جدول", "مرشد"] },
   { key: "subjectsHub", en: { title: "Subjects", desc: "Choose a subject and its study tools" }, ar: { title: "المواد", desc: "اختَر مادة وافتح أدواتها الدراسية" } },
   { key: "ourTeachers", en: { title: "Our Teachers", desc: "Find your teacher's lectures, flashcards and MCQs" }, ar: { title: "مدرسونا", desc: "محاضرات وبطاقات وأسئلة المدرسين", tags: "نادية النعيمي احمد النداوي محمد النداوي" } },
   { key: "ourCourses", en: { title: "Our Courses", desc: "Browse your courses and lessons" }, ar: { title: "دوراتنا", desc: "الدورات والدروس المتاحة" } },

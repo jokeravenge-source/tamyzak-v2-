@@ -50,8 +50,8 @@ const UsageIntroGate = ({
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
               {isAr
-                ? "إذا لم تكن متأكداً، سيرشدك مساعد ذكي إلى الأداة المناسبة لهدفك."
-                : "If you're not sure, a smart guide will point you to the right tool for your goal."}
+                ? "متميز يساعدك بأسئلتك وجدولك ويدلّيك على الأداة المناسبة لهدفك."
+                : "متميز can answer questions, plan your study and find the right tool."}
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
@@ -64,7 +64,7 @@ const UsageIntroGate = ({
                 onClick={() => answer(false)}
                 className="h-11 rounded-xl border border-border bg-secondary font-semibold text-foreground transition-colors hover:bg-secondary/70"
               >
-                {isAr ? "لا، أرشدني" : "No, guide me"}
+                {isAr ? "افتح متميز" : "Open متميز"}
               </button>
             </div>
           </motion.div>

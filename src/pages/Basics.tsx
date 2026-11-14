@@ -285,7 +285,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
   { key: "canvas",     Icon: Palette },
   { key: "notes",      Icon: NotebookPen },
   { key: "adminNotes", Icon: BookOpen },
-  { key: "companion",  Icon: Sparkles },
+  { key: "mutamayiz",  Icon: Sparkles },
   { key: "mcq",        Icon: HelpCircle },
 ];
 
@@ -299,7 +299,7 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
   canvas: Palette,
   notes: NotebookPen,
   adminNotes: BookOpen,
-  companion: Sparkles,
+  mutamayiz: Sparkles,
   mcq: HelpCircle,
   mcqBank: Layers,
   mistakes: AlertTriangle,
@@ -329,7 +329,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   textToVideo: { card: "border-pink-400/40 bg-gradient-to-br from-pink-500/25 via-rose-500/10 to-orange-400/20", icon: "bg-pink-600 text-white shadow-lg shadow-pink-500/25" },
   youtube: { card: "border-red-400/40 bg-gradient-to-br from-red-500/25 via-rose-500/10 to-pink-400/20", icon: "bg-red-600 text-white shadow-lg shadow-red-500/25" },
   canvas: { card: "border-blue-400/40 bg-gradient-to-br from-indigo-500/25 via-blue-500/10 to-cyan-400/20", icon: "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25" },
-  companion: { card: "border-emerald-400/40 bg-gradient-to-br from-teal-500/25 via-cyan-500/10 to-emerald-400/20", icon: "bg-teal-600 text-white shadow-lg shadow-teal-500/25" },
+  mutamayiz: { card: "border-emerald-400/40 bg-gradient-to-br from-teal-500/25 via-cyan-500/10 to-emerald-400/20", icon: "bg-teal-600 text-white shadow-lg shadow-teal-500/25" },
   mcq: { card: "border-purple-400/40 bg-gradient-to-br from-purple-500/25 via-fuchsia-500/10 to-pink-400/20", icon: "bg-purple-600 text-white shadow-lg shadow-purple-500/25" },
   liveBattle: { card: "border-rose-400/40 bg-gradient-to-br from-rose-500/25 via-red-500/10 to-amber-400/20", icon: "bg-rose-600 text-white shadow-lg shadow-rose-500/25" },
   report: { card: "border-lime-400/40 bg-gradient-to-br from-lime-500/25 via-emerald-500/10 to-green-400/20", icon: "bg-lime-600 text-white shadow-lg shadow-lime-500/25" },
@@ -413,7 +413,7 @@ const TOOL_CATEGORY_LABELS = {
 const TOOL_CATEGORY_KEYS: Record<"Review" | "Test" | "Organize", Set<string>> = {
   Review: new Set(["flashcards", "malazam", "summaries", "adminNotes", "ministerialBank", "mistakes", "notes", "mindmap", "videoNotes", "podcastTutor", "youtube", "frenchConjugator"]),
   Test: new Set(["mcq", "mcqBank", "essay", "liveBattle", "dailyGame", "challenge", "biologyDrawings", "biologySchemes", "physicsSchemes", "physicsQuickMcq", "physicsProblemSolver", "problemGenerator", "chemicalEquations", "organicEquations", "examGenerator"]),
-  Organize: new Set(["subjectsHub", "ourCourses", "teachers", "ourTeachers", "report", "sessions", "missions", "todo", "leaderboard", "news", "advices", "whoIsBest", "account", "premium", "more", "joinTamayzak", "unlocks", "textToVideo", "canvas", "islamicSurahs", "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat", "englishVerbForms", "englishReadingPractice", "frenchSynonyms", "frenchAntonyms", "psych", "companion", "subjectTutor", "physicsLaws", "physicsActivities", "chemistryExperiments"]),
+  Organize: new Set(["subjectsHub", "ourCourses", "teachers", "ourTeachers", "report", "sessions", "missions", "todo", "leaderboard", "news", "advices", "whoIsBest", "account", "premium", "more", "joinTamayzak", "unlocks", "textToVideo", "canvas", "islamicSurahs", "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat", "englishVerbForms", "englishReadingPractice", "frenchSynonyms", "frenchAntonyms", "psych", "mutamayiz", "subjectTutor", "physicsLaws", "physicsActivities", "chemistryExperiments"]),
 };
 function toolCategoryFor(key: string): "Review" | "Test" | "Organize" {
   if (TOOL_CATEGORY_KEYS.Review.has(key)) return "Review";
@@ -438,7 +438,7 @@ const FEATURED_COPY = {
     canvas: { title: "Canvas", subtitle: "Sketch and diagram your ideas freely." },
     notes: { title: "Notes", subtitle: "Write and organize your own study notes." },
     adminNotes: { title: "Enrichments", subtitle: "Colorful enrichment cards crafted by your instructors." },
-    companion: { title: "Success Companion", subtitle: "Your AI study partner and planner." },
+    mutamayiz: { title: "متميز", subtitle: "One assistant for questions, planning, support and website tools." },
     liveBattle: { title: "Live Battle", subtitle: "Challenge a friend in a 10-question MCQ duel." },
     subjectsHub: { title: "Subjects", subtitle: "All your subjects, chapter by chapter." },
     sessions: { title: "Study Sessions", subtitle: "Time your study and join study rooms." },
@@ -461,7 +461,7 @@ const FEATURED_COPY = {
     canvas: { title: "اللوحة", subtitle: "ارسم ونظّم أفكارك بحرية." },
     notes: { title: "ملاحظاتي", subtitle: "اكتب ونظّم ملاحظاتك الدراسية." },
     adminNotes: { title: "إثرائيات", subtitle: "بطاقات إثرائية ملوّنة أعدّها المدرّسون خصيصاً لك." },
-    companion: { title: "رفيق النجاح", subtitle: "شريكك الذكي في الدراسة والتخطيط." },
+    mutamayiz: { title: "متميز", subtitle: "مساعد واحد لأسئلتك ومشاكلك وجدولك ودليلك بالموقع." },
     liveBattle: { title: "المعركة المباشرة", subtitle: "تحد صديقك" },
     subjectsHub: { title: "المواد", subtitle: "كل موادك، فصلاً بفصل." },
     sessions: { title: "جلسات الدراسة", subtitle: "احسب وقت دراستك وادخل غرف الدراسة." },
