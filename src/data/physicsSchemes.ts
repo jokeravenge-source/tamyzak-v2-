@@ -1,3 +1,4 @@
+import { RESONANCE_LESSON } from "./physicsResonance";
 import definitionImage from "@/assets/physics-schemes/01-definition.svg";
 import causeImage from "@/assets/physics-schemes/02-cause.svg";
 import copperPlateImage from "@/assets/physics-schemes/03-copper-plate.svg";
@@ -20,6 +21,12 @@ export type PhysicsSchemePart = {
   text: PhysicsSchemeText;
   image: string;
   imageAlt: PhysicsSchemeText;
+  video?: { src: string; durationSeconds: number };
+  source?: { name: string; pages: number[]; text: string; language: "en" | "ar" };
+  formulas?: string[];
+  memory?: PhysicsSchemeText;
+  recall?: { question: PhysicsSchemeText; answer: PhysicsSchemeText };
+  group?: PhysicsSchemeText;
 };
 
 export type PhysicsSchemeLesson = {
@@ -33,6 +40,7 @@ export type PhysicsSchemeLesson = {
 const bilingual = (en: string, ar = en): PhysicsSchemeText => ({ ar, en });
 
 export const PHYSICS_SCHEMES: PhysicsSchemeLesson[] = [
+  RESONANCE_LESSON,
   {
     id: "eddy-currents",
     chapter: 2,
