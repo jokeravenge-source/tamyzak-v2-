@@ -7,6 +7,7 @@ import anziAsset from "@/assets/teachers/mohammed-anzi.jpg.asset.json";
 import nadiaPhoto from "@/assets/teachers/nadia-al-nuaimy.png";
 import { missionsData } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { extractStudyMaterial } from "@/lib/fileText";
 import TeacherLectureVideos from "@/components/TeacherLectureVideos";
 import NadiaCurriculumCards from "@/components/NadiaCurriculumCards";
@@ -52,6 +53,11 @@ const t = {
     practice: "Practice",
     close: "Close",
     next: "Next",
+    previous: "Previous",
+    review: "Review questions",
+    answered: "Answered",
+    noQuestions: "No questions in this set.",
+    questionContent: "Question content",
     finish: "Finish",
     correct: "Correct",
     wrong: "Wrong",
@@ -89,6 +95,11 @@ const t = {
     practice: "تدريب",
     close: "إغلاق",
     next: "التالي",
+    previous: "السابق",
+    review: "مراجعة الأسئلة",
+    answered: "تمت الإجابة",
+    noQuestions: "ماكو أسئلة بهذه المجموعة.",
+    questionContent: "محتوى السؤال",
     finish: "إنهاء",
     correct: "صحيح",
     wrong: "خطأ",
@@ -532,6 +543,7 @@ function TopicView({
 
       {practice && (
         <PracticeModal
+          key={practice.id}
           set={practice}
           language={language}
           L={L}
@@ -731,44 +743,59 @@ function GeneratorPanel({
 }
 
 // ---------- Practice quiz modal ----------
-function PracticeModal({
+export function PracticeModal({
   set,
   language,
-  L,
+  L = t[language],
   onClose,
   isAdmin,
   onSetUpdated,
 }: {
   set: MCQSet;
   language: AppLanguage;
-  L: Record<keyof (typeof t)["en"], string>;
+  L?: Record<keyof (typeof t)["en"], string>;
   onClose: () => void;
   isAdmin?: boolean;
   onSetUpdated?: (next: MCQSet | null) => void;
 }) {
   const [i, setI] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [questions, setQuestions] = useState<MCQItem[]>(set.questions);
+  const [answers, setAnswers] = useState<Array<{ selected: number | null; revealed: boolean }>>(
+    () => set.questions.map(() => ({ selected: null, revealed: false })),
+  );
   const [deleting, setDeleting] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const questionRef = useRef<HTMLHeadingElement>(null);
   const q = questions[i];
+  const selected = answers[i]?.selected ?? null;
+  const revealed = answers[i]?.revealed ?? false;
+  const answered = answers.filter((answer) => answer.revealed).length;
+  const score = answers.reduce((total, answer, index) =>
+    total + Number(answer.revealed && answer.selected === questions[index]?.answer_index), 0);
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+    questionRef.current?.focus({ preventScroll: true });
+  }, [i, done]);
+
+  const select = (choice: number) => {
+    if (revealed || deleting) return;
+    setAnswers((current) => current.map((answer, index) => index === i ? { ...answer, selected: choice } : answer));
+  };
 
   const submit = () => {
-    if (selected === null) return;
-    if (selected === q.answer_index) setScore((s) => s + 1);
-    setRevealed(true);
+    if (!q || selected === null || revealed || deleting) return;
+    setAnswers((current) => current.map((answer, index) => index === i ? { ...answer, revealed: true } : answer));
   };
 
   const next = () => {
+    if (deleting || !q) return;
     if (i + 1 >= questions.length) {
       setDone(true);
       return;
     }
     setI((n) => n + 1);
-    setSelected(null);
-    setRevealed(false);
   };
 
   const deleteCurrentQuestion = async () => {
@@ -793,10 +820,9 @@ function PracticeModal({
         .eq("id", set.id);
       if (error) throw error;
       setQuestions(remaining);
+      setAnswers((current) => current.filter((_, index) => index !== i));
       const nextIndex = Math.min(i, remaining.length - 1);
       setI(nextIndex);
-      setSelected(null);
-      setRevealed(false);
       onSetUpdated?.({ ...set, questions: remaining });
       toast.success(L.delete);
     } catch (e: any) {
@@ -807,23 +833,21 @@ function PracticeModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm grid place-items-center p-4"
-      onClick={onClose}
-      dir={language === "ar" ? "rtl" : "ltr"}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-3xl border border-primary/30 bg-card p-6 shadow-xl"
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        dir={language === "ar" ? "rtl" : "ltr"}
+        className="flex max-w-xl flex-col gap-0 overflow-hidden rounded-3xl border-primary/30 bg-card p-0"
+        style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)" }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-xs text-muted-foreground">
-            {done ? L.finish : `${i + 1} / ${questions.length}`}
-          </span>
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border p-4 pe-14">
+          <div className="min-w-0">
+            <DialogTitle className="break-words text-base leading-6">{set.title || L.practice}</DialogTitle>
+            <DialogDescription aria-live="polite" className="mt-1 text-xs">
+              {done ? L.finish : `${q ? i + 1 : 0} / ${questions.length}`} · {L.answered}: {answered} / {questions.length}
+            </DialogDescription>
+          </div>
           <div className="flex items-center gap-2">
-            {isAdmin && !done && (
+            {isAdmin && !done && q && (
               <button
                 onClick={deleteCurrentQuestion}
                 disabled={deleting}
@@ -834,12 +858,10 @@ function PracticeModal({
                 {L.deleteQuestion}
               </button>
             )}
-            <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">
-              {L.close}
-            </button>
           </div>
-        </div>
+        </header>
 
+        <div ref={contentRef} role="region" aria-label={L.questionContent} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         {done ? (
           <div className="text-center py-6">
             <h3 className="text-2xl font-bold mb-2">{L.score}</h3>
@@ -847,9 +869,9 @@ function PracticeModal({
               {score} / {questions.length}
             </p>
           </div>
-        ) : (
+        ) : q ? (
           <>
-            <h3 className="text-lg font-semibold mb-4">{q.question}</h3>
+            <h3 ref={questionRef} tabIndex={-1} className="mb-4 whitespace-pre-wrap break-words text-lg font-semibold leading-8 outline-none [overflow-wrap:anywhere]">{q.question}</h3>
             <div className="grid gap-2 mb-4">
               {q.choices.map((c, idx) => {
                 const isCorrect = revealed && idx === q.answer_index;
@@ -857,9 +879,11 @@ function PracticeModal({
                 return (
                   <button
                     key={idx}
-                    disabled={revealed}
-                    onClick={() => setSelected(idx)}
-                    className={`text-start p-3 rounded-xl border transition-colors ${
+                    type="button"
+                    aria-pressed={selected === idx}
+                    disabled={revealed || deleting}
+                    onClick={() => select(idx)}
+                    className={`min-h-11 break-words text-start p-3 rounded-xl border transition-colors [overflow-wrap:anywhere] ${
                       isCorrect
                         ? "border-emerald-500 bg-emerald-500/10"
                         : isWrong
@@ -869,9 +893,9 @@ function PracticeModal({
                             : "border-border hover:bg-secondary"
                     }`}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                      {isWrong && <XCircle className="w-4 h-4 text-destructive" />}
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      {isCorrect && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />}
+                      {isWrong && <XCircle className="w-4 h-4 shrink-0 text-destructive" />}
                       {c}
                     </span>
                   </button>
@@ -879,32 +903,24 @@ function PracticeModal({
               })}
             </div>
             {revealed && q.explanation && (
-              <p className="text-sm text-muted-foreground mb-4 p-3 rounded-lg bg-secondary/50">
+              <p className="whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground mb-4 p-3 rounded-lg bg-secondary/50 [overflow-wrap:anywhere]">
                 {q.explanation}
               </p>
             )}
-            <div className="flex justify-end gap-2">
-              {!revealed ? (
-                <button
-                  onClick={submit}
-                  disabled={selected === null}
-                  className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-50"
-                >
-                  {L.reveal}
-                </button>
-              ) : (
-                <button
-                  onClick={next}
-                  className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-semibold"
-                >
-                  {i + 1 >= questions.length ? L.finish : L.next}
-                </button>
-              )}
-            </div>
           </>
-        )}
-      </motion.div>
-    </div>
+        ) : <p className="py-6 text-center text-muted-foreground">{L.noQuestions}</p>}
+        </div>
+        {(done || q) && <footer className="shrink-0 space-y-3 border-t border-border bg-card p-4">
+          {done ? <button type="button" onClick={() => setDone(false)} className="min-h-11 w-full rounded-xl border border-primary px-4 py-2 font-semibold text-primary">{L.review}</button> : <>
+            {!revealed && <button type="button" onClick={submit} disabled={selected === null || deleting} className="min-h-11 w-full rounded-xl border border-primary px-4 py-2 font-semibold text-primary disabled:opacity-50">{L.reveal}</button>}
+            <nav aria-label={language === "ar" ? "التنقل بين الأسئلة" : "Question navigation"} className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setI((index) => Math.max(0, index - 1))} disabled={i === 0 || deleting} className="min-h-11 rounded-xl border border-border px-3 py-2 font-semibold disabled:opacity-50">{L.previous}</button>
+              <button type="button" onClick={next} disabled={deleting} className="min-h-11 rounded-xl bg-primary px-3 py-2 font-semibold text-primary-foreground disabled:opacity-50">{i + 1 >= questions.length ? L.finish : L.next}</button>
+            </nav>
+          </>}
+        </footer>}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1379,6 +1395,7 @@ function NadiaLectureMcqBank({
 
       {practice && (
         <PracticeModal
+          key={practice.id}
           set={practice}
           language={language}
           L={L}
@@ -1932,6 +1949,7 @@ function AnziLectureView({
 
           {practice && (
             <PracticeModal
+              key={practice.id}
               set={practice}
               language={lang}
               L={L2}
