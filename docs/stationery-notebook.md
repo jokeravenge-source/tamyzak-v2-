@@ -1,7 +1,8 @@
 # My Notebook
 
-Open `/notebook` directly, or choose **My Notebook / دفتري** from Tamayzak's tools.
-The existing `canvas` menu key now opens the stationery notebook. Previous
+Choose **Study → My Notebook / الدراسة → دفتري** from Tamayzak's study tools.
+The standalone `/notebook` page has been removed. The existing `canvas` menu
+key opens the stationery notebook within the normal application. Previous
 whiteboard drawings remain available through Notebook settings and retain their
 original storage key. Notes, enrichment notebooks, and mind maps are unchanged.
 

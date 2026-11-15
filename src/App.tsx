@@ -220,11 +220,6 @@ const McqBankDeepLink = () => {
 };
 
 const App = () => {
-  // This notebook works locally without an account. Existing tool and auth
-  // routes retain their normal gates; no server records are exposed here.
-  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/notebook") {
-    return <Suspense fallback={null}><Canvas language="en" onBack={() => { window.location.href = "/"; }} /></Suspense>;
-  }
   normalizeNadiaTeacherLink();
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-review") return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}><McqReviewDashboard /></Suspense></TooltipProvider></QueryClientProvider>;
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;
