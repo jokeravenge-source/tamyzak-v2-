@@ -7,7 +7,7 @@ export const CUSTOMIZABLE_STUDY_TOOLS = [
   { key: "malazam", en: "Al Malazam", ar: "بنك الملازم" },
   { key: "notes", en: "Notes", ar: "ملاحظاتي" },
   { key: "adminNotes", en: "Enrichments", ar: "الإثرائيات" },
-  { key: "canvas", en: "Canvas", ar: "اللوحة" },
+  { key: "canvas", en: "My Notebook", ar: "دفتري" },
   { key: "summaries", en: "Summaries", ar: "الملخصات" },
   { key: "mcq", en: "MCQ Generator", ar: "مولّد الأسئلة" },
   { key: "mcqBank", en: "MCQ Bank", ar: "بنك الأسئلة" },

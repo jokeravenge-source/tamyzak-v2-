@@ -1,0 +1,247 @@
+[
+  {
+    "id": "classic-books",
+    "name": "Classic books",
+    "category": "Books",
+    "width": 246,
+    "height": 194
+  },
+  {
+    "id": "pink-bow",
+    "name": "Pink bow",
+    "category": "Decor",
+    "width": 170,
+    "height": 176
+  },
+  {
+    "id": "heart-journal",
+    "name": "Heart journal",
+    "category": "Study",
+    "width": 174,
+    "height": 178
+  },
+  {
+    "id": "pencil",
+    "name": "Pencil",
+    "category": "Study",
+    "width": 138,
+    "height": 200
+  },
+  {
+    "id": "graduation-cap",
+    "name": "Graduation cap",
+    "category": "Study",
+    "width": 239,
+    "height": 172
+  },
+  {
+    "id": "globe",
+    "name": "Little globe",
+    "category": "Science",
+    "width": 178,
+    "height": 233
+  },
+  {
+    "id": "paper-plane",
+    "name": "Paper airplane",
+    "category": "Science",
+    "width": 170,
+    "height": 138
+  },
+  {
+    "id": "study-stack",
+    "name": "Study essentials",
+    "category": "Books",
+    "width": 211,
+    "height": 259
+  },
+  {
+    "id": "notepaper",
+    "name": "Little notepaper",
+    "category": "Decor",
+    "width": 213,
+    "height": 253
+  },
+  {
+    "id": "alarm-clock",
+    "name": "Alarm clock",
+    "category": "Study",
+    "width": 171,
+    "height": 217
+  },
+  {
+    "id": "black-backpack",
+    "name": "Black backpack",
+    "category": "Study",
+    "width": 200,
+    "height": 232
+  },
+  {
+    "id": "open-book",
+    "name": "Open book",
+    "category": "Study",
+    "width": 256,
+    "height": 164
+  },
+  {
+    "id": "highlighter",
+    "name": "Yellow highlighter",
+    "category": "Study",
+    "width": 123,
+    "height": 201
+  },
+  {
+    "id": "dream-books",
+    "name": "Dream, study, achieve",
+    "category": "Books",
+    "width": 247,
+    "height": 187
+  },
+  {
+    "id": "gold-stars",
+    "name": "Golden stars",
+    "category": "Decor",
+    "width": 120,
+    "height": 165
+  },
+  {
+    "id": "calculator",
+    "name": "Calculator",
+    "category": "Study",
+    "width": 171,
+    "height": 191
+  },
+  {
+    "id": "pencil-cup",
+    "name": "Pencil cup",
+    "category": "Study",
+    "width": 160,
+    "height": 207
+  },
+  {
+    "id": "colorful-books",
+    "name": "Colorful books",
+    "category": "Books",
+    "width": 219,
+    "height": 177
+  },
+  {
+    "id": "desk-board",
+    "name": "Desk chalkboard",
+    "category": "Study",
+    "width": 249,
+    "height": 188
+  },
+  {
+    "id": "flask",
+    "name": "Little science flask",
+    "category": "Science",
+    "width": 148,
+    "height": 201
+  },
+  {
+    "id": "spiral-notebook",
+    "name": "Spiral notebook",
+    "category": "Study",
+    "width": 171,
+    "height": 199
+  },
+  {
+    "id": "apple",
+    "name": "Apple",
+    "category": "Science",
+    "width": 156,
+    "height": 188
+  },
+  {
+    "id": "future-card",
+    "name": "Our bright future",
+    "category": "Books",
+    "width": 191,
+    "height": 200
+  },
+  {
+    "id": "blue-pen",
+    "name": "Blue pen",
+    "category": "Study",
+    "width": 130,
+    "height": 198
+  },
+  {
+    "id": "heart-books",
+    "name": "Books with love",
+    "category": "Books",
+    "width": 235,
+    "height": 203
+  },
+  {
+    "id": "triangle-ruler",
+    "name": "Triangle ruler",
+    "category": "Study",
+    "width": 148,
+    "height": 155
+  },
+  {
+    "id": "pink-heart",
+    "name": "Little heart",
+    "category": "Decor",
+    "width": 67,
+    "height": 98
+  },
+  {
+    "id": "dreams-card",
+    "name": "Dreams and plans",
+    "category": "Books",
+    "width": 157,
+    "height": 168
+  },
+  {
+    "id": "ruler",
+    "name": "Ruler",
+    "category": "Study",
+    "width": 163,
+    "height": 174
+  },
+  {
+    "id": "potted-plant",
+    "name": "Potted plant",
+    "category": "Science",
+    "width": 129,
+    "height": 167
+  },
+  {
+    "id": "mesh-cup",
+    "name": "Colorful pencil holder",
+    "category": "Study",
+    "width": 119,
+    "height": 178
+  },
+  {
+    "id": "gift-books",
+    "name": "Gift-wrapped books",
+    "category": "Books",
+    "width": 226,
+    "height": 150
+  },
+  {
+    "id": "heart-label",
+    "name": "Heart label",
+    "category": "Decor",
+    "width": 135,
+    "height": 141
+  },
+  {
+    "id": "blue-backpack",
+    "name": "Blue backpack",
+    "category": "Study",
+    "width": 185,
+    "height": 190
+  },
+  {
+    "id": "outline-star",
+    "name": "Wish upon a star",
+    "category": "Decor",
+    "width": 115,
+    "height": 120
+  }
+]

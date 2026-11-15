@@ -116,10 +116,10 @@ const GROUPS: Group[] = [
       ],
       [
         "canvas",
-        "Canvas",
-        "اللوحة",
-        "Draw and explain your ideas.",
-        "ارسم أفكارك واشرحها."
+        "My Notebook",
+        "دفتري",
+        "Draw, write and decorate your own paper notebook.",
+        "اكتب وارسم وزيّن صفحات دفترك."
       ],
       [
         "mindmap",

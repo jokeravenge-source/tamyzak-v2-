@@ -39,7 +39,7 @@ const ENTRIES: Entry[] = [
   { key: "frenchConjugator", en: { title: "French Conjugator", desc: "All forms, moods, and tenses" }, ar: { title: "مصرّف الأفعال الفرنسية", desc: "جميع الصيغ والأزمنة" },
     keywords: ["french", "conjugator", "conjugation", "verbs", "moods", "tenses", "فرنسي", "فرنسية", "تصريف", "أفعال", "محمد علي الكناني"] },
   { key: "notes", en: { title: "My Notes", desc: "Your notebooks and study notes" }, ar: { title: "ملاحظاتي", desc: "دفاترك وملاحظاتك الدراسية" } },
-  { key: "canvas", en: { title: "Canvas", desc: "Draw, sketch and organise ideas" }, ar: { title: "اللوحة", desc: "ارسم ورتب أفكارك" } },
+  { key: "canvas", en: { title: "My Notebook", desc: "Write, draw and decorate your paper notebook" }, ar: { title: "دفتري", desc: "اكتب وارسم وزيّن صفحات دفترك" } },
   { key: "youtube", en: { title: "YouTube Lectures", desc: "Watch lectures in your study space" }, ar: { title: "محاضرات يوتيوب", desc: "شاهد المحاضرات داخل مساحة الدراسة" } },
   { key: "podcastTutor", en: { title: "Podcast Tutor", desc: "Study with spoken explanations" }, ar: { title: "المعلم الصوتي", desc: "راجع الدروس بالشروحات الصوتية" } },
   { key: "liveBattle", en: { title: "Live Battle", desc: "Challenge a friend to an MCQ round" }, ar: { title: "التحدي المباشر", desc: "تحدَّ صديقك بجولة أسئلة" } },

@@ -1,5 +1,7 @@
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Whiteboard } from "@/components/whiteboard/Whiteboard";
+import { Notebook } from "@/components/notebook/Notebook";
+import { useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 
 const Canvas = ({
@@ -10,7 +12,12 @@ const Canvas = ({
   onOpenNotes?: () => void;
 }) => {
   useFeatureUsed("canvas");
-  return <Whiteboard onBack={onBack} />;
+  const [legacy, setLegacy] = useState(false);
+  return legacy ? (
+    <Whiteboard onBack={() => setLegacy(false)} />
+  ) : (
+    <Notebook onBack={onBack} onOpenLegacy={() => setLegacy(true)} />
+  );
 };
 
 export default Canvas;
