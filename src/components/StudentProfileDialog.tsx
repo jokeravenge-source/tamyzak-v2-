@@ -139,7 +139,7 @@ export default function StudentProfileDialog({
             <ProfilePets traits={data.character} language={language} />
 
             {data.bio && (
-              <p className="rounded-xl border border-border bg-card p-3 text-sm leading-relaxed text-foreground">
+              <p className="whitespace-pre-wrap break-words rounded-xl border border-border bg-card p-3 text-sm leading-relaxed text-foreground [overflow-wrap:anywhere]">
                 {data.bio}
               </p>
             )}

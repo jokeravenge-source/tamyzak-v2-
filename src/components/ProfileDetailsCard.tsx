@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ const FIELDS: { key: keyof Socials; icon: typeof Instagram; label: string; ph: s
   { key: "facebook", icon: Facebook, label: "Facebook", ph: "profile link or name" },
 ];
 
-export default function ProfileDetailsCard({ language }: { language: AppLanguage }) {
+export default function ProfileDetailsCard({ language, userId }: { language: AppLanguage; userId: string }) {
   const isAr = language === "ar";
   const t = (en: string, ar: string) => (isAr ? ar : en);
   const [loading, setLoading] = useState(true);
@@ -24,78 +24,119 @@ export default function ProfileDetailsCard({ language }: { language: AppLanguage
   const [bio, setBio] = useState("");
   const [socials, setSocials] = useState<Socials>({});
   const [showHours, setShowHours] = useState(true);
+  const [hoursSaving, setHoursSaving] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<"load" | "save" | "session" | null>(null);
+  const [retry, setRetry] = useState(0);
+  const revision = useRef(0);
+  const id = useId();
+  const busy = saving || hoursSaving;
+  const errorText = error === "session"
+    ? t("Your session changed. Reopen your account to edit your profile.", "تغيّر حسابك. افتح مركز الحساب من جديد لتعديل ملفك.")
+    : error === "load"
+      ? t("Could not load your profile. Try again before editing.", "تعذّر تحميل ملفك. حاول مرة ثانية قبل التعديل.")
+      : t("Could not save your profile. Your changes are still here; try again.", "تعذّر حفظ ملفك. تعديلاتك باقية، حاول مرة ثانية.");
 
   useEffect(() => {
-    let alive = true;
+    const request = ++revision.current;
+    const current = () => revision.current === request;
+    setLoading(true); setReady(false); setError(null); setSaving(false); setHoursSaving(false);
+    setBio(""); setSocials({}); setShowHours(true);
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { setLoading(false); return; }
-      const { data } = await supabase
-        .from("profiles")
-        .select("bio, socials, show_study_hours")
-        .eq("user_id", u.user.id)
-        .maybeSingle();
-      if (!alive) return;
-      setBio((data?.bio as string) || "");
-      setSocials(((data?.socials as Socials) ?? {}) || {});
-      setShowHours((data?.show_study_hours as boolean) ?? true);
-      setLoading(false);
+      try {
+        const { data: u, error: authError } = await supabase.auth.getUser();
+        if (!current()) return;
+        if (authError || !userId || u.user?.id !== userId) { setError("session"); return; }
+        const { data, error: readError } = await supabase.from("profiles")
+          .select("bio, socials, show_study_hours").eq("user_id", userId).maybeSingle();
+        if (!current()) return;
+        if (readError || !data) throw new Error("profile_unavailable");
+        const clean: Socials = {};
+        const stored = data.socials as Socials | null;
+        FIELDS.forEach(({ key }) => { if (typeof stored?.[key] === "string") clean[key] = stored[key]; });
+        setBio(data.bio ?? ""); setSocials(clean); setShowHours(data.show_study_hours ?? true); setReady(true);
+      } catch { if (current()) setError("load"); }
+      finally { if (current()) setLoading(false); }
     })();
-    return () => { alive = false; };
-  }, []);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user.id === userId) return;
+      revision.current++; setLoading(false); setReady(false); setSaving(false); setHoursSaving(false);
+      setBio(""); setSocials({}); setShowHours(true); setError("session");
+    });
+    return () => { revision.current++; listener.subscription.unsubscribe(); };
+  }, [userId, retry]);
 
-  const persist = async (patch: { bio?: string | null; socials?: unknown; show_study_hours?: boolean }) => {
+  const persist = async (patch: { bio?: string | null; socials?: Socials; show_study_hours?: boolean }, request: number) => {
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const { error } = await supabase.from("profiles").update(patch as never).eq("user_id", u.user.id);
-    if (error) throw error;
+    if (u.user?.id !== userId || revision.current !== request) throw new Error("session_changed");
+    const { data, error } = await supabase.from("profiles").update(patch)
+      .eq("user_id", userId).select("user_id").single();
+    if (error || data?.user_id !== userId) throw new Error("profile_not_saved");
   };
 
   const toggleHours = async () => {
+    if (!ready || busy) return;
+    const request = revision.current;
     const next = !showHours;
-    setShowHours(next);
+    setShowHours(next); setHoursSaving(true); setError(null);
     try {
-      await persist({ show_study_hours: next });
+      await persist({ show_study_hours: next }, request);
+      if (revision.current !== request) return;
       toast.success(next ? t("Study hours are now visible", "ساعات دراستك ظاهرة الآن") : t("Study hours are now hidden", "تم إخفاء ساعات دراستك"));
     } catch {
+      if (revision.current !== request) return;
       setShowHours(!next);
+      setError("save");
       toast.error(t("Could not save", "تعذّر الحفظ"));
-    }
+    } finally { if (revision.current === request) setHoursSaving(false); }
   };
 
-  const save = async () => {
-    setSaving(true);
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!ready || busy) return;
+    const request = revision.current;
+    setSaving(true); setError(null);
     try {
       const clean: Socials = {};
       (Object.keys(socials) as (keyof Socials)[]).forEach((k) => {
         const v = (socials[k] || "").trim().slice(0, 120);
         if (v) clean[k] = v;
       });
-      await persist({ bio: bio.trim().slice(0, 280) || null, socials: clean as never });
+      const nextBio = bio.trim().slice(0, 280);
+      await persist({ bio: nextBio || null, socials: clean }, request);
+      if (revision.current !== request) return;
+      setBio(nextBio); setSocials(clean);
       toast.success(t("Profile saved", "تم حفظ الملف"));
     } catch {
+      if (revision.current !== request) return;
+      setError("save");
       toast.error(t("Could not save", "تعذّر الحفظ"));
     } finally {
-      setSaving(false);
+      if (revision.current === request) setSaving(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 flex justify-center">
+      <div role="status" aria-label={t("Loading profile", "جاري تحميل الملف")} className="rounded-3xl border border-border bg-card p-6 flex justify-center">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-secondary/40 backdrop-blur-xl p-6 space-y-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-        {t("Your profile", "ملفك الشخصي")}
-      </p>
+    <section aria-labelledby={`${id}-heading`} dir={isAr ? "rtl" : "ltr"} className="min-w-0 rounded-[1.5rem] border border-border bg-card p-5 shadow-sm sm:p-6">
+      <h2 id={`${id}-heading`} className="text-lg font-semibold">{t("Edit profile", "تعديل الملف الشخصي")}</h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("Your bio and social links appear on your student profile.", "نبذتك وحساباتك الاجتماعية تظهر بملفك للطلاب.")}</p>
+      {error && <p role="alert" className="mt-3 text-sm text-destructive">{errorText}</p>}
+      {!ready ? <Button type="button" onClick={() => setRetry(value => value + 1)} className="mt-4">{t("Try again", "حاول مرة ثانية")}</Button> : <form onSubmit={save} className="mt-5 space-y-5">
 
       {/* Study hours visibility */}
       <button
+        type="button"
+        role="switch"
+        aria-checked={showHours}
+        disabled={busy}
         onClick={toggleHours}
         className={`w-full flex items-center gap-3 rounded-2xl border p-4 text-start transition ${
           showHours
@@ -121,15 +162,18 @@ export default function ProfileDetailsCard({ language }: { language: AppLanguage
 
       {/* Bio */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">{t("Bio", "نبذة عنك")}</label>
+        <label htmlFor={`${id}-bio`} className="text-sm font-semibold text-foreground">{t("Bio", "نبذة عنك")}</label>
         <Textarea
+          id={`${id}-bio`}
+          aria-describedby={`${id}-count`}
+          disabled={busy}
           value={bio}
           onChange={(e) => setBio(e.target.value.slice(0, 280))}
           maxLength={280}
           rows={3}
           placeholder={t("Tell others about you…", "اكتب نبذة قصيرة عنك…")}
         />
-        <p className="text-[11px] text-muted-foreground">{bio.length}/280</p>
+        <p id={`${id}-count`} className="text-[11px] text-muted-foreground">{bio.length}/280</p>
       </div>
 
       {/* Socials */}
@@ -141,6 +185,8 @@ export default function ProfileDetailsCard({ language }: { language: AppLanguage
               <Icon className="h-4 w-4" />
             </span>
             <Input
+              aria-label={label}
+              disabled={busy}
               value={socials[key] || ""}
               onChange={(e) => setSocials((s) => ({ ...s, [key]: e.target.value }))}
               placeholder={`${label} — ${ph}`}
@@ -150,9 +196,10 @@ export default function ProfileDetailsCard({ language }: { language: AppLanguage
         ))}
       </div>
 
-      <Button onClick={save} disabled={saving} className="w-full">
+      <Button type="submit" disabled={busy} className="w-full">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Save profile", "حفظ الملف")}
       </Button>
-    </div>
+      </form>}
+    </section>
   );
 }

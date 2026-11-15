@@ -11,6 +11,7 @@ import { ThemePicker } from "@/components/ThemePicker";
 import { ReferralCard } from "@/components/ReferralCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
@@ -311,6 +312,8 @@ const AccountCenter = ({
           </form>
         )}
         </div>
+
+        {!loading && userId && <ProfileDetailsCard key={userId} userId={userId} language={language} />}
 
         <TelegramLinkCard language={language} source="profile" />
 
