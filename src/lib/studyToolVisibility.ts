@@ -8,6 +8,7 @@ export const CUSTOMIZABLE_STUDY_TOOLS = [
   { key: "notes", en: "Notes", ar: "ملاحظاتي" },
   { key: "adminNotes", en: "Enrichments", ar: "الإثرائيات" },
   { key: "canvas", en: "My Notebook", ar: "دفتري" },
+  { key: "biologySketchpad", en: "Biology Sketchpad", ar: "الرسم الحر بالأحياء" },
   { key: "summaries", en: "Summaries", ar: "الملخصات" },
   { key: "mcq", en: "MCQ Generator", ar: "مولّد الأسئلة" },
   { key: "mcqBank", en: "MCQ Bank", ar: "بنك الأسئلة" },

@@ -86,6 +86,8 @@ const SUBJECTS: { code: SubjectKey; en: string; ar: string; Icon: React.Componen
       { key: "biologySchemes", en: "Schemes", ar: "مخططات", Icon: Images, free: true,
         descEn: "Visual, step-by-step explanations of complete Biology texts.", descAr: "شرح بصري متسلسل للنصوص الكاملة خطوة بخطوة." },
       { key: "biologyDrawings", en: "Biology Drawings", ar: "رسومات الأحياء", Icon: Microscope },
+      { key: "biologySketchpad", en: "Biology Sketchpad", ar: "الرسم الحر بالأحياء", Icon: PenLine,
+        descEn: "Draw on blank paper or a biology outline, erase and submit.", descAr: "ورقة سكتش ومخططات ترسم عليها بإصبعك، تمسح وتسلّم." },
       { key: "flashcards", en: "Flashcards", ar: "البطاقات", Icon: Layers },
       { key: "malazam", en: "Malazam", ar: "الملازم", Icon: BookMarked },
     ],

@@ -1,50 +1,55 @@
-# Finger marking in Biology Drawings
+# Standalone Biology Sketchpad
 
-The existing Biology Drawings page now defaults to finger/pen/mouse annotation
-over its existing chapter diagrams. Drag-and-drop label practice remains a second
-mode. The tool is also listed in All Tools.
+Biology Sketchpad is a separate study tool at
+`https://tamyazak.site/?menu=biologySketchpad`. It is listed in Study Tools,
+All Tools, Biology, search, and the teacher-tool catalog. The assistant's shared
+navigation catalog includes the new key. Its public landing page uses
+`/tools/biology-sketchpad`.
 
-Ink is a separate transparent canvas above the SVG artwork. Erasing affects only
-ink. Pointer capture, primary-pointer filtering and cancellation bind a gesture to
-one pointer. Normalized coordinates, high-DPI repainting and ResizeObserver retain
-alignment after resizing. Hand mode restores scrolling and pinch zoom. Controls
-wrap, have 44px touch targets, and page padding clears bottom navigation.
+The existing Biology Drawings tool keeps its drag-and-drop label practice.
+Sketchpad starts with blank paper. Students can also choose an outline of one
+of the existing 19 biology diagrams, grouped by chapter. Outlines reuse the
+original scientific geometry and change only the colors/fills to ink on white
+paper. They are not newly generated scientific content.
 
-Pen colors/thickness, Undo, Redo and reversible Clear all are available. Completed
-strokes autosave to IndexedDB, keyed by current account and diagram; guests have
-their own device-local scope. Account/diagram changes remount the editor. Obsolete
-read/write results cannot update a different editor's UI.
+The sketch canvas supports finger, pen and mouse input, pen colors/thickness,
+eraser, Undo, Redo and reversible Clear all. Ink is a separate transparent canvas
+above the optional outline. Erasing affects only the student's ink. Pointer
+capture, primary-pointer filtering and cancellation bind a gesture to one pointer.
+Normalized coordinates and high-DPI repainting retain alignment after resizing.
+Hand mode restores scrolling and pinch zoom. Controls wrap with 44px touch targets;
+page padding clears the bottom navigation.
 
-Submit checks visible ink, waits for the latest draft write, and confirms only
-after the submission transaction completes. The attempt then stays read-only
-until Edit marks is chosen. This is personal review on this device: no automatic
-grading, teacher delivery or cross-device synchronization. The UI says so.
+Completed strokes autosave to IndexedDB, keyed by account and paper ID. Blank
+paper and every template have distinct `sketchbook:` IDs. Guests have a separate
+device-local scope. Account/paper changes remount the editor; obsolete read/write
+results cannot update another editor's UI.
 
-Failed reads block editing until Retry, protecting an unread attempt. Failed
-writes preserve visible work and offer Retry; failed submission does not show
-success. Persisted data and stroke counts are bounded. No database migration,
-new scientific content or backend permission is needed. Existing access and
-subscription gating is unchanged.
+Submit checks visible ink, waits for the latest draft write and confirms after
+the submission transaction commits. The sketch stays read-only until Edit sketch
+is chosen. Submission is personal review stored in this browser on this device;
+it does not grade, deliver to a teacher or synchronize across devices. Failed
+reads block editing until Retry. Failed writes preserve visible work and offer
+Retry. Storage validation and stroke counts are bounded. No database migration or
+new server permission is required.
 
-Direct entry: https://tamyazak.site/?menu=biologyDrawings
+Validation commands:
 
-Validation for a normal checkout:
-
-~~~sh
-npm test -- src/lib/biologyDrawing.test.ts
+```sh
+npm test -- src/lib/biologyDrawing.test.ts src/data/biologySketches.test.tsx src/components/BiologySketchCanvas.test.tsx
 npx tsc --noEmit -p tsconfig.app.json
 npm run build
-~~~
+```
 
-The execution environment was unavailable. Fifteen direct runtime checks of the
-model helpers passed: coordinates/resize/clamping, invalid geometry, point noise
-and compaction, record validation/bounds, submission state, eraser compositing and
-taps. Metadata syntax and Arabic/English copy-key parity were also checked.
-The included Vitest/IndexedDB tests were not run. TypeScript, production build
-and browser/device layout verification remain outstanding; a repository push
-does not establish hosting publication.
+The 14 focused tests cover coordinates and resizing, storage isolation and
+validation, eraser compositing, scientific geometry preservation, blank paper,
+touch strokes, Undo/Clear, successful Submit/Edit, fully erased submission and
+storage failure. Browser checks use the actual page with a mobile-width viewport;
+physical-device testing remains separate. Publishing must be verified at the
+hosting provider; pushing main alone is not publication.
 
-Manual checks: Arabic/English; touch, mouse and pen; release outside the diagram;
-secondary fingers/cancellation; erase then draw; Undo/Redo/Clear; rotate/resize;
-navigate away/back; submit/reopen/edit; account switch; storage denial/quota;
-empty/fully erased submission; bottom navigation.
+Verified in this change: 51 focused and navigation/access tests passed; TypeScript
+application checking and production build passed (162 Malazam pages generated).
+Mobile-width browser checks at 320px/390px passed with no horizontal overflow.
+Arabic template drawing, erasing, undo, Submit, reload, Edit and resubmission
+were exercised. English blank paper and Submit were also checked.

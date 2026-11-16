@@ -96,6 +96,7 @@ export type BasicsChoice =
   | "summaries"
   | "sessions"
   | "biologyDrawings"
+  | "biologySketchpad"
   | "todo"
   | "news"
   | "ministerialBank"
@@ -161,7 +162,8 @@ const copy = {
       malazam: { title: "Malazam", subtitle: "Curated booklets and notes per subject." },
       summaries: { title: "Notes & Summaries", subtitle: "Upload and browse approved notes." },
       sessions: { title: "Sessions", subtitle: "Track study time and climb the board." },
-      biologyDrawings: { title: "Biology Drawings", subtitle: "Mark diagrams with your finger, erase and submit." },
+      biologyDrawings: { title: "Biology Drawings", subtitle: "Practice diagram labels with drag and drop." },
+      biologySketchpad: { title: "Biology Sketchpad", subtitle: "Sketch on blank paper or a biology outline, erase and submit." },
       todo: { title: "To-Do List", subtitle: "Plan tasks and celebrate when you finish." },
       news: { title: "News", subtitle: "Latest announcements and updates." },
       ministerialBank: { title: "Ministerial Questions Bank", subtitle: "Past ministerial questions by chapter." },
@@ -177,7 +179,8 @@ const copy = {
       malazam: { title: "الملازم", subtitle: "ملازم ومذكرات لكل مادة." },
       summaries: { title: "ملاحظات وملخصات", subtitle: "ارفع وتصفّح الملاحظات المعتمدة." },
       sessions: { title: "الجلسات", subtitle: "احسب وقت دراستك وتصدّر اللوحة." },
-      biologyDrawings: { title: "رسومات الأحياء", subtitle: "أشّر بإصبعك على الرسمة، امسح وسلّم محاولتك." },
+      biologyDrawings: { title: "رسومات الأحياء", subtitle: "تدرّب على تسميات الرسومات بالسحب والإفلات." },
+      biologySketchpad: { title: "الرسم الحر بالأحياء", subtitle: "ورقة سكتش ومخططات ترسم عليها بإصبعك، تمسح وتسلّم." },
       todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },
       news: { title: "الأخبار", subtitle: "آخر الإعلانات والتحديثات." },
       ministerialBank: { title: "بنك الوزاريات", subtitle: "أسئلة وزارية سابقة مرتبة حسب الفصل." },
@@ -216,7 +219,8 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
       { key: "chemicalEquations", labelEn: "Chemical Equation", labelAr: "المعادلات الكيميائية", Icon: FlaskConical },
       { key: "mindmap", labelEn: "Mind Map", labelAr: "الخريطة الذهنية", Icon: Network },
       { key: "videoNotes", labelEn: "Video Notes", labelAr: "ملاحظات الفيديو", Icon: Headphones },
-      { key: "biologyDrawings", labelEn: "Biology Drawings", labelAr: "رسومات الأحياء", Icon: PenLine },
+      { key: "biologyDrawings", labelEn: "Biology Drawings", labelAr: "رسومات الأحياء", Icon: Microscope },
+      { key: "biologySketchpad", labelEn: "Biology Sketchpad", labelAr: "الرسم الحر بالأحياء", Icon: PenLine },
       { key: "podcastTutor", labelEn: "Podcast Tutor", labelAr: "المعلّم الصوتي", Icon: Podcast },
       { key: "textToVideo", labelEn: "Text → Video", labelAr: "نص إلى فيديو", Icon: Video },
       { key: "youtube", labelEn: "YouTube Player", labelAr: "مشغّل يوتيوب", Icon: Youtube },
@@ -284,6 +288,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
   { key: "podcastTutor", Icon: Podcast },
   { key: "youtube",    Icon: Youtube },
   { key: "canvas",     Icon: Palette },
+  { key: "biologySketchpad", Icon: PenLine },
   { key: "notes",      Icon: NotebookPen },
   { key: "adminNotes", Icon: BookOpen },
   { key: "mutamayiz",  Icon: Sparkles },
@@ -298,6 +303,7 @@ const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className
   podcastTutor: Podcast,
   youtube: Youtube,
   canvas: Palette,
+  biologySketchpad: PenLine,
   notes: NotebookPen,
   adminNotes: BookOpen,
   mutamayiz: Sparkles,
@@ -316,6 +322,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   flashcards: { card: "border-violet-400/40 bg-gradient-to-br from-blue-500/20 via-violet-500/10 to-violet-400/20", icon: "bg-violet-600 text-white shadow-lg shadow-violet-500/25" },
   malazam: { card: "border-orange-400/40 bg-gradient-to-br from-amber-500/25 via-orange-500/10 to-orange-400/20", icon: "bg-orange-600 text-white shadow-lg shadow-orange-500/25" },
   ministerialBank: { card: "border-amber-400/40 bg-gradient-to-br from-orange-500/25 via-amber-500/10 to-yellow-400/20", icon: "bg-amber-600 text-white shadow-lg shadow-amber-500/25" },
+  biologySketchpad: { card: "border-teal-400/40 bg-gradient-to-br from-teal-500/25 via-cyan-500/10 to-sky-400/20", icon: "bg-teal-600 text-white" },
   biologyDrawings: { card: "border-lime-400/40 bg-gradient-to-br from-green-500/25 via-lime-500/10 to-lime-400/20", icon: "bg-lime-600 text-white shadow-lg shadow-lime-500/25" },
   mcqBank: { card: "border-sky-400/40 bg-gradient-to-br from-sky-500/25 via-blue-500/10 to-blue-400/20", icon: "bg-sky-600 text-white shadow-lg shadow-sky-500/25" },
   missions: { card: "border-yellow-400/40 bg-gradient-to-br from-amber-500/25 via-yellow-500/10 to-yellow-300/20", icon: "bg-amber-500 text-white shadow-lg shadow-amber-500/25" },
@@ -413,7 +420,7 @@ const TOOL_CATEGORY_LABELS = {
 } as const;
 const TOOL_CATEGORY_KEYS: Record<"Review" | "Test" | "Organize", Set<string>> = {
   Review: new Set(["flashcards", "malazam", "summaries", "adminNotes", "ministerialBank", "mistakes", "notes", "mindmap", "videoNotes", "podcastTutor", "youtube", "frenchConjugator"]),
-  Test: new Set(["mcq", "mcqBank", "essay", "liveBattle", "dailyGame", "challenge", "biologyDrawings", "biologySchemes", "physicsSchemes", "physicsQuickMcq", "physicsProblemSolver", "problemGenerator", "chemicalEquations", "organicEquations", "examGenerator"]),
+  Test: new Set(["mcq", "mcqBank", "essay", "liveBattle", "dailyGame", "challenge", "biologyDrawings", "biologySketchpad", "biologySchemes", "physicsSchemes", "physicsQuickMcq", "physicsProblemSolver", "problemGenerator", "chemicalEquations", "organicEquations", "examGenerator"]),
   Organize: new Set(["subjectsHub", "ourCourses", "teachers", "ourTeachers", "report", "sessions", "missions", "todo", "leaderboard", "news", "advices", "whoIsBest", "account", "premium", "more", "joinTamayzak", "unlocks", "textToVideo", "canvas", "islamicSurahs", "hadithChecker", "poemsChecker", "englishEssays", "englishIsqat", "englishVerbForms", "englishReadingPractice", "frenchSynonyms", "frenchAntonyms", "psych", "mutamayiz", "subjectTutor", "physicsLaws", "physicsActivities", "chemistryExperiments"]),
 };
 function toolCategoryFor(key: string): "Review" | "Test" | "Organize" {
@@ -437,6 +444,7 @@ const FEATURED_COPY = {
     videoNotes: { title: "Video to Notes", subtitle: "Turn a YouTube lecture into AI study notes." },
     podcastTutor: { title: "Podcast Tutor", subtitle: "Explain, recap aloud, and get instant spoken feedback." },
     canvas: { title: "My Notebook", subtitle: "Write, draw and decorate your own paper notebook." },
+    biologySketchpad: { title: "Biology Sketchpad", subtitle: "Draw on sketch paper or biology outlines, erase and submit." },
     notes: { title: "Notes", subtitle: "Write and organize your own study notes." },
     adminNotes: { title: "Enrichments", subtitle: "Colorful enrichment cards crafted by your instructors." },
     mutamayiz: { title: "متميز", subtitle: "One assistant for questions, planning, support and website tools." },
@@ -460,6 +468,7 @@ const FEATURED_COPY = {
     videoNotes: { title: "من الفيديو إلى ملاحظات", subtitle: "حوّل محاضرة يوتيوب إلى ملاحظات بالذكاء." },
     podcastTutor: { title: "المعلّم الصوتي", subtitle: "استمع، لخّص بصوتك، واحصل على تصحيح فوري." },
     canvas: { title: "دفتري", subtitle: "اكتب وارسم وزيّن صفحات دفترك." },
+    biologySketchpad: { title: "الرسم الحر بالأحياء", subtitle: "ارسم على ورقة سكتش أو مخطط، امسح وسلّم رسمك." },
     notes: { title: "ملاحظاتي", subtitle: "اكتب ونظّم ملاحظاتك الدراسية." },
     adminNotes: { title: "إثرائيات", subtitle: "بطاقات إثرائية ملوّنة أعدّها المدرّسون خصيصاً لك." },
     mutamayiz: { title: "متميز", subtitle: "مساعد واحد لأسئلتك ومشاكلك وجدولك ودليلك بالموقع." },
@@ -717,7 +726,7 @@ const Basics = ({
     if (grp) setActiveGroup(grp.titleEn);
     // Featured BasicsChoice keys still flow through onSelect to use the basic back-target
     const basicsKeys = new Set<MainMenuChoice>([
-      "flashcards", "malazam", "summaries", "sessions", "biologyDrawings",
+      "flashcards", "malazam", "summaries", "sessions", "biologyDrawings", "biologySketchpad",
       "todo", "news", "ministerialBank", "mindmap",
     ]);
     if (basicsKeys.has(k)) onSelect(k as BasicsChoice);

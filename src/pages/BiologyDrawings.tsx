@@ -1,19 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Sparkles, Microscope, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import LabeledDiagram from "@/components/LabeledDiagram";
 import { CHAPTER_DIAGRAMS } from "@/data/biologyDiagrams";
-import BiologyDrawingCanvas from "@/components/BiologyDrawingCanvas";
-import { supabase } from "@/integrations/supabase/client";
 
 const copy = {
   en: {
     badge: "Biology Drawings",
     title: "Biology Drawings",
-    description: "Pick a chapter, mark the diagram with your finger, then submit your attempt.",
-    drawingTab: "Draw with your finger", mode: "Practice mode",
-    opening: "Opening your drawing…", ownerError: "Could not open your account’s drawing space. Please retry.", retry: "Retry",
+    description: "Pick a chapter to practice labeling.",
     chapter: "Chapter",
     practiceTab: "Drag & drop",
     soon: "Interactive drawings for this chapter are coming soon.",
@@ -22,9 +18,7 @@ const copy = {
   ar: {
     badge: "رسومات الأحياء",
     title: "رسومات الأحياء",
-    description: "اختار الفصل، أشّر بإصبعك فوق الرسمة وبعدين سلّم محاولتك.",
-    drawingTab: "تأشير بالإصبع", mode: "طريقة التدريب",
-    opening: "جارٍ فتح مساحة التأشير…", ownerError: "تعذّر فتح مساحة الرسم لحسابك. جرّب مرّة ثانية.", retry: "إعادة المحاولة",
+    description: "اختر الفصل لتدرب على التسميات.",
     chapter: "الفصل",
     practiceTab: "سحب وإفلات",
     soon: "الرسومات التفاعلية لهذا الفصل قريباً.",
@@ -36,24 +30,6 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
   const t = copy[language];
   const [chapter, setChapter] = useState<number | null>(null);
   const [diagramIdx, setDiagramIdx] = useState(0);
-  const [owner, setOwner] = useState<string | null>(null);
-  const [ownerError, setOwnerError] = useState(false);
-  const [ownerRetry, setOwnerRetry] = useState(0);
-  useEffect(() => {
-    let live = true, revision = 0;
-    setOwner(null); setOwnerError(false);
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      revision++;
-      if (live) { setOwner(session?.user?.id ? "user:" + session.user.id : "guest"); setOwnerError(false); }
-    });
-    const initialRevision = revision;
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (!live || revision !== initialRevision) return;
-      if (error) { setOwnerError(true); return; }
-      setOwner(data.session?.user?.id ? "user:" + data.session.user.id : "guest");
-    }, () => { if (live && revision === initialRevision) setOwnerError(true); });
-    return () => { live = false; listener.subscription.unsubscribe(); };
-  }, [ownerRetry]);
   const availableChapters = Object.keys(CHAPTER_DIAGRAMS)
     .map(Number)
     .filter((chapterNumber) => CHAPTER_DIAGRAMS[chapterNumber]?.length > 0)
@@ -116,11 +92,11 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-white/10 bg-secondary/50 backdrop-blur text-sm font-medium text-primary-foreground">
                 <Pencil className="w-4 h-4" />
-                <span>{t.mode}</span>
+                <span>{t.practiceTab}</span>
               </div>
             </div>
 
-            <PracticeView chapter={chapter} idx={diagramIdx} setIdx={setDiagramIdx} language={language} t={t} owner={owner} ownerError={ownerError} onRetryOwner={() => setOwnerRetry((value) => value + 1)} />
+            <PracticeView chapter={chapter} idx={diagramIdx} setIdx={setDiagramIdx} language={language} t={t} />
           </motion.section>
         )}
       </AnimatePresence>
@@ -129,13 +105,11 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
 };
 
 const PracticeView = ({
-  chapter, idx, setIdx, language, t, owner, ownerError, onRetryOwner,
+  chapter, idx, setIdx, language, t,
 }: {
   chapter: number; idx: number; setIdx: (n: number) => void;
   language: AppLanguage; t: typeof copy["en"] | typeof copy["ar"];
-  owner: string | null; ownerError: boolean; onRetryOwner: () => void;
 }) => {
-  const [mode, setMode] = useState<"draw" | "labels">("draw");
   const diagrams = CHAPTER_DIAGRAMS[chapter] ?? [];
   if (!diagrams.length) {
     return (
@@ -192,22 +166,7 @@ const PracticeView = ({
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.25 }}
         >
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2" role="group" aria-label={t.mode}>
-              <button type="button" aria-pressed={mode === "draw"} onClick={() => setMode("draw")}
-                className={"min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold " + (mode === "draw" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{t.drawingTab}</button>
-              <button type="button" aria-pressed={mode === "labels"} onClick={() => setMode("labels")}
-                className={"min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold " + (mode === "labels" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{t.practiceTab}</button>
-            </div>
-            {mode === "labels" ? <LabeledDiagram diagram={current} language={language} /> : owner ? (
-              <BiologyDrawingCanvas key={owner + ":" + current.id} diagram={current} language={language} ownerId={owner} />
-            ) : (
-              <div className="rounded-2xl border border-border bg-card p-6" role={ownerError ? "alert" : "status"}>
-                <p>{ownerError ? t.ownerError : t.opening}</p>
-                {ownerError && <button type="button" onClick={onRetryOwner} className="mt-3 min-h-11 rounded-xl border border-primary px-4 py-2">{t.retry}</button>}
-              </div>
-            )}
-          </div>
+          <LabeledDiagram diagram={current} language={language} />
         </motion.div>
       </AnimatePresence>
     </div>

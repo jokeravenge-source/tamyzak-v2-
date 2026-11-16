@@ -71,6 +71,8 @@ const ENTRIES: Entry[] = [
     keywords: ["profile", "settings", "username", "name", "avatar", "countdown", "timer", "event", "exam date", "theme", "language", "preferences", "signout", "logout", "telegram", "linked", "حساب", "إعدادات", "اسم", "ملف شخصي", "موعد", "عد تنازلي", "امتحان", "تليغرام", "خروج"] },
   { key: "biologyDrawings", en: { title: "Biology Drawings", desc: "Labeled diagrams" }, ar: { title: "رسومات الأحياء", desc: "رسومات معنونة" },
     keywords: ["biology", "diagrams", "drawings", "labels", "anatomy", "cell", "أحياء", "رسومات", "تشريح", "خلية"] },
+  { key: "biologySketchpad", en: { title: "Biology Sketchpad", desc: "Freehand sketch paper and biology outlines" }, ar: { title: "الرسم الحر بالأحياء", desc: "ورقة سكتش للرسم بالإصبع والتسليم" },
+    keywords: ["biology", "sketch", "sketchpad", "draw", "drawing", "pen", "eraser", "أحياء", "رسم", "سكتش", "قلم", "ممحاة", "تأشير"] },
   { key: "biologySchemes", en: { title: "Biology Schemes", desc: "Visual step-by-step Biology texts" }, ar: { title: "مخططات", desc: "شرح نصوص الأحياء بالصور خطوة بخطوة" },
     keywords: ["biology", "schemes", "visual", "parts", "text", "أحياء", "مخططات", "صور", "نص", "شرح"] },
   { key: "physicsSchemes", en: { title: "Physics Schemes", desc: "Illustrated Physics lessons in short steps" }, ar: { title: "مخططات الفيزياء", desc: "شرح الفيزياء بالصور وخطوات قصيرة" },

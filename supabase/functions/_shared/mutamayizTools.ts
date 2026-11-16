@@ -64,6 +64,10 @@ export const STUDENT_TOOLS = [
     "description": "رسومات الأحياء المعنونة / Labelled Biology drawings"
   },
   {
+    "key": "biologySketchpad",
+    "description": "الرسم الحر بالأحياء: ورقة سكتش ومخططات للرسم بالإصبع والمحو والتسليم للمراجعة الشخصية / Biology Sketchpad: freehand sketch paper, biology outlines, erasing and personal submissions"
+  },
+  {
     "key": "biologySchemes",
     "description": "مخططات الأحياء بالصور والخطوات / Visual Biology schemes"
   },

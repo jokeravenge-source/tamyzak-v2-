@@ -20,6 +20,7 @@ const APP_MENU_BY_TOOL_SLUG: Record<string, string> = {
   todo: "todo",
   "daily-report": "report",
   "biology-drawings": "biologyDrawings",
+  "biology-sketchpad": "biologySketchpad",
   "islamic-surahs": "islamicSurahs",
   "hadith-checker": "hadithChecker",
   "poems-checker": "poemsChecker",

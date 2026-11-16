@@ -7,37 +7,37 @@ import { appendDrawingPoint, drawingPoint, loadDrawingAttempt, MAX_DRAWING_POINT
 
 const copy = {
   ar: {
-    instructions: "اختار القلم وأشّر بإصبعك فوق الرسمة. الممحاة تمسح التأشير فقط، وزر اليد يخليك تمرّر الصفحة.",
+    instructions: "ارسم بإصبعك أو بالقلم داخل الورقة. اختار الممحاة لتعديل خطوطك، أو اليد لتمرير الصفحة.",
     pen: "قلم", eraser: "ممحاة", pan: "تمرير", undo: "تراجع", redo: "إعادة", clear: "مسح الكل",
     brush: "سُمك القلم", thin: "رفيع", medium: "متوسط", thick: "عريض",
     colors: ["أحمر", "أزرق", "أخضر", "بنفسجي", "كحلي"],
-    submit: "تسليم الرسم", submitting: "جارٍ التسليم…", edit: "تعديل التأشير",
+    submit: "تسليم الرسم", submitting: "جارٍ التسليم…", edit: "تعديل الرسم",
     submitted: "تم تسليم محاولتك وحفظها على هذا الجهاز.",
-    local: "محاولتك محفوظة لحسابك على هذا الجهاز فقط، للمراجعة الشخصية بدون تصحيح آلي أو إرسال للمدرّس.",
-    loading: "جارٍ فتح محاولتك…", saving: "جارٍ الحفظ…", saved: "تم الحفظ على هذا الجهاز", draft: "ابدأ بالتأشير على الرسمة",
+    local: "Submit يحفظ رسمك للمراجعة الشخصية في هذا المتصفح على جهازك. تگدر تفتحه وتعدّله لاحقاً.",
+    loading: "جارٍ فتح محاولتك…", saving: "جارٍ الحفظ…", saved: "تم الحفظ على هذا الجهاز", draft: "ابدأ بالرسم على الورقة",
     loadError: "تعذّر فتح محاولتك المحفوظة. جرّب مرّة ثانية.", saveError: "تعذّر الحفظ على هذا الجهاز. محاولتك ما زالت ظاهرة؛ جرّب الحفظ مرّة ثانية.",
-    retry: "إعادة المحاولة", empty: "أضف تأشيراً واضحاً قبل التسليم.", limit: "وصلت حدّ التأشير لهذه المحاولة. تراجع عن بعض الخطوط أو امسح الكل حتى تكمل.",
-    canvas: "مساحة التأشير على رسم ", eraserHint: "الممحاة ما تمسح الرسم الأصلي. تگدر تتراجع حتى عن مسح الكل.",
+    retry: "إعادة المحاولة", empty: "ارسم شيئاً على الورقة قبل التسليم.", limit: "وصلت حدّ الرسم لهذه الورقة. تراجع عن بعض الخطوط أو امسح الكل حتى تكمل.",
+    canvas: "ورقة سكتش: ", eraserHint: "الممحاة تمسح خطوطك وتحافظ على خلفية السكتش. تگدر تتراجع حتى عن مسح الكل.",
   },
   en: {
-    instructions: "Choose the pen and mark the diagram with your finger. Erase your marks, or choose the hand to scroll.",
+    instructions: "Sketch on the paper with your finger or a pen. Erase your strokes, or choose the hand to scroll.",
     pen: "Pen", eraser: "Eraser", pan: "Scroll", undo: "Undo", redo: "Redo", clear: "Clear all",
     brush: "Pen thickness", thin: "Thin", medium: "Medium", thick: "Thick",
     colors: ["Red", "Blue", "Green", "Purple", "Navy"],
-    submit: "Submit drawing", submitting: "Submitting…", edit: "Edit marks",
+    submit: "Submit drawing", submitting: "Submitting…", edit: "Edit sketch",
     submitted: "Your attempt was submitted and saved on this device.",
-    local: "Attempts are saved for this account on this device only, for personal review without automatic grading or sending to a teacher.",
-    loading: "Opening your attempt…", saving: "Saving…", saved: "Saved on this device", draft: "Start marking the diagram",
+    local: "Submit saves your sketch for personal review in this browser on this device. You can reopen and edit it later.",
+    loading: "Opening your attempt…", saving: "Saving…", saved: "Saved on this device", draft: "Start sketching on the paper",
     loadError: "Could not open your saved attempt. Please retry.", saveError: "Could not save on this device. Your marks are still visible; please retry saving.",
-    retry: "Retry", empty: "Add a visible mark before submitting.", limit: "This attempt has reached its drawing limit. Undo some strokes or Clear all to continue.",
-    canvas: "Drawing area for ", eraserHint: "The eraser keeps the original diagram intact. Even Clear all can be undone.",
+    retry: "Retry", empty: "Draw something on the paper before submitting.", limit: "This paper has reached its drawing limit. Undo some strokes or Clear all to continue.",
+    canvas: "Sketch paper: ", eraserHint: "The eraser removes your strokes and keeps the sketch background. Even Clear all can be undone.",
   },
 } as const;
 const colors = ["#e11d48", "#2563eb", "#059669", "#7c3aed", "#0f172a"];
 type History = { past: DrawingStroke[][]; strokes: DrawingStroke[]; future: DrawingStroke[][]; submittedAt: string | null };
 const emptyHistory = (): History => ({ past: [], strokes: [], future: [], submittedAt: null });
 
-export default function BiologyDrawingCanvas({ diagram, language, ownerId }: { diagram: DiagramDef; language: AppLanguage; ownerId: string }) {
+export default function BiologySketchCanvas({ diagram, language, ownerId }: { diagram: DiagramDef; language: AppLanguage; ownerId: string }) {
   const t = copy[language];
   const instructionsId = useId();
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -51,8 +51,8 @@ export default function BiologyDrawingCanvas({ diagram, language, ownerId }: { d
   const sequence = useRef(0);
   const lastWrite = useRef<Promise<void>>(Promise.resolve());
   const [tool, setTool] = useState<"pen" | "eraser" | "pan">("pen");
-  const [color, setColor] = useState(colors[0]);
-  const [brush, setBrush] = useState(5);
+  const [color, setColor] = useState(colors[4]);
+  const [brush, setBrush] = useState(3);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -208,7 +208,7 @@ export default function BiologyDrawingCanvas({ diagram, language, ownerId }: { d
         <h2 className="break-words text-xl font-bold">{diagram.title[language]}</h2>
         <p id={instructionsId} className="mt-2 text-sm leading-7 text-muted-foreground">{t.instructions}</p>
       </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={language === "ar" ? "أدوات التأشير" : "Drawing controls"}>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={language === "ar" ? "أدوات الرسم" : "Drawing controls"}>
         {([{ id: "pen", label: t.pen, Icon: Pencil }, { id: "eraser", label: t.eraser, Icon: Eraser }, { id: "pan", label: t.pan, Icon: Hand }] as const).map(({ id, label, Icon }) => (
           <button key={id} type="button" aria-pressed={tool === id} disabled={id === "pan" ? drawing || submitting : toolbarDisabled}
             onClick={() => setTool(id)} className={button + (tool === id ? " border-primary bg-primary text-primary-foreground" : " border-border bg-background")}>
@@ -242,9 +242,9 @@ export default function BiologyDrawingCanvas({ diagram, language, ownerId }: { d
           </select>
         </label>
       </div>
-      <div className="relative isolate w-full overflow-hidden rounded-2xl border border-border bg-background" style={{ aspectRatio: diagram.aspect ?? "4/3" }} dir="ltr">
+      <div className="relative isolate w-full overflow-hidden rounded-2xl border border-slate-200 bg-white" style={{ aspectRatio: diagram.aspect ?? "4/3" }} dir="ltr">
         <svg viewBox="0 0 100 75" preserveAspectRatio="none" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">{diagram.art}</svg>
-        <canvas ref={canvas} tabIndex={0} role="img" aria-label={t.canvas + diagram.title[language]} aria-describedby={instructionsId}
+        <canvas ref={canvas} data-testid="biology-sketch-paper" tabIndex={0} role="img" aria-label={t.canvas + diagram.title[language]} aria-describedby={instructionsId}
           className={"absolute inset-0 h-full w-full select-none " + (tool === "pan" || submitted ? "cursor-grab" : "cursor-crosshair")}
           style={{ touchAction: disabled || tool === "pan" ? "pan-y pinch-zoom" : "none" }}
           onContextMenu={(event) => event.preventDefault()} onPointerDown={start} onPointerMove={move} onPointerUp={(event) => finish(event)}

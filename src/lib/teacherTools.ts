@@ -20,6 +20,7 @@ export const TEACHER_TOOL_CATALOG = [
   { key: "chemicalEquations", labelAr: "المعادلات الكيميائية", labelEn: "Chemical Equations" },
   { key: "biologySchemes", labelAr: "مخططات الأحياء", labelEn: "Biology Schemes" },
   { key: "biologyDrawings", labelAr: "رسومات الأحياء", labelEn: "Biology Drawings" },
+  { key: "biologySketchpad", labelAr: "الرسم الحر بالأحياء", labelEn: "Biology Sketchpad" },
   { key: "englishVerbForms", labelAr: "تصاريف الأفعال", labelEn: "Verb Forms" },
   { key: "englishReadingPractice", labelAr: "تدريب القطع", labelEn: "Reading Practice" },
   { key: "englishEssays", labelAr: "إنشاءات الإنكليزي", labelEn: "English Essays" },
