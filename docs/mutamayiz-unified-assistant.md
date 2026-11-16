@@ -29,3 +29,5 @@ npm test -- src/lib/mutamayiz.test.ts src/lib/mutamayizEdge.test.ts src/lib/muta
 npx tsc --noEmit -p tsconfig.app.json
 npm run build
 ```
+
+Scientific provenance now targets 2026–2027 and adds a curated-source lookup and source cards. See [the source contract and release requirements](./mutamayiz-science-sources.md). This extension requires its database migration; no official textbook/exam corpus is bundled, so unavailable provenance remains explicitly unverified.

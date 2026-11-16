@@ -10,7 +10,7 @@ export async function readAssistantFile(file: File): Promise<string> {
     try {
       for (let i = 1; i <= doc.numPages && text.length < limit; i++) {
         const page = await doc.getPage(i);
-        try { const content = await page.getTextContent(); text += content.items.map(item => "str" in item ? item.str : "").join(" ") + "\n"; }
+        try { const content = await page.getTextContent(); text += `\n[PDF page ${i} — file page, not a verified printed textbook page]\n` + content.items.map(item => "str" in item ? item.str : "").join(" ") + "\n"; }
         finally { page.cleanup(); }
       }
     } finally { await doc.destroy(); }

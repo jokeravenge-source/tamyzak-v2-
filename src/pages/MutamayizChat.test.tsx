@@ -16,6 +16,13 @@ beforeEach(()=>{
 afterEach(()=>vi.restoreAllMocks());
 const send=async(text:string)=>{const input=await screen.findByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());await act(async()=>{fireEvent.change(input,{target:{value:text}});fireEvent.click(screen.getByRole('button',{name:'إرسال'}));});};
 describe('single Mutamayiz conversation',()=>{
+ it('renders source status under the answer and preserves it across entry points',async()=>{
+  backend.invoke.mockResolvedValue({data:{reply:'السعة C = Q/V.',scienceEvidence:{academicYear:'2026-2027',sources:[]}},error:null});
+  const first=render(<MutamayizChat language="ar"/>);await send('عرّف السعة');
+  expect(screen.getByRole('region',{name:'مصادر الجواب'})).toHaveTextContent('صفحة الكتاب: غير متحقق');
+  first.unmount();const second=render(<MutamayizChat language="ar"/>);
+  expect(await screen.findByRole('region',{name:'مصادر الجواب'})).toBeInTheDocument();second.unmount();
+ });
  it('clears unsent personal text when another student signs in',async()=>{
   const view=render(<MutamayizChat language="ar"/>);
   const input=screen.getByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());

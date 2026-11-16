@@ -1,3 +1,4 @@
+import ScienceEvidenceCard from "@/components/ScienceEvidenceCard";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowUpRight, Bot, Check, Loader2, Paperclip, Plus, Send, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,7 +96,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       } });
       if (error) { const message = await edgeErrorMessage(error, t.error); throw new Error(aiErrorNotice({ message, status: error.context?.status }, language).message); }
       const reply = typeof data?.reply === "string" && data.reply.trim() ? data.reply : t.error;
-      updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: reply }].slice(-60) }));
+      updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: reply, ...(data?.scienceEvidence ? { scienceEvidence: data.scienceEvidence } : {}) }].slice(-60) }));
     } catch (error) {
       updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: error instanceof Error ? error.message : t.error }].slice(-60) }));
     } finally { updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, busy: false })); }
@@ -160,6 +161,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
         {messages.length === 0 && <section className="space-y-5"><div className="rounded-3xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 p-5 text-base leading-8"><Sparkles className="mb-3 size-6 text-blue-600" />{t.intro}</div><div className="grid gap-2 sm:grid-cols-2">{t.quick.map(prompt => <button key={prompt} disabled={busy} onClick={() => { setInput(prompt); }} className="min-h-12 rounded-2xl border border-border bg-card px-4 py-3 text-start text-sm font-semibold hover:border-blue-500">{prompt}</button>)}</div></section>}
         {messages.map(message => <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[95%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-8 [overflow-wrap:anywhere] sm:max-w-[90%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
           {message.role === "user" ? message.content : renderAssistantParts(stripAssistantPlan(message.content)).map((part, index) => part.t === "text" ? <span key={index}>{readableMath(part.v)}</span> : <button key={index} onClick={() => openTool(part.key)} className="my-2 inline-flex min-h-11 max-w-full items-center gap-2 whitespace-normal rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm font-bold text-blue-700 dark:text-blue-200">{part.label}<ArrowUpRight className="size-4 shrink-0" /></button>)}
+          {message.role === "assistant" && message.scienceEvidence && <ScienceEvidenceCard evidence={message.scienceEvidence} ar={ar} />}
         </div></div>)}
         {busy && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t.loading}</p>}
         {plan && <section aria-label={ar ? "مراجعة الخطة" : "Review plan"} className="space-y-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
