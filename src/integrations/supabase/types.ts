@@ -1499,6 +1499,196 @@ export type Database = {
         }
         Relationships: []
       }
+      literature_access_codes: {
+        Row: {
+          code_hash: string
+          code_hint: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          label: string
+          max_uses: number
+          revoked: boolean
+          uses: number
+        }
+        Insert: {
+          code_hash: string
+          code_hint?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string
+          max_uses: number
+          revoked?: boolean
+          uses?: number
+        }
+        Update: {
+          code_hash?: string
+          code_hint?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string
+          max_uses?: number
+          revoked?: boolean
+          uses?: number
+        }
+        Relationships: []
+      }
+      literature_code_attempts: {
+        Row: {
+          attempts: number
+          user_id: string
+          window_end: string
+        }
+        Insert: {
+          attempts: number
+          user_id: string
+          window_end: string
+        }
+        Update: {
+          attempts?: number
+          user_id?: string
+          window_end?: string
+        }
+        Relationships: []
+      }
+      literature_enrollments: {
+        Row: {
+          code_id: string
+          created_at: string
+          expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "literature_enrollments_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "literature_access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      literature_exams: {
+        Row: {
+          chapter: string
+          created_at: string
+          created_by: string | null
+          file_path: string
+          id: string
+          is_published: boolean
+          title: string
+        }
+        Insert: {
+          chapter?: string
+          created_at?: string
+          created_by?: string | null
+          file_path: string
+          id?: string
+          is_published?: boolean
+          title: string
+        }
+        Update: {
+          chapter?: string
+          created_at?: string
+          created_by?: string | null
+          file_path?: string
+          id?: string
+          is_published?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      literature_mcq_attempts: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          score: number
+          set_id: string
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          score: number
+          set_id: string
+          total: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          score?: number
+          set_id?: string
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "literature_mcq_attempts_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "literature_mcq_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      literature_mcq_sets: {
+        Row: {
+          chapter: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          questions: Json
+          requested_count: number
+          source_name: string
+          title: string
+        }
+        Insert: {
+          chapter?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          questions: Json
+          requested_count: number
+          source_name: string
+          title: string
+        }
+        Update: {
+          chapter?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          questions?: Json
+          requested_count?: number
+          source_name?: string
+          title?: string
+        }
+        Relationships: []
+      }
       malazam: {
         Row: {
           cover_path: string
@@ -2750,6 +2940,72 @@ export type Database = {
           sent_at?: string | null
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      science_sources: {
+        Row: {
+          academic_year: string
+          book_edition: string | null
+          book_title: string | null
+          book_url: string | null
+          chapter: string | null
+          classification: string | null
+          classification_url: string | null
+          created_at: string
+          created_by: string | null
+          curriculum: string
+          exams: Json
+          excerpt: string
+          id: string
+          pdf_page: number | null
+          printed_page: number | null
+          question: string
+          search_vector: unknown
+          subject: string
+          verified: boolean
+        }
+        Insert: {
+          academic_year: string
+          book_edition?: string | null
+          book_title?: string | null
+          book_url?: string | null
+          chapter?: string | null
+          classification?: string | null
+          classification_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          curriculum: string
+          exams?: Json
+          excerpt: string
+          id?: string
+          pdf_page?: number | null
+          printed_page?: number | null
+          question: string
+          search_vector?: unknown
+          subject: string
+          verified?: boolean
+        }
+        Update: {
+          academic_year?: string
+          book_edition?: string | null
+          book_title?: string | null
+          book_url?: string | null
+          chapter?: string | null
+          classification?: string | null
+          classification_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          curriculum?: string
+          exams?: Json
+          excerpt?: string
+          id?: string
+          pdf_page?: number | null
+          printed_page?: number | null
+          question?: string
+          search_vector?: unknown
+          subject?: string
+          verified?: boolean
         }
         Relationships: []
       }
@@ -4144,6 +4400,15 @@ export type Database = {
         Args: { _amount: number; _start: string; _unit: string }
         Returns: string
       }
+      create_literature_codes: {
+        Args: {
+          code_label?: string
+          expiry?: string
+          quantity?: number
+          use_limit?: number
+        }
+        Returns: Json
+      }
       create_study_challenge: {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
         Returns: string
@@ -4158,6 +4423,7 @@ export type Database = {
       }
       get_exam_answer_path: { Args: { _exam_id: string }; Returns: string }
       get_home_dashboard_stats: { Args: never; Returns: Json }
+      get_literature_mcq_set: { Args: { set_id: string }; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
       has_active_premium: {
@@ -4165,6 +4431,7 @@ export type Database = {
         Returns: boolean
       }
       has_full_access_promo: { Args: never; Returns: boolean }
+      has_literature_access: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4179,8 +4446,10 @@ export type Database = {
       is_course_teacher: { Args: { _course: string }; Returns: boolean }
       is_french_flashcard_owner: { Args: never; Returns: boolean }
       is_french_flashcard_staff: { Args: never; Returns: boolean }
+      is_literature_supervisor: { Args: never; Returns: boolean }
       is_study_room_member: { Args: { _room: string }; Returns: boolean }
       is_study_room_owner: { Args: { _room: string }; Returns: boolean }
+      list_literature_mcq_sets: { Args: never; Returns: Json }
       list_subject_chapters: {
         Args: { _subject: string }
         Returns: {
@@ -4188,6 +4457,7 @@ export type Database = {
           has_files: boolean
         }[]
       }
+      literature_course_access: { Args: never; Returns: Json }
       manage_french_flashcard_staff: {
         Args: { action?: string; staff_email?: string }
         Returns: {
@@ -4231,6 +4501,7 @@ export type Database = {
         }
         Returns: string
       }
+      redeem_literature_code: { Args: { access_code: string }; Returns: Json }
       redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       redeem_premium_with_points: {
         Args: { _environment?: string }
@@ -4248,6 +4519,41 @@ export type Database = {
       respond_study_challenge: {
         Args: { _accept: boolean; _challenge_id: string }
         Returns: undefined
+      }
+      revoke_literature_code: { Args: { code_id: string }; Returns: undefined }
+      search_science_sources: {
+        Args: {
+          curriculum_key: string
+          question_text: string
+          school_year: string
+        }
+        Returns: {
+          academic_year: string
+          book_edition: string | null
+          book_title: string | null
+          book_url: string | null
+          chapter: string | null
+          classification: string | null
+          classification_url: string | null
+          created_at: string
+          created_by: string | null
+          curriculum: string
+          exams: Json
+          excerpt: string
+          id: string
+          pdf_page: number | null
+          printed_page: number | null
+          question: string
+          search_vector: unknown
+          subject: string
+          verified: boolean
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "science_sources"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
       study_flight_inbox_internal: { Args: { _uid: string }; Returns: Json }
@@ -4274,6 +4580,10 @@ export type Database = {
           _flight_id?: string
           _invitee_id?: string
         }
+        Returns: Json
+      }
+      submit_literature_mcq: {
+        Args: { selections: Json; set_id: string }
         Returns: Json
       }
       sync_my_study_flights: { Args: never; Returns: Json }
