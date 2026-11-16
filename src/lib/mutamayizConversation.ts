@@ -1,5 +1,6 @@
+import type { ScienceEvidence } from "../../supabase/functions/_shared/scienceEvidence";
 import type { WeeklyLearningProfile } from "./weeklyLearning";
-export type AssistantMessage = { id: string; role: "user" | "assistant"; content: string };
+export type AssistantMessage = { id: string; role: "user" | "assistant"; content: string; scienceEvidence?: ScienceEvidence };
 export type AssistantConversation = { owner: string | null; messages: AssistantMessage[]; busy: boolean; epoch: number; file: { name: string; text: string } | null; profile: WeeklyLearningProfile | null; approved: string[]; approvingPlan: string | null };
 let state: AssistantConversation = { owner: null, messages: [], busy: false, epoch: 0, file: null, profile: null, approved: [], approvingPlan: null };
 const listeners = new Set<() => void>();

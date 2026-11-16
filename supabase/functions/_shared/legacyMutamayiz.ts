@@ -16,6 +16,7 @@ export async function legacyMutamayiz(req: Request) {
     const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/excellence-companion`, {
       method: "POST", headers: { Authorization: req.headers.get("Authorization") ?? "", apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "", "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "unified", language: body.language === "en" ? "en" : "ar", messages,
+        ...(typeof body.attachmentName === "string" ? { attachmentName: body.attachmentName.slice(0, 240) } : {}),
         ...(typeof body.clientContext === "string" ? { clientContext: body.clientContext.slice(0, 80000) } : {}),
       }),
     });

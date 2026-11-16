@@ -253,6 +253,13 @@
       "when": 1794655559481,
       "tag": "0035_flight_visa_rewards_and_study_time_idempotent",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794848400000,
+      "tag": "0036_mutamayiz_science_sources",
+      "breakpoints": true
     }
   ]
 }

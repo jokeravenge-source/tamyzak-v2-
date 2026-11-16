@@ -1,3 +1,4 @@
+import ScienceEvidenceCard from "@/components/ScienceEvidenceCard";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowUpRight, Bot, Check, Loader2, Paperclip, Plus, Send, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,7 @@ const copy = {
     intro: "هلا بيك، آني متميز ✨ اسألني عن درسك، احچيلي عن مشكلة أو ضغط تمر بيه، خلّيني أرتب جدولك، أو كلي شنو تحتاج بالموقع. نكمل كلشي بنفس المحادثة.",
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
-    approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٥ ميغابايت.",
+    approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت. إذا الملف صور فقط، يحتاج تحويل إلى نص (OCR).",
     error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.", syncError: "انحفظت الخطة على جهازك، لكن تعذّرت مزامنة الحساب. اضغط اعتماد الخطة للمحاولة مرة ثانية.",
   },
   en: {
@@ -26,7 +27,7 @@ const copy = {
     intro: "Hi, I'm متميز ✨ Ask about your lessons, work through a problem, talk about study pressure, plan your week, or find a tool. We can do all of that in this one conversation.",
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
-    approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 15 MB.",
+    approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB. Image-only PDFs need OCR before they can be read.",
     error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.", syncError: "Plan saved on this device. Account sync failed; approve the plan again to retry.",
   },
 };
@@ -91,11 +92,11 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     try {
       const { data, error } = await supabase.functions.invoke("excellence-companion", { body: {
         mode: "unified", language, messages: next.slice(-16).map(({ role, content }) => ({ role, content: content.slice(0, 6000) })),
-        ...(state.profile ? { learningProfile: state.profile } : {}), ...(state.file ? { clientContext: state.file.text } : {}),
+        ...(state.profile ? { learningProfile: state.profile } : {}), ...(state.file ? { clientContext: state.file.text, attachmentName: state.file.name } : {}),
       } });
       if (error) { const message = await edgeErrorMessage(error, t.error); throw new Error(aiErrorNotice({ message, status: error.context?.status }, language).message); }
       const reply = typeof data?.reply === "string" && data.reply.trim() ? data.reply : t.error;
-      updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: reply }].slice(-60) }));
+      updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: reply, ...(data?.scienceEvidence ? { scienceEvidence: data.scienceEvidence } : {}) }].slice(-60) }));
     } catch (error) {
       updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: error instanceof Error ? error.message : t.error }].slice(-60) }));
     } finally { updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, busy: false })); }
@@ -143,6 +144,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const scope = owner, epoch = assistantSnapshot().epoch, operation = ++uploadOperation.current;
     const currentConversation = () => operation === uploadOperation.current && ownerRef.current === scope && assistantSnapshot().owner === scope && assistantSnapshot().epoch === epoch;
     setFileBusy(true); setNotice("");
+    updateAssistant(scope, state => ({ ...state, file: null }));
     try { const text = await readAssistantFile(file); if (!text.trim()) throw new Error("empty_file"); if (currentConversation()) updateAssistant(scope, state => ({ ...state, file: { name: file.name, text } })); }
     catch { if (currentConversation()) setNotice(t.fileError); }
     finally { if (operation === uploadOperation.current) { setFileBusy(false); if (upload.current) upload.current.value = ""; } }
@@ -160,6 +162,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
         {messages.length === 0 && <section className="space-y-5"><div className="rounded-3xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 p-5 text-base leading-8"><Sparkles className="mb-3 size-6 text-blue-600" />{t.intro}</div><div className="grid gap-2 sm:grid-cols-2">{t.quick.map(prompt => <button key={prompt} disabled={busy} onClick={() => { setInput(prompt); }} className="min-h-12 rounded-2xl border border-border bg-card px-4 py-3 text-start text-sm font-semibold hover:border-blue-500">{prompt}</button>)}</div></section>}
         {messages.map(message => <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[95%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-8 [overflow-wrap:anywhere] sm:max-w-[90%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
           {message.role === "user" ? message.content : renderAssistantParts(stripAssistantPlan(message.content)).map((part, index) => part.t === "text" ? <span key={index}>{readableMath(part.v)}</span> : <button key={index} onClick={() => openTool(part.key)} className="my-2 inline-flex min-h-11 max-w-full items-center gap-2 whitespace-normal rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm font-bold text-blue-700 dark:text-blue-200">{part.label}<ArrowUpRight className="size-4 shrink-0" /></button>)}
+          {message.role === "assistant" && message.scienceEvidence && <ScienceEvidenceCard evidence={message.scienceEvidence} ar={ar} />}
         </div></div>)}
         {busy && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t.loading}</p>}
         {plan && <section aria-label={ar ? "مراجعة الخطة" : "Review plan"} className="space-y-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
