@@ -31,3 +31,5 @@ npm run build
 ```
 
 Scientific provenance now targets 2026–2027 and adds a curated-source lookup and source cards. See [the source contract and release requirements](./mutamayiz-science-sources.md). This extension requires its database migration; no official textbook/exam corpus is bundled, so unavailable provenance remains explicitly unverified.
+
+Attachment delivery includes the active filename and extracted text on every turn. The backend places that data immediately before the latest user question and explicitly distinguishes current attachment availability from earlier chat denials. Empty/scanned PDF page markers cannot pass the readable-text check; partial extraction/truncation is disclosed in context. Replacing an attachment clears the previous file before parsing, and unreadable PDFs show an OCR hint. Deploy both the frontend and `excellence-companion` (plus legacy forwarding changes) for this fix.

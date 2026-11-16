@@ -23,6 +23,23 @@ describe('single Mutamayiz conversation',()=>{
   first.unmount();const second=render(<MutamayizChat language="ar"/>);
   expect(await screen.findByRole('region',{name:'مصادر الجواب'})).toBeInTheDocument();second.unmount();
  });
+ it('sends the current file name and text on every question and stops sending it after removal',async()=>{
+  backend.readFile.mockResolvedValue('A plane intersects a sphere in a circle.');
+  backend.invoke.mockResolvedValue({data:{reply:'I can read the attached lesson.'},error:null});
+  const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
+  await act(async()=>fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['lesson'],'الهندسة الفضائية.pdf')]}}));
+  expect(await screen.findByText('الهندسة الفضائية.pdf')).toBeInTheDocument();
+  await send('حصلت الملف؟');await send('اشرحلي المثال');
+  for(const call of backend.invoke.mock.calls)expect(call[1].body).toMatchObject({attachmentName:'الهندسة الفضائية.pdf',clientContext:'A plane intersects a sphere in a circle.'});
+  fireEvent.click(screen.getByRole('button',{name:'حذف الملف'}));await send('حصلت الملف؟');
+  expect(backend.invoke.mock.calls[2][1].body).not.toHaveProperty('clientContext');expect(backend.invoke.mock.calls[2][1].body).not.toHaveProperty('attachmentName');view.unmount();
+ });
+ it('clears a previous attachment when the replacement has no readable text and shows an OCR hint',async()=>{
+  backend.readFile.mockResolvedValue('');const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
+  act(()=>updateAssistant('student',state=>({...state,file:{name:'old.pdf',text:'old text'}})));
+  await act(async()=>fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['scan'],'scan.pdf')]}}));
+  expect(assistantSnapshot().file).toBeNull();expect(screen.getByRole('alert')).toHaveTextContent('OCR');expect(screen.queryByText('scan.pdf')).not.toBeInTheDocument();view.unmount();
+ });
  it('clears unsent personal text when another student signs in',async()=>{
   const view=render(<MutamayizChat language="ar"/>);
   const input=screen.getByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());

@@ -19,7 +19,7 @@ const copy = {
     intro: "هلا بيك، آني متميز ✨ اسألني عن درسك، احچيلي عن مشكلة أو ضغط تمر بيه، خلّيني أرتب جدولك، أو كلي شنو تحتاج بالموقع. نكمل كلشي بنفس المحادثة.",
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
-    approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت.",
+    approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت. إذا الملف صور فقط، يحتاج تحويل إلى نص (OCR).",
     error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.", syncError: "انحفظت الخطة على جهازك، لكن تعذّرت مزامنة الحساب. اضغط اعتماد الخطة للمحاولة مرة ثانية.",
   },
   en: {
@@ -27,7 +27,7 @@ const copy = {
     intro: "Hi, I'm متميز ✨ Ask about your lessons, work through a problem, talk about study pressure, plan your week, or find a tool. We can do all of that in this one conversation.",
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
-    approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB.",
+    approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB. Image-only PDFs need OCR before they can be read.",
     error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.", syncError: "Plan saved on this device. Account sync failed; approve the plan again to retry.",
   },
 };
@@ -92,7 +92,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     try {
       const { data, error } = await supabase.functions.invoke("excellence-companion", { body: {
         mode: "unified", language, messages: next.slice(-16).map(({ role, content }) => ({ role, content: content.slice(0, 6000) })),
-        ...(state.profile ? { learningProfile: state.profile } : {}), ...(state.file ? { clientContext: state.file.text } : {}),
+        ...(state.profile ? { learningProfile: state.profile } : {}), ...(state.file ? { clientContext: state.file.text, attachmentName: state.file.name } : {}),
       } });
       if (error) { const message = await edgeErrorMessage(error, t.error); throw new Error(aiErrorNotice({ message, status: error.context?.status }, language).message); }
       const reply = typeof data?.reply === "string" && data.reply.trim() ? data.reply : t.error;
@@ -144,6 +144,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const scope = owner, epoch = assistantSnapshot().epoch, operation = ++uploadOperation.current;
     const currentConversation = () => operation === uploadOperation.current && ownerRef.current === scope && assistantSnapshot().owner === scope && assistantSnapshot().epoch === epoch;
     setFileBusy(true); setNotice("");
+    updateAssistant(scope, state => ({ ...state, file: null }));
     try { const text = await readAssistantFile(file); if (!text.trim()) throw new Error("empty_file"); if (currentConversation()) updateAssistant(scope, state => ({ ...state, file: { name: file.name, text } })); }
     catch { if (currentConversation()) setNotice(t.fileError); }
     finally { if (operation === uploadOperation.current) { setFileBusy(false); if (upload.current) upload.current.value = ""; } }

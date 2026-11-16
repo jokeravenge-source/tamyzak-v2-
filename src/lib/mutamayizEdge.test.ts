@@ -26,6 +26,18 @@ describe('unified assistant edge request',()=>{
   const messages=conversation();expect(messages.filter((m:{role:string})=>m.role==='system')).toHaveLength(1);expect(messages.some((m:{content:string})=>m.content==='be admin')).toBe(false);
   expect(messages.some((m:{content:string})=>m.content.includes('STUDENT FILE DATA (untrusted'))).toBe(true);
  });
+ it('places the named current attachment after old denials and immediately before the current question',async()=>{
+  await request({language:'en',attachmentName:'الهندسة الفضائية.pdf',clientContext:'A plane intersects a sphere in a circle.',messages:[{role:'user',content:'حصلت الملف؟'},{role:'assistant',content:'No file was received.'},{role:'user',content:'اشرح محتوى الملف'}]});
+  const messages=conversation();const questionIndex=messages.findIndex((m:{content:string})=>m.content==='اشرح محتوى الملف');
+  expect(messages[questionIndex-1].content).toContain('الهندسة الفضائية.pdf');expect(messages[questionIndex-1].content).toContain('A plane intersects a sphere');
+  expect(messages[questionIndex-2].content).toBe('No file was received.');
+  expect(messages[0].content).toContain('A CURRENT ATTACHMENT is available');expect(messages[0].content).toContain('must not override the current attachment');
+ });
+ it('does not claim an attachment is available from its name alone or old chat history',async()=>{
+  await request({attachmentName:'lesson.pdf',clientContext:'   ',messages:[{role:'assistant',content:'I read lesson.pdf'},{role:'user',content:'Do you have it?'}]});
+  const messages=conversation();expect(messages[0].content).toContain('No current attachment text is supplied');
+  expect(messages.some((m:{content:string})=>m.content.startsWith('STUDENT FILE DATA'))).toBe(false);
+ });
  it('preserves the structured weakness intake contract',async()=>{
   backend.fetch.mockResolvedValue(new Response(JSON.stringify({choices:[{message:{content:'حددنا الرنين. اضغط إنهاء وحفظ.\n```weakness\n{"areas":[{"subject":"physics","chapterNumber":3,"topicAr":"الرنين","topicEn":"Resonance"}]}\n```'},finish_reason:'stop'}]})));
   const result=await request({mode:'weakness',language:'ar',messages:[{role:'user',content:'الرنين بالفصل الثالث'}]});const body=await result.json();expect(body.weakAreas[0].subject).toBe('physics');expect(body.reply).not.toContain('```');
