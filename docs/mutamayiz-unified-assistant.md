@@ -7,7 +7,7 @@ All student chat entry points now mount `MutamayizChat`: the center navigation b
 - The UI calls the existing authenticated `excellence-companion` function with `mode: "unified"`. Legacy schedule/problem/psych requests use the same system prompt. The structured `weakness` intake remains an internal contract for personalized practice, with the same assistant identity.
 - The old `guide-chat` and `psych-chat` functions forward to that endpoint, carrying the user's authorization. They no longer maintain a separate persona, save support conversations, or forward personal messages to Telegram.
 - One in-memory, account-scoped conversation is shared by mounted entry points. Sign-out/account changes clear messages and attachments. New conversations invalidate late replies. Personal chat text is not written to local storage or a chat-history table.
-- PDF/TXT/MD attachments are read locally, with a 15 MiB file limit and an 80,000-character text context limit. Scanned PDFs without extractable text produce a clear error. File text and learning profiles are untrusted user data, never system instructions.
+- PDF/TXT/MD attachments are read locally, with a 100 MiB file limit and an 80,000-character text context limit. Scanned PDFs without extractable text produce a clear error. File text and learning profiles are untrusted user data, never system instructions.
 - The shared student-tool catalog controls both the model's descriptions and the frontend's button allowlist. Unknown/admin markers cannot become navigation buttons; responses have at most three tool buttons. Existing premium/points checks still apply to the destination tools.
 
 ## Plans and support

@@ -1,5 +1,5 @@
 export async function readAssistantFile(file: File): Promise<string> {
-  if (file.size > 15 * 1024 * 1024) throw new Error("file_too_large");
+  if (file.size > 100 * 1024 * 1024) throw new Error("file_too_large");
   const limit = 80_000;
   if (file.name.toLowerCase().endsWith(".pdf")) {
     const pdfjs = await import("pdfjs-dist");
