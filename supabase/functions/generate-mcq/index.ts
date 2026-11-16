@@ -1,3 +1,4 @@
+import { canGenerateLiterature, literatureMcqPrompt, isLiteratureQuestionRelevant } from "../_shared/literatureGeneration.ts";
 import { protect } from "../_shared/guard.ts";
 import { requireAdmin, requireUser } from "../_shared/auth.ts";
 import { generateText, Output } from "npm:ai";
@@ -122,6 +123,7 @@ const requestSchema = z.object({
   fileData: z.string().max(MAX_PDF_CHARS).optional(),
   pageImages: z.array(z.string()).max(200).optional(),
   adminGeneration: z.boolean().optional(),
+  literatureGeneration: z.boolean().optional(),
   curriculum: z.object({
     subject: z.enum(["physics", "chemistry", "biology", "english", "french", "arabic", "islamic"]),
     chapter: z.number().int().positive().nullable(),
@@ -274,13 +276,13 @@ const shuffleChoices = (question: Question): Question => {
 };
 
 /** Drops duplicates and any question whose correct answer did not survive. */
-const finalizeQuestions = (questions: Question[], limit: number): Question[] => {
+const finalizeQuestions = (questions: Question[], limit: number, relevant = isExamRelevantQuestion): Question[] => {
   const seen = new Set<string>();
   const output: Question[] = [];
   for (const question of questions) {
     if (output.length >= limit) break;
     const key = normalizeKey(question.question);
-    if (!key || seen.has(key) || !isExamRelevantQuestion(question.question)) continue;
+    if (!key || seen.has(key) || !relevant(question.question)) continue;
     seen.add(key);
     const shuffled = shuffleChoices(question);
     if (shuffled.answer_index < 0 || shuffled.answer_index > 3) continue;
@@ -364,7 +366,10 @@ Deno.serve(async (req) => {
     const limited = await enforceRateLimit(req, "mcq", 3, 60);
     if (!limited.ok) return json({ error: limited.error }, limited.status);
 
-    if (body.adminGeneration === true) {
+    if (body.literatureGeneration === true) {
+      if (!await canGenerateLiterature(req, Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!)) return json({ error: "Literature supervisor access required" }, 403);
+      if (!Number.isInteger(body.count) || body.count! < 1 || body.count! > MAX_QUESTIONS) return json({ error: "Choose 1–100 questions" }, 400);
+    } else if (body.adminGeneration === true) {
       const admin = await requireAdmin(req);
       if (!admin.ok) return json({ error: admin.error }, admin.status);
     } else {
@@ -405,7 +410,7 @@ Deno.serve(async (req) => {
 
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway(MODEL);
-    const system = buildSystemPrompt(language) + curriculumInstructions(curriculum);
+    const system = (body.literatureGeneration ? literatureMcqPrompt(language) : buildSystemPrompt(language)) + curriculumInstructions(curriculum);
 
     let retryAttempts = 0;
     let parsingFailures = 0;
@@ -473,7 +478,7 @@ Deno.serve(async (req) => {
       MAX_CONCURRENT_BATCHES,
     );
 
-    const questions = finalizeQuestions(batches.flat(), requestedCount).map(q => applyCurriculumChapter(q, curriculum));
+    const questions = finalizeQuestions(batches.flat(), requestedCount, body.literatureGeneration ? isLiteratureQuestionRelevant : isExamRelevantQuestion).map(q => applyCurriculumChapter(q, curriculum));
 
     log(requestId, "completed", {
       durationMs: Date.now() - startedAt,
@@ -487,7 +492,7 @@ Deno.serve(async (req) => {
     });
 
     if (questions.length === 0) {
-      return json({ error: "No readable scientific content was found in the file." }, 422);
+      return json({ error: body.literatureGeneration ? "No readable literature content was found in the file." : "No readable scientific content was found in the file." }, 422);
     }
     return json({ questions });
   } catch (error) {

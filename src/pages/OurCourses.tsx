@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Dna, FlaskConical, Sigma, Atom, FileText, ScanLine, Upload, Sparkles, ArrowLeft, Lock, Plus, Trash2, Loader2, X, ShieldCheck, Zap, ArrowRight, ImagePlus, GraduationCap, ExternalLink, Send, Youtube, ListVideo, Video, BookOpen, Languages, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ import geometryImg from "@/assets/course-geometry.jpg";
 import nuclearImg from "@/assets/course-nuclear.jpg";
 import laserImg from "@/assets/course-laser.jpg";
 import arabicImg from "@/assets/course-arabic.jpg";
+
+const LiteratureCourse = lazy(() => import("./LiteratureCourse"));
 
 type Course = {
   id: string;
@@ -243,16 +245,16 @@ const OurCourses = ({ language, onBack }: { language: AppLanguage; onBack: () =>
           </h1>
           <p className="mt-2 text-muted-foreground text-sm sm:text-base max-w-2xl">
             {isAr
-              ? "دورات مبنية على الامتحانات. حلّ الامتحان على ورقة، صوّرها وارفعها، ونقوم بتصحيحها تلقائياً بتقنية التعرف الضوئي على الحروف (OCR)."
-              : "Exam-based courses. Solve on paper, upload a photo of your answers, and we grade them automatically using OCR."}
+              ? "اختر دورتك للوصول إلى امتحاناتها وأدوات المراجعة الخاصة بيها."
+              : "Choose a course to access its exams and revision tools."}
           </p>
 
           {/* How it works ribbon */}
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
-              { Icon: FileText, ar: "اختر الامتحان", en: "Pick an exam" },
-              { Icon: Upload, ar: "ارفع ورقتك", en: "Upload your paper" },
-              { Icon: ScanLine, ar: "تصحيح فوري بالـ OCR", en: "Instant OCR grading" },
+              { Icon: BookOpen, ar: "اختر دورتك", en: "Choose a course" },
+              { Icon: FileText, ar: "افتح محتواها", en: "Open its content" },
+              { Icon: CheckCircle2, ar: "تدرّب وراجع", en: "Practise and revise" },
             ].map((s, i) => (
               <div
                 key={i}
@@ -359,11 +361,11 @@ const OurCourses = ({ language, onBack }: { language: AppLanguage; onBack: () =>
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary text-secondary-foreground">
                       <FileText className="w-3 h-3" />
-                      {examCount} {isAr ? "امتحان" : "exams"}
+                      {c.isArabicHub ? (isAr ? "أدب وقواعد" : "Literature & grammar") : <>{examCount} {isAr ? "امتحان" : "exams"}</>}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary text-secondary-foreground">
-                      <ScanLine className="w-3 h-3" />
-                      {isAr ? "تصحيح OCR" : "OCR grading"}
+                      {c.isArabicHub ? <Lock className="w-3 h-3" /> : <ScanLine className="w-3 h-3" />}
+                      {c.isArabicHub ? (isAr ? "دخول الأدب بكود" : "Literature access code") : (isAr ? "تصحيح OCR" : "OCR grading")}
                     </span>
                   </div>
 
@@ -500,6 +502,8 @@ const OurCourses = ({ language, onBack }: { language: AppLanguage; onBack: () =>
 
 function ArabicHub({ isAr, onClose }: { isAr: boolean; onClose: () => void }) {
   const [grammarSoon, setGrammarSoon] = useState(false);
+  const [literatureOpen, setLiteratureOpen] = useState(false);
+  if (literatureOpen) return <div className="fixed inset-0 z-50 overflow-y-auto bg-background"><Suspense fallback={<p className="p-6">{isAr ? "جاري تحميل الدورة…" : "Loading course…"}</p>}><LiteratureCourse isAr={isAr} onClose={() => setLiteratureOpen(false)} /></Suspense></div>;
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
@@ -517,10 +521,8 @@ function ArabicHub({ isAr, onClose }: { isAr: boolean; onClose: () => void }) {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <a
-            href="https://t.me/heh212_bot"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => setLiteratureOpen(true)}
             className="group rounded-2xl border border-border/60 bg-card p-6 flex flex-col gap-3 hover:-translate-y-1 transition-transform"
             style={{ boxShadow: "0 12px 30px -12px hsl(35 90% 55% / 0.35)" }}
           >
@@ -529,13 +531,13 @@ function ArabicHub({ isAr, onClose }: { isAr: boolean; onClose: () => void }) {
             </div>
             <h3 className="text-xl font-extrabold">{isAr ? "أدب" : "Literature (أدب)"}</h3>
             <p className="text-sm text-muted-foreground">
-              {isAr ? "انتقل إلى بوت الأدب على تيليجرام" : "Open the literature bot on Telegram"}
+              {isAr ? "امتحانات وMCQ داخل تميّزك، والدخول بكود من المشرف" : "Exams and MCQs inside Tamayzak, unlocked with a supervisor code"}
             </p>
             <span className="mt-2 inline-flex items-center gap-2 text-sm font-bold text-primary">
-              <ExternalLink className="w-4 h-4" />
-              @heh212_bot
+              <Lock className="w-4 h-4" />
+              {isAr ? "دخول الدورة" : "Open course"}
             </span>
-          </a>
+          </button>
 
           <button
             onClick={() => setGrammarSoon(true)}
