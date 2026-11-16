@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Sparkles, Microscope, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import LabeledDiagram from "@/components/LabeledDiagram";
 import { CHAPTER_DIAGRAMS } from "@/data/biologyDiagrams";
+import BiologyDrawingCanvas from "@/components/BiologyDrawingCanvas";
+import { supabase } from "@/integrations/supabase/client";
 
 const copy = {
   en: {
     badge: "Biology Drawings",
     title: "Biology Drawings",
-    description: "Pick a chapter to practice labeling.",
+    description: "Pick a chapter, mark the diagram with your finger, then submit your attempt.",
+    drawingTab: "Draw with your finger", mode: "Practice mode",
+    opening: "Opening your drawing…", ownerError: "Could not open your account’s drawing space. Please retry.", retry: "Retry",
     chapter: "Chapter",
     practiceTab: "Drag & drop",
     soon: "Interactive drawings for this chapter are coming soon.",
@@ -18,7 +22,9 @@ const copy = {
   ar: {
     badge: "رسومات الأحياء",
     title: "رسومات الأحياء",
-    description: "اختر الفصل لتدرب على التسميات.",
+    description: "اختار الفصل، أشّر بإصبعك فوق الرسمة وبعدين سلّم محاولتك.",
+    drawingTab: "تأشير بالإصبع", mode: "طريقة التدريب",
+    opening: "جارٍ فتح مساحة التأشير…", ownerError: "تعذّر فتح مساحة الرسم لحسابك. جرّب مرّة ثانية.", retry: "إعادة المحاولة",
     chapter: "الفصل",
     practiceTab: "سحب وإفلات",
     soon: "الرسومات التفاعلية لهذا الفصل قريباً.",
@@ -30,19 +36,37 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
   const t = copy[language];
   const [chapter, setChapter] = useState<number | null>(null);
   const [diagramIdx, setDiagramIdx] = useState(0);
+  const [owner, setOwner] = useState<string | null>(null);
+  const [ownerError, setOwnerError] = useState(false);
+  const [ownerRetry, setOwnerRetry] = useState(0);
+  useEffect(() => {
+    let live = true, revision = 0;
+    setOwner(null); setOwnerError(false);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      revision++;
+      if (live) { setOwner(session?.user?.id ? "user:" + session.user.id : "guest"); setOwnerError(false); }
+    });
+    const initialRevision = revision;
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!live || revision !== initialRevision) return;
+      if (error) { setOwnerError(true); return; }
+      setOwner(data.session?.user?.id ? "user:" + data.session.user.id : "guest");
+    }, () => { if (live && revision === initialRevision) setOwnerError(true); });
+    return () => { live = false; listener.subscription.unsubscribe(); };
+  }, [ownerRetry]);
   const availableChapters = Object.keys(CHAPTER_DIAGRAMS)
     .map(Number)
     .filter((chapterNumber) => CHAPTER_DIAGRAMS[chapterNumber]?.length > 0)
     .sort((a, b) => a - b);
 
   return (
-    <main className="min-h-screen px-4 py-12 md:py-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
+    <main className="min-h-screen px-4 pt-20 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pt-20 relative overflow-hidden" dir={language === "ar" ? "rtl" : "ltr"}>
       <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
 
       <button
         onClick={() => (chapter === null ? onBack() : setChapter(null))}
-        aria-label="Back"
+        aria-label={language === "ar" ? "رجوع" : "Back"}
         className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
       >
         <ArrowLeft className="w-5 h-5" />
@@ -92,11 +116,11 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-white/10 bg-secondary/50 backdrop-blur text-sm font-medium text-primary-foreground">
                 <Pencil className="w-4 h-4" />
-                <span>{t.practiceTab}</span>
+                <span>{t.mode}</span>
               </div>
             </div>
 
-            <PracticeView chapter={chapter} idx={diagramIdx} setIdx={setDiagramIdx} language={language} t={t} />
+            <PracticeView chapter={chapter} idx={diagramIdx} setIdx={setDiagramIdx} language={language} t={t} owner={owner} ownerError={ownerError} onRetryOwner={() => setOwnerRetry((value) => value + 1)} />
           </motion.section>
         )}
       </AnimatePresence>
@@ -105,11 +129,13 @@ const BiologyDrawings = ({ language, onBack }: { language: AppLanguage; onBack: 
 };
 
 const PracticeView = ({
-  chapter, idx, setIdx, language, t,
+  chapter, idx, setIdx, language, t, owner, ownerError, onRetryOwner,
 }: {
   chapter: number; idx: number; setIdx: (n: number) => void;
   language: AppLanguage; t: typeof copy["en"] | typeof copy["ar"];
+  owner: string | null; ownerError: boolean; onRetryOwner: () => void;
 }) => {
+  const [mode, setMode] = useState<"draw" | "labels">("draw");
   const diagrams = CHAPTER_DIAGRAMS[chapter] ?? [];
   if (!diagrams.length) {
     return (
@@ -133,14 +159,14 @@ const PracticeView = ({
           <button
             onClick={() => setIdx(Math.max(0, safeIdx - 1))}
             disabled={safeIdx === 0}
-            className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border border-white/10 bg-secondary/60 hover:border-primary/40 transition disabled:opacity-40"
+            className="inline-flex items-center gap-1 min-h-11 text-sm px-3 py-1.5 rounded-full border border-white/10 bg-secondary/60 hover:border-primary/40 transition disabled:opacity-40"
           >
             <ChevronLeft className="w-4 h-4" /> {t.prev}
           </button>
           <button
             onClick={() => setIdx(Math.min(diagrams.length - 1, safeIdx + 1))}
             disabled={safeIdx === diagrams.length - 1}
-            className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-full border border-white/10 bg-secondary/60 hover:border-primary/40 transition disabled:opacity-40"
+            className="inline-flex items-center gap-1 min-h-11 text-sm px-3 py-1.5 rounded-full border border-white/10 bg-secondary/60 hover:border-primary/40 transition disabled:opacity-40"
           >
             {t.next} <ChevronRight className="w-4 h-4" />
           </button>
@@ -153,7 +179,7 @@ const PracticeView = ({
           <button
             key={d.id}
             onClick={() => setIdx(i)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs border transition ${i === safeIdx ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground hover:text-foreground hover:border-primary/40"}`}
+            className={`min-h-11 shrink-0 px-3 py-1.5 rounded-full text-xs border transition ${i === safeIdx ? "bg-primary text-primary-foreground border-primary" : "border-white/10 bg-secondary/40 text-muted-foreground hover:text-foreground hover:border-primary/40"}`}
           >
             {d.title[language]}
           </button>
@@ -166,7 +192,22 @@ const PracticeView = ({
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.25 }}
         >
-          <LabeledDiagram diagram={current} language={language} />
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t.mode}>
+              <button type="button" aria-pressed={mode === "draw"} onClick={() => setMode("draw")}
+                className={"min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold " + (mode === "draw" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{t.drawingTab}</button>
+              <button type="button" aria-pressed={mode === "labels"} onClick={() => setMode("labels")}
+                className={"min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold " + (mode === "labels" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{t.practiceTab}</button>
+            </div>
+            {mode === "labels" ? <LabeledDiagram diagram={current} language={language} /> : owner ? (
+              <BiologyDrawingCanvas key={owner + ":" + current.id} diagram={current} language={language} ownerId={owner} />
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-6" role={ownerError ? "alert" : "status"}>
+                <p>{ownerError ? t.ownerError : t.opening}</p>
+                {ownerError && <button type="button" onClick={onRetryOwner} className="mt-3 min-h-11 rounded-xl border border-primary px-4 py-2">{t.retry}</button>}
+              </div>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>
