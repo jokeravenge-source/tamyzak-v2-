@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Shield, LogOut, FileText, Check, Trash2, Loader2, Download, Clock, Layers, Bell, Plus, Send, Newspaper, Upload, Users as UsersIcon, Search, Ban, RotateCcw, UserCog, X, Timer, BookOpen, Crown, KeyRound, StickyNote, Coins, Sparkles, Flame, Pencil, Save, Link2, GraduationCap, Trophy, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,8 @@ import { flashcardsCh8Ar } from "@/data/flashcardsCh8Ar";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
+const LiteratureCourse = lazy(() => import("./LiteratureCourse"));
+
 type Row = {
   id: string;
   user_id: string;
@@ -38,15 +40,16 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest" | "coupons";
+  type Tab = "literatureCourse" | "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest" | "coupons";
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "french-flashcards") {
       return "frenchFlashcards";
     }
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "literature-course") return "literatureCourse";
     return "pending";
   });
   const sectionLabels: Record<Tab, string> = {
-    pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
+    literatureCourse: "دورة الأدب", pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
     frenchFlashcards: "French Flashcards", malazam: "Al-Malazam Library",
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
@@ -73,7 +76,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     })();
   }, []);
   const MOD_TABS: Tab[] = ["pending", "flashcards", "usernames", "aifiles", "whoIsBest"];
-  const canSee = (t: Tab) => t === "coupons" || isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
+  const canSee = (t: Tab) => t === "coupons" || t === "literatureCourse" || isOwner || (isFlashcardOnlyAdmin ? t === "flashcards" : MOD_TABS.includes(t));
   useEffect(() => {
     if (accessReady && !canSee(tab)) setTab(isFlashcardOnlyAdmin ? "flashcards" : "pending");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,8 +84,9 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   useEffect(() => {
     if (!accessReady || typeof window === "undefined") return;
     const url = new URL(window.location.href);
-    if (tab === "frenchFlashcards") url.searchParams.set("section", "french-flashcards");
-    else if (url.searchParams.get("section") === "french-flashcards") url.searchParams.delete("section");
+    if (tab === "literatureCourse") url.searchParams.set("section", "literature-course");
+    else if (tab === "frenchFlashcards") url.searchParams.set("section", "french-flashcards");
+    else if (["french-flashcards", "literature-course"].includes(url.searchParams.get("section") ?? "")) url.searchParams.delete("section");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [accessReady, tab]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -813,6 +817,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <Layers className="w-4 h-4 inline mr-1.5" />Flashcards
             </button>
           )}
+          {canSee("literatureCourse") && <button onClick={() => setTab("literatureCourse")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${tab === "literatureCourse" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>دورة الأدب</button>}
           {canSee("frenchFlashcards") && (
             <button onClick={() => setTab("frenchFlashcards")} className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${tab === "frenchFlashcards" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <Languages className="w-4 h-4 inline mr-1.5" />French Flashcards
@@ -919,6 +924,8 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           <AdminBankTab />
         ) : tab === "notes" ? (
           <AdminNotesTab />
+        ) : tab === "literatureCourse" ? (
+          <Suspense fallback={<p>جاري تحميل دورة الأدب…</p>}><LiteratureCourse isAr={true} onClose={() => setTab("pending")} /></Suspense>
         ) : tab === "frenchFlashcards" ? (
           <>
             <a href="/tmz-ctrl-8462/french-flashcards" className="mb-5 inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-semibold hover:bg-secondary">Open teacher dashboard & manage French staff</a>
