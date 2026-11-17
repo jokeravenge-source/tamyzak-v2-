@@ -79,6 +79,18 @@ export const DESTINATIONS: Destination[] = [
 
 export const getDestination = (id: string) => DESTINATIONS.find((destination) => destination.id === id);
 
+/** Pick a country fairly, then one of its eligible cities. */
+export function pickRandomDestination(available: readonly Destination[], previousCountry?: string): Destination | undefined {
+  const countries = [...new Set(available.map((destination) => destination.country.alpha2))];
+  if (!countries.length) return undefined;
+  // A reroll should change countries whenever another country is available.
+  const alternatives = countries.filter((country) => country !== previousCountry);
+  const pool = alternatives.length ? alternatives : countries;
+  const country = pool[Math.floor(Math.random() * pool.length)];
+  const cities = available.filter((destination) => destination.country.alpha2 === country);
+  return cities[Math.floor(Math.random() * cities.length)];
+}
+
 export function searchDestinations(query: string): Destination[] {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
   if (!terms.length) return DESTINATIONS;

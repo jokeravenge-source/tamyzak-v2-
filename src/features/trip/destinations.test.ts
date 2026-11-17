@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { COUNTRIES } from "./countries";
-import { DESTINATIONS, getDestination, searchDestinations } from "./destinations";
+import { DESTINATIONS, getDestination, pickRandomDestination, searchDestinations } from "./destinations";
 import { geodesicKm, isValidCoord } from "./geo";
 import { TRIP_ORIGIN } from "./config";
 import { createLocalRepository, journeyState, planTrip } from "./journeys";
@@ -8,6 +8,16 @@ import { createLocalRepository, journeyState, planTrip } from "./journeys";
 afterEach(() => vi.restoreAllMocks());
 
 describe("city study flights", () => {
+  it("gives countries equal chances even when one has more cities, and changes country on reroll", () => {
+    const available = [getDestination("AE:dubai")!, getDestination("AE:sharjah")!, getDestination("FR")!];
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    expect(pickRandomDestination(available)?.country.alpha2).toBe("FR");
+    vi.mocked(Math.random).mockReturnValue(0);
+    expect(pickRandomDestination(available, "AE")?.country.alpha2).toBe("FR");
+    expect(pickRandomDestination(available.slice(0, 2), "AE")?.id).toBe("AE:dubai");
+    expect(pickRandomDestination([])).toBeUndefined();
+  });
+
   it("keeps every existing capital route and gives all added cities a unique valid location", () => {
     expect(DESTINATIONS).toHaveLength(COUNTRIES.length + 50);
     expect(new Set(DESTINATIONS.map((city) => city.id)).size).toBe(DESTINATIONS.length);

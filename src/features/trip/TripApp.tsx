@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Globe2, Plane, Stamp } from "lucide-react";
+import { ArrowLeft, Globe2, Plane, Shuffle, Stamp } from "lucide-react";
 import { BoardingPass } from "./BoardingPass";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import { TRIP_INTRO_MS, TRIP_ORIGIN, TRIP_VIRTUAL_SPEED_KMH } from "./config";
 import { getCountry, type Country } from "./countries";
-import { DESTINATIONS, destinationCity, getDestination, searchDestinations } from "./destinations";
+import { DESTINATIONS, destinationCity, getDestination, pickRandomDestination, searchDestinations } from "./destinations";
 import { FlightCabin } from "./FlightCabin";
 import { formatDuration, formatKm } from "./geo";
 import { Globe } from "./Globe";
@@ -120,7 +120,9 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   const activeJourney = journeys?.find((j) => !j.legacy && !journeyState(j, now).arrived) ?? null;
   const completedJourneys = journeys?.filter((j) => journeyState(j, now).arrived) ?? [];
   const visaStudentName = studentName?.trim() || (lang === "ar" ? "طالب تميزك" : "Tamayzak Student");
-  const bookedCities = new Set((journeys ?? []).map(journeyDestinationKey));
+  const bookedCities = useMemo(() => new Set((journeys ?? []).map(journeyDestinationKey)), [journeys]);
+  const randomDestinations = useMemo(() => DESTINATIONS.filter((destination) =>
+    !bookedCities.has(destination.id) && planTrip(destination.id).ok), [bookedCities]);
 
   // Arrival: the moment timestamps say so, resolve once.
   useEffect(() => {
@@ -145,6 +147,23 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   const plan = selected ? planTrip(selected) : null;
   const selDestination = selected ? getDestination(selected) : undefined;
   const cname = (c: Country) => (lang === "ar" ? c.nameAr : c.name);
+
+  const chooseRandomCountry = () => {
+    if (creating) return;
+    const destination = pickRandomDestination(randomDestinations, selDestination?.country.alpha2);
+    if (!destination) return;
+    setSelected(destination.id);
+    setQuery("");
+    setCreateError(null);
+    setPhase("preview");
+  };
+
+  const randomCountryButton = (
+    <button type="button" className={`${btnSecondary} w-full`} onClick={chooseRandomCountry}
+      disabled={creating || !randomDestinations.length}>
+      <Shuffle aria-hidden className="h-5 w-5 shrink-0" /> {t.randomCountry}
+    </button>
+  );
 
   async function getTicket() {
     if (creatingRef.current || !plan?.ok) return;
@@ -356,6 +375,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
             onClick={activeJourney ? () => openJourney(activeJourney) : getTicket}>
             {activeJourney ? t.resume : creating ? t.creating : t.getTicket}
           </button>
+          <div className="mt-3">{randomCountryButton}</div>
           <button className="mt-3 w-full text-sm font-bold underline" onClick={() => setPhase("select")}>{t.change}</button>
         </section>
         {plan?.ok && <FlightItinerary stages={plan.itinerary} lang={lang} preview />}
@@ -365,6 +385,8 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
     body = (
       <section className="flex flex-col gap-3" aria-labelledby="trip-dest">
         <h2 id="trip-dest" className="font-display text-3xl font-bold">{t.destinations}</h2>
+        {randomCountryButton}
+        <p className="text-sm font-semibold text-trip-ink/70">{randomDestinations.length ? t.randomCountryHint : t.noRandomCountries}</p>
         <label className="sr-only" htmlFor="trip-search">{t.searchLabel}</label>
         <input id="trip-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t.search} autoComplete="off"
           className="trip-shadow-sm min-h-12 rounded-2xl border-[3px] bg-trip-cloud px-4 text-lg font-semibold placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring" />
