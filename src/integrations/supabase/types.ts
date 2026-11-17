@@ -547,6 +547,24 @@ export type Database = {
         }
         Relationships: []
       }
+      character_unlocks: {
+        Row: {
+          character_key: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          character_key: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          character_key?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_chapters: {
         Row: {
           course_id: string
@@ -4351,6 +4369,7 @@ export type Database = {
         Args: { _challenge_id: string }
         Returns: undefined
       }
+      character_unlock_status: { Args: never; Returns: Json }
       check_edge_rate_limit: {
         Args: {
           _feature: string
@@ -4501,6 +4520,7 @@ export type Database = {
         }
         Returns: string
       }
+      redeem_character_code: { Args: { access_code: string }; Returns: Json }
       redeem_literature_code: { Args: { access_code: string }; Returns: Json }
       redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       redeem_premium_with_points: {
