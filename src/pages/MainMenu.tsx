@@ -18,6 +18,7 @@ const copy = {
       flashcards: { title: "Flashcards", subtitle: "Study with smart Q&A cards across every subject." },
       sessions: { title: "Sessions", subtitle: "Track study time per subject and climb the leaderboard." },
       ourCourses: { title: "Our Courses", subtitle: "Browse available courses and start learning." },
+      pdfBuilder: { title: "Build Your PDF", subtitle: "Create a chapter booklet from question banks and choose its design." },
       malazam: { title: "Al Malazam", subtitle: "Read PDFs, download booklets and save your copies." },
       summaries: { title: "Notes & Summaries", subtitle: "Upload your notes or summaries — they appear once an admin approves." },
       missions: { title: "My Missions", subtitle: "Check off chapter topics and watch your progress per subject." },
@@ -43,6 +44,7 @@ const copy = {
       flashcards: { title: "البطاقات التعليمية", subtitle: "ادرس عبر بطاقات السؤال والجواب لجميع المواد." },
       sessions: { title: "الجلسات", subtitle: "احسب وقت دراستك لكل مادة وتحدّى أصدقاءك على لوحة المتصدرين." },
       ourCourses: { title: "دوراتنا", subtitle: "تصفّح الدورات المتاحة وابدأ الدراسة." },
+      pdfBuilder: { title: "صمّم ملزمتك", subtitle: "اختَر أسئلة الفصل وتصميم ملزمتك ونزّلها PDF." },
       malazam: { title: "بنك الملازم", subtitle: "اقرأ ملفات PDF وحمّل الملازم واحفظ نسختك." },
       summaries: { title: "ملاحظات وملخصات", subtitle: "ارفع ملاحظاتك أو ملخصاتك — تظهر بعد موافقة المسؤول." },
       missions: { title: "مهماتي", subtitle: "اشطب مواضيع كل فصل وتابع تقدمك في كل مادة." },
@@ -59,7 +61,7 @@ const copy = {
   },
 } as const;
 
-export type MainMenuChoice = "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySketchpad" | "biologySchemes" | "physicsSchemes" | "leaderboard" | "news" | "premium" | "more" | "todo" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+export type MainMenuChoice = "pdfBuilder" | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySketchpad" | "biologySchemes" | "physicsSchemes" | "leaderboard" | "news" | "premium" | "more" | "todo" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
 
 const MainMenu = ({
   language,
@@ -92,6 +94,7 @@ const MainMenu = ({
     { key: "basics" as const, Icon: Compass, locked: false, ...text.items.basics },
     { key: "report" as const, Icon: LineChart, locked: false, ...text.items.report },
     { key: "flashcards" as const, Icon: Layers, locked: false, ...text.items.flashcards },
+    { key: "pdfBuilder" as const, Icon: FileText, locked: false, ...text.items.pdfBuilder },
     { key: "malazam", Icon: BookMarked, locked: false, ...text.items.malazam },
     { key: "summaries", Icon: FileText, locked: false, ...text.items.summaries },
     { key: "mcq", Icon: HelpCircle, locked: false, ...text.items.mcq },

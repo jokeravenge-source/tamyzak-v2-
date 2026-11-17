@@ -209,6 +209,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
     titleEn: "Study",
     titleAr: "الأدوات",
     items: [
+      { key: "pdfBuilder", labelEn: "Build Your PDF", labelAr: "صمّم ملزمتك", Icon: FileText },
       { key: "malazam", labelEn: "Al Malazam", labelAr: "بنك الملازم", Icon: BookMarked },
       { key: "notes", labelEn: "Notes", labelAr: "ملاحظاتي", Icon: NotebookPen },
       { key: "adminNotes", labelEn: "Enrichments", labelAr: "الإثرائيات", Icon: BookOpen },
@@ -281,6 +282,7 @@ const FEATURED: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: s
 
 // Study tools grid (bottom section)
 const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "pdfBuilder", Icon: FileText },
   { key: "malazam",    Icon: BookMarked },
   { key: "mcqBank",    Icon: Layers },
   { key: "mistakes",   Icon: AlertTriangle },
@@ -297,6 +299,7 @@ const STUDY_TOOLS: { key: MainMenuChoice; Icon: React.ComponentType<{ className?
 
 // Icons for any tool that can show up in "recently used"
 const TOOL_ICONS: Partial<Record<MainMenuChoice, React.ComponentType<{ className?: string }>>> = {
+  pdfBuilder: FileText,
   malazam: BookMarked,
   chemicalEquations: FlaskConical,
   videoNotes: Headphones,
@@ -320,6 +323,7 @@ const HOME_TOOL_TINTS: Partial<Record<MainMenuChoice, { card: string; icon: stri
   chemicalEquations: { card: "border-chemistry/40 bg-gradient-to-br from-chemistry/25 via-chemistry/10 to-orange-400/15", icon: "bg-chemistry text-white" },
   subjectsHub: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/25 via-sky-500/10 to-cyan-400/20", icon: "bg-blue-600 text-white shadow-lg shadow-blue-500/25" },
   flashcards: { card: "border-violet-400/40 bg-gradient-to-br from-blue-500/20 via-violet-500/10 to-violet-400/20", icon: "bg-violet-600 text-white shadow-lg shadow-violet-500/25" },
+  pdfBuilder: { card: "border-blue-400/40 bg-gradient-to-br from-blue-500/20 to-amber-100/10", icon: "bg-blue-700 text-white" },
   malazam: { card: "border-orange-400/40 bg-gradient-to-br from-amber-500/25 via-orange-500/10 to-orange-400/20", icon: "bg-orange-600 text-white shadow-lg shadow-orange-500/25" },
   ministerialBank: { card: "border-amber-400/40 bg-gradient-to-br from-orange-500/25 via-amber-500/10 to-yellow-400/20", icon: "bg-amber-600 text-white shadow-lg shadow-amber-500/25" },
   biologySketchpad: { card: "border-teal-400/40 bg-gradient-to-br from-teal-500/25 via-cyan-500/10 to-sky-400/20", icon: "bg-teal-600 text-white" },
@@ -431,6 +435,7 @@ function toolCategoryFor(key: string): "Review" | "Test" | "Organize" {
 
 const FEATURED_COPY = {
   en: {
+    pdfBuilder: { title: "Build Your PDF", subtitle: "Choose chapter questions, answers and a booklet template." },
     malazam: { title: "Al Malazam", subtitle: "Read PDFs, download booklets and save your copies." },
     chemicalEquations: { title: "Chemical Equation", subtitle: "19 chemistry equations organized by topic, with a memory hint for each." },
     report: { title: "Daily Report", subtitle: "AI insights + parent follow-up link." },
@@ -458,6 +463,7 @@ const FEATURED_COPY = {
     chemicalEquations: { title: "المعادلات الكيميائية", subtitle: "19 معادلة كيميائية مرتبة حسب الموضوع، مع تلميح لحفظ كل معادلة." },
     report: { title: "تقريري اليومي", subtitle: "ملاحظات ذكية ورابط متابعة لولي الأمر." },
     summaries: { title: "ملخصات", subtitle: "ارفع وتصفّح ملاحظات معتمدة." },
+    pdfBuilder: { title: "صمّم ملزمتك", subtitle: "وزاريات ومراجعة وMCQ بتصميم تختاره وتنزيل PDF." },
     malazam: { title: "بنك الملازم", subtitle: "اقرأ ملفات PDF وحمّل الملازم واحفظ نسختك." },
     todo: { title: "قائمة المهام", subtitle: "نظّم مهامك واحتفل بإنجازها." },
     missions: { title: "الفهرست", subtitle: "مواضيع الفصول لكل مادة." },

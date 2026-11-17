@@ -1,4 +1,5 @@
 export const STUDENT_TOOLS = [
+  { "key": "pdfBuilder", "description": "صمّم ملزمتك: PDF من الوزاريات والبطاقات وMCQ مع قوالب التصميم / Build a study PDF from existing banks with design templates" },
   {
     "key": "basics",
     "description": "الرئيسية والأساسيات / Home and essential tools"

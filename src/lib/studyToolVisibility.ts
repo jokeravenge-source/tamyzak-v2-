@@ -4,6 +4,7 @@ export const STUDY_TOOL_VISIBILITY_KEY = "app_hidden_study_tools_v1";
 export const STUDY_TOOL_VISIBILITY_EVENT = "app:study-tools-visibility-changed";
 
 export const CUSTOMIZABLE_STUDY_TOOLS = [
+  { key: "pdfBuilder", en: "Build Your PDF", ar: "صمّم ملزمتك" },
   { key: "malazam", en: "Al Malazam", ar: "بنك الملازم" },
   { key: "notes", en: "Notes", ar: "ملاحظاتي" },
   { key: "adminNotes", en: "Enrichments", ar: "الإثرائيات" },
