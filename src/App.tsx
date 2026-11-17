@@ -495,8 +495,8 @@ const StudentApp = () => {
   const [tgLoading, setTgLoading] = useState(false);
   const CHANNEL_VERIFIED_STORAGE_KEY = SITE_TELEGRAM_VERIFIED_STORAGE_KEY;
   // Membership in both @Tamayuzak and @a6th_DHS is remembered for 3 days.
-  // Require the existing Telegram channel membership check before entering the app.
-  const CHANNEL_GATE_ENABLED = true;
+  // Temporarily pause the site-wide Telegram gate while Telegram access is disrupted.
+  const CHANNEL_GATE_ENABLED = false;
   const [channelVerified, _setChannelVerified] = useState<boolean>(() => {
     if (!CHANNEL_GATE_ENABLED) return true;
     return hasRecentSiteTelegramVerification();
