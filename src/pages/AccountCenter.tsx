@@ -12,6 +12,7 @@ import { ReferralCard } from "@/components/ReferralCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
+import KokiCharacterCard, { KOKI_VARIANT } from "@/components/KokiCharacterCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
@@ -182,19 +183,24 @@ const AccountCenter = ({
   };
 
   const pickGender = async (g: Gender) => {
-    setGender(g);
     const base = getAvatarStyle(userId || "anon", g);
-    setTraits((prev) => prev ?? base);
+    const next = { ...(traits ?? base), ...(g === "male" && traits?.variant === KOKI_VARIANT ? { variant: 1 as const } : {}) };
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data: existing } = await supabase.from("profiles").select("id").eq("user_id", u.user.id).maybeSingle();
       if (existing) {
-        await supabase.from("profiles").update({ gender: g }).eq("user_id", u.user.id);
+        const { error } = await supabase.from("profiles").update({ gender: g, character: next as any }).eq("user_id", u.user.id);
+        if (error) throw error;
       } else {
-        await supabase.from("profiles").insert({ user_id: u.user.id, display_name: name.trim() || "Student", gender: g, source: getSignupSource() });
+        const { error } = await supabase.from("profiles").insert({ user_id: u.user.id, display_name: name.trim() || "Student", gender: g, character: next as any, source: getSignupSource() });
+        if (error) throw error;
       }
-    } catch {}
+      setGender(g);
+      setTraits(next);
+    } catch {
+      toast.error(language === "ar" ? "تعذّر حفظ الشخصية. جرّب مرة ثانية." : "Could not save your character. Please try again.");
+    }
   };
 
   const updateTraits = async (patch: Partial<CharacterTraits>) => {
@@ -202,11 +208,26 @@ const AccountCenter = ({
       ...(traits ?? getAvatarStyle(userId || "anon", gender ?? "male")),
       ...patch,
     };
+    const previous = traits;
     setTraits(next);
     try {
       if (!userId) return;
-      await supabase.from("profiles").update({ character: next as any }).eq("user_id", userId);
-    } catch {}
+      const { error } = await supabase.from("profiles").update({ character: next as any }).eq("user_id", userId);
+      if (error) throw error;
+    } catch {
+      setTraits(current => current === next ? previous : current);
+      toast.error(language === "ar" ? "تعذّر حفظ الشخصية. جرّب مرة ثانية." : "Could not save your character. Please try again.");
+    }
+  };
+
+  const selectKoki = async () => {
+    if (!userId) throw new Error("Not signed in");
+    const next = { ...(traits ?? getAvatarStyle(userId, "female")), variant: KOKI_VARIANT };
+    const { data, error } = await supabase.from("profiles").update({ gender: "female", character: next as any }).eq("user_id", userId).select("user_id").single();
+    if (error) throw error;
+    if (data?.user_id !== userId) throw new Error("Profile was not saved");
+    setGender("female");
+    setTraits(next);
   };
 
   // Auto-give Premium users the crown by default — but only once, so if they
@@ -423,6 +444,8 @@ const AccountCenter = ({
                       );
                     })}
                   </div>
+                  <KokiCharacterCard key={userId} userId={userId} language={language}
+                    selected={gender === "female" && effective?.variant === KOKI_VARIANT} onSelect={selectKoki} />
                 </div>
 
                 {/* Crown accessory — Premium only */}

@@ -25,6 +25,7 @@ import girl12 from "@/assets/character-girl-12.png";
 import girl13 from "@/assets/character-girl-13.png";
 import girl14 from "@/assets/character-girl-14.png";
 import girl15 from "@/assets/character-girl-15.webp.asset.json";
+import koki from "@/assets/character-koki.png";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
 import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
@@ -36,7 +37,7 @@ export type Gender = "male" | "female";
 
 export const MALE_VARIANTS = [boy1, boy2, boy3, boy4, boy5, boy6, boy7, boy8, boy9, boy10, boy11] as const;
 export const FEMALE_VARIANTS = [girl1, girl2, girl3, girl4, girl5, girl6, girl7, girl8.url, girl9.url, girl10, girl11, girl12, girl13, girl14, girl15.url] as const;
-export type CharacterVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+export type CharacterVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
 
 // Kept for API compatibility with AccountCenter / Leaderboard.
 export const SKIN_COLORS = ["#fff6f1", "#feede6", "#ffe6d5", "#f1cfc5", "#d2b0a2", "#a17c6a"] as const;
@@ -112,7 +113,8 @@ function CharacterAvatarComponent({
   const safeVariant = Number.isFinite(requestedVariant) ? Math.trunc(requestedVariant) : 1;
   const idx = Math.max(0, Math.min(variants.length - 1, safeVariant - 1));
   const fallbackSrc = variants[0];
-  const src = variants[idx] ?? fallbackSrc;
+  // Koki is a separate, code-unlocked choice; never add her to the free catalog.
+  const src = g === "female" && safeVariant === 16 ? koki : variants[idx] ?? fallbackSrc;
   const hasCrown = traits?.accessory === "crown";
   const hat = traits?.hat ?? null;
   const skin = traits?.skin ?? SKIN_COLORS[0];
