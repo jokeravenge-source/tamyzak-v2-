@@ -143,6 +143,7 @@ const WeaknessCheckInAgent = lazy(() =>
   ),
 );
 import TelegramGate from "./components/TelegramGate";
+import { hasRecentSiteTelegramVerification, SITE_TELEGRAM_VERIFIED_STORAGE_KEY } from "@/lib/siteTelegramChannels";
 const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
 import BottomGroupNav from "./components/BottomGroupNav";
@@ -492,18 +493,13 @@ const StudentApp = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [tgVerified, setTgVerified] = useState(false);
   const [tgLoading, setTgLoading] = useState(false);
-  const CHANNEL_VERIFIED_STORAGE_KEY = "tg_channel_verified_v1";
-  // Mandatory @a6th_DHS membership; remembered for 3 days in localStorage so installed apps (where sessionStorage resets every launch) are not re-blocked by transient check failures.
-  const CHANNEL_VERIFIED_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+  const CHANNEL_VERIFIED_STORAGE_KEY = SITE_TELEGRAM_VERIFIED_STORAGE_KEY;
+  // Membership in both @Tamayuzak and @a6th_DHS is remembered for 3 days.
   // Require the existing Telegram channel membership check before entering the app.
   const CHANNEL_GATE_ENABLED = true;
   const [channelVerified, _setChannelVerified] = useState<boolean>(() => {
     if (!CHANNEL_GATE_ENABLED) return true;
-    if (typeof window === "undefined") return false;
-    try {
-      const ts = Number(localStorage.getItem(CHANNEL_VERIFIED_STORAGE_KEY) || 0);
-      return ts > 0 && Date.now() - ts < CHANNEL_VERIFIED_TTL_MS;
-    } catch { return false; }
+    return hasRecentSiteTelegramVerification();
   });
   const setChannelVerified = (v: boolean) => {
     _setChannelVerified(v);
