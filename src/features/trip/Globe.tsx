@@ -35,24 +35,26 @@ function projectPath(points: LatLng[], center: LatLng, lift: (i: number) => numb
   return d;
 }
 
-export type GlobeMode = "idle" | "orbit" | "flight" | "landed";
+export type GlobeMode = "idle" | "orbit" | "flight" | "landed" | "selecting" | "selected";
 
-export function Globe({ destination, progress = 0, mode = "idle", label, via }: {
+export function Globe({ destination, progress = 0, mode = "idle", label, via, viewCenter }: {
   destination?: LatLng | null;
   progress?: number;
   mode?: GlobeMode;
   label: string;
   via?: LatLng | null;
+  /** Camera center for the random-destination globe reveal. */
+  viewCenter?: LatLng;
 }) {
   const dest = destination && isValidCoord(destination) ? destination : null;
   const destinationLat = dest?.lat ?? null;
   const destinationLng = dest?.lng ?? null;
   const viaLat = via?.lat ?? null, viaLng = via?.lng ?? null;
   const center = useMemo<LatLng>(
-    () => (destinationLat != null && destinationLng != null
+    () => viewCenter && isValidCoord(viewCenter) ? viewCenter : (destinationLat != null && destinationLng != null
       ? interpolateGreatCircle(TRIP_ORIGIN, { lat: destinationLat, lng: destinationLng }, 0.5)
       : { lat: 22, lng: TRIP_ORIGIN.lng }),
-    [destinationLat, destinationLng],
+    [destinationLat, destinationLng, viewCenter],
   );
 
   const graticule = useMemo(() => {
@@ -77,13 +79,13 @@ export function Globe({ destination, progress = 0, mode = "idle", label, via }: 
 
   const N = 60;
   const route = useMemo(() => {
-    if (destinationLat == null || destinationLng == null) return null;
+    if (destinationLat == null || destinationLng == null || mode === "selecting" || mode === "selected") return null;
     const routeDestination = { lat: destinationLat, lng: destinationLng };
     const stop = viaLat == null || viaLng == null ? undefined : { lat: viaLat, lng: viaLng };
     const pts = Array.from({ length: N + 1 }, (_, i) => interpolateFlightRoute(TRIP_ORIGIN, routeDestination, i / N, stop));
     const lift = (i: number) => 1 + 0.13 * Math.sin((Math.PI * i) / N);
     return { pts, lift, d: projectPath(pts, center, lift) };
-  }, [destinationLat, destinationLng, center, viaLat, viaLng]);
+  }, [destinationLat, destinationLng, center, viaLat, viaLng, mode]);
 
   const at = (p: LatLng, k = 1) => {
     const q = orthographic(p, center);
@@ -153,15 +155,15 @@ export function Globe({ destination, progress = 0, mode = "idle", label, via }: 
       )}
 
       {/* origin */}
-      {o.visible && (
+      {o.visible && mode !== "selecting" && mode !== "selected" && (
         <g>
           <circle cx={o.x} cy={o.y} r="6" className="fill-trip-sun stroke-trip-ink" strokeWidth="2" />
           <text x={o.x} y={o.y + 18} textAnchor="middle" className="fill-trip-ink font-display text-[11px] font-bold">BGW</text>
         </g>
       )}
       {/* destination pin */}
-      {dest && t.visible && (
-        <g transform={`translate(${t.x} ${t.y})`} className={mode === "landed" ? "trip-pop" : ""}>
+      {dest && t.visible && mode !== "selecting" && (
+        <g transform={`translate(${t.x} ${t.y})`} className={mode === "landed" || mode === "selected" ? "trip-pop" : ""}>
           <path d="M0 0c-6-8-9-11-9-15a9 9 0 0 1 18 0c0 4-3 7-9 15z" className="fill-trip-coral stroke-trip-ink" strokeWidth="2" />
           <circle cy="-15" r="3.2" className="fill-trip-cream" />
         </g>
