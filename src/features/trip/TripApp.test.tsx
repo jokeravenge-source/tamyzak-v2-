@@ -7,6 +7,9 @@ import { DESTINATIONS } from "./destinations";
 import { DICTS } from "./i18n";
 
 vi.mock("./Globe", () => ({ Globe: () => <div>Flight map preview</div> }));
+vi.mock("./RandomDestinationGlobe", () => ({
+  RandomDestinationGlobe: ({ onComplete }: { onComplete: () => void }) => <button onClick={onComplete}>Finish globe spin</button>,
+}));
 vi.mock("@/components/CharacterAvatar", () => ({
   CharacterAvatar: ({ gender, traits }: { gender: string; traits?: { variant?: number } }) => (
     <span data-testid="character" data-gender={gender} data-variant={traits?.variant} />
@@ -16,7 +19,7 @@ vi.mock("@/components/CharacterAvatar", () => ({
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("random flight country", () => {
-  it.each(["en", "ar"] as const)("previews, rerolls and books a random country in %s without booking early", async (language) => {
+  it.each(["en", "ar"] as const)("reveals a random country after the spin in %s without a pick-again button or early booking", async (language) => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const store = new Map<string, string>();
     const local = createLocalRepository({ getItem: key => store.get(key) ?? null, setItem: (key, value) => { store.set(key, value); } });
@@ -27,15 +30,18 @@ describe("random flight country", () => {
     fireEvent.click(await screen.findByRole("button", { name: t.start }));
     fireEvent.change(screen.getByLabelText(t.searchLabel), { target: { value: "not-a-place-123" } });
     fireEvent.click(screen.getByRole("button", { name: t.randomCountry }));
+    expect(screen.getByRole("status")).toHaveTextContent(t.randomChoosing);
+    expect(screen.queryByRole("button", { name: t.getTicket })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t.randomCountry })).not.toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Finish globe spin" }));
     // Baghdad is the origin; random choice must pick a valid city instead.
     expect(await screen.findByRole("heading", { name: language === "ar" ? "أربيل" : "Erbil" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t.getTicket })).toBeEnabled();
     expect(create).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: t.randomCountry }));
-    expect(await screen.findByRole("heading", { name: language === "ar" ? "دبي" : "Dubai" })).toBeInTheDocument();
-    expect(create).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: t.randomCountry })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: t.getTicket }));
-    await waitFor(() => expect(create).toHaveBeenCalledWith("student-1", "AE:dubai"));
+    await waitFor(() => expect(create).toHaveBeenCalledWith("student-1", "IQ:erbil"));
     fireEvent.click(await screen.findByRole("button", { name: t.skip }));
     expect(await screen.findByRole("region", { name: t.cabin })).toBeInTheDocument();
   });
@@ -54,6 +60,7 @@ describe("random flight country", () => {
     const view = render(<TripApp studentId="student-1" repository={repository} language="en" />);
     fireEvent.click(await screen.findByText(DICTS.en.start, { selector: "button" }));
     fireEvent.click(screen.getByText(DICTS.en.randomCountry, { selector: "button" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish globe spin" }));
     expect(await screen.findByRole("heading", { name: "Paris" })).toBeInTheDocument();
     expect(planTrip("FR").ok).toBe(true);
     expect(screen.getByRole("button", { name: DICTS.en.getTicket })).toBeEnabled();
@@ -63,6 +70,22 @@ describe("random flight country", () => {
     fireEvent.click(await screen.findByText(DICTS.en.start, { selector: "button" }));
     expect(screen.getByText(DICTS.en.randomCountry, { selector: "button" })).toBeDisabled();
     expect(screen.getByText(DICTS.en.noRandomCountries)).toBeInTheDocument();
+  });
+
+  it("lets the student leave the spin and still choose a destination manually", async () => {
+    const store = new Map<string, string>();
+    const repository = createLocalRepository({ getItem: key => store.get(key) ?? null, setItem: (key, value) => { store.set(key, value); } });
+    render(<TripApp studentId="student-1" repository={repository} language="en" />);
+    fireEvent.click(await screen.findByRole("button", { name: DICTS.en.start }));
+    fireEvent.click(screen.getByRole("button", { name: DICTS.en.randomCountry }));
+    fireEvent.click(screen.getByRole("button", { name: DICTS.en.back }));
+    expect(screen.queryByRole("button", { name: "Finish globe spin" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: DICTS.en.start }));
+    fireEvent.change(screen.getByLabelText(DICTS.en.searchLabel), { target: { value: "Dubai" } });
+    fireEvent.click(screen.getByRole("button", { name: /Dubai United Arab Emirates/ }));
+    expect(await screen.findByRole("heading", { name: "Dubai" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: DICTS.en.getTicket })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Finish globe spin" })).not.toBeInTheDocument();
   });
 });
 

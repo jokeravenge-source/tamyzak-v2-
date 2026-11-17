@@ -8,6 +8,7 @@ import { DESTINATIONS, destinationCity, getDestination, pickRandomDestination, s
 import { FlightCabin } from "./FlightCabin";
 import { formatDuration, formatKm } from "./geo";
 import { Globe } from "./Globe";
+import { RandomDestinationGlobe } from "./RandomDestinationGlobe";
 import { DICTS, type Lang } from "./i18n";
 import { createLocalRepository, journeyState, planTrip, type Journey, type JourneyRepository } from "./journeys";
 import { StudyVisa } from "./StudyVisa";
@@ -65,6 +66,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   const [flightView, setFlightView] = useState<"cabin" | "map">("cabin");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [randomReveal, setRandomReveal] = useState<"none" | "spinning" | "settled">("none");
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -147,20 +149,22 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   const plan = selected ? planTrip(selected) : null;
   const selDestination = selected ? getDestination(selected) : undefined;
   const cname = (c: Country) => (lang === "ar" ? c.nameAr : c.name);
+  const finishRandomReveal = useCallback(() => setRandomReveal(value => value === "spinning" ? "settled" : value), []);
 
   const chooseRandomCountry = () => {
-    if (creating) return;
+    if (creating || randomReveal === "spinning") return;
     const destination = pickRandomDestination(randomDestinations, selDestination?.country.alpha2);
     if (!destination) return;
     setSelected(destination.id);
     setQuery("");
     setCreateError(null);
+    setRandomReveal("spinning");
     setPhase("preview");
   };
 
   const randomCountryButton = (
     <button type="button" className={`${btnSecondary} w-full`} onClick={chooseRandomCountry}
-      disabled={creating || !randomDestinations.length}>
+      disabled={creating || randomReveal === "spinning" || !randomDestinations.length}>
       <Shuffle aria-hidden className="h-5 w-5 shrink-0" /> {t.randomCountry}
     </button>
   );
@@ -187,7 +191,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
   }
 
   const openJourney = (j: Journey) => { setViewingId(j.id); setFlightView("cabin"); setPhase("ticket"); };
-  const goHome = () => { setPhase("home"); setSelected(null); setQuery(""); };
+  const goHome = () => { setPhase("home"); setSelected(null); setQuery(""); setRandomReveal("none"); };
 
   const flightAction = async (action: "pause" | "resume", journey: Journey) => {
     if (busyAction) return;
@@ -341,13 +345,19 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
       </section>
     );
   } else if (phase === "world") {
-    body = <WorldPassport journeys={journeys ?? []} now={now} lang={lang} onChoose={(id) => { setSelected(id); setCreateError(null); setPhase("preview"); }} />;
+    body = <WorldPassport journeys={journeys ?? []} now={now} lang={lang} onChoose={(id) => { setSelected(id); setCreateError(null); setRandomReveal("none"); setPhase("preview"); }} />;
   } else if (phase === "preview" && selDestination) {
     body = (
       <div className="flex flex-col gap-4">
         <div className="mx-auto aspect-square w-full max-w-[17rem]">
-          <Globe mode="flight" progress={0} destination={selDestination} via={plan?.ok ? plan.stopover : undefined} label={`${TRIP_ORIGIN.city} → ${selDestination.city}`} />
+          {randomReveal !== "none" ? (
+            <RandomDestinationGlobe key={selDestination.id} destination={selDestination} onComplete={finishRandomReveal}
+              label={randomReveal === "spinning" ? t.randomChoosing : `${destinationCity(selDestination, lang)}, ${cname(selDestination.country)}`} />
+          ) : (
+            <Globe mode="flight" progress={0} destination={selDestination} via={plan?.ok ? plan.stopover : undefined} label={`${TRIP_ORIGIN.city} → ${selDestination.city}`} />
+          )}
         </div>
+        {randomReveal === "spinning" ? <p role="status" className="text-center font-display text-xl font-bold">{t.randomChoosing}</p> : <>
         <section className="trip-shadow trip-rise rounded-3xl border-[3px] bg-trip-cream p-5">
           <div className="flex items-center gap-3">
             <span className="text-5xl" aria-hidden>{selDestination.country.flag}</span>
@@ -375,10 +385,10 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
             onClick={activeJourney ? () => openJourney(activeJourney) : getTicket}>
             {activeJourney ? t.resume : creating ? t.creating : t.getTicket}
           </button>
-          <div className="mt-3">{randomCountryButton}</div>
-          <button className="mt-3 w-full text-sm font-bold underline" onClick={() => setPhase("select")}>{t.change}</button>
+          <button className="mt-3 w-full text-sm font-bold underline" onClick={() => { setRandomReveal("none"); setPhase("select"); }}>{t.change}</button>
         </section>
         {plan?.ok && <FlightItinerary stages={plan.itinerary} lang={lang} preview />}
+        </>}
       </div>
     );
   } else if (phase === "select") {
@@ -400,7 +410,7 @@ export function TripApp({ studentId = "local-student", repository, onBackToStudy
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label={t.destinations}>
             {results.map((destination) => (
               <li key={destination.id}>
-                <button disabled={bookedCities.has(destination.id)} onClick={() => { setSelected(destination.id); setCreateError(null); setPhase("preview"); }}
+                <button disabled={bookedCities.has(destination.id)} onClick={() => { setSelected(destination.id); setCreateError(null); setRandomReveal("none"); setPhase("preview"); }}
                   className="trip-shadow-sm flex h-full w-full flex-col items-start gap-1 rounded-2xl border-[3px] bg-trip-cream p-3 text-start transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring disabled:opacity-55 disabled:hover:translate-y-0">
                   <span className="text-3xl" aria-hidden>{destination.country.flag}</span>
                   <span className="font-display text-base font-bold leading-tight">{destinationCity(destination, lang)}</span>
