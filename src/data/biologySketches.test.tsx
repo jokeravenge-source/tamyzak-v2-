@@ -1,7 +1,7 @@
 import { Children, isValidElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { CHAPTER_DIAGRAMS } from "./biologyDiagrams";
-import { BIOLOGY_SKETCH_CHAPTERS, BLANK_BIOLOGY_SKETCH, getBiologySketch } from "./biologySketches";
+import { BIOLOGY_SKETCH_CHAPTERS, BLANK_BIOLOGY_SKETCH, getBiologySketch, getBiologySketchSections } from "./biologySketches";
 
 function elements(node: ReactNode): Record<string, any>[] {
   const result: Record<string, any>[] = [];
@@ -36,6 +36,22 @@ describe("standalone biology sketch paper", () => {
             if (!styling.has(key)) expect(outline[i][key]).toEqual(value);
           }
         });
+      });
+    }
+  });
+
+  it("splits every diagram into four to six independently saved sketch parts", () => {
+    expect(getBiologySketchSections(BLANK_BIOLOGY_SKETCH.id)).toEqual([BLANK_BIOLOGY_SKETCH]);
+    for (const sketch of BIOLOGY_SKETCH_CHAPTERS.flatMap((group) => group.sketches)) {
+      const sections = getBiologySketchSections(sketch.id);
+      expect(sections.length).toBeGreaterThanOrEqual(4);
+      expect(sections.length).toBeLessThanOrEqual(6);
+      expect(new Set(sections.map((section) => section.id)).size).toBe(sections.length);
+      sections.forEach((section, index) => {
+        expect(section.id).toBe(`${sketch.id}:part-${index + 1}`);
+        expect(section.title.en).toContain(`Part ${index + 1} of ${sections.length}`);
+        expect(section.title.ar).toContain(`الجزء ${index + 1} من ${sections.length}`);
+        expect(section.art).not.toBeNull();
       });
     }
   });
