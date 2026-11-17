@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
-import { CheckCircle2, Eraser, Hand, Pencil, Redo2, Send, Trash2, Undo2 } from "lucide-react";
+import { CheckCircle2, Eraser, Hand, Pencil, Redo2, Send, Trash2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import type { DiagramDef } from "@/components/LabeledDiagram";
 import { appendDrawingPoint, drawingPoint, loadDrawingAttempt, MAX_DRAWING_POINTS, paintDrawing, saveDrawingAttempt,
@@ -18,6 +18,7 @@ const copy = {
     loadError: "تعذّر فتح محاولتك المحفوظة. جرّب مرّة ثانية.", saveError: "تعذّر الحفظ على هذا الجهاز. محاولتك ما زالت ظاهرة؛ جرّب الحفظ مرّة ثانية.",
     retry: "إعادة المحاولة", empty: "ارسم شيئاً على الورقة قبل التسليم.", limit: "وصلت حدّ الرسم لهذه الورقة. تراجع عن بعض الخطوط أو امسح الكل حتى تكمل.",
     canvas: "ورقة سكتش: ", eraserHint: "الممحاة تمسح خطوطك وتحافظ على خلفية السكتش. تگدر تتراجع حتى عن مسح الكل.",
+    zoomIn: "تكبير", zoomOut: "تصغير", zoomLevel: "نسبة التكبير", zoomControls: "أدوات تكبير الرسمة",
   },
   en: {
     instructions: "Sketch on the paper with your finger or a pen. Erase your strokes, or choose the hand to scroll.",
@@ -31,9 +32,13 @@ const copy = {
     loadError: "Could not open your saved attempt. Please retry.", saveError: "Could not save on this device. Your marks are still visible; please retry saving.",
     retry: "Retry", empty: "Draw something on the paper before submitting.", limit: "This paper has reached its drawing limit. Undo some strokes or Clear all to continue.",
     canvas: "Sketch paper: ", eraserHint: "The eraser removes your strokes and keeps the sketch background. Even Clear all can be undone.",
+    zoomIn: "Zoom in", zoomOut: "Zoom out", zoomLevel: "Zoom level", zoomControls: "Drawing zoom controls",
   },
 } as const;
 const colors = ["#e11d48", "#2563eb", "#059669", "#7c3aed", "#0f172a"];
+const MIN_ZOOM = 0.75;
+const MAX_ZOOM = 2.5;
+const ZOOM_STEP = 0.25;
 type History = { past: DrawingStroke[][]; strokes: DrawingStroke[]; future: DrawingStroke[][]; submittedAt: string | null };
 const emptyHistory = (): History => ({ past: [], strokes: [], future: [], submittedAt: null });
 
@@ -53,6 +58,7 @@ export default function BiologySketchCanvas({ diagram, language, ownerId }: { di
   const [tool, setTool] = useState<"pen" | "eraser" | "pan">("pen");
   const [color, setColor] = useState(colors[4]);
   const [brush, setBrush] = useState(3);
+  const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -241,14 +247,35 @@ export default function BiologySketchCanvas({ diagram, language, ownerId }: { di
             <option value={3}>{t.thin}</option><option value={5}>{t.medium}</option><option value={8}>{t.thick}</option>
           </select>
         </label>
+        <div className="inline-flex min-h-11 items-center rounded-xl border border-border bg-background p-1" role="group" aria-label={t.zoomControls}>
+          <button type="button" aria-label={t.zoomOut} title={t.zoomOut} disabled={zoom <= MIN_ZOOM}
+            onClick={() => setZoom((value) => Math.max(MIN_ZOOM, value - ZOOM_STEP))}
+            className="grid h-10 w-10 place-items-center rounded-lg hover:bg-secondary disabled:opacity-40">
+            <ZoomOut className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <output aria-label={t.zoomLevel} aria-live="polite" className="min-w-14 px-2 text-center text-sm font-bold tabular-nums">
+            {Math.round(zoom * 100)}%
+          </output>
+          <button type="button" aria-label={t.zoomIn} title={t.zoomIn} disabled={zoom >= MAX_ZOOM}
+            onClick={() => setZoom((value) => Math.min(MAX_ZOOM, value + ZOOM_STEP))}
+            className="grid h-10 w-10 place-items-center rounded-lg hover:bg-secondary disabled:opacity-40">
+            <ZoomIn className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
-      <div className="relative isolate w-full overflow-hidden rounded-2xl border border-slate-200 bg-white" style={{ aspectRatio: diagram.aspect ?? "4/3" }} dir="ltr">
-        <svg viewBox="0 0 100 75" preserveAspectRatio="none" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">{diagram.art}</svg>
-        <canvas ref={canvas} data-testid="biology-sketch-paper" tabIndex={0} role="img" aria-label={t.canvas + diagram.title[language]} aria-describedby={instructionsId}
-          className={"absolute inset-0 h-full w-full select-none " + (tool === "pan" || submitted ? "cursor-grab" : "cursor-crosshair")}
-          style={{ touchAction: disabled || tool === "pan" ? "pan-y pinch-zoom" : "none" }}
-          onContextMenu={(event) => event.preventDefault()} onPointerDown={start} onPointerMove={move} onPointerUp={(event) => finish(event)}
-          onPointerCancel={(event) => finish(event, true)} onLostPointerCapture={(event) => finish(event, true)} />
+      <div data-testid="biology-sketch-viewport" className="w-full overflow-auto rounded-2xl border border-slate-200 bg-slate-100" style={{ maxHeight: "min(72vh, 52rem)" }} dir="ltr">
+        <div data-testid="biology-sketch-stage" className="relative isolate bg-white" style={{
+          aspectRatio: diagram.aspect ?? "4/3",
+          width: `${Math.round(zoom * 100)}%`,
+          marginInline: zoom <= 1 ? "auto" : undefined,
+        }}>
+          <svg viewBox="0 0 100 75" preserveAspectRatio="none" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">{diagram.art}</svg>
+          <canvas ref={canvas} data-testid="biology-sketch-paper" tabIndex={0} role="img" aria-label={t.canvas + diagram.title[language]} aria-describedby={instructionsId}
+            className={"absolute inset-0 h-full w-full select-none " + (tool === "pan" || submitted ? "cursor-grab" : "cursor-crosshair")}
+            style={{ touchAction: disabled || tool === "pan" ? "pan-x pan-y pinch-zoom" : "none" }}
+            onContextMenu={(event) => event.preventDefault()} onPointerDown={start} onPointerMove={move} onPointerUp={(event) => finish(event)}
+            onPointerCancel={(event) => finish(event, true)} onLostPointerCapture={(event) => finish(event, true)} />
+        </div>
       </div>
       <p className="text-xs leading-6 text-muted-foreground">{t.eraserHint}</p>
       {loadError && <div className="rounded-xl border border-destructive/40 p-3" role="alert">

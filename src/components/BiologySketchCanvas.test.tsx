@@ -50,6 +50,26 @@ describe("sketch paper interaction", () => {
     expect(storage.save.mock.calls.at(-1)[1].strokes).toHaveLength(1);
   });
 
+  it("zooms in and out while keeping the paper scrollable in hand mode", async () => {
+    render(<BiologySketchCanvas diagram={paper} language="en" ownerId="guest" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Pen" })).toBeEnabled());
+    const stage = screen.getByTestId("biology-sketch-stage");
+    expect(stage).toHaveStyle({ width: "100%" });
+    expect(screen.getByLabelText("Zoom level")).toHaveTextContent("100%");
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zoom in" })));
+    expect(stage).toHaveStyle({ width: "125%" });
+    expect(screen.getByLabelText("Zoom level")).toHaveTextContent("125%");
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zoom out" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zoom out" })));
+    expect(stage).toHaveStyle({ width: "75%" });
+    expect(screen.getByRole("button", { name: "Zoom out" })).toBeDisabled();
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Scroll" })));
+    expect(screen.getByTestId("biology-sketch-paper")).toHaveStyle({ touchAction: "pan-x pan-y pinch-zoom" });
+  });
+
   it("confirms Submit only after saving, then permits editing the sketch", async () => {
     render(<BiologySketchCanvas diagram={paper} language="en" ownerId="user:a" />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Pen" })).toBeEnabled());
