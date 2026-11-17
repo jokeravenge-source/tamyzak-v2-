@@ -22,9 +22,9 @@ describe("PDF builder", () => {
     const button = await screen.findByRole("button", { name: "Preview my PDF · 3" });
     fireEvent.click(button);
     for (const [name, id] of [["Exam paper", "exam"], ["Compact revision", "compact"], ["Tamayzak signature", "tamayzak"], ["Revision booklet", "revision"]]) {
-      fireEvent.click(screen.getByRole("button", { name, exact: true }));
+      fireEvent.click(screen.getByRole("button", { name }));
       expect(rendered().settings.template).toBe(id);
-      expect(screen.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
     }
     fireEvent.change(screen.getByLabelText("Booklet title"), { target: { value: "My final revision" } });
     fireEvent.change(screen.getByLabelText("Answer placement"), { target: { value: "none" } });
