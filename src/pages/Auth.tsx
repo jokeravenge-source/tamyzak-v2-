@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { trackEvent, getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -34,6 +34,7 @@ const AUTH_COPY = {
     progress: "حسابك يحفظ نقاطك وأيام التزامك وتقدمك الدراسي.", submit: "إنشاء حسابي", privacy: "تابع تقدمك من أي جهاز بحسابك.",
     invalidEmail: "اكتب بريداً صحيحاً ينتهي بـ gmail.com@", created: "تم إنشاء الحساب. افتح بريدك لتأكيده.", ready: "حسابك جاهز",
     failed: "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.", resetSent: "أرسلنا رابط تغيير كلمة المرور إلى بريدك.", resetFailed: "تعذر إرسال الرابط. جرّب مرة ثانية.",
+    oauthTimeout: "استغرق تسجيل الدخول وقتًا أطول من المتوقع. حاول مرة ثانية وتأكد أن نافذة Google أو Apple لم تُغلق.",
   },
   en: {
     signin: "Sign in", signup: "Create account", welcome: "Welcome back", start: "Start studying smarter",
@@ -43,6 +44,7 @@ const AUTH_COPY = {
     progress: "Your account keeps your points, streak and study progress synced.", submit: "Create my account", privacy: "Continue your study progress on any device.",
     invalidEmail: "Please enter a valid Gmail address ending with @gmail.com", created: "Account created. Check your email to confirm it.", ready: "Your account is ready",
     failed: "Could not sign in. Check your email and password.", resetSent: "Password reset link sent. Check your email.", resetFailed: "Could not send the reset link. Please try again.",
+    oauthTimeout: "Sign-in took longer than expected. Try again and make sure the Google or Apple window was not closed.",
   },
 } as const;
 
@@ -82,6 +84,8 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "apple" | null>(null);
+  const oauthAttemptRef = useRef(0);
   const [resetting, setResetting] = useState(false);
 
   const switchMode = (nextMode: AuthMode) => {
@@ -157,7 +161,16 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
-    setLoading(true);
+    if (loading || oauthProvider) return;
+    setAuthError("");
+    setOauthProvider(provider);
+    const attempt = ++oauthAttemptRef.current;
+    const timeout = window.setTimeout(() => {
+      if (oauthAttemptRef.current !== attempt) return;
+      oauthAttemptRef.current += 1;
+      setOauthProvider(null);
+      setAuthError(text.oauthTimeout);
+    }, 15000);
     const startedAt = new Date().toISOString();
     const context = {
       provider,
@@ -179,17 +192,27 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
         error: result?.error,
       });
 
+      if (oauthAttemptRef.current !== attempt) return;
+
       if (result.error) {
-        toast.error(`${provider}: ${result.error.message ?? "Sign-in failed"}`);
-        setLoading(false);
+        const message = result.error.message ?? "Sign-in failed";
+        setAuthError(message);
+        toast.error(`${provider}: ${message}`);
         return;
       }
+      // A top-level OAuth redirect normally unloads this page immediately. If
+      // navigation is blocked, clearing the local state keeps the app usable.
       if (result.redirected) return;
       onAuthed();
     } catch (error: unknown) {
+      if (oauthAttemptRef.current !== attempt) return;
       console.error("[OAuth] signInWithOAuth threw", { provider, error });
-      toast.error(`${provider}: ${error instanceof Error ? error.message : "Sign-in failed"}`);
-      setLoading(false);
+      const message = error instanceof Error ? error.message : "Sign-in failed";
+      setAuthError(message);
+      toast.error(`${provider}: ${message}`);
+    } finally {
+      window.clearTimeout(timeout);
+      if (oauthAttemptRef.current === attempt) setOauthProvider(null);
     }
   };
 
@@ -250,19 +273,21 @@ export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) =
             <button
               type="button"
               onClick={() => handleOAuth("google")}
-              disabled={loading}
+              disabled={loading || oauthProvider !== null}
+              aria-busy={oauthProvider === "google"}
               className="flex h-12 items-center justify-center gap-2.5 rounded-2xl border border-border bg-background font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
             >
-              <GoogleIcon />
+              {oauthProvider === "google" ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <GoogleIcon />}
               Google
             </button>
             <button
               type="button"
               onClick={() => handleOAuth("apple")}
-              disabled={loading}
+              disabled={loading || oauthProvider !== null}
+              aria-busy={oauthProvider === "apple"}
               className="flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-foreground font-semibold text-background transition hover:-translate-y-0.5 hover:opacity-90 hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
             >
-              <AppleIcon />
+              {oauthProvider === "apple" ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <AppleIcon />}
               Apple
             </button>
           </div>

@@ -22,6 +22,7 @@ import { applyTheme, getInitialTheme } from "./components/ThemePicker";
 import { useEffect } from "react";
 import Auth from "./pages/Auth";
 import { supabase } from "./integrations/supabase/client";
+import { readOAuthCallback } from "@/lib/oauthCallback";
 const Missions = lazy(() => import("./pages/Missions"));
 const MCQ = lazy(() => import("./pages/MCQ"));
 const Summaries = lazy(() => import("./pages/Summaries"));
@@ -547,6 +548,15 @@ const StudentApp = () => {
       console.error("[OAuth] failed to parse callback URL", e);
     }
 
+    // The Lovable broker returns Google/Apple sessions in the URL fragment.
+    // Recover them explicitly before getSession() so slow WebView storage or a
+    // delayed Supabase initializer cannot leave the app on its loading screen.
+    const oauthCallback = readOAuthCallback(window.location.href);
+    if (oauthCallback.kind !== "none") {
+      window.history.replaceState(window.history.state, "", oauthCallback.cleanPath);
+    }
+    let active = true;
+
     // Detect a persisted Supabase session token in storage. On Android
     // WebViews / slow networks getSession() can stall or the refresh call can
     // fail; in that case we must NOT bounce a logged-in user to the sign-in
@@ -592,35 +602,54 @@ const StudentApp = () => {
       setAuthLoading(false);
     }, 4000);
 
-    supabase.auth.getSession().then(({ data, error }) => {
-      console.log("[OAuth] initial getSession", {
-        hasSession: !!data.session,
-        userId: data.session?.user?.id,
-        provider: (data.session?.user as any)?.app_metadata?.provider,
-        error: error ? { message: error.message, name: error.name } : null,
-      });
-      if (data.session) setAuthed(true);
-      // A transient null result must not override a persisted signed-in user.
-      // Only the SIGNED_OUT auth event above is allowed to clear that state.
-      else if (hasPersistedAuthSession()) setAuthed(true);
-      else setAuthed(false);
-      if (data.session?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.session.user.id)
-          .in("role", ["admin", "moderator"])
-          .limit(1)
-          .maybeSingle()
-          .then(({ data: r }) => setIsAdmin(!!r));
+    const initializeAuth = async () => {
+      try {
+        if (oauthCallback.kind === "error") {
+          toast.error(oauthCallback.message || "تعذر تسجيل الدخول · Sign-in failed");
+        } else if (oauthCallback.kind === "tokens") {
+          const { error } = await supabase.auth.setSession(oauthCallback.tokens);
+          if (error) throw error;
+        }
+
+        const { data, error } = await supabase.auth.getSession();
+        if (!active) return;
+        console.log("[OAuth] initial getSession", {
+          hasSession: !!data.session,
+          userId: data.session?.user?.id,
+          provider: (data.session?.user as any)?.app_metadata?.provider,
+          error: error ? { message: error.message, name: error.name } : null,
+        });
+        if (data.session) setAuthed(true);
+        // A transient null result must not override a persisted signed-in user.
+        // Only the SIGNED_OUT auth event above is allowed to clear that state.
+        else if (hasPersistedAuthSession()) setAuthed(true);
+        else setAuthed(false);
+        if (data.session?.user) {
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.session.user.id)
+            .in("role", ["admin", "moderator"])
+            .limit(1)
+            .maybeSingle()
+            .then(({ data: r }) => setIsAdmin(!!r));
+        }
+        window.clearTimeout(authTimeout);
+        setAuthLoading(false);
+      } catch (e) {
+        if (!active) return;
+        console.error("[OAuth] session recovery failed", e);
+        if (hasPersistedAuthSession()) setAuthed(true);
+        else if (oauthCallback.kind === "tokens") {
+          toast.error("تعذر إكمال تسجيل الدخول. حاول مرة ثانية · Sign-in failed. Please try again.");
+        }
+        window.clearTimeout(authTimeout);
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
-    }).catch((e) => {
-      console.error("[OAuth] getSession failed", e);
-      if (hasPersistedAuthSession()) setAuthed(true);
-      setAuthLoading(false);
-    });
+    };
+    void initializeAuth();
     return () => {
+      active = false;
       window.clearTimeout(authTimeout);
       sub.subscription.unsubscribe();
     };
