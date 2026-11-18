@@ -1,10 +1,12 @@
-// Built-in fallback for the supplied Biology Chapter 2 bank.
+import { ARABIC_CHAPTER_TWO_QUESTIONS } from "@/lib/biologyChapter2ArabicMcqs";
+
+// Built-in fallback for the supplied Biology Chapter 2 banks.
 // The matching database migration remains the primary source after deployment.
 export type BuiltInBiologyChapter2Row = {
   id: string;
   subject: "biology";
   chapter: 2;
-  chapter_title: "Tissues";
+  chapter_title: "Tissues" | "الأنسجة";
   question: string;
   choices: string[];
   answer_index: number;
@@ -19,7 +21,7 @@ type SourceQuestion = readonly [
   answerIndex: number,
 ];
 
-const CHAPTER_TWO_QUESTIONS = [
+const ENGLISH_CHAPTER_TWO_QUESTIONS = [
   ["Introduction and Plant Tissues", "The science concerned with the study of tissues is called:", ["Cytology","Histology","Embryology","Taxonomy"], 1],
   ["Introduction and Plant Tissues", "Which meristematic tissue is found at the tips of roots and stems?", ["Lateral","Intercalary","Apical","Ground"], 2],
   ["Introduction and Plant Tissues", "Which meristematic tissue allows elongation at the nodes and rapid regrowth of mature leaves in grasses?", ["Apical","Intercalary","Lateral","Vascular"], 1],
@@ -72,16 +74,20 @@ const CHAPTER_TWO_QUESTIONS = [
   ["Blood, Muscle and Nervous Tissue", "Neuroglia cells function mainly to:", ["Contract and relax","Transport oxygen","Support the neurons and phagocytose bacteria","Secrete antibodies"], 2],
 ] as const satisfies readonly SourceQuestion[];
 
-/** The source questions are English and stay available in either interface language. */
-export const getBuiltInBiologyChapter2 = (language: "ar" | "en"): BuiltInBiologyChapter2Row[] =>
-  CHAPTER_TWO_QUESTIONS.map(([section, question, choices, answerIndex], index) => ({
+/** Return the supplied source bank that matches the selected interface language. */
+export const getBuiltInBiologyChapter2 = (language: "ar" | "en"): BuiltInBiologyChapter2Row[] => {
+  const questions = language === "ar" ? ARABIC_CHAPTER_TWO_QUESTIONS : ENGLISH_CHAPTER_TWO_QUESTIONS;
+  const chapterTitle = language === "ar" ? "الأنسجة" : "Tissues";
+
+  return questions.map(([section, question, choices, answerIndex], index) => ({
     id: `builtin-biology-2-${language}-${String(index + 1).padStart(2, "0")}`,
     subject: "biology",
     chapter: 2,
-    chapter_title: "Tissues",
+    chapter_title: chapterTitle,
     question,
     choices: [...choices],
     answer_index: answerIndex,
     explanation: null,
     tags: [section],
   }));
+};

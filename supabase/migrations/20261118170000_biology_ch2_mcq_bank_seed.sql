@@ -1,5 +1,4 @@
--- Biology Chapter 2: Tissues (50 supplied MCQs).
--- The English source questions are available in both interface languages.
+-- Biology Chapter 2: Tissues (50 supplied English MCQs).
 WITH questions AS (
   SELECT *
   FROM jsonb_to_recordset($questions$
@@ -612,25 +611,21 @@ WITH questions AS (
     choices jsonb,
     answer_index integer
   )
-),
-interface_languages (language) AS (
-  VALUES ('ar'), ('en')
 )
 INSERT INTO public.mcq_banks (
   subject, chapter, chapter_title, section, language,
   question, choices, answer_index, explanation, source, tags, sort_order
 )
 SELECT
-  'biology', 2, 'Tissues', questions.section, interface_languages.language,
+  'biology', 2, 'Tissues', questions.section, 'en',
   questions.question, questions.choices, questions.answer_index, NULL,
   'Uploaded Chapter 2 Tissues MCQ Practice', ARRAY[questions.section], 200 + questions.sort_order
 FROM questions
-CROSS JOIN interface_languages
 WHERE NOT EXISTS (
   SELECT 1
   FROM public.mcq_banks AS existing
   WHERE existing.subject = 'biology'
     AND existing.chapter = 2
-    AND existing.language = interface_languages.language
+    AND existing.language = 'en'
     AND existing.question = questions.question
 );

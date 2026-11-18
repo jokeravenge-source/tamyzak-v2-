@@ -50,6 +50,20 @@ describe("PDF bank adapters", () => {
       answer: "Support the neurons and phagocytose bacteria",
     });
   });
+  it("includes the complete Arabic Biology Chapter 2 bank in custom PDFs", async () => {
+    const result = await loadPdfBank({ ...selection, subject: "biology", chapter: "2", language: "ar", list: "nadia-al-nuaimi" });
+    const supplied = result.questions.filter((question) => question.id.startsWith("mcq:builtin-biology-2-ar-"));
+    expect(supplied).toHaveLength(84);
+    expect(supplied[0]).toMatchObject({
+      kind: "mcq",
+      question: "النسيج المرستيمي يتميز بأن خلاياه:",
+      answer: "غير متمايزة وقادرة على الانقسام",
+    });
+    expect(supplied.at(-1)).toMatchObject({
+      question: "الخلية العصبية ثنائية القطب يكون جسمها:",
+      answer: "مغزلي الشكل ذا نتوءين",
+    });
+  });
   it("honors Ahmed's edited and deleted cards and fails if corrections cannot load", async () => {
     const s = { ...selection, subject: "chemistry", chapter: "7", list: "ahmed-al-nadawi" } as BankSelection;
     const original = await loadSource("chemistry:ahmed-al-nadawi:ar:7");
