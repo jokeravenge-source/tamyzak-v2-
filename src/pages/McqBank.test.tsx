@@ -23,6 +23,13 @@ function row(subject: string, chapter: number, chapter_title: string | null) {
 }
 
 describe("MCQ bank flashcard divisions", () => {
+  it("opens all supplied Biology Chapter 2 questions from the built-in bank", async () => {
+    render(<McqBank language="en" onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Biology/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Tissues/ }));
+    expect(screen.getByText("Question 1 of 50")).toBeInTheDocument();
+    expect(screen.getByText("The science concerned with the study of tissues is called:")).toBeInTheDocument();
+  });
   it("opens the subject selected in Subjects instead of asking for it twice", async () => {
     mocks.rows = [row("physics", 1, "Capacitors")];
     sessionStorage.setItem("mcq_subject_focus_v1", "physics");
