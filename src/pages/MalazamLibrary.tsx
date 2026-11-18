@@ -1,14 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { AlertCircle, ArrowLeft, BookMarked, Bookmark, BookOpen, CheckCircle2, Download, FileText, FolderOpen, Link2, Loader2, LockKeyhole, RefreshCw, Send, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, BookMarked, Bookmark, BookOpen, CheckCircle2, Download, FileText, FolderOpen, Loader2, LockKeyhole, RefreshCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeTelegramStart } from "@/lib/telegramStart";
 import { invokeMalazamDownload } from "@/lib/malazamDownload";
 import { downloadMalzamaPdf, fetchMalzamaPdf, validateMalzamaPdf } from "@/lib/malazamPdf";
 import { getSavedMalzama, listSavedMalazam, removeSavedMalzama, saveMalzama, saveMalzamaPage, type MalzamaMetadata, type SavedMalzama } from "@/lib/savedMalazam";
 import SeoHead from "@/components/SeoHead";
 import { malzamaPath, parseMalzamaId } from "@/lib/malazamLinks";
-import { TAMAYZAK_BOT_USERNAME, tamayzakBotLink } from "@/lib/tamayzakTelegram";
 import {
   MALAZAM_SEO_CATEGORIES,
   getMalazamSeoCategory,
@@ -31,14 +29,7 @@ type Malzama = {
 
 type DownloadGate =
   | { type: "auth" }
-  | { type: "link"; botUrl: string | null }
-  | { type: "channels"; missingChannels: string[] }
   | { type: "error"; message: string };
-
-const CHANNELS = [
-  { username: "@a6th_DHS", name: "6th D’H’S", url: "https://t.me/a6th_DHS" },
-  { username: "@sad6ths", name: "مفاتيح النجاح", url: "https://t.me/sad6ths" },
-] as const;
 
 const subjectName = (code: string) => MALAZAM_SEO_CATEGORIES.find((category) => category.slug === code)?.name ?? code;
 
@@ -103,9 +94,9 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
       ? `${requestedCategory.title} | تميزك`
       : "ملازم السادس العلمي 2027 PDF | تميزك";
   const description = detailItem
-    ? `تحميل ${detailItem.name} ضمن ${subjectName(detailItem.subject)} — ${detailItem.topic} لطلاب السادس العلمي من منصة تميزك بعد التحقق من حساب تيليجرام.`
+    ? `تحميل ${detailItem.name} ضمن ${subjectName(detailItem.subject)} — ${detailItem.topic} لطلاب السادس العلمي بحساب تميّزك.`
     : legacyItem?.description ?? requestedCategory?.description ??
-    "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، وحمّل الملفات بعد ربط حساب تيليجرام.";
+    "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، واقرأ الملفات وحمّلها بحساب تميّزك.";
   const canonicalPath = detailItem ? malzamaPath(detailItem) : dynamicItemId ? pathname : slug ? `/malazam/${slug}/` : "/malazam/";
 
   const load = useCallback(async () => {
@@ -201,28 +192,10 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
       const code = String(payload.error ?? "");
       if (code === "unauthenticated") {
         setGate({ type: "auth" });
-      } else if (code === "not_linked") {
-        const linkResult = await invokeTelegramStart({ source: "malazam-download" });
-        if (linkResult.signedOut) {
-          setGate({ type: "auth" });
-        } else if (linkResult.error || !tamayzakBotLink(linkResult.data)) {
-          setGate({ type: "error", message: "تعذّر فتح بوت تميّزك حالياً. حاول مرة ثانية بعد قليل." });
-        } else {
-          setGate({ type: "link", botUrl: tamayzakBotLink(linkResult.data) });
-        }
-      } else if (code === "not_joined") {
-        const missingChannels = Array.isArray(payload.missingChannels) ? payload.missingChannels.map(String) : [];
-        setGate({ type: "channels", missingChannels });
-      } else if (code === "bot_not_channel_admin") {
-        setGate({ type: "error", message: "بوت التحقق غير مهيّأ في إحدى القناتين حالياً. يجب إضافة بوت تميّزك كمشرف في القناتين ثم المحاولة مجدداً." });
-      } else if (code === "wrong_bot_connection") {
-        setGate({ type: "error", message: `اتصال تيليجرام في الخادم مرتبط ببوت آخر. يجب إعادة ربطه بالبوت الرسمي @${TAMAYZAK_BOT_USERNAME}.` });
-      } else if (code === "telegram_not_configured" || code === "telegram_gateway_unavailable") {
-        setGate({ type: "error", message: "اتصال بوت تميّزك بالخادم غير متاح حالياً. أعد ربط تكامل Telegram ثم حاول مجدداً." });
       } else if (code === "too_many_requests" || code.toLowerCase().includes("too many")) {
         setGate({ type: "error", message: "صارت محاولات كثيرة خلال دقيقة. انتظر دقيقة واحدة ثم جرّب مجدداً." });
       } else {
-        setGate({ type: "error", message: "تعذّر التحقق من الاشتراك حالياً. حاول مرة ثانية بعد قليل." });
+        setGate({ type: "error", message: "تعذّر تجهيز الملف حالياً. حاول مرة ثانية بعد قليل." });
       }
     } catch (reason) {
       setActionError(reason instanceof Error ? reason.message : "تعذر فتح الملف أو حفظه. تحقق من الاتصال ومساحة الجهاز ثم حاول مجدداً.");
@@ -279,7 +252,7 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
             </div>
             <div className="shrink-0 rounded-2xl border border-border bg-background/70 p-4 text-sm font-bold text-muted-foreground backdrop-blur">
               <LockKeyhole className="mb-2 size-6 text-primary" />
-              تحميل آمن بعد التحقق من تيليجرام
+              قراءة وتحميل بحساب تميّزك
             </div>
           </div>
         </header>
@@ -343,7 +316,7 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
                   <a href={`/malazam/${detailItem.subject}/`} className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{subjectName(detailItem.subject)}</a>
                   <p className="mt-5 text-sm font-black text-primary">{detailItem.topic}</p>
                   <h2 className="mt-2 text-3xl font-black leading-tight md:text-4xl">{detailItem.name}</h2>
-                  <p className="mt-4 leading-8 text-muted-foreground">ملزمة دراسية لطلاب السادس العلمي. التحميل محمي ويتطلب تسجيل الدخول وربط حساب تيليجرام والانضمام إلى القنوات المطلوبة.</p>
+                  <p className="mt-4 leading-8 text-muted-foreground">ملزمة دراسية لطلاب السادس العلمي. سجّل دخولك بحساب تميّزك لقراءة الملف وتحميله وحفظه.</p>
                   {actions(detailItem)}
                 </div>
               </div>
@@ -372,41 +345,22 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
         <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="malazam-gate-title">
           <section className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <span className="grid size-12 place-items-center rounded-2xl bg-[#229ED9]/10 text-[#229ED9]"><Send className="size-6" /></span>
+              <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><FileText className="size-6" /></span>
               <button type="button" onClick={() => setGate(null)} className="grid size-10 place-items-center rounded-xl border border-border hover:bg-secondary" aria-label="إغلاق"><X className="size-5" /></button>
             </div>
             <h2 id="malazam-gate-title" className="mt-5 text-2xl font-black">
-              {gate.type === "auth" ? "سجّل دخولك أولاً" : gate.type === "link" ? "اربط حساب تيليجرام" : gate.type === "channels" ? "انضم إلى القناتين" : "تعذّر التحقق"}
+              {gate.type === "auth" ? "سجّل دخولك أولاً" : "تعذّر إكمال الطلب"}
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {gate.type === "auth" && "لازم تستخدم حساب تميّزك حتى نربطه بحساب تيليجرام ونحفظ صلاحية التحميل."}
-              {gate.type === "link" && `افتح البوت الرسمي @${TAMAYZAK_BOT_USERNAME} واضغط Start، وبعدها ارجع واضغط تحقق وتحميل.`}
-              {gate.type === "channels" && "تحميل الملازم متاح لأعضاء 6th D’H’S ومفاتيح النجاح. انضم للقناتين ثم أعد التحقق."}
+              {gate.type === "auth" && "سجّل دخولك بحساب تميّزك لقراءة الملزمة وتحميلها وحفظها."}
               {gate.type === "error" && gate.message}
             </p>
 
             {gate.type === "auth" && <a href="/" onClick={() => sessionStorage.setItem("tamayzak_return_after_auth", window.location.pathname + window.location.search)} className="mt-5 flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 font-black text-primary-foreground">تسجيل الدخول</a>}
-            {gate.type === "link" && (
-              <a href={gate.botUrl ?? undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!gate.botUrl} className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-4 font-black text-white"><Link2 className="size-5" />فتح @{TAMAYZAK_BOT_USERNAME}</a>
-            )}
-            {gate.type === "channels" && (
-              <div className="mt-5 space-y-3">
-                {CHANNELS.map((channel) => {
-                  const missing = gate.missingChannels.length === 0 || gate.missingChannels.includes(channel.username);
-                  return (
-                    <a key={channel.username} href={channel.url} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-between rounded-xl border border-[#229ED9]/30 bg-[#229ED9]/5 px-4 font-bold text-[#229ED9]">
-                      <span className="inline-flex items-center gap-2"><Send className="size-4" />{channel.name}</span>
-                      {missing ? <span className="text-xs">انضم</span> : <CheckCircle2 className="size-5 text-emerald-500" />}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
-
             {gate.type !== "auth" && (
               <button type="button" onClick={() => void startAction(pendingItem, pendingAction)} disabled={downloadId === pendingItem.id} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 px-4 font-black text-primary hover:bg-primary/5 disabled:opacity-60">
                 {downloadId === pendingItem.id ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle2 className="size-5" />}
-                تحقق وتابع
+                إعادة المحاولة
               </button>
             )}
           </section>

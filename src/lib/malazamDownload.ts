@@ -16,7 +16,7 @@ function responseStatus(error: unknown) {
 /**
  * Invokes the protected download function with a fresh access token.
  * A tab can stay open long enough for its cached JWT to expire, so retry one
- * time after refreshing instead of showing a misleading Telegram error.
+ * time after refreshing instead of showing a misleading download error.
  */
 export async function invokeMalazamDownload(malzamaId: string) {
   let { data: { session } } = await supabase.auth.getSession();

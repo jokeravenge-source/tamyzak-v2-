@@ -1,16 +1,16 @@
 import { toast } from "sonner";
-import { openPremiumTelegram } from "@/lib/premium";
+import { openPremiumInstagram } from "@/lib/premium";
 import { aiErrorNotice } from "@/lib/aiErrorNotice";
 
 /**
- * Offer Telegram activation only for membership errors, not rate limits.
+ * Offer Instagram contact only for membership errors, not rate limits.
  */
 export function handleAiError(err: unknown, opts?: { onUpgrade?: () => void; language?: "en" | "ar" }) {
   const lang = opts?.language ?? "en";
   const { message, premiumRequired } = aiErrorNotice(err, lang);
   if (premiumRequired) {
     toast.error(message,
-      { action: { label: lang === "ar" ? "افتح عبر تيليجرام" : "Unlock via Telegram", onClick: openPremiumTelegram } },
+      { action: { label: lang === "ar" ? "تواصل عبر إنستغرام" : "Contact on Instagram", onClick: openPremiumInstagram } },
     );
     return;
   }

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Atom, BookOpen, Crown, FlaskConical, Loader2, LockKeyhole, RotateCcw, Search, Send, Table2 } from "lucide-react";
+import { ArrowLeft, Atom, BookOpen, Crown, FlaskConical, Loader2, LockKeyhole, RotateCcw, Search, Instagram, Table2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { useSubscription } from "@/hooks/useSubscription";
-import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
+import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 import { CATEGORIES, ELEMENTS, kToC, matchElement, type Category, type ElementRecord } from "@/data/atomAtlas/elements";
 import { ELEMENT_NOTES } from "@/data/atomAtlas/element-notes";
 import { KIND_LABEL, MOLECULES, type Molecule } from "@/data/atomAtlas/molecules";
@@ -59,7 +59,7 @@ const copy = {
     geometry: "Geometry", bonds: "Bond type", composition: "Composition", rotate: "Rotate model", termSearch: "Search English or Arabic terms…",
     objectives: "Learning objectives", example: "Worked example", practice: "Practice", correct: "Correct", tryAgain: "Try again", sources: "Scientific basis",
     premium: "Premium", lockedTitle: "This section is for Premium members", lockedDescription: "Unlock the Chemistry Dictionary and Lessons through your Tamayzak Premium membership.",
-    unlock: "Unlock via Telegram", checking: "Checking your membership…",
+    unlock: "Contact on Instagram", checking: "Checking your membership…",
     sourceText: "Element records use PubChem periodic-table data with IUPAC conventions. Educational notes are limited to reviewed textbook-level facts.",
   },
   ar: {
@@ -76,7 +76,7 @@ const copy = {
     geometry: "الشكل الهندسي", bonds: "نوع الرابطة", composition: "التركيب", rotate: "تدوير النموذج", termSearch: "ابحث بالمصطلح العربي أو الإنجليزي…",
     objectives: "أهداف التعلّم", example: "مثال محلول", practice: "تدريب", correct: "إجابة صحيحة", tryAgain: "حاول مجددًا", sources: "الأساس العلمي",
     premium: "بريميوم", lockedTitle: "هذا القسم للمشتركين", lockedDescription: "افتح قاموس الكيمياء والدروس من خلال اشتراك تميّزك بريميوم.",
-    unlock: "افتح البريميوم عبر تيليجرام", checking: "جارٍ التحقق من اشتراكك…",
+    unlock: "تواصل للاشتراك عبر إنستغرام", checking: "جارٍ التحقق من اشتراكك…",
     sourceText: "تعتمد سجلات العناصر على بيانات الجدول الدوري من PubChem مع اصطلاحات IUPAC، وتقتصر الملاحظات التعليمية على معلومات مدرسية مراجعة.",
   },
 } as const;
@@ -175,8 +175,8 @@ function LockedSection({ language, loading }: { language: AppLanguage; loading: 
       <p className="inline-flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300"><Crown className="size-4" />{t.premium}</p>
       <h2 className="mt-2 text-2xl font-black">{t.lockedTitle}</h2>
       <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-muted-foreground">{t.lockedDescription}</p>
-      <a href={PREMIUM_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 font-bold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Send className="size-4" />{t.unlock}</a>
-      <p className="mt-3 text-sm font-semibold text-muted-foreground" dir="ltr">@ias404</p>
+      <a href={PREMIUM_INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 font-bold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Instagram className="size-4" />{t.unlock}</a>
+      <p className="mt-3 text-sm font-semibold text-muted-foreground" dir="ltr">@s_o_v_e0</p>
     </div>}
   </section>;
 }

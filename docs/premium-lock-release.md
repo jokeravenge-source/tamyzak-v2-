@@ -1,13 +1,29 @@
 # Premium lock release
 
-Premium unlock actions navigate to `https://t.me/ias404`. Opening Telegram does
+Premium contact actions navigate to `https://www.instagram.com/s_o_v_e0/`. Opening Instagram does
 not grant access: activation uses the existing admin-managed live subscription.
 Existing valid memberships, including previously redeemed memberships, remain
 valid. New point redemption is no longer offered on the activation screen.
 Daily AI usage caps are removed; this does not grant non-members access to
 Premium tools. Short-term request guards, provider limits, and reward rules stay.
 
-## Release order
+## Instagram contact and channel-requirement removal
+
+Publish the frontend with Instagram contact buttons and no Telegram channel gates.
+Deploy `malazam-download` and `telegram-channel-check` together with their shared
+dependencies. No new database migration is required for these changes.
+
+The download function still authenticates users, checks that the requested PDF
+is published, rate-limits requests and creates a short-lived signed URL. It no
+longer reads Telegram verification records or checks channel membership. The
+legacy membership endpoint reports `required: false` to signed-in installed
+clients so they do not remain stuck behind an old channel gate.
+
+Verify a signed-in student can read/download/save a published booklet without a
+linked Telegram account, and that Premium contact buttons open `@s_o_v_e0` on
+Instagram. Server entitlement checks still determine Premium access.
+
+## Original Premium rollout
 
 1. Apply the migrations in order using the normal database migration workflow:
 
@@ -42,7 +58,7 @@ Do not deploy unrelated locally modified functions as part of this release.
 
 ## Live verification
 
-- A non-member sees a lock on Premium cards; clicking unlock opens @ias404.
+- A non-member sees a lock on Premium cards; clicking contact opens @s_o_v_e0 on Instagram.
 - A saved menu or `?menu=mcq` shows the lock screen without mounting the AI tool.
 - A signed-in non-member's direct request to a paid AI endpoint returns 403.
 - A valid live member can repeatedly use paid tools without a daily quota.

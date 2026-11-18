@@ -60,13 +60,15 @@ describe("Malazam reader and saved copies", () => {
     expect(await screen.findByRole("dialog", { name: `قارئ ${book.name}` })).toBeInTheDocument();
     expect(mocks.download).toHaveBeenCalledWith(blob, book.name);
     expect(mocks.save).not.toHaveBeenCalled();
+    expect(screen.queryByText(/تيليجرام|تلغرام|Telegram/i)).not.toBeInTheDocument();
   });
-  it("does not store PDF data when the Telegram membership gate rejects access", async () => {
+  it("does not ask students to join Telegram when an older download deployment rejects access", async () => {
     signedIn(); mocks.result.mockResolvedValue({ data: [book], error: null });
     mocks.invoke.mockResolvedValue({ data: { error: "not_joined", missingChannels: ["@sad6ths"] } });
     render(<MalazamLibrary />);
     fireEvent.click(await screen.findByRole("button", { name: "حفظ الملزمة" }));
-    expect(await screen.findByRole("heading", { name: "انضم إلى القناتين" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "تعذّر إكمال الطلب" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /انضم|تلغرام|تيليجرام/ })).not.toBeInTheDocument();
     expect(mocks.fetchPdf).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled();
   });
   it("stores the actual verified PDF for the current user", async () => {

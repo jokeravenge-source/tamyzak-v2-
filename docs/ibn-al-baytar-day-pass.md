@@ -14,8 +14,8 @@ finite deadline. No request is sent to Paddle and no charge is created. Existing
 AI entitlement checks use the same server truth. The full-access marker also
 temporarily bypasses point gates and grants published-course reading via the existing
 enrollment helper; it does not grant teacher/admin roles or permanent enrollments.
-Disabled/development-only tools remain disabled. Existing Telegram requirements
-for downloading new booklet copies remain in place.
+Disabled/development-only tools remain disabled. Telegram channel requirements have since been removed;
+downloading new booklet copies still requires the student's normal account authentication.
 
 ## Release
 

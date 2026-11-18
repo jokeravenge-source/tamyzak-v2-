@@ -32,7 +32,7 @@ export async function verifyPremiumAccess(
   try {
     const { data, error } = await check();
     if (error) return { ok: false, status: 500, error: "Could not verify Premium membership. Please try again." };
-    if (data !== true) return { ok: false, status: 403, error: "Premium membership required. Unlock via Telegram: @ias404." };
+    if (data !== true) return { ok: false, status: 403, error: "Premium membership required. Contact us on Instagram: @s_o_v_e0." };
     return { ok: true };
   } catch {
     return { ok: false, status: 500, error: "Could not verify Premium membership. Please try again." };
