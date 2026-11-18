@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { ArrowLeft, Check, Crown, Send } from "lucide-react";
+import { ArrowLeft, Check, Crown, Instagram } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import type { AppLanguage } from "@/components/LanguageGate";
-import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
+import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 import PremiumPromoCodeForm from "@/components/PremiumPromoCodeForm";
 
 const copy = {
@@ -16,8 +16,8 @@ const copy = {
     subtitle: "Unlimited AI everywhere, plus exclusive looks for your character.",
     price: "7.99 dinar",
     per: "/ month",
-    cta: "Unlock via Telegram",
-    ctaSub: "Message @ias404 on Telegram to activate",
+    cta: "Contact on Instagram",
+    ctaSub: "Message @s_o_v_e0 on Instagram to activate",
     active: "You're a Premium member",
     activeDesc: "Enjoy unlimited AI and your premium perks.",
     features: [
@@ -34,8 +34,8 @@ const copy = {
     subtitle: "استخدام غير محدود للذكاء الاصطناعي وأزياء حصرية لشخصيتك.",
     price: "٧٫٩٩ دينار",
     per: "/ شهرياً",
-    cta: "افتح البريميوم عبر تيليجرام",
-    ctaSub: "راسل @ias404 على تيليجرام للتفعيل",
+    cta: "تواصل للاشتراك عبر إنستغرام",
+    ctaSub: "راسل @s_o_v_e0 على إنستغرام للتفعيل",
     active: "أنت عضو بريميوم",
     activeDesc: "استمتع بذكاء اصطناعي غير محدود ومميزاتك البريميوم.",
     features: [
@@ -130,7 +130,7 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
             <div className="space-y-2">
               <PremiumPromoCodeForm language={language} />
               <a
-                href={PREMIUM_TELEGRAM_URL}
+                href={PREMIUM_INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative w-full h-12 rounded-xl font-bold text-white inline-flex items-center justify-center gap-2 transition"
@@ -139,7 +139,7 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
                   boxShadow: "0 10px 30px -10px rgba(251, 191, 36, 0.6)",
                 }}
               >
-                <Send className="w-4 h-4" />{t.cta}
+                <Instagram className="w-4 h-4" />{t.cta}
               </a>
               <p className="text-xs text-center text-muted-foreground">{t.ctaSub}</p>
             </div>

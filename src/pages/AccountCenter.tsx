@@ -21,7 +21,7 @@ import { PET_DEFINITIONS, getSelectedPets, isPetUnlocked, type PetDefinition } f
 import { RANKS, rankFor } from "@/lib/points";
 
 import { useSubscription } from "@/hooks/useSubscription";
-import { openPremiumTelegram } from "@/lib/premium";
+import { openPremiumInstagram } from "@/lib/premium";
 import { CUSTOMIZABLE_STUDY_TOOLS, saveHiddenStudyTools, useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import {
   CharacterAvatar,
@@ -110,7 +110,7 @@ const AccountCenter = ({
   const tryPremium = (apply: () => void) => {
     if (!isPremium) {
       toast.error(text.upgrade, {
-        action: { label: language === "ar" ? "افتح عبر تيليجرام" : "Unlock via Telegram", onClick: openPremiumTelegram },
+        action: { label: language === "ar" ? "تواصل عبر إنستغرام" : "Contact on Instagram", onClick: openPremiumInstagram },
       });
       return;
     }

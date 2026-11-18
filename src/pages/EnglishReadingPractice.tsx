@@ -13,14 +13,14 @@ import {
   LockKeyhole,
   RefreshCw,
   RotateCcw,
-  Send,
+  Instagram,
   Sparkles,
   XCircle,
 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import { useEnglishReadingAccess } from "@/hooks/useEnglishReadingAccess";
-import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
+import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 
 type Difficulty = "easy" | "medium" | "hard";
 type QuestionType = "short" | "true_false" | "fill_blank" | "title";
@@ -346,10 +346,10 @@ function ReadingTrialExpired({ language, onBack }: { language: AppLanguage; onBa
       <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-black text-amber-600 dark:text-amber-300"><Crown className="h-4 w-4" />Premium</p>
       <h1 className="mt-3 text-3xl font-black">{ar ? "انتهت تجربتك المجانية" : "Your free trial has ended"}</h1>
       <p className="mt-3 text-sm leading-7 text-muted-foreground">{ar ? "استفدت من تدريب القطع لمدة 3 أيام. اشترك في تميّزك Premium حتى تستمر بتوليد القطع وتصحيح الإجابات بدون توقف." : "Your 3-day reading-practice trial is complete. Join Tamayzak Premium to keep generating passages and checking answers."}</p>
-      <a href={PREMIUM_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-400 to-yellow-300 px-5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:brightness-105">
-        <Send className="h-4 w-4" />{ar ? "اشترك الآن عبر تيليجرام" : "Subscribe via Telegram"}
+      <a href={PREMIUM_INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-400 to-yellow-300 px-5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:brightness-105">
+        <Instagram className="h-4 w-4" />{ar ? "تواصل للاشتراك عبر إنستغرام" : "Contact on Instagram"}
       </a>
-      <p className="mt-3 text-xs font-semibold text-muted-foreground" dir="ltr">@ias404</p>
+      <p className="mt-3 text-xs font-semibold text-muted-foreground" dir="ltr">@s_o_v_e0</p>
     </section>,
   );
 }

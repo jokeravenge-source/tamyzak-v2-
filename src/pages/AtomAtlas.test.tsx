@@ -42,7 +42,7 @@ describe("Atom Atlas", () => {
     fireEvent.click(screen.getByRole("button", { name: `${section} — Premium` }));
 
     expect(screen.getByRole("heading", { name: "This section is for Premium members" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Unlock via Telegram" })).toHaveAttribute("href", "https://t.me/ias404");
+    expect(screen.getByRole("link", { name: "Contact on Instagram" })).toHaveAttribute("href", "https://www.instagram.com/s_o_v_e0/");
   });
 
   it("opens Dictionary and Lessons for Premium students", () => {

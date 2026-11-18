@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { extractStudyMaterial } from "@/lib/fileText";
 import { handleAiError } from "@/lib/upgradeToast";
 import { useSubscription } from "@/hooks/useSubscription";
-import { openPremiumTelegram } from "@/lib/premium";
+import { openPremiumInstagram } from "@/lib/premium";
 
 const copy = {
   en: {
@@ -119,7 +119,7 @@ const ProblemGenerator = ({
     if (subLoading) return false;
     if (!isPremium) {
       toast.error(t.premiumOnly, {
-        action: { label: rtl ? "افتح عبر تيليجرام" : "Unlock via Telegram", onClick: openPremiumTelegram },
+        action: { label: rtl ? "تواصل عبر إنستغرام" : "Contact on Instagram", onClick: openPremiumInstagram },
       });
       return false;
     }

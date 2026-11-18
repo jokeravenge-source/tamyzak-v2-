@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE_DAY_ENDS_AT, hasActivePremiumSubscription, isPremiumTool, PREMIUM_TELEGRAM_URL } from "./premium";
+import { FREE_DAY_ENDS_AT, hasActivePremiumSubscription, isPremiumTool, PREMIUM_INSTAGRAM_URL } from "./premium";
 import { PREMIUM_AI_FEATURES, verifyPremiumAccess } from "../../supabase/functions/_shared/premium-access";
 
 describe("Premium access policy", () => {
@@ -38,8 +38,8 @@ describe("Premium access policy", () => {
     expect(isPremiumTool("mcq", Date.parse("2026-10-31T20:59:00Z"))).toBe(false);
     expect(isPremiumTool("mcq", Date.parse("2026-10-31T21:00:00Z"))).toBe(true);
   });
-  it("uses the requested Telegram account", () => {
-    expect(PREMIUM_TELEGRAM_URL).toBe("https://t.me/ias404");
+  it("uses the requested Instagram account", () => {
+    expect(PREMIUM_INSTAGRAM_URL).toBe("https://www.instagram.com/s_o_v_e0/");
   });
   it("protects the paid AI generation and grading features", () => {
     for (const feature of ["mcq", "essay", "agent", "problem_generator", "exam_generator", "exam_grade", "english_reading_generate", "english_reading_grade"]) {

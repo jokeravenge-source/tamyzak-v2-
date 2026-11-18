@@ -11,7 +11,7 @@ vi.mock("@/lib/analytics", () => ({
 }));
 vi.mock("@/lib/premium", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/premium")>(),
-  openPremiumTelegram: vi.fn(),
+  openPremiumInstagram: vi.fn(),
 }));
 
 describe("French Conjugator navigation", () => {

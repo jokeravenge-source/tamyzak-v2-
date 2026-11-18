@@ -9,10 +9,10 @@ vi.mock("sonner", () => ({ toast: { success } }));
 beforeEach(() => { state.isPremium = false; state.loading = false; success.mockClear(); window.history.replaceState({}, "", "/"); });
 afterEach(cleanup);
 describe("Premium activation", () => {
-  it.each(["en", "ar"] as const)("provides Telegram as the %s activation action", (language) => {
+  it.each(["en", "ar"] as const)("provides Instagram as the %s activation action", (language) => {
     render(<Premium language={language} onBack={vi.fn()} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "https://t.me/ias404");
-    expect(screen.getByRole("link")).toHaveTextContent(language === "ar" ? "افتح البريميوم عبر تيليجرام" : "Unlock via Telegram");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "https://www.instagram.com/s_o_v_e0/");
+    expect(screen.getByRole("link")).toHaveTextContent(language === "ar" ? "تواصل للاشتراك عبر إنستغرام" : "Contact on Instagram");
     expect(screen.queryByText(/unlock with points|افتحه بالنقاط/)).not.toBeInTheDocument();
   });
   it("does not claim a membership just because the URL says success", () => {

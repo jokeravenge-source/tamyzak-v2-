@@ -120,13 +120,13 @@ const pages = [
   ...published.map((item) => {
     const category = categoryFor(item);
     const label = category?.name ?? "ملازم السادس العلمي";
-    const description = `تحميل ${item.name} ضمن ${label} — ${item.topic} لطلاب السادس العلمي من منصة تميزك بعد التحقق من حساب تيليجرام.`;
+    const description = `تحميل ${item.name} ضمن ${label} — ${item.topic} لطلاب السادس العلمي بحساب تميّزك.`;
     return {
       path: publishedPath(item),
       title: `${item.name} ${label} PDF | تميزك`,
       description,
       schemaType: "LearningResource",
-      body: `<a class="seo-badge" href="/malazam/">بنك الملازم — تميزك</a><h1>${escapeHtml(item.name)}</h1><p>${escapeHtml(description)}</p><dl><dt>المادة</dt><dd>${escapeHtml(label)}</dd><dt>الموضوع</dt><dd>${escapeHtml(item.topic)}</dd><dt>نوع الملف</dt><dd>PDF</dd></dl><p>تحميل الملزمة متاح بعد تسجيل الدخول والتحقق من الاشتراك بقنوات تيليجرام المطلوبة.</p>${category ? `<a class="seo-cta" href="/malazam/${escapeHtml(category.slug)}/">تصفح ملازم ${escapeHtml(label)}</a>` : ""}`,
+      body: `<a class="seo-badge" href="/malazam/">بنك الملازم — تميزك</a><h1>${escapeHtml(item.name)}</h1><p>${escapeHtml(description)}</p><dl><dt>المادة</dt><dd>${escapeHtml(label)}</dd><dt>الموضوع</dt><dd>${escapeHtml(item.topic)}</dd><dt>نوع الملف</dt><dd>PDF</dd></dl><p>سجّل دخولك بحساب تميّزك لقراءة الملزمة وتحميلها وحفظها.</p>${category ? `<a class="seo-cta" href="/malazam/${escapeHtml(category.slug)}/">تصفح ملازم ${escapeHtml(label)}</a>` : ""}`,
     };
   }),
 ];

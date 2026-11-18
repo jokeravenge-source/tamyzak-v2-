@@ -8,13 +8,13 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
 beforeEach(() => rpc.mockReset());
 afterEach(cleanup);
 describe("Premium lock screen", () => {
-  it.each(["en", "ar"] as const)("links the %s unlock action directly to Telegram", (language) => {
+  it.each(["en", "ar"] as const)("links the %s unlock action directly to Instagram", (language) => {
     const onBack = vi.fn();
     render(<PremiumToolLock language={language} loading={false} onBack={onBack} />);
     expect(screen.getByRole("main")).toHaveAttribute("dir", language === "ar" ? "rtl" : "ltr");
-    expect(screen.getByRole("link")).toHaveAttribute("href", "https://t.me/ias404");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "https://www.instagram.com/s_o_v_e0/");
     expect(screen.getByRole("link")).toHaveAttribute("rel", "noopener noreferrer");
-    expect(screen.getByText("@ias404")).toHaveAttribute("dir", "ltr");
+    expect(screen.getByText("@s_o_v_e0")).toHaveAttribute("dir", "ltr");
     fireEvent.click(screen.getByRole("button", { name: language === "ar" ? "رجوع" : "Back" }));
     expect(onBack).toHaveBeenCalledOnce();
   });

@@ -142,9 +142,6 @@ const WeaknessCheckInAgent = lazy(() =>
     import("./components/WeaknessCheckInAgent").catch(() => ({ default: (() => null) as unknown as typeof import("./components/WeaknessCheckInAgent").default })),
   ),
 );
-import TelegramGate from "./components/TelegramGate";
-import { hasRecentSiteTelegramVerification, SITE_TELEGRAM_VERIFIED_STORAGE_KEY } from "@/lib/siteTelegramChannels";
-const TelegramChannelGate = lazy(() => import("./components/TelegramChannelGate"));
 import PageTransition from "./components/PageTransition";
 import BottomGroupNav from "./components/BottomGroupNav";
 import { startAnalyticsSession, captureSignupSource } from "@/lib/analytics";
@@ -491,25 +488,6 @@ const StudentApp = () => {
   const [nadiaAuthOpen, setNadiaAuthOpen] = useState(false);
   
   const [isAdmin, setIsAdmin] = useState(false);
-  const [tgVerified, setTgVerified] = useState(false);
-  const [tgLoading, setTgLoading] = useState(false);
-  const CHANNEL_VERIFIED_STORAGE_KEY = SITE_TELEGRAM_VERIFIED_STORAGE_KEY;
-  // Membership in both @Tamayuzak and @a6th_DHS is remembered for 3 days.
-  // Temporarily pause the site-wide Telegram gate while Telegram access is disrupted.
-  const CHANNEL_GATE_ENABLED = false;
-  const [channelVerified, _setChannelVerified] = useState<boolean>(() => {
-    if (!CHANNEL_GATE_ENABLED) return true;
-    return hasRecentSiteTelegramVerification();
-  });
-  const setChannelVerified = (v: boolean) => {
-    _setChannelVerified(v);
-    if (typeof window !== "undefined") {
-      try {
-        if (v) localStorage.setItem(CHANNEL_VERIFIED_STORAGE_KEY, String(Date.now()));
-        else localStorage.removeItem(CHANNEL_VERIFIED_STORAGE_KEY);
-      } catch { /* storage unavailable */ }
-    }
-  };
   const [authRole, setAuthRole] = useState<"student" | "admin" | "guest">(
     () => {
       if (typeof window === "undefined") return "student";
@@ -599,19 +577,8 @@ const StudentApp = () => {
           .limit(1)
           .maybeSingle()
           .then(({ data }) => setIsAdmin(!!data));
-        setTgLoading(true);
-        supabase
-          .from("telegram_verifications")
-          .select("telegram_user_id, verified")
-          .eq("user_id", session.user.id)
-          .maybeSingle()
-          .then(({ data }) => {
-            setTgVerified(!!data?.telegram_user_id && data?.verified !== false);
-            setTgLoading(false);
-          });
       } else {
         setIsAdmin(false);
-        setTgVerified(false);
       }
     });
     // Safety net: some in-app browsers (Telegram/Android WebView) can stall
@@ -623,7 +590,6 @@ const StudentApp = () => {
       // dropping them back on the sign-in screen.
       if (hasPersistedAuthSession()) setAuthed(true);
       setAuthLoading(false);
-      setTgLoading(false);
     }, 4000);
 
     supabase.auth.getSession().then(({ data, error }) => {
@@ -647,23 +613,12 @@ const StudentApp = () => {
           .limit(1)
           .maybeSingle()
           .then(({ data: r }) => setIsAdmin(!!r));
-        setTgLoading(true);
-        supabase
-          .from("telegram_verifications")
-          .select("telegram_user_id, verified")
-          .eq("user_id", data.session.user.id)
-          .maybeSingle()
-          .then(({ data: row }) => {
-            setTgVerified(!!row?.telegram_user_id && row?.verified !== false);
-            setTgLoading(false);
-          });
       }
       setAuthLoading(false);
     }).catch((e) => {
       console.error("[OAuth] getSession failed", e);
       if (hasPersistedAuthSession()) setAuthed(true);
       setAuthLoading(false);
-      setTgLoading(false);
     });
     return () => {
       window.clearTimeout(authTimeout);
@@ -671,8 +626,7 @@ const StudentApp = () => {
     };
   }, []);
 
-  // Re-verify Telegram channel membership on load. Only unverify (show gate)
-  // if the check explicitly reports the user has left the channel.
+  // Record sign-in analytics and referral activity.
   useEffect(() => {
     if (!authed) return;
     startAnalyticsSession();
@@ -1008,7 +962,7 @@ const StudentApp = () => {
           language={language ?? "en"}
           onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
         />
-        {authed && language && authRole !== "admin" && channelVerified && (
+        {authed && language && authRole !== "admin" && (
           <UsageIntroGate language={language} onNeedHelp={() => setMutamayizOpen(true)} />
         )}
       {mutamayizOpen && language && (
@@ -1029,19 +983,19 @@ const StudentApp = () => {
           </Suspense>
         </div>
       )}
-      {authed && language && channelVerified && (
+      {authed && language && (
         <StudyChallengeInviteWatcher language={language} />
       )}
-      {authed && language && channelVerified && (
+      {authed && language && (
         <ChallengeInviteWatcher language={language} onAccept={() => chooseMenu("liveBattle" as MenuChoice)} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && (
+      {authed && language && authRole !== "admin" && (
         <SearchFAB language={language} onSelect={(c) => chooseMenu(c as MenuChoice)} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && (
+      {authed && language && authRole !== "admin" && (
         <WeaknessCheckInAgent language={language} />
       )}
-      {authed && language && authRole !== "admin" && channelVerified && (
+      {authed && language && authRole !== "admin" && (
         <BottomGroupNav
           language={language}
           active={(menuChoice as any) ?? "basics"}
@@ -1052,7 +1006,7 @@ const StudentApp = () => {
       </Suspense>
       {authed && <a href="#tmz-current-screen" className="sr-only fixed start-4 top-4 z-[200] rounded-lg bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only">{language === "ar" ? "انتقل للمحتوى" : "Skip to content"}</a>}
       <PageTransition
-        routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${channelVerified ? "ch" : "noch"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
+        routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
       {authRole === "admin" && (window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/french-flashcards` || new URLSearchParams(window.location.search).get("section") === "french-flashcards") ? (
         <FrenchTeacherDashboard />
@@ -1133,8 +1087,6 @@ const StudentApp = () => {
         <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
         <LanguageGate onSelect={setLanguage} />
-      ) : authRole !== "admin" && !channelVerified && !isNadiaMinisterialRoute && !(typeof window !== "undefined" && window.location.pathname.startsWith("/flashcards")) ? (
-        <TelegramChannelGate language={language} onVerified={() => setChannelVerified(true)} />
       ) : ["mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "") ? (
         <div className="h-[calc(100dvh-var(--nav-safe,7rem))]"><MutamayizChat embedded language={language} onBack={resetMenu} onOpenTool={(key) => { if (isGuideToolKey(key)) chooseMenu(key as MenuChoice); }} /></div>
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (

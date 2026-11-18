@@ -2,7 +2,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { protect } from "../_shared/guard.ts";
-import { checkTelegramMembership } from "../_shared/telegram-membership.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -30,34 +29,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const [{ data: item }, { data: verification }] = await Promise.all([
-      admin.from("malazam").select("id, name, file_path, is_published").eq("id", malzamaId).maybeSingle(),
-      admin.from("telegram_verifications").select("telegram_user_id, verified").eq("user_id", auth.userId).maybeSingle(),
-    ]);
+    const { data: item } = await admin.from("malazam")
+      .select("id, name, file_path, is_published").eq("id", malzamaId).maybeSingle();
 
     if (!item?.is_published) return json({ error: "not_found" }, 404);
-    if (!verification?.verified || !verification.telegram_user_id) {
-      return json({ ok: false, error: "not_linked" });
-    }
-
-    const channels = await checkTelegramMembership(Number(verification.telegram_user_id), "malazam");
-    const failed = channels.find((channel) => !channel.ok);
-    if (failed) {
-      const passthroughErrors = new Set([
-        "bot_not_channel_admin",
-        "wrong_bot_connection",
-        "telegram_not_configured",
-        "telegram_gateway_unavailable",
-      ]);
-      const error = failed.error && passthroughErrors.has(failed.error) ? failed.error : "membership_check_failed";
-      return json({ error, failedChannel: failed.channel, channels }, 503);
-    }
-
-    const missingChannels = channels.filter((channel) => !channel.joined).map((channel) => channel.channel);
-    if (missingChannels.length) {
-      return json({ ok: false, error: "not_joined", missingChannels, channels });
-    }
-
     const { data: signed, error: signedError } = await admin.storage
       .from("malazam-files")
       .createSignedUrl(item.file_path, 120);

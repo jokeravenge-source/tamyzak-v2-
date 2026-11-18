@@ -1,5 +1,5 @@
-export const PREMIUM_TELEGRAM_URL = "https://t.me/ias404";
-// Telegram activations are live subscriptions, independent of Paddle test mode.
+export const PREMIUM_INSTAGRAM_URL = "https://www.instagram.com/s_o_v_e0/";
+// Manual activations are live subscriptions, independent of Paddle test mode.
 export const PREMIUM_ENVIRONMENT = "live";
 
 // One policy for home cards, subject tools, and persisted/deep-linked screens.
@@ -25,9 +25,9 @@ export function isPremiumTool(menu: string | null, now = Date.now()): boolean {
   return menu !== null && PREMIUM_TOOLS.has(menu);
 }
 
-export function openPremiumTelegram() {
+export function openPremiumInstagram() {
   // Same-tab navigation also works in mobile in-app browsers with popup blocking.
-  window.location.assign(PREMIUM_TELEGRAM_URL);
+  window.location.assign(PREMIUM_INSTAGRAM_URL);
 }
 
 export type PremiumSubscription = {

@@ -1,6 +1,6 @@
-import { ArrowLeft, Crown, Loader2, LockKeyhole, Send } from "lucide-react";
+import { ArrowLeft, Crown, Loader2, LockKeyhole, Instagram } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
-import { PREMIUM_TELEGRAM_URL } from "@/lib/premium";
+import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 import PremiumPromoCodeForm from "@/components/PremiumPromoCodeForm";
 
 export default function PremiumToolLock({ language, loading, onBack, onUnlocked = () => window.location.reload() }: {
@@ -20,12 +20,12 @@ export default function PremiumToolLock({ language, loading, onBack, onUnlocked 
           <>
             <p className="mb-2 inline-flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300"><Crown className="h-4 w-4" />{ar ? "بريميوم" : "Premium"}</p>
             <h1 className="text-2xl font-black text-foreground">{ar ? "هذه الأداة للمشتركين" : "This tool is for Premium members"}</h1>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">{ar ? "راسلنا على تيليجرام لتفعيل اشتراكك، ثم ارجع إلى تميزك." : "Message us on Telegram to activate your membership, then return to Tamayzak."}</p>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">{ar ? "راسلنا على إنستغرام لتفعيل اشتراكك، ثم ارجع إلى تميّزك." : "Message us on Instagram to activate your membership, then return to Tamayzak."}</p>
             <PremiumPromoCodeForm language={language} onUnlocked={onUnlocked} />
-            <a href={PREMIUM_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 font-bold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <Send className="h-4 w-4" />{ar ? "افتح البريميوم عبر تيليجرام" : "Unlock via Telegram"}
+            <a href={PREMIUM_INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 font-bold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <Instagram className="h-4 w-4" />{ar ? "تواصل للاشتراك عبر إنستغرام" : "Contact on Instagram"}
             </a>
-            <p className="mt-3 text-sm font-semibold text-muted-foreground" dir="ltr">@ias404</p>
+            <p className="mt-3 text-sm font-semibold text-muted-foreground" dir="ltr">@s_o_v_e0</p>
           </>
         )}
       </section>
