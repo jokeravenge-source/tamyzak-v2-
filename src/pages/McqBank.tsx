@@ -32,6 +32,7 @@ import { recordMistake } from "@/lib/mistakes";
 import { categoryLabel, loadTopicPractice, recordTopicPractice, type PracticeAttempt } from "@/lib/topicMastery";
 import { buildTopicQuiz, TOPIC_PRACTICE_TARGET_KEY, topicBaseline, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
 import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
@@ -167,6 +168,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const chapterTwoFallback = getBuiltInPhysicsCh2(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
+      const biologyChapterTwoFallback = getBuiltInBiologyChapter2(lang).filter(
+        (row) => !existingQuestions.has(rowKey(row)),
+      );
       const literatureFallback = getBuiltInEnglishLiteratureSection1(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
@@ -176,7 +180,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const literatureSectionThreeFallback = getBuiltInEnglishLiteratureSection3(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
-      setRows([...databaseRows, ...chapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
+      setRows([...databaseRows, ...chapterTwoFallback, ...biologyChapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
       setTopicAttempts(priorAttempts);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
