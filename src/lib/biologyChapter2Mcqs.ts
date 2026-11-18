@@ -77,9 +77,9 @@ const ENGLISH_CHAPTER_TWO_QUESTIONS = [
 /** Return the supplied source bank that matches the selected interface language. */
 export const getBuiltInBiologyChapter2 = (language: "ar" | "en"): BuiltInBiologyChapter2Row[] => {
   const questions = language === "ar" ? ARABIC_CHAPTER_TWO_QUESTIONS : ENGLISH_CHAPTER_TWO_QUESTIONS;
-  const chapterTitle = language === "ar" ? "الأنسجة" : "Tissues";
+  const chapterTitle: BuiltInBiologyChapter2Row["chapter_title"] = language === "ar" ? "الأنسجة" : "Tissues";
 
-  return questions.map(([section, question, choices, answerIndex], index) => ({
+  return questions.map(([section, question, choices, answerIndex], index): BuiltInBiologyChapter2Row => ({
     id: `builtin-biology-2-${language}-${String(index + 1).padStart(2, "0")}`,
     subject: "biology",
     chapter: 2,
