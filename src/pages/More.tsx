@@ -211,6 +211,13 @@ const GROUPS: Group[] = [
         "تدرّب مع صديق."
       ],
       [
+        "studyRace",
+        "Tamayzak Race",
+        "سباق تميّزك",
+        "Choose a lane, answer questions and review mistakes.",
+        "اختَر مسارك، جاوب الأسئلة وراجع أخطاءك."
+      ],
+      [
         "dailyGame",
         "Daily game",
         "لعبة اليوم",

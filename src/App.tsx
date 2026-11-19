@@ -25,6 +25,7 @@ import { supabase } from "./integrations/supabase/client";
 import { readOAuthCallback } from "@/lib/oauthCallback";
 const Missions = lazy(() => import("./pages/Missions"));
 const MCQ = lazy(() => import("./pages/MCQ"));
+const StudyRace = lazy(() => import("./pages/StudyRace"));
 const Summaries = lazy(() => import("./pages/Summaries"));
 const MalazamLibrary = lazy(() => import("./pages/MalazamLibrary"));
 const Advices = lazy(() => import("./pages/Advices"));
@@ -778,7 +779,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
   });
-  type MenuChoice = "pdfBuilder" | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySketchpad" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = "studyRace" | "pdfBuilder" | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySketchpad" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
@@ -805,6 +806,9 @@ const StudentApp = () => {
     if (window.location.pathname.startsWith("/enrichments")) {
       localStorage.setItem(MENU_STORAGE_KEY, "adminNotes");
       return "adminNotes";
+    }
+    if (window.location.pathname.replace(/\/+$/, "") === "/study-race") {
+      return "studyRace";
     }
     if (window.location.pathname.startsWith("/who-is-best")) {
       localStorage.setItem(MENU_STORAGE_KEY, "whoIsBest");
@@ -1282,6 +1286,8 @@ const StudentApp = () => {
         <TeacherDirectory language={language} onBack={backToBasics} onSelect={chooseMenu} />
       ) : menuChoice === "adminNotes" ? (
         <AdminNotes language={language} onBack={backToBasics} />
+      ) : menuChoice === "studyRace" ? (
+        <StudyRace language={language} onBack={resetMenu} />
       ) : menuChoice === "dailyGame" ? (
         <DailyGame language={language} onBack={backToBasics} />
       ) : menuChoice === "whoIsBest" ? (
