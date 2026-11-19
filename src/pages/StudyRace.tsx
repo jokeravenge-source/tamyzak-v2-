@@ -3,24 +3,15 @@ import { createPortal } from "react-dom";
 import { Flag, Trophy, Pause, Play } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
-import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import {
+  loadRaceQuestionBank,
+  type RaceQuestion as Question,
+} from "@/lib/raceQuestionBank";
 import boy from "@/assets/character-boy-1.png";
 import girl from "@/assets/character-girl-1.png";
 import "./StudyRace.css";
 import StudyRunner from "@/components/StudyRunner";
 
-type Question = {
-  id: string;
-  subject: string;
-  chapter: number;
-  question: string;
-  choices: string[];
-  answer_index: number;
-  explanation: string | null;
-  tags?: string[];
-};
 type Turn = {
   question: Question;
   choices: { text: string; correct: boolean }[];
@@ -116,57 +107,37 @@ export default function StudyRace({
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 60000);
     setLoading(true);
     const load = async () => {
-      const fallback = [
-        ...getBuiltInBiologyChapter2(language),
-        ...getBuiltInPhysicsCh2(language),
-      ];
-      try {
-        const { data, error } = await supabase
-          .from("mcq_banks")
-          .select(
-            "id,subject,chapter,question,choices,answer_index,explanation,tags",
-          )
-          .eq("language", language)
-          .order("subject")
-          .order("chapter")
-          .limit(2000)
-          .abortSignal(AbortSignal.timeout(15000));
-        if (error) throw error;
-        const rows = [...(data ?? []), ...fallback];
-        const seen = new Set<string>();
-        const valid = rows.filter((row) => {
-          const key = `${row.subject}:${row.chapter}:${row.question.trim()}`;
-          if (
-            seen.has(key) ||
-            !Array.isArray(row.choices) ||
-            row.choices.length < 3 ||
-            !row.choices.every((c) => typeof c === "string" && c.trim()) ||
-            !Number.isInteger(row.answer_index) ||
-            row.answer_index < 0 ||
-            row.answer_index >= row.choices.length
-          )
-            return false;
-          seen.add(key);
-          return true;
-        }) as Question[];
-        if (active) {
-          setBank(valid);
-          setOffline(false);
-        }
-      } catch {
-        if (active) {
-          setBank(fallback);
-          setOffline(true);
-        }
-      } finally {
-        if (active) setLoading(false);
+      const { questions, partial } = await loadRaceQuestionBank(
+        language,
+        controller.signal,
+      );
+      if (active) {
+        setBank(questions);
+        setOffline(partial);
+        setLoading(false);
+        setSubject((previous) =>
+          questions.some((q) => q.subject === previous)
+            ? previous
+            : (questions[0]?.subject ?? ""),
+        );
+        setChapter((previous) =>
+          questions.some((q) => q.subject === subject && q.chapter === previous)
+            ? previous
+            : (questions.find((q) => q.subject === subject)?.chapter ??
+              questions[0]?.chapter ??
+              2),
+        );
       }
     };
-    void load();
+    void load().finally(() => window.clearTimeout(timeout));
     return () => {
       active = false;
+      controller.abort();
+      window.clearTimeout(timeout);
     };
   }, [language]);
 
@@ -190,12 +161,18 @@ export default function StudyRace({
         return;
       event.preventDefault();
       setLane((value) =>
-        Math.max(0, Math.min(2, value + (event.key === "ArrowLeft" ? -1 : 1))),
+        Math.max(
+          0,
+          Math.min(
+            (current?.choices.length ?? 3) - 1,
+            value + (event.key === "ArrowLeft" ? -1 : 1),
+          ),
+        ),
       );
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [phase, paused, revealed, running]);
+  }, [phase, paused, revealed, running, current]);
 
   const start = () => {
     const selected = shuffle(
@@ -298,8 +275,8 @@ export default function StudyRace({
               {offline && (
                 <p role="status">
                   {tr(
-                    "تعذّر تحميل البنك الكامل. متاحة حالياً أسئلة الفصل الثاني للأحياء والفيزياء.",
-                    "The full bank is unavailable. Biology and Physics chapter 2 are available.",
+                    "تعذّر تحميل البنك بالكامل. تقدر تلعب بالمواد المتاحة حالياً.",
+                    "The full bank could not load. You can play the subjects currently available.",
                   )}
                 </p>
               )}
@@ -417,7 +394,13 @@ export default function StudyRace({
                 </p>
               )}
               <h1 dir="auto">{current.question.question}</h1>
-              <div className="race-lanes" dir="ltr">
+              <div
+                className="race-lanes"
+                dir="ltr"
+                style={{
+                  gridTemplateColumns: `repeat(${current.choices.length}, minmax(0, 1fr))`,
+                }}
+              >
                 {current.choices.map((choice, i) => (
                   <button
                     key={i}
