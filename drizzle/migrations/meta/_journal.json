@@ -288,6 +288,13 @@
       "when": 1794931200001,
       "tag": "0040_apply_pending_koki_character_unlock",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795129905424,
+      "tag": "0041_race_account_points",
+      "breakpoints": true
     }
   ]
 }

@@ -4355,6 +4355,18 @@ export type Database = {
         Args: { _choice_index: number; _question_id: string }
         Returns: Json
       }
+      answer_race_question: {
+        Args: {
+          _attempt_id: string
+          _chapter: number
+          _choice: string
+          _language: string
+          _question: string
+          _question_id: string
+          _subject: string
+        }
+        Returns: Json
+      }
       award_points: {
         Args: { _action_type: string; _metadata?: Json }
         Returns: Json
