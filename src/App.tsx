@@ -1007,8 +1007,9 @@ const StudentApp = () => {
       <Sonner />
       <ZombieGuard />
       <SpotifyAuthCallback />
-      <PaymentTestModeBanner />
+      {menuChoice !== "studyRace" && <PaymentTestModeBanner />}
       <Suspense fallback={null}>
+      {menuChoice !== "studyRace" && <>
         <PointsAwardOverlay language={language ?? "en"} />
         <FeatureUnlockCelebration
           language={language ?? "en"}
@@ -1055,6 +1056,7 @@ const StudentApp = () => {
           onGuide={() => setMutamayizOpen(true)}
         />
       )}
+      </>}
       </Suspense>
       {authed && <a href="#tmz-current-screen" className="sr-only fixed start-4 top-4 z-[200] rounded-lg bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only">{language === "ar" ? "انتقل للمحتوى" : "Skip to content"}</a>}
       <PageTransition
@@ -1287,7 +1289,12 @@ const StudentApp = () => {
       ) : menuChoice === "adminNotes" ? (
         <AdminNotes language={language} onBack={backToBasics} />
       ) : menuChoice === "studyRace" ? (
-        <StudyRace language={language} onBack={resetMenu} />
+        <StudyRace language={language} onBack={() => {
+          if (window.location.pathname.replace(/\/+$/, "") === "/study-race") {
+            window.history.replaceState({}, "", "/");
+          }
+          resetMenu();
+        }} />
       ) : menuChoice === "dailyGame" ? (
         <DailyGame language={language} onBack={backToBasics} />
       ) : menuChoice === "whoIsBest" ? (

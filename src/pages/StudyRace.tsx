@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Flag, Trophy, Pause, Play } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,14 @@ export default function StudyRace({
   const [lives, setLives] = useState(3);
   const [points, setPoints] = useState(0);
   const current = queue[index];
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     if (phase === "play" && running && lives === 0) {
@@ -249,7 +258,7 @@ export default function StudyRace({
   const chapters = [
     ...new Set(bank.filter((q) => q.subject === subject).map((q) => q.chapter)),
   ].sort((a, b) => a - b);
-  return (
+  return createPortal(
     <main className="study-race" dir={ar ? "rtl" : "ltr"}>
       <header className="race-header">
         <Button variant="ghost" onClick={onBack}>
@@ -500,6 +509,7 @@ export default function StudyRace({
           </Button>
         </section>
       )}
-    </main>
+    </main>,
+    document.body,
   );
 }
