@@ -39,7 +39,10 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 describe("StudyRace", () => {
   it("loads the existing bank, pauses and completes a round with review attempts", async () => {
-    render(<StudyRace language="ar" onBack={vi.fn()} />);
+    const previousOverflow = document.body.style.overflow;
+    const view = render(<StudyRace language="ar" onBack={vi.fn()} />);
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.body.querySelector(".study-race")?.parentElement).toBe(document.body);
     const start = await screen.findByRole("button", { name: "ابدأ السباق" });
     fireEvent.click(start);
     fireEvent.click(screen.getByRole("button", { name: "إيقاف أو استئناف" }));
@@ -86,5 +89,7 @@ describe("StudyRace", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "ابدأ السباق" })).toBeEnabled(),
     );
+    view.unmount();
+    expect(document.body.style.overflow).toBe(previousOverflow);
   });
 });
