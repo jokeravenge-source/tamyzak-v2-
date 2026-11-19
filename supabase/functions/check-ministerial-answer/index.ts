@@ -75,6 +75,9 @@ STUDENT ANSWER:
 ${studentAnswer}
 """`;
 
+    let parsed: any = null;
+    let lastError = "No answer check returned.";
+    for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
     const response = await fetch(AI_URL, {
       method: "POST",
       headers: {
@@ -142,11 +145,22 @@ ${studentAnswer}
       return json({ error: `AI error: ${detail}` }, 500);
     }
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) return json({ error: "No answer check returned." }, 500);
+    const data = await response.json().catch(() => null);
+    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
+    const content = data?.choices?.[0]?.message?.content;
+    const raw = toolCall?.function?.arguments ?? (typeof content === "string" ? content.replace(/^```(?:json)?|```$/g, "").trim() : "");
+    try {
+      const candidate = raw ? JSON.parse(raw) : null;
+      if (candidate && candidate.similarity !== undefined) parsed = candidate;
+    } catch (e) {
+      lastError = `Invalid answer check: ${String(e)}`;
+    }
+    }
+    if (!parsed) {
+      console.error("check-ministerial-answer failed", lastError);
+      return json({ error: lastError }, 500);
+    }
 
-    const parsed = JSON.parse(toolCall.function.arguments);
     const similarity = Math.max(0, Math.min(100, Math.round(Number(parsed.similarity) || 0)));
 
     return json({
