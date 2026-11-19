@@ -1,5 +1,6 @@
 import { requireUser } from "../_shared/auth.ts";
-import { protect } from "../_shared/guard.ts";
+import { protect, checkBodySize } from "../_shared/guard.ts";
+import { readPodcastPdf, type PodcastPdfSource } from "../_shared/podcastPdfSource.ts";
 import {
   adminClient,
   corsHeaders,
@@ -15,14 +16,15 @@ async function processSession(
   youtubeUrl: string,
   videoId: string,
   subject: string | undefined,
+  pdf: PodcastPdfSource | null,
 ) {
   const admin = adminClient();
   try {
-    const [title, transcript] = await Promise.all([
+    const [title, transcript]: [string | null, string] = pdf ? [pdf.name.replace(/\.pdf$/i, ""), pdf.text] : await Promise.all([
       fetchVideoTitle(youtubeUrl),
       transcriptFor(youtubeUrl, videoId),
     ]);
-    const segments = await generateScript(transcript, subject);
+    const segments = await generateScript(transcript, subject, pdf?.images ?? []);
     const rows = [];
     for (let index = 0; index < segments.length; index += 1) {
       const segment = segments[index];
@@ -54,6 +56,8 @@ async function processSession(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
+  const size = checkBodySize(req, 20 * 1024 * 1024);
+  if (!size.ok) return json({ error: size.error }, size.status);
 
   const user = await requireUser(req);
   if (!user.ok) return json({ error: user.error, code: "AUTH_REQUIRED" }, user.status);
@@ -67,7 +71,7 @@ Deno.serve(async (req) => {
     .eq("role", "admin")
     .maybeSingle();
   if (!adminRole) {
-    const guarded = await protect(req, "create-podcast-session", { max: 20, windowSeconds: 600, maxBytes: 16_384 });
+    const guarded = await protect(req, "create-podcast-session", { max: 20, windowSeconds: 600, maxBytes: 20 * 1024 * 1024 });
     if (!guarded.ok) return json({ error: guarded.error }, guarded.status);
   }
 
@@ -89,21 +93,25 @@ Deno.serve(async (req) => {
     code: "PREMIUM_REQUIRED",
   }, 403);
 
-  let body: { youtube_url?: unknown; subject?: unknown };
+  let body: Record<string, unknown>;
+  let pdf: PodcastPdfSource | null;
   try {
     body = await req.json();
+    if (!body || Array.isArray(body) || typeof body !== "object") throw new Error("Invalid body");
+    pdf = readPodcastPdf(body);
   } catch {
-    return json({ error: "الطلب غير صالح." }, 400);
+    return json({ error: "ملف PDF غير صالح أو يتجاوز حدود الجلسة. اختَر جزءاً واضحاً لا يتجاوز ٢٠ صفحة." }, 400);
   }
   const youtubeUrl = typeof body.youtube_url === "string" ? body.youtube_url.trim() : "";
-  const videoId = extractYouTubeId(youtubeUrl);
-  if (!videoId || videoId.length > 32) return json({ error: "أدخل رابط يوتيوب صالحاً." }, 400);
+  const videoId = pdf ? "" : extractYouTubeId(youtubeUrl);
+  if (!pdf && (!videoId || videoId.length > 32)) return json({ error: "أدخل ملف PDF صالحاً." }, 400);
   const subject = typeof body.subject === "string" ? body.subject.trim().slice(0, 80) : undefined;
   const { data: session, error } = await admin
     .from("podcast_sessions")
     .insert({
       user_id: user.userId,
-      youtube_url: youtubeUrl,
+      youtube_url: pdf ? "" : youtubeUrl,
+      title: pdf?.name.replace(/\.pdf$/i, "") ?? null,
       subject: subject || null,
       status: "processing",
       voice_id: "browser-arabic",
@@ -112,7 +120,7 @@ Deno.serve(async (req) => {
     .single();
   if (error || !session) return json({ error: "تعذّر إنشاء الجلسة." }, 500);
 
-  const work = processSession(session.id, youtubeUrl, videoId, subject);
+  const work = processSession(session.id, youtubeUrl, videoId ?? "", subject, pdf);
   const edgeRuntime = (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime;
   if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(work);
   else await work;

@@ -60,12 +60,13 @@ Deno.serve(async (req) => {
     if (session.status === "processing" || session.status === "failed") return json({ error: "الجلسة غير جاهزة للإجابة." }, 409);
 
     const grade = validGrade(await callTutorJson(`
-أنت مدرس عراقي تقيّم ملخص طالب بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
+أنت مدرس عراقي تقيّم إجابات الطالب على أسئلة الفهم بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
 ${PODCAST_TEACHER_STYLE}
 أرجع كائن JSON فقط بلا markdown:
 {"verdict":"correct|partial|incorrect","correction_text":null}
 إذا كانت الإجابة جزئية أو خاطئة، اجعل correction_text تصحيحاً عربياً منطوقاً قصيراً يذكر الفكرة الناقصة أو يصحح الخطأ بلطف.
 إذا كانت صحيحة، اجعل correction_text null.
+لا تعتبر الإجابة صحيحة إلا إذا وضّح الطالب الأفكار المطلوبة وجاوب أسئلة نهاية الجزء. إذا بقي نقص مهم اعتبرها partial حتى يجرّب مرة ثانية بعد التصحيح.
 
 شرح المقطع: ${segment.narration_text}
 مفتاح الإجابة الداخلي: ${segment.answer_key}
@@ -79,7 +80,7 @@ ${PODCAST_TEACHER_STYLE}
       verdict: grade.verdict,
       correction_text: grade.correction_text,
       correction_audio_url: null,
-      completed_at: completedAt,
+      completed_at: grade.verdict === "correct" ? completedAt : null,
     }).eq("id", segment.id);
     if (updateError) throw updateError;
 

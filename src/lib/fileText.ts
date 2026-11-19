@@ -3,6 +3,7 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 type ExtractOptions = {
+  complete?: boolean;
   maxPages?: number;
   maxChars?: number;
 };
@@ -122,6 +123,9 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
 
   try {
     const pdf = await loadingTask.promise;
+    if (options.complete && pdf.numPages > maxPagesLimit) {
+      throw new Error(`قسّم الملف إلى أجزاء لا تتجاوز ${maxPagesLimit} صفحة للجلسة الواحدة.`);
+    }
     const pagePlan = buildPagePlan(pdf.numPages, Math.min(pdf.numPages, maxPagesLimit));
     const imagePages = buildImagePagePlan(pdf.numPages);
     const chunks: string[] = [];
@@ -143,6 +147,9 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
 
           if (pageText) {
             const labelledText = `[Page ${pageNumber}]\n${pageText}`;
+            if (options.complete && totalLength + labelledText.length > maxChars) {
+              throw new Error("محتوى الملف طويل. قسّمه إلى أجزاء أصغر حتى نشرحه بالكامل.");
+            }
             const remaining = maxChars - totalLength;
             chunks.push(labelledText.slice(0, remaining));
             totalLength += Math.min(labelledText.length, remaining);
@@ -151,10 +158,11 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
           page.cleanup();
         }
       } catch (error) {
+        if (options.complete) throw error;
         console.warn(`Skipped unreadable PDF page ${pageNumber}`, error);
       }
 
-      if (totalLength >= maxChars) break;
+      if (totalLength >= maxChars && !options.complete) break;
       if (index % 5 === 4) {
         pdf.cleanup();
         await waitForBrowser();
@@ -164,14 +172,16 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
     for (let index = 0; index < imagePages.length; index++) {
       try {
         const image = await renderPdfPageImage(pdf, imagePages[index]);
+        if (!image && options.complete) throw new Error("تعذّر قراءة إحدى صفحات الملف. جرّب PDF أوضح.");
         if (image) pageImages.push(image);
       } catch (error) {
+        if (options.complete) throw error;
         console.warn(`Skipped PDF page image ${imagePages[index]}`, error);
       }
       if (index % 3 === 2) await waitForBrowser();
     }
 
-    const fileData = file.size <= MAX_INLINE_PDF_BYTES ? await fileToDataUrl(file) : undefined;
+    const fileData = !options.complete && file.size <= MAX_INLINE_PDF_BYTES ? await fileToDataUrl(file) : undefined;
     return {
       text: chunks.join("\n\n").slice(0, maxChars),
       pageImages,
