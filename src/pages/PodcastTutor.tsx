@@ -18,12 +18,15 @@ import {
   Instagram,
   Sparkles,
   Volume2,
-  Youtube,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import PodcastPractice from "@/components/PodcastPractice";
+import PodcastBreak from "@/components/PodcastBreak";
+import { planPodcastBreak, type PodcastBreakPlan } from "@/lib/podcastBreak";
+import { extractStudyMaterial, materializeFile } from "@/lib/fileText";
 
 type SessionStatus = "processing" | "ready" | "in_progress" | "completed" | "failed";
 type Verdict = "correct" | "partial" | "incorrect";
@@ -115,7 +118,8 @@ export default function PodcastTutor({
   language: AppLanguage;
   onBack: () => void;
 }) {
-  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [breakPlan, setBreakPlan] = useState<PodcastBreakPlan | null>(null);
   const [subject, setSubject] = useState("");
   const [history, setHistory] = useState<PodcastSession[]>([]);
   const [session, setSession] = useState<PodcastSession | null>(null);
@@ -130,6 +134,7 @@ export default function PodcastTutor({
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const speechRunRef = useRef(0);
+  const checkpointStruggles = useRef<Record<string, number>>({});
 
   const current = segments[currentIndex] ?? null;
   const isComplete = session?.status === "completed";
@@ -149,10 +154,20 @@ export default function PodcastTutor({
   }, []);
 
   const loadSession = useCallback(async (id: string) => {
+    ttsAudioRef.current?.pause();
+    recordAudioRef.current?.pause();
+    speechRunRef.current += 1;
+    setRecordPlaying(false);
     const result = await invoke<{ session: PodcastSession; segments: PodcastSegment[] }>("get-session-status", {
       body: { session_id: id },
     });
     setSession(result.session);
+    const rest = planPodcastBreak(result.segments, checkpointStruggles.current[result.session.id] ?? 0);
+    const key = "podcast-rest:" + result.session.id;
+    let offered = false;
+    try { offered = sessionStorage.getItem(key) === "offered"; } catch { /* Session storage may be unavailable. */ }
+    setBreakPlan(rest && !offered ? rest : null);
+    if (rest && !offered) { try { sessionStorage.setItem(key, "offered"); } catch { /* The break remains optional. */ } }
     setSegments(result.segments);
     const firstIncomplete = result.segments.findIndex((item) => !item.completed_at);
     setCurrentIndex(firstIncomplete >= 0 ? firstIncomplete : 0);
@@ -180,13 +195,17 @@ export default function PodcastTutor({
     setError(null);
     setPremiumRequired(false);
     try {
+      if (!pdfFile) throw new Error("اختَر ملف PDF أولاً.");
+      const file = await materializeFile(pdfFile);
+      if (!/\.pdf$/i.test(file.name) || file.size > 20 * 1024 * 1024) throw new Error("اختَر PDF بحجم لا يتجاوز ٢٠ ميغابايت.");
+      const material = await extractStudyMaterial(file, { maxPages: 20, maxChars: 90000, complete: true });
       const result = await invoke<{ session_id: string }>("create-podcast-session", {
-        body: { youtube_url: youtubeUrl, subject: subject || undefined },
+        body: { pdf_name: file.name, pdf_text: material.text, pdf_images: material.pageImages ?? [], subject: subject || undefined },
       });
       setSession({
         id: result.session_id,
-        youtube_url: youtubeUrl,
-        title: null,
+        youtube_url: "",
+        title: file.name.replace(/\.pdf$/i, ""),
         subject: subject || null,
         status: "processing",
         error_message: null,
@@ -286,7 +305,7 @@ export default function PodcastTutor({
     if (!current) return;
     const studentAnswer = answerText.replace(/\s+/g, " ").trim();
     if (studentAnswer.length < 2) {
-      setError("اكتب ملخصك أولاً.");
+      setError("اكتب إجابتك على أسئلة الجزء أولاً.");
       return;
     }
     setPhase("grading");
@@ -303,19 +322,24 @@ export default function PodcastTutor({
         }
         throw new Error(message);
       }
+      if (data.verdict !== "correct" && session) checkpointStruggles.current[session.id] = (checkpointStruggles.current[session.id] ?? 0) + 1;
       setSegments((previous) => previous.map((item) => item.id === current.id ? {
         ...item,
         student_answer_text: data.student_answer_text,
         verdict: data.verdict,
         correction_text: data.correction_text,
         correction_audio_url: data.correction_audio_url,
-        completed_at: new Date().toISOString(),
+        completed_at: data.verdict === "correct" ? new Date().toISOString() : null,
       } : item));
       setAnswerText("");
       if (data.correction_text) {
-        speakArabic(data.correction_text, "correction", () => { void advance(); });
+        speakArabic(data.correction_text, "correction", () => {
+          if (data.verdict === "correct") void advance();
+          else setPhase("listening");
+        });
       } else {
-        await advance();
+        if (data.verdict === "correct") await advance();
+        else setPhase("listening");
       }
     } catch (e) {
       setPhase("listening");
@@ -374,6 +398,7 @@ export default function PodcastTutor({
     speechRunRef.current += 1;
     ttsAudioRef.current = null;
     setSession(null);
+    setBreakPlan(null);
     setSegments([]);
     setAnswerText("");
     setPhase("idle");
@@ -403,17 +428,18 @@ export default function PodcastTutor({
             <section>
               <div className="mb-7 max-w-2xl">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1.5 text-xs font-bold text-amber-100"><Crown className="h-4 w-4" /> ميزة مميّزة</div>
-                <h2 className="text-3xl font-black leading-tight sm:text-5xl">محاضرتك تتحوّل إلى<br /><span className="bg-gradient-to-l from-cyan-300 to-indigo-300 bg-clip-text text-transparent">حوار يثبت المعلومة</span></h2>
-                <p className="mt-4 max-w-xl leading-8 text-slate-300">الصق رابط المحاضرة، واستمع إلى شرح عربي مقسّم حسب الأفكار. بعد كل فكرة، اكتب تلخيصك ليقيّمك المعلّم ويصحح لك فوراً.</p>
+                <h2 className="text-3xl font-black leading-tight sm:text-5xl">ملزمتك تتحوّل إلى<br /><span className="bg-gradient-to-l from-cyan-300 to-indigo-300 bg-clip-text text-transparent">حوار يثبت المعلومة</span></h2>
+                <p className="mt-4 max-w-xl leading-8 text-slate-300">ارفع ملف PDF ونراجعه فكرة فكرة ويا مدرس عراقي خفيف دم. بنهاية كل جزء تجاوب أسئلة فهم، وبنص المراجعة نقترح استراحة حسب صعوبة الشرح وإجاباتك.</p>
               </div>
               <GlassCard className="p-5 sm:p-7">
                 <form onSubmit={createSession} className="space-y-5">
                   <label className="block">
-                    <span className="mb-2 block text-sm font-bold text-slate-200">رابط محاضرة يوتيوب</span>
+                    <span className="mb-2 block text-sm font-bold text-slate-200">ملف المراجعة PDF</span>
                     <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-slate-950/40 px-4 focus-within:border-cyan-400/70">
-                      <Youtube className="h-5 w-5 shrink-0 text-red-400" />
-                      <input dir="ltr" type="url" required value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="h-14 w-full bg-transparent text-left text-sm outline-none placeholder:text-slate-600" />
+                      <FileText className="h-5 w-5 shrink-0 text-cyan-300" />
+                      <input type="file" accept=".pdf,application/pdf" required disabled={busy} onChange={(e) => { setPdfFile(e.target.files?.[0] ?? null); setError(null); }} className="w-full py-4 text-sm" />
                     </div>
+                    <p className="mt-2 text-sm text-slate-400">حد الجلسة ٢٠ صفحة و٢٠ ميغابايت، حتى نشرح الجزء بالكامل. يدعم الصفحات المصوّرة الواضحة.</p>
                   </label>
                   <label className="block">
                     <span className="mb-2 block text-sm font-bold text-slate-200">المادة (اختياري)</span>
@@ -442,9 +468,11 @@ export default function PodcastTutor({
           <GlassCard className="mx-auto max-w-xl p-8 text-center">
             <CircleAlert className="mx-auto mb-4 h-12 w-12 text-rose-300" />
             <h2 className="text-2xl font-black">تعذّر تجهيز الجلسة</h2>
-            <p className="mt-3 leading-7 text-slate-300">{session.error_message || "قد يكون الفيديو خاصاً أو مقيّداً أو غير متاح."}</p>
-            <button onClick={resetHome} className="mt-6 rounded-2xl bg-white px-6 py-3 font-black text-slate-950">جرّب رابطاً آخر</button>
+            <p className="mt-3 leading-7 text-slate-300">{session.error_message || "تأكد من وضوح صفحات الملف وجرّب جزءاً أصغر."}</p>
+            <button onClick={resetHome} className="mt-6 rounded-2xl bg-white px-6 py-3 font-black text-slate-950">جرّب ملفاً آخر</button>
           </GlassCard>
+        ) : breakPlan ? (
+          <PodcastBreak plan={breakPlan} onContinue={() => setBreakPlan(null)} />
         ) : isComplete ? (
           <>
             <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} onPlay={playStudyRecord} onStop={stopStudyRecord} />
@@ -476,7 +504,7 @@ function ErrorBanner({ message }: { message: string }) {
 }
 
 function ProcessingCard({ title }: { title: string | null }) {
-  const steps = ["استخراج محتوى المحاضرة", "تقسيم الأفكار وكتابة الشرح", "تحضير مقاطع المراجعة التفاعلية"];
+  const steps = ["قراءة صفحات المصدر", "تقسيم الأفكار وكتابة الشرح", "تحضير مقاطع المراجعة التفاعلية"];
   return <GlassCard className="mx-auto max-w-2xl p-7 sm:p-10">
     <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-[28px] bg-cyan-400/15"><Loader2 className="h-10 w-10 animate-spin text-cyan-300" /></div>
     <h2 className="text-center text-2xl font-black">نجهّز جلستك الصوتية</h2>
@@ -510,7 +538,7 @@ function SessionView(props: {
         <motion.div key={`${current.id}-${phase}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
           {phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
           : phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
-          : phase === "listening" ? <StateIcon icon={<PenLine className="h-9 w-9" />} label="اكتب ما فهمته" />
+          : phase === "listening" ? <StateIcon icon={<PenLine className="h-9 w-9" />} label="جاوب أسئلة الجزء بكلماتك" />
           : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
           : phase === "correction" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="استمع إلى التصحيح" />
           : <StateIcon icon={answered ? <Check className="h-9 w-9" /> : <Podcast className="h-9 w-9" />} label={answered ? "اكتمل هذا المقطع" : "اضغط لتسمع شرح المقطع"} />}
@@ -521,7 +549,7 @@ function SessionView(props: {
           {phase === "listening" && <>
             <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>
             <div className="mt-4 rounded-[24px] border border-white/15 bg-slate-950/35 p-3 text-right shadow-inner shadow-slate-950/30 focus-within:border-cyan-300/50 focus-within:bg-slate-950/50">
-              <textarea aria-label="اكتب تلخيصك هنا بأسلوبك..."
+              <textarea aria-label="اكتب إجاباتك هنا بأسلوبك..."
                 dir="rtl"
                 rows={5}
                 maxLength={5000}
@@ -531,7 +559,7 @@ function SessionView(props: {
                 onKeyDown={(event) => {
                   if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && props.answerText.trim().length >= 2) props.onSubmitAnswer();
                 }}
-                placeholder="اكتب تلخيصك هنا بأسلوبك..."
+                placeholder="اكتب إجاباتك هنا بأسلوبك..."
                 className="w-full resize-none bg-transparent px-2 py-2 text-base leading-8 text-white outline-none placeholder:text-slate-600"
               />
               <div className="flex items-center justify-between px-2 pb-1 text-[11px] text-slate-500">
@@ -540,12 +568,12 @@ function SessionView(props: {
               </div>
             </div>
           </>}
-          {answered && current.verdict && <div className="mt-5 text-right"><span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-black ${verdictCopy[current.verdict].style}`}>{verdictCopy[current.verdict].label}</span>{current.student_answer_text && <p className="mt-3 rounded-2xl bg-slate-950/30 p-4 text-sm leading-7 text-slate-300"><span className="font-black text-white">إجابتك: </span>{current.student_answer_text}</p>}{current.correction_text && <p className="mt-3 rounded-2xl border border-indigo-300/15 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100"><span className="font-black">تصحيح المعلّم: </span>{current.correction_text}</p>}</div>}
+          {current.verdict && <div className="mt-5 text-right"><span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-black ${verdictCopy[current.verdict].style}`}>{verdictCopy[current.verdict].label}</span>{current.student_answer_text && <p className="mt-3 rounded-2xl bg-slate-950/30 p-4 text-sm leading-7 text-slate-300"><span className="font-black text-white">إجابتك: </span>{current.student_answer_text}</p>}{current.correction_text && <p className="mt-3 rounded-2xl border border-indigo-300/15 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100"><span className="font-black">تصحيح المعلّم: </span>{current.correction_text}</p>}</div>}
           {props.error && <div className="mt-5"><ErrorBanner message={props.error} /></div>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             {phase === "narration" && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" /> استمع حتى نهاية المقطع</span>}
-            {phase === "listening" && <><button disabled={props.answerText.trim().length < 2} onClick={props.onSubmitAnswer} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-6 py-3 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><Send className="h-5 w-5" /> أرسل التلخيص</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
+            {phase === "listening" && <><button disabled={props.answerText.trim().length < 2} onClick={props.onSubmitAnswer} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-6 py-3 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><Send className="h-5 w-5" /> أرسل الإجابة</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
             {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_text && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
           </div>
         </motion.div>
@@ -562,7 +590,7 @@ function SummaryView({ session, segments, recordPlaying, onPlay, onStop }: { ses
   const correct = segments.filter((item) => item.verdict === "correct").length;
   return <div className="mx-auto max-w-4xl">
     <GlassCard className="mb-5 p-6 sm:p-8">
-      <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-right"><div className="grid h-20 w-20 shrink-0 place-items-center rounded-[28px] bg-emerald-400/15 text-emerald-200"><Check className="h-10 w-10" /></div><div className="flex-1"><p className="text-sm font-bold text-emerald-200">اكتملت الجلسة</p><h2 className="mt-1 text-2xl font-black">{session.title || "مراجعتك الصوتية"}</h2><p className="mt-2 text-sm text-slate-400">أتقنت {correct} من {segments.length} مقاطع من المحاولة الأولى.</p></div><button onClick={recordPlaying ? onStop : onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">{recordPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}{recordPlaying ? "إيقاف السجل" : "تشغيل سجل الجلسة"}</button></div>
+      <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-right"><div className="grid h-20 w-20 shrink-0 place-items-center rounded-[28px] bg-emerald-400/15 text-emerald-200"><Check className="h-10 w-10" /></div><div className="flex-1"><p className="text-sm font-bold text-emerald-200">اكتملت الجلسة</p><h2 className="mt-1 text-2xl font-black">{session.title || "مراجعتك الصوتية"}</h2><p className="mt-2 text-sm text-slate-400">أتقنت {correct} من {segments.length} مقاطع خلال الجلسة.</p></div><button onClick={recordPlaying ? onStop : onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">{recordPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}{recordPlaying ? "إيقاف السجل" : "تشغيل سجل الجلسة"}</button></div>
     </GlassCard>
     <div className="space-y-3">{segments.map((item) => <GlassCard key={item.id} className="p-5"><div className="flex items-start gap-4"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-sm font-black">{item.segment_order}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black">المقطع {item.segment_order}</h3>{item.verdict && <span className={`rounded-full border px-3 py-1 text-xs font-black ${verdictCopy[item.verdict].style}`}>{verdictCopy[item.verdict].label}</span>}</div>{item.student_answer_text && <p className="mt-3 text-sm leading-7 text-slate-300"><span className="font-bold text-white">تلخيصك: </span>{item.student_answer_text}</p>}{item.correction_text && <p className="mt-2 text-sm leading-7 text-indigo-200"><span className="font-bold">التصحيح: </span>{item.correction_text}</p>}</div></div></GlassCard>)}</div>
   </div>;
