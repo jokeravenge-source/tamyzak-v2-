@@ -51,8 +51,13 @@ async function run() {
   button.href = 'intent://auth/callback?' + callbackQuery + '#Intent;scheme=com.tamayzak.app;package=com.tamayzak.app;end';
   button.hidden = false;
   title.textContent = 'جاهز ترجع لدراستك';
-  message.textContent = 'اضغط الزر حتى يكتمل الدخول داخل التطبيق. Tap below to finish signing in to the app.';
+  message.textContent = 'راح ينفتح تطبيق تميّزك تلقائياً. إذا ما انفتح، اضغط الزر ولا تسد المتصفح يدوياً. Tamayzak will open automatically. If it does not, tap the button instead of closing the browser.';
   sessionStorage.removeItem(STORAGE);
+  // Android browsers may allow the explicit-package intent after the OAuth
+  // redirect. Try it immediately so returning to the app cannot skip the
+  // encrypted callback. Browsers that require a fresh user gesture simply
+  // keep this page visible and the button remains the trusted fallback.
+  try { location.assign(button.href); } catch { /* Keep the manual button available. */ }
   setTimeout(() => { button.hidden = true; fail(); }, 120000);
 }
 run().catch(fail);
