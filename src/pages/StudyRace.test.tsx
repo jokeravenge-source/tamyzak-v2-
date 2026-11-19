@@ -2,6 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import StudyRace from "./StudyRace";
 import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
+vi.mock("@/lib/racePoints", () => ({
+  saveRaceReward: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("@/components/StudyRunner", () => ({
   default: ({

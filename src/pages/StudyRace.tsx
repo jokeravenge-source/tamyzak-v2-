@@ -11,6 +11,7 @@ import boy from "@/assets/character-boy-1.png";
 import girl from "@/assets/character-girl-1.png";
 import "./StudyRace.css";
 import StudyRunner from "@/components/StudyRunner";
+import { saveRaceReward, type RaceReward } from "@/lib/racePoints";
 
 type Turn = {
   question: Question;
@@ -85,7 +86,22 @@ export default function StudyRace({
   const [crashed, setCrashed] = useState(false);
   const [lives, setLives] = useState(3);
   const [points, setPoints] = useState(0);
+  const [savedPoints, setSavedPoints] = useState(0);
+  const [savingRewards, setSavingRewards] = useState(0);
+  const [failedRewards, setFailedRewards] = useState<RaceReward[]>([]);
   const current = queue[index];
+
+  const saveReward = async (reward: RaceReward) => {
+    setSavingRewards((count) => count + 1);
+    try {
+      await saveRaceReward(reward);
+      setSavedPoints((count) => count + 10);
+    } catch {
+      setFailedRewards((rows) => [...rows, reward]);
+    } finally {
+      setSavingRewards((count) => count - 1);
+    }
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -199,8 +215,15 @@ export default function StudyRace({
     if (!current || answerLock.current || paused || running) return;
     answerLock.current = true;
     setRevealed(true);
-    if (current.choices[lane].correct) setPoints((value) => value + 10);
-    else setLives((value) => Math.max(0, value - 1));
+    if (current.choices[lane].correct) {
+      setPoints((value) => value + 10);
+      void saveReward({
+        attemptId: crypto.randomUUID(),
+        question: current.question,
+        language,
+        choice: current.choices[lane].text,
+      });
+    } else setLives((value) => Math.max(0, value - 1));
     if (!current.retry) {
       setAnswered((n) => n + 1);
       if (current.choices[lane].correct) setCorrect((n) => n + 1);
@@ -490,6 +513,39 @@ export default function StudyRace({
           <Button variant="ghost" onClick={() => setPhase("setup")}>
             {tr("غيّر المادة والفصل", "Change subject or chapter")}
           </Button>
+        </section>
+      )}
+      {(savedPoints > 0 || savingRewards > 0 || failedRewards.length > 0) && (
+        <section className="race-panel" aria-live="polite">
+          {savedPoints > 0 && (
+            <p>
+              {tr("انضاف لحسابك", "Added to your account")} {savedPoints}{" "}
+              {tr("نقطة", "points")}
+            </p>
+          )}
+          {savingRewards > 0 && (
+            <p>{tr("جارٍ حفظ نقاط الحساب…", "Saving account points…")}</p>
+          )}
+          {failedRewards.length > 0 && (
+            <>
+              <p>
+                {tr(
+                  "تعذّر حفظ بعض نقاط الحساب. أعد المحاولة قبل مغادرة اللعبة.",
+                  "Some account points could not be saved. Retry before leaving the game.",
+                )}
+              </p>
+              <Button
+                disabled={savingRewards > 0}
+                onClick={() => {
+                  const pending = failedRewards;
+                  setFailedRewards([]);
+                  pending.forEach((reward) => void saveReward(reward));
+                }}
+              >
+                {tr("إعادة حفظ النقاط", "Retry saving points")}
+              </Button>
+            </>
+          )}
         </section>
       )}
     </main>,
