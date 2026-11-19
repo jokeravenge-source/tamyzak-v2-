@@ -258,3 +258,154 @@
     padding: 0.7rem 0.3rem;
   }
 }
+.runner-shell {
+  max-width: 760px;
+  margin: auto;
+}
+.runner-hud {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 0;
+  color: #c2f6e5;
+  font-weight: 700;
+}
+.runner-field {
+  height: min(52dvh, 460px);
+  min-height: 260px;
+  background: #172d49;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #53718c;
+  border-radius: 22px;
+  touch-action: none;
+}
+.runner-road {
+  position: absolute;
+  inset: 0 8%;
+  background:
+    repeating-linear-gradient(
+        0deg,
+        transparent 0 30px,
+        #f9e8bc88 31px 48px,
+        transparent 49px 80px
+      )
+      33% 0/3px 100%,
+    repeating-linear-gradient(
+        0deg,
+        transparent 0 30px,
+        #f9e8bc88 31px 48px,
+        transparent 49px 80px
+      )
+      67% 0/3px 100%,
+    #36536b;
+  background-repeat: repeat-y;
+  animation: runner-road 0.65s linear infinite;
+}
+.runner-scenery {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    #284767 0 20px,
+    #43745e 21px 80px,
+    #284767 81px 100px
+  );
+  animation: runner-road 0.8s linear infinite;
+}
+.runner-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+}
+.runner-coin {
+  font-size: 2rem;
+  color: #ffe38c;
+  text-shadow: 0 0 16px #f8c837;
+}
+.runner-barrier {
+  width: 19%;
+  height: 32px;
+  border: 3px solid #ffe9b3;
+  border-radius: 5px;
+  background: repeating-linear-gradient(
+    135deg,
+    #f4ac53 0 9px,
+    #9c483e 10px 20px
+  );
+  box-shadow: 0 7px 0 #142c44;
+  color: transparent;
+}
+.runner-sprite {
+  position: absolute;
+  top: 79%;
+  width: 70px;
+  height: 90px;
+  transform: translate(-50%, -60%);
+  z-index: 3;
+  transition: left 0.12s linear;
+  filter: drop-shadow(0 8px 3px #132337);
+}
+.runner-sprite img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: race-bounce 0.2s infinite alternate;
+}
+.runner-jumping {
+  margin-top: -42px;
+  scale: 1.15;
+}
+.runner-frozen * {
+  animation-play-state: paused !important;
+}
+.runner-frozen {
+  height: 160px;
+  min-height: 160px;
+}
+.runner-stop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  background: #10193688;
+  font-weight: 800;
+  color: white;
+}
+.runner-controls {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  padding: 0.8rem;
+}
+.runner-controls button {
+  min-width: 70px;
+  min-height: 48px;
+  background: #284b56;
+  color: #fff;
+}
+.runner-help {
+  max-width: 640px;
+  margin: 1rem auto;
+  text-align: center;
+  line-height: 1.8;
+  color: #d6def2;
+}
+@keyframes runner-road {
+  to {
+    background-position-y: 80px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .runner-road,
+  .runner-scenery,
+  .runner-sprite img {
+    animation: none;
+  }
+  .runner-sprite {
+    transition: none;
+  }
+}

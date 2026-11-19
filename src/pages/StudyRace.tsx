@@ -8,6 +8,7 @@ import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
 import boy from "@/assets/character-boy-1.png";
 import girl from "@/assets/character-girl-1.png";
 import "./StudyRace.css";
+import StudyRunner from "@/components/StudyRunner";
 
 type Question = {
   id: string;
@@ -88,7 +89,8 @@ export default function StudyRace({
   const [missed, setMissed] = useState<Question[]>([]);
   const [total, setTotal] = useState(0);
   const answerLock = useRef(false);
-  const touchX = useRef<number | null>(null);
+  const [running, setRunning] = useState(true);
+  const [crashed, setCrashed] = useState(false);
   const current = queue[index];
 
   useEffect(() => {
@@ -159,6 +161,7 @@ export default function StudyRace({
     const key = (event: KeyboardEvent) => {
       if (
         phase !== "play" ||
+        running ||
         paused ||
         revealed ||
         !["ArrowLeft", "ArrowRight"].includes(event.key)
@@ -171,7 +174,7 @@ export default function StudyRace({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [phase, paused, revealed]);
+  }, [phase, paused, revealed, running]);
 
   const start = () => {
     const selected = shuffle(
@@ -188,10 +191,12 @@ export default function StudyRace({
     setRevealed(false);
     setPaused(false);
     answerLock.current = false;
+    setRunning(true);
+    setCrashed(false);
     setPhase("play");
   };
   const answer = () => {
-    if (!current || answerLock.current || paused) return;
+    if (!current || answerLock.current || paused || running) return;
     answerLock.current = true;
     setRevealed(true);
     if (!current.retry) {
@@ -213,6 +218,7 @@ export default function StudyRace({
       setPhase("result");
       return;
     }
+    setRunning(true);
     setIndex((n) => n + 1);
     setLane(1);
     setRevealed(false);
@@ -246,13 +252,11 @@ export default function StudyRace({
           <div className="race-emblem">
             <Flag size={40} />
           </div>
-          <h1>
-            {tr("كل إجابة تقرّبك للنهاية", "Every answer moves you forward")}
-          </h1>
+          <h1>{tr("اركض، تفادى، وجاوب", "Run, dodge and answer")}</h1>
           <p>
             {tr(
-              "اختَر المسار الصحيح وراجع معلوماتك بجولة من ١٢ سؤال. خذ وقتك بالقراءة، وأكّد إجابتك من تكون جاهز.",
-              "Choose the correct lane in a 12-question review. Take your time reading, then confirm your answer.",
+              "اجمع النجوم وتفادى الحواجز بثلاث مسارات. كل ١٠ ثواني يوقف اللعب لسؤال من فصلك. عندك ٣ قلوب، والسؤال يبقى لحد ما تجاوب.",
+              "Collect stars and dodge barriers in three lanes. Every 10 seconds, play pauses for a chapter question. You have 3 lives and unlimited reading time.",
             )}
           </p>
           {loading ? (
@@ -346,39 +350,20 @@ export default function StudyRace({
             </span>
             <progress value={answered} max={total} />
           </div>
-          <div
-            className={`race-world ${paused || revealed ? "race-still" : ""}`}
-            onTouchStart={(e) => {
-              touchX.current = e.touches[0].clientX;
+          <StudyRunner
+            active={running && !paused}
+            segment={index}
+            avatar={avatar}
+            ar={ar}
+            onQuestion={() => {
+              setRunning(false);
+              setLane(1);
             }}
-            onTouchEnd={(e) => {
-              const startX = touchX.current;
-              touchX.current = null;
-              if (startX === null || paused || revealed) return;
-              const dx = e.changedTouches[0].clientX - startX;
-              if (Math.abs(dx) > 35)
-                setLane((v) => Math.max(0, Math.min(2, v + (dx > 0 ? 1 : -1))));
+            onFinish={() => {
+              setCrashed(true);
+              setPhase("result");
             }}
-          >
-            <div className="race-sky">
-              <span>✦</span>
-              <Flag size={36} />
-              <span>✦</span>
-            </div>
-            <div className="race-track" />
-            <div
-              className="race-runner"
-              style={{ left: `${((lane + 0.5) * 100) / 3}%` }}
-            >
-              <img
-                src={avatar}
-                alt={tr(
-                  "شخصيتك بالمسار المختار",
-                  "Your runner in the selected lane",
-                )}
-              />
-            </div>
-          </div>
+          />
           {paused ? (
             <section className="race-panel" role="status">
               <h2>{tr("السباق متوقف", "Race paused")}</h2>
@@ -386,6 +371,13 @@ export default function StudyRace({
                 {tr("كمّل السباق", "Resume")}
               </Button>
             </section>
+          ) : running ? (
+            <p className="runner-help">
+              {tr(
+                "اسحب يمين ويسار لتبديل المسار، واسحب لفوك حتى تقفز. كل ١٠ ثواني يوقف الركض ويطلع سؤال.",
+                "Swipe sideways to change lanes and up to jump. Every 10 seconds, running pauses for a question.",
+              )}
+            </p>
           ) : (
             <section className="race-question">
               {current.retry && (
@@ -439,12 +431,16 @@ export default function StudyRace({
       {phase === "result" && (
         <section className="race-panel">
           <Trophy className="race-trophy" size={60} />
-          <h1>{tr("وصلت للنهاية!", "Finish line!")}</h1>
+          <h1>
+            {crashed
+              ? tr("انتهت الجولة", "Run over")
+              : tr("وصلت للنهاية!", "Finish line!")}
+          </h1>
           <p className="race-score">
-            {Math.round((correct / Math.max(total, 1)) * 100)}%
+            {Math.round((correct / Math.max(answered, 1)) * 100)}%
           </p>
           <p>
-            {correct} / {total}{" "}
+            {correct} / {answered}{" "}
             {tr(
               "إجابة صحيحة من المحاولة الأولى",
               "correct on the first attempt",
