@@ -29,8 +29,21 @@ vi.mock("@/integrations/supabase/client", () => ({
         select: () => query,
         eq: () => query,
         order: () => query,
-        limit: () => query,
-        abortSignal: async () => ({ data: [], error: null }),
+        range: () => query,
+        abortSignal: async () => ({
+          data: [
+            {
+              id: "chem-test",
+              subject: "chemistry",
+              chapter: 1,
+              question: "Two-choice question",
+              choices: ["Yes", "No"],
+              answer_index: 1,
+              explanation: null,
+            },
+          ],
+          error: null,
+        }),
       };
       return query;
     },
@@ -38,11 +51,31 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 describe("StudyRace", () => {
+  it("plays a newly loaded subject with two-choice keyboard selection", async () => {
+    const view = render(<StudyRace language="en" onBack={vi.fn()} />);
+    await screen.findByRole("button", { name: "Start race" });
+    fireEvent.change(screen.getByLabelText("Subject"), {
+      target: { value: "chemistry" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start race" }));
+    fireEvent.click(screen.getByRole("button", { name: "Run ten seconds" }));
+    expect(document.querySelectorAll(".race-lanes button")).toHaveLength(2);
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(
+      document.querySelectorAll('.race-lanes button[aria-pressed="true"]'),
+    ).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Confirm lane" }));
+    expect(document.querySelector(".race-feedback")).toBeInTheDocument();
+    view.unmount();
+  });
   it("loads the existing bank, pauses and completes a round with review attempts", async () => {
     const previousOverflow = document.body.style.overflow;
     const view = render(<StudyRace language="ar" onBack={vi.fn()} />);
     expect(document.body.style.overflow).toBe("hidden");
-    expect(document.body.querySelector(".study-race")?.parentElement).toBe(document.body);
+    expect(document.body.querySelector(".study-race")?.parentElement).toBe(
+      document.body,
+    );
     const start = await screen.findByRole("button", { name: "ابدأ السباق" });
     fireEvent.click(start);
     fireEvent.click(screen.getByRole("button", { name: "إيقاف أو استئناف" }));
