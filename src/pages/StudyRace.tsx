@@ -91,7 +91,19 @@ export default function StudyRace({
   const answerLock = useRef(false);
   const [running, setRunning] = useState(true);
   const [crashed, setCrashed] = useState(false);
+  const [lives, setLives] = useState(3);
+  const [points, setPoints] = useState(0);
   const current = queue[index];
+
+  useEffect(() => {
+    if (phase === "play" && running && lives === 0) {
+      const timer = window.setTimeout(() => {
+        setCrashed(true);
+        setPhase("result");
+      }, 700);
+      return () => window.clearTimeout(timer);
+    }
+  }, [lives, running, phase]);
 
   useEffect(() => {
     let active = true;
@@ -193,12 +205,16 @@ export default function StudyRace({
     answerLock.current = false;
     setRunning(true);
     setCrashed(false);
+    setLives(3);
+    setPoints(0);
     setPhase("play");
   };
   const answer = () => {
     if (!current || answerLock.current || paused || running) return;
     answerLock.current = true;
     setRevealed(true);
+    if (current.choices[lane].correct) setPoints((value) => value + 10);
+    else setLives((value) => Math.max(0, value - 1));
     if (!current.retry) {
       setAnswered((n) => n + 1);
       if (current.choices[lane].correct) setCorrect((n) => n + 1);
@@ -214,6 +230,11 @@ export default function StudyRace({
     }
   };
   const next = () => {
+    if (lives === 0) {
+      setCrashed(true);
+      setPhase("result");
+      return;
+    }
     if (index + 1 >= queue.length) {
       setPhase("result");
       return;
@@ -343,6 +364,9 @@ export default function StudyRace({
         <>
           <div className="race-progress">
             <span>
+              {points} {tr("نقطة", "points")}
+            </span>
+            <span>
               {answered} / {total} {tr("سؤال", "questions")}
             </span>
             <span>
@@ -351,7 +375,7 @@ export default function StudyRace({
             <progress value={answered} max={total} />
           </div>
           <StudyRunner
-            active={running && !paused}
+            active={running && !paused && lives > 0}
             segment={index}
             avatar={avatar}
             ar={ar}
@@ -359,10 +383,8 @@ export default function StudyRace({
               setRunning(false);
               setLane(1);
             }}
-            onFinish={() => {
-              setCrashed(true);
-              setPhase("result");
-            }}
+            lives={lives}
+            onHit={() => setLives((value) => Math.max(0, value - 1))}
           />
           {paused ? (
             <section className="race-panel" role="status">
@@ -407,6 +429,11 @@ export default function StudyRace({
                       ? tr("إجابة صحيحة!", "Correct!")
                       : tr("راجع الإجابة", "Review the answer")}
                   </h2>
+                  <p>
+                    {current.choices[lane].correct
+                      ? tr("+١٠ نقاط", "+10 points")
+                      : tr("−١ قلب", "−1 life")}
+                  </p>
                   <p dir="auto">
                     {current.question.choices[current.question.answer_index]}
                   </p>
@@ -414,7 +441,7 @@ export default function StudyRace({
                     <p dir="auto">{current.question.explanation}</p>
                   )}
                   <Button onClick={next}>
-                    {index + 1 >= queue.length
+                    {lives === 0 || index + 1 >= queue.length
                       ? tr("شوف نتيجتك", "See results")
                       : tr("كمّل", "Continue")}
                   </Button>
@@ -438,6 +465,9 @@ export default function StudyRace({
           </h1>
           <p className="race-score">
             {Math.round((correct / Math.max(answered, 1)) * 100)}%
+          </p>
+          <p>
+            {points} {tr("نقطة بالسباق", "race points")}
           </p>
           <p>
             {correct} / {answered}{" "}

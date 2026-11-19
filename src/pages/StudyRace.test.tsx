@@ -1,18 +1,24 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import StudyRace from "./StudyRace";
+import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
 
 vi.mock("@/components/StudyRunner", () => ({
   default: ({
     active,
     onQuestion,
+    lives,
   }: {
     active: boolean;
     onQuestion: () => void;
+    lives: number;
   }) => (
-    <button disabled={!active} onClick={onQuestion}>
-      Run ten seconds
-    </button>
+    <>
+      <span>Lives {lives}</span>
+      <button disabled={!active} onClick={onQuestion}>
+        Run ten seconds
+      </button>
+    </>
   ),
 }));
 
@@ -45,7 +51,22 @@ describe("StudyRace", () => {
         screen.queryByRole("button", { name: "تأكيد المسار" }),
       ).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Run ten seconds" }));
+      const question = getBuiltInBiologyChapter2("ar").find(
+        (q) =>
+          q.question ===
+          document.querySelector(".race-question h1")?.textContent,
+      )!;
+      const options = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(".race-lanes button"),
+      );
+      const selected = options.find((button) =>
+        turns === 0
+          ? button.textContent !== question.choices[question.answer_index]
+          : button.textContent === question.choices[question.answer_index],
+      )!;
+      fireEvent.click(selected);
       fireEvent.click(screen.getByRole("button", { name: "تأكيد المسار" }));
+      expect(screen.getByText("Lives 2")).toBeInTheDocument();
       const choices = document.querySelectorAll(".race-lanes button");
       expect(choices).toHaveLength(3);
       expect(document.querySelectorAll(".race-lanes .right")).toHaveLength(1);
@@ -57,6 +78,7 @@ describe("StudyRace", () => {
       expect(turns).toBeLessThanOrEqual(24);
     }
     expect(turns).toBeGreaterThanOrEqual(12);
+    expect(screen.getByText("120 نقطة بالسباق")).toBeInTheDocument();
     expect(
       screen.getByText(/إجابة صحيحة من المحاولة الأولى/),
     ).toBeInTheDocument();
