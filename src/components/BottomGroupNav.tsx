@@ -32,6 +32,7 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 ];
 
 const OVERFLOW_ITEMS: OverflowItem[] = [
+  { key: "studyRace", labelAr: "سباق تميّزك", labelEn: "Tamayzak Race", Icon: Zap },
   { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
   {
@@ -60,7 +61,7 @@ const BottomGroupNav = ({
   const navRef = useRef<HTMLDivElement>(null);
   const navVisible = useNavVisibility();
   const isRtl = language === "ar";
-  const overflowIsActive = active === "sessions" || active === "account";
+  const overflowIsActive = active === "sessions" || active === "account" || active === "studyRace";
 
   useEffect(() => {
     setPortalRoot(document.body);
@@ -144,7 +145,7 @@ const BottomGroupNav = ({
               role="menu"
               aria-label={isRtl ? "روابط إضافية" : "More destinations"}
             >
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
                 {OVERFLOW_ITEMS.map((item) => {
                   const label = isRtl ? item.labelAr : item.labelEn;
                   const selected = item.key !== "tesla" && active === item.key;
