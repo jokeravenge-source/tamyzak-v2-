@@ -409,3 +409,63 @@
     transition: none;
   }
 }
+.runner-lives {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  background: #101936cc;
+  padding: 3px 7px;
+  border-radius: 10px;
+  color: #ff7796;
+  font-size: 19px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.runner-lives .lost {
+  color: #718099;
+}
+.runner-hit img {
+  animation: runner-collision 0.18s linear infinite !important;
+  filter: sepia(1) saturate(6) hue-rotate(300deg);
+}
+.runner-frozen .runner-hit img {
+  animation-play-state: running !important;
+}
+.runner-impact {
+  position: absolute;
+  top: -35px;
+  right: -25px;
+  color: #fff0ad;
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 0 2px 5px #962d42;
+}
+.runner-road {
+  animation-duration: calc(0.65s / var(--runner-speed, 1));
+}
+.runner-scenery {
+  animation-duration: calc(0.8s / var(--runner-speed, 1));
+}
+@keyframes runner-collision {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-7px) rotate(-9deg);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateX(7px) rotate(9deg);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .runner-hit img {
+    animation: none !important;
+  }
+}

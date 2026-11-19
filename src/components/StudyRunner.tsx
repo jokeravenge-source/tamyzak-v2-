@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 
 type Item = { id: number; lane: number; y: number; coin: boolean };
@@ -8,7 +8,8 @@ type Props = {
   avatar: string;
   ar: boolean;
   onQuestion: () => void;
-  onFinish: () => void;
+  lives: number;
+  onHit: () => void;
 };
 
 export default function StudyRunner({
@@ -17,14 +18,16 @@ export default function StudyRunner({
   avatar,
   ar,
   onQuestion,
-  onFinish,
+  lives,
+  onHit,
 }: Props) {
   const model = useRef({
     lane: 1,
     elapsed: 0,
     spawn: 0,
     distance: 0,
-    hearts: 3,
+    runTime: 0,
+    hitTime: 0,
     coins: 0,
     jump: 0,
     items: [] as Item[],
@@ -32,8 +35,8 @@ export default function StudyRunner({
     stopped: false,
   });
   const [view, setView] = useState({ ...model.current });
-  const callbacks = useRef({ onQuestion, onFinish });
-  callbacks.current = { onQuestion, onFinish };
+  const callbacks = useRef({ onQuestion, onHit, lives });
+  callbacks.current = { onQuestion, onHit, lives };
   const touch = useRef<{ x: number; y: number } | null>(null);
   const move = (direction: number) => {
     if (!active) return;
@@ -60,7 +63,10 @@ export default function StudyRunner({
       const game = model.current;
       if (document.hidden || game.stopped) return;
       game.elapsed = Math.min(10, game.elapsed + dt);
-      game.distance += dt * 12;
+      game.runTime += dt;
+      const speed = Math.min(2.2, 1 + game.runTime / 120);
+      game.distance += dt * 12 * speed;
+      game.hitTime = Math.max(0, game.hitTime - dt);
       game.jump = Math.max(0, game.jump - dt);
       game.spawn += dt;
       if (game.spawn >= 1.6) {
@@ -76,19 +82,20 @@ export default function StudyRunner({
       }
       game.items = game.items.filter((item) => {
         const before = item.y;
-        item.y += dt * 24;
+        item.y += dt * 24 * speed;
         if (before < 79 && item.y >= 79 && item.lane === game.lane) {
           if (item.coin) game.coins++;
-          else if (game.jump <= 0) game.hearts--;
+          else if (game.jump <= 0 && game.hitTime <= 0) {
+            game.hitTime = 1;
+            if (callbacks.current.lives <= 1) game.stopped = true;
+            callbacks.current.onHit();
+          }
           return false;
         }
         return item.y < 110;
       });
       setView({ ...game });
-      if (game.hearts <= 0) {
-        game.stopped = true;
-        callbacks.current.onFinish();
-      } else if (game.elapsed >= 10 - 0.001) {
+      if (!game.stopped && game.elapsed >= 10 - 0.001) {
         game.stopped = true;
         callbacks.current.onQuestion();
       }
@@ -114,11 +121,9 @@ export default function StudyRunner({
   return (
     <section className="runner-shell">
       <div className="runner-hud">
-        <span aria-label={ar ? "القلوب" : "Lives"}>
-          ♥ {Math.max(0, view.hearts)}
-        </span>
         <span>● {view.coins}</span>
         <span>{Math.floor(view.distance)} m</span>
+        <span>×{Math.min(2.2, 1 + view.runTime / 120).toFixed(1)}</span>
         <span>
           {ar ? "السؤال بعد" : "Question in"}{" "}
           {Math.max(0, 10 - Math.floor(view.elapsed))} s
@@ -127,6 +132,11 @@ export default function StudyRunner({
       <div
         className={`runner-field ${active ? "" : "runner-frozen"}`}
         dir="ltr"
+        style={
+          {
+            "--runner-speed": Math.min(2.2, 1 + view.runTime / 120),
+          } as CSSProperties
+        }
         onTouchStart={(e) => {
           touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }}
@@ -157,10 +167,30 @@ export default function StudyRunner({
           </div>
         ))}
         <div
-          className={`runner-sprite ${view.jump > 0 ? "runner-jumping" : ""}`}
+          className={`runner-sprite ${view.jump > 0 ? "runner-jumping" : ""} ${view.hitTime > 0 ? "runner-hit" : ""}`}
           style={{ left: `${((view.lane + 0.5) * 100) / 3}%` }}
         >
+          <span
+            className="runner-lives"
+            role="status"
+            aria-label={`${ar ? "القلوب" : "Lives"}: ${lives}`}
+          >
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={i < lives ? "" : "lost"}
+                aria-hidden="true"
+              >
+                ♥
+              </span>
+            ))}
+          </span>
           <img src={avatar} alt={ar ? "شخصيتك" : "Your runner"} />
+          {view.hitTime > 0 && (
+            <span className="runner-impact" aria-hidden="true">
+              ✹ −1
+            </span>
+          )}
         </div>
         {!active && (
           <div className="runner-stop">
