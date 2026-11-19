@@ -253,6 +253,7 @@ const NAV_GROUPS: { titleEn: string; titleAr: string; items: NavItem[] }[] = [
     titleAr: "العب",
     items: [
       { key: "dailyGame", labelEn: "Daily Game", labelAr: "لعبة اليوم", Icon: Sparkles },
+      { key: "studyRace", labelEn: "Tamayzak Race", labelAr: "سباق تميّزك", Icon: Trophy },
       { key: "liveBattle", labelEn: "Live Battle", labelAr: "المعركة المباشرة", Icon: Swords },
     ],
   },
