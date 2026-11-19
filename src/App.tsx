@@ -533,7 +533,6 @@ const StudentApp = () => {
         url.pathname.includes("/~oauth");
       if (isOAuthLanding) {
         console.log("[OAuth] callback landing", {
-          href: window.location.href,
           origin: window.location.origin,
           pathname: url.pathname,
           searchKeys,
@@ -556,6 +555,25 @@ const StudentApp = () => {
       window.history.replaceState(window.history.state, "", oauthCallback.cleanPath);
     }
     let active = true;
+
+    // A resumed Android WebView can navigate from / to /#access_token=...
+    // without remounting React. Consume that callback on the existing page.
+    const handleReturn = async () => {
+      const callback = readOAuthCallback(window.location.href);
+      if (callback.kind === "none") return;
+      window.history.replaceState(window.history.state, "", callback.cleanPath);
+      try {
+        if (callback.kind === "error") throw new Error("OAuth callback failed");
+        const { data, error } = await supabase.auth.setSession(callback.tokens);
+        if (error || !data.session) throw new Error("Session recovery failed");
+        if (active) setAuthed(true);
+      } catch {
+        if (active) toast.error("تعذر إكمال تسجيل الدخول. حاول مرة ثانية · Please sign in again.");
+      } finally {
+        if (active) setAuthLoading(false);
+      }
+    };
+    window.addEventListener("hashchange", handleReturn);
 
     // Detect a persisted Supabase session token in storage. On Android
     // WebViews / slow networks getSession() can stall or the refresh call can
@@ -651,6 +669,7 @@ const StudentApp = () => {
     return () => {
       active = false;
       window.clearTimeout(authTimeout);
+      window.removeEventListener("hashchange", handleReturn);
       sub.subscription.unsubscribe();
     };
   }, []);
