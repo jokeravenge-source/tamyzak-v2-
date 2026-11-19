@@ -1,4 +1,5 @@
 import { requireUser } from "../_shared/auth.ts";
+import { PODCAST_TEACHER_STYLE } from "../_shared/podcastStyle.ts";
 import { protect } from "../_shared/guard.ts";
 import {
   adminClient,
@@ -60,6 +61,7 @@ Deno.serve(async (req) => {
 
     const grade = validGrade(await callTutorJson(`
 أنت مدرس عراقي تقيّم ملخص طالب بعد مقطع شرح. قيّم المعنى لا التطابق الحرفي، وكن مشجعاً ودقيقاً.
+${PODCAST_TEACHER_STYLE}
 أرجع كائن JSON فقط بلا markdown:
 {"verdict":"correct|partial|incorrect","correction_text":null}
 إذا كانت الإجابة جزئية أو خاطئة، اجعل correction_text تصحيحاً عربياً منطوقاً قصيراً يذكر الفكرة الناقصة أو يصحح الخطأ بلطف.
