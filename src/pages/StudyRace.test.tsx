@@ -2,6 +2,20 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import StudyRace from "./StudyRace";
 
+vi.mock("@/components/StudyRunner", () => ({
+  default: ({
+    active,
+    onQuestion,
+  }: {
+    active: boolean;
+    onQuestion: () => void;
+  }) => (
+    <button disabled={!active} onClick={onQuestion}>
+      Run ten seconds
+    </button>
+  ),
+}));
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: () => {
@@ -27,6 +41,10 @@ describe("StudyRace", () => {
     fireEvent.click(screen.getByRole("button", { name: "كمّل السباق" }));
     let turns = 0;
     while (!screen.queryByText("وصلت للنهاية!")) {
+      expect(
+        screen.queryByRole("button", { name: "تأكيد المسار" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Run ten seconds" }));
       fireEvent.click(screen.getByRole("button", { name: "تأكيد المسار" }));
       const choices = document.querySelectorAll(".race-lanes button");
       expect(choices).toHaveLength(3);
