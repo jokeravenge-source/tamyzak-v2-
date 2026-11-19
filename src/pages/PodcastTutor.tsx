@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
+import PodcastPractice from "@/components/PodcastPractice";
 
 type SessionStatus = "processing" | "ready" | "in_progress" | "completed" | "failed";
 type Verdict = "correct" | "partial" | "incorrect";
@@ -445,7 +446,10 @@ export default function PodcastTutor({
             <button onClick={resetHome} className="mt-6 rounded-2xl bg-white px-6 py-3 font-black text-slate-950">جرّب رابطاً آخر</button>
           </GlassCard>
         ) : isComplete ? (
-          <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} onPlay={playStudyRecord} onStop={stopStudyRecord} />
+          <>
+            <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} onPlay={playStudyRecord} onStop={stopStudyRecord} />
+            <PodcastPractice key={session.id} title={session.title ?? ""} subject={session.subject} onSpeak={text => { stopStudyRecord(); speakArabic(text, "narration", () => setPhase("idle")); }} />
+          </>
         ) : (
           <SessionView
             session={session}

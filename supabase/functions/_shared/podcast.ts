@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { PODCAST_TEACHER_STYLE } from "./podcastStyle.ts";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -307,9 +308,10 @@ export async function generateScript(transcript: string, subject?: string): Prom
   const limited = transcript.slice(0, 90000);
   const result = await callTutorJson(`
 أنت مدرس عراقي خبير لطلاب السادس العلمي. حوّل نص المحاضرة التالي إلى شرح صوتي عربي واضح، تعليمي، ودقيق.
+${PODCAST_TEACHER_STYLE}
 قسّم المحتوى إلى 3 إلى 5 مقاطع فقط عند حدود المفاهيم الطبيعية، لا حسب الزمن.
 لا تترجم حرفياً ولا تنسخ النص؛ أعد صياغته كمدرس يشرح الفكرة بأسلوب محادثة مناسب للصوت.
-كل النصوص التي سيسمعها الطالب يجب أن تكون بالعربية فقط.
+الشرح بالعراقي والمصطلحات العلمية الأصلية تُذكر عند الحاجة مع تفسيرها.
 المادة الاختيارية: ${subject || "غير محددة"}
 
 أرجع مصفوفة JSON فقط بلا markdown أو مقدمة. كل عنصر بالشكل:
