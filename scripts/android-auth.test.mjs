@@ -10,10 +10,14 @@ async function load({ query = '', hash = '', pending, status = 200 } = {}) {
   const originals = Object.getOwnPropertyDescriptors(globalThis);
   const stored = new Map(pending ? [['tamayzak.android.auth.v1', JSON.stringify(pending)]] : []);
   const elements = { title: { textContent: '' }, message: { textContent: '' }, return: { hidden: true, href: '' } };
-  const requests = [], historyEntries = [], redirects = [], timers = [];
+  const requests = [], historyEntries = [], redirects = [], appLaunches = [], timers = [];
   const nativeSetTimeout = globalThis.setTimeout;
   const mocks = {
-    window: {}, location: { origin: 'https://tamyazak.site', search: query, hash, replace(url) { redirects.push(url); } },
+    window: {}, location: {
+      origin: 'https://tamyazak.site', search: query, hash,
+      replace(url) { redirects.push(url); },
+      assign(url) { appLaunches.push(url); },
+    },
     document: { getElementById(id) { return elements[id]; } },
     sessionStorage: { getItem(key) { return stored.get(key) ?? null; }, setItem(key, value) { stored.set(key, value); }, removeItem(key) { stored.delete(key); } },
     history: { replaceState(...args) { historyEntries.push(args); } },
@@ -26,7 +30,7 @@ async function load({ query = '', hash = '', pending, status = 200 } = {}) {
     await import('../public/android-login.js?test=' + counter++);
     for (let i = 0; i < 300 && !redirects.length && elements.return.hidden && elements.title.textContent !== 'ما اكتمل تسجيل الدخول'; i++)
       await new Promise(resolve => nativeSetTimeout(resolve, 2));
-    return { elements, requests, historyEntries, redirects, stored };
+    return { elements, requests, historyEntries, redirects, appLaunches, stored };
   } finally {
     for (const timer of timers) clearTimeout(timer);
     for (const key of Object.keys(mocks)) {
@@ -52,6 +56,7 @@ test('valid callbacks validate the session and produce only an encrypted explici
   assert.equal(result.elements.return.hidden, false);
   const href = result.elements.return.href;
   assert.match(href, /package=com\.tamayzak\.app/); assert.equal(href.includes(access), false);
+  assert.deepEqual(result.appLaunches, [href]);
   const callback = new URL(href.replace('intent://', 'com.tamayzak.app://').split('#Intent')[0]);
   const payload = JSON.parse(Buffer.from(callback.searchParams.get('payload'), 'base64url'));
   const key = privateDecrypt({ key: privateKey, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, Buffer.from(payload.key, 'base64url'));
