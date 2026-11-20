@@ -2023,6 +2023,45 @@ export type Database = {
         }
         Relationships: []
       }
+      nadawi_contest_test_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          elapsed_ms: number | null
+          id: string
+          items: Json
+          question_index: number
+          question_started_at: string
+          score: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          elapsed_ms?: number | null
+          id?: string
+          items: Json
+          question_index?: number
+          question_started_at: string
+          score?: number
+          started_at: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          elapsed_ms?: number | null
+          id?: string
+          items?: Json
+          question_index?: number
+          question_started_at?: string
+          score?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           created_at: string
@@ -4329,6 +4368,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _nadawi_admin_contest_step: {
+        Args: {
+          _accept?: boolean
+          _answer?: string
+          _id: string
+          _index?: number
+        }
+        Returns: Json
+      }
       _nadawi_contest_step: {
         Args: {
           _accept?: boolean
@@ -4520,6 +4568,7 @@ export type Database = {
       get_literature_mcq_set: { Args: { set_id: string }; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
+      get_nadawi_admin_test_state: { Args: never; Returns: Json }
       get_nadawi_contest_leaderboard: {
         Args: never
         Returns: {
@@ -4662,6 +4711,7 @@ export type Database = {
         }
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      start_nadawi_admin_test: { Args: { _restart?: boolean }; Returns: Json }
       start_nadawi_contest: { Args: never; Returns: Json }
       study_flight_inbox_internal: { Args: { _uid: string }; Returns: Json }
       study_flight_periods_internal: {
@@ -4691,6 +4741,10 @@ export type Database = {
       }
       submit_literature_mcq: {
         Args: { selections: Json; set_id: string }
+        Returns: Json
+      }
+      submit_nadawi_admin_test_answer: {
+        Args: { _answer?: string; _attempt_id: string; _question_index: number }
         Returns: Json
       }
       submit_nadawi_contest_answer: {
