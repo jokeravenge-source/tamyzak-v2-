@@ -7,7 +7,7 @@ export type ChallengeSubject = "physics" | "chemistry" | "biology";
 export type PendingBattle = {
   code: string;
   host: boolean;
-  subject?: ChallengeSubject;
+  subject?: string;
   chapter?: number;
   /** Curriculum language of the questions. */
   lang?: "ar" | "en";

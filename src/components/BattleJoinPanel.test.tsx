@@ -1,0 +1,40 @@
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import BattleJoinPanel from "./BattleJoinPanel";
+const search = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/battleChallenges", () => ({ searchBattleStudents: search }));
+beforeEach(() => { vi.useFakeTimers(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); });
+const props = () => ({ language: "en" as const, canCreate: true, sendingId: null, onCreate: vi.fn(), onJoin: vi.fn(), onChallenge: vi.fn() });
+it("joins a code directly and keeps code entry available when the bank is unavailable", () => {
+  const p = { ...props(), canCreate: false }; render(<BattleJoinPanel {...p} />);
+  fireEvent.change(screen.getByLabelText("Have a friend’s room code?"), { target: { value: "١٢٣٤٥٦" } });
+  fireEvent.click(screen.getByRole("button", { name: "Join" }));
+  expect(p.onJoin).toHaveBeenCalledWith("123456"); expect(search).not.toHaveBeenCalled();
+});
+it("debounces name search and never shows an old request after the name changes", async () => {
+  let oldResult: (rows: unknown[]) => void;
+  search.mockImplementationOnce(() => new Promise((resolve) => { oldResult = resolve; }));
+  search.mockResolvedValueOnce([{ user_id: "new", display_name: "New student" }]);
+  render(<BattleJoinPanel {...props()} />);
+  fireEvent.click(screen.getByRole("button", { name: "Search by name" }));
+  fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "Old" } });
+  await act(async () => vi.advanceTimersByTime(300));
+  const signal = search.mock.calls[0][1] as AbortSignal;
+  fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "New" } });
+  expect(signal.aborted).toBe(true);
+  await act(async () => { oldResult!([{ user_id: "old", display_name: "Old student" }]); vi.advanceTimersByTime(300); });
+  expect(screen.queryByText("Old student")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Challenge New student" })).toBeEnabled();
+});
+it("sends the selected student identity and blocks repeated sends while waiting", async () => {
+  search.mockResolvedValue([{ user_id: "ali-id", display_name: "Ali" }]);
+  const p = props(); const view = render(<BattleJoinPanel {...p} />);
+  fireEvent.click(screen.getByRole("button", { name: "Search by name" }));
+  fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "Ali" } });
+  await act(async () => vi.advanceTimersByTime(300));
+  fireEvent.click(screen.getByRole("button", { name: "Challenge Ali" }));
+  expect(p.onChallenge).toHaveBeenCalledWith({ user_id: "ali-id", display_name: "Ali" });
+  view.rerender(<BattleJoinPanel {...p} sendingId="ali-id" />);
+  expect(screen.getByRole("button", { name: "Challenge Ali" })).toBeDisabled();
+});

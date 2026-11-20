@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import LiveBattle from "./LiveBattle";
 import type { RaceQuestion } from "@/lib/raceQuestionBank";
-const api = vi.hoisted(() => ({ bank: vi.fn(), channel: vi.fn(), remove: vi.fn(), invoke: vi.fn(), pending: vi.fn(), rpc: vi.fn() }));
+const api = vi.hoisted(() => ({ bank: vi.fn(), channel: vi.fn(), remove: vi.fn(), invoke: vi.fn(), pending: vi.fn(), rpc: vi.fn(), search: vi.fn(), send: vi.fn(), cancel: vi.fn() }));
+vi.mock("@/lib/battleChallenges", () => ({ BATTLE_INVITE_LIFETIME: 180000, searchBattleStudents: api.search, sendBattleChallenge: api.send, cancelBattleChallenge: api.cancel, battleChallengeStatus: async () => "pending" }));
 vi.mock("@/hooks/useFeatureUsed", () => ({ useFeatureUsed: vi.fn() }));
 vi.mock("@/lib/raceQuestionBank", () => ({ loadRaceQuestionBank: api.bank }));
 vi.mock("@/lib/battleInvite", () => ({ consumePendingBattle: api.pending, newRoomCode: () => "123456" }));
@@ -16,8 +17,9 @@ beforeEach(() => {
   vi.clearAllMocks(); api.pending.mockReturnValue(null); localStorage.clear();
   api.bank.mockResolvedValue({ questions: rows, partial: false });
   api.rpc.mockResolvedValue({ error: null });
+  api.send.mockResolvedValue("invite-one"); api.cancel.mockResolvedValue(undefined); api.search.mockResolvedValue([{ user_id: "friend", display_name: "Ali" }]);
   api.channel.mockImplementation(() => {
-    const channel = { on: vi.fn(() => channel), subscribe: vi.fn((fn) => { void fn("SUBSCRIBED"); return channel; }), track: vi.fn().mockResolvedValue("ok"), send: vi.fn().mockResolvedValue("ok"), presenceState: () => ({}) };
+    const channel = { on: vi.fn(() => channel), subscribe: vi.fn((fn) => { void fn?.("SUBSCRIBED"); return channel; }), track: vi.fn().mockResolvedValue("ok"), send: vi.fn().mockResolvedValue("ok"), presenceState: () => ({}) };
     return channel;
   });
 });
@@ -80,4 +82,26 @@ it("keeps a no-opponent outcome actionable and clears the queue", async () => {
   act(() => vi.advanceTimersByTime(60000));
   expect(screen.getByRole("status")).toHaveTextContent("No opponent right now");
   expect(screen.getByRole("button", { name: "Challenge a friend" })).toBeEnabled();
+});
+
+it("searches by name, sends the selected bank settings and hosts the invited room", async () => {
+  view();
+  await waitFor(() => expect(screen.getByRole("button", { name: "Challenge a friend" })).toBeEnabled());
+  fireEvent.change(screen.getByLabelText("Chapter"), { target: { value: "2" } });
+  fireEvent.click(screen.getByRole("button", { name: "Search by name" }));
+  fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "Ali" } });
+  fireEvent.click(await screen.findByRole("button", { name: "Challenge Ali" }));
+  await screen.findByText("Invitation sent to Ali. Waiting for acceptance…");
+  expect(api.send).toHaveBeenCalledWith("friend", { code: "123456", subject: "physics", chapter: 2, language: "en", count: 1 });
+  expect(api.channel).toHaveBeenCalledWith("battle:123456", expect.anything());
+  fireEvent.click(screen.getByRole("button", { name: "Cancel room" }));
+  expect(api.cancel).toHaveBeenCalledWith("invite-one");
+});
+it("accepts a challenge while Live Battle is already mounted", async () => {
+  view();
+  await waitFor(() => expect(screen.getByRole("button", { name: "Challenge a friend" })).toBeEnabled());
+  api.pending.mockReturnValueOnce({ code: "654321", host: false, subject: "biology", chapter: 1, lang: "en", count: 5 });
+  act(() => window.dispatchEvent(new Event("app:join-battle")));
+  expect(api.channel).toHaveBeenLastCalledWith("battle:654321", expect.anything());
+  expect(screen.getByText("654321")).toBeInTheDocument();
 });
