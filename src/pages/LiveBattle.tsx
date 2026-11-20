@@ -1,1213 +1,318 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFeatureUsed } from "@/hooks/useFeatureUsed";
-import { ArrowLeft, Swords, Users, Trophy, Copy, Loader2, Check, X, Sparkles, Upload, FileText, User, Shuffle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, BookOpen, Check, Copy, Loader2, Shuffle, Swords, Trophy, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
-import { buildBattleMcqs, type BattleSubject, type BattleMCQ } from "@/lib/battleMcqBank";
-import { extractStudyMaterial } from "@/lib/fileText";
-import { consumePendingBattle } from "@/lib/battleInvite";
-import { edgeErrorMessage } from "@/lib/edgeError";
+import { useFeatureUsed } from "@/hooks/useFeatureUsed";
+import { BATTLE_QUESTION_SECONDS, useLiveBattle } from "@/hooks/useLiveBattle";
+import { supabase } from "@/integrations/supabase/client";
+import { consumePendingBattle, newRoomCode } from "@/lib/battleInvite";
+import { loadRaceQuestionBank, type RaceQuestion } from "@/lib/raceQuestionBank";
+import { selectBattleQuestions, type LiveBattleQuestion } from "@/lib/liveBattleBank";
+import { toast } from "sonner";
 
-type Subject = BattleSubject;
-type MCQ = BattleMCQ;
-
-const QUESTION_TIME = 25;
-const SOLO_QUESTION_TIME = 20;
-
-function pickQuestions(n: number, seed: number, subject: Subject = "general"): MCQ[] {
-  // Mix in time-based randomness so each room gets a fresh set even with the same seed range.
-  const mixed = (seed ^ Date.now()) >>> 0;
-  return buildBattleMcqs(subject, n, mixed);
-}
-
-const T = (l: AppLanguage) => ({
-  title: l === "ar" ? "المعركة المباشرة" : "Live Battle",
-  subtitle: l === "ar" ? "اختر طريقتك: تدرّب لوحدك، تحدَّ لاعباً عشوائياً، أو العب مع صديق" : "Choose your mode: solo, random match, or play with a friend",
-  soloMode: l === "ar" ? "ابدأ الحل" : "Start solving",
-  soloDesc: l === "ar" ? "ارفع ملفاً وحل الأسئلة بمفردك" : "Upload a file and solve on your own",
-  randomMode: l === "ar" ? "منافسة عشوائية" : "Pick a battle randomly",
-  randomDesc: l === "ar" ? "طابق مع طالب آخر حسب المادة والفصل" : "Match another student by subject & chapter",
-  friendMode: l === "ar" ? "العب مع صديق" : "Play with a friend",
-  friendDesc: l === "ar" ? "أنشئ غرفة وشارك الرمز" : "Create a room and share the code",
-  create: l === "ar" ? "إنشاء غرفة" : "Create Room",
-  join: l === "ar" ? "انضمام لغرفة" : "Join Room",
-  back: l === "ar" ? "رجوع" : "Back",
-  name: l === "ar" ? "اسمك" : "Your name",
-  code: l === "ar" ? "رمز الغرفة" : "Room code",
-  shareCode: l === "ar" ? "شارك هذا الرمز مع صديقك" : "Share this code with your friend",
-  waiting: l === "ar" ? "بانتظار اللاعب الثاني..." : "Waiting for second player...",
-  searching: l === "ar" ? "جاري البحث عن منافس..." : "Searching for an opponent...",
-  matchFound: l === "ar" ? "تم إيجاد منافس!" : "Match found!",
-  noMatchFound: l === "ar" ? "لم يتم العثور على منافس، حاول مرة أخرى" : "No opponent found, try again",
-  cancelSearch: l === "ar" ? "إلغاء البحث" : "Cancel search",
-  subject: l === "ar" ? "المادة" : "Subject",
-  chapter: l === "ar" ? "الفصل" : "Chapter",
-  findMatch: l === "ar" ? "ابحث عن منافس" : "Find opponent",
-  finish: l === "ar" ? "إنهاء" : "Finish",
-  next: l === "ar" ? "التالي" : "Next",
-  starting: l === "ar" ? "تبدأ خلال" : "Starting in",
-  q: l === "ar" ? "سؤال" : "Question",
-  of: l === "ar" ? "من" : "of",
-  you: l === "ar" ? "أنت" : "You",
-  opp: l === "ar" ? "الخصم" : "Opponent",
-  winner: l === "ar" ? "الفائز" : "Winner",
-  tie: l === "ar" ? "تعادل!" : "It's a tie!",
-  youWin: l === "ar" ? "فزت! 🎉" : "You win! 🎉",
-  youLose: l === "ar" ? "خسارة 😔" : "You lost 😔",
-  soloDone: l === "ar" ? "انتهيت!" : "All done!",
-  pointsEarned: l === "ar" ? "نقاط مكتسبة" : "Points earned",
-  correctCount: l === "ar" ? "إجابات صحيحة" : "Correct answers",
-  playAgain: l === "ar" ? "العب مرة أخرى" : "Play again",
-  invalidCode: l === "ar" ? "أدخل رمزاً صحيحاً" : "Enter a valid 6-digit code",
-  copied: l === "ar" ? "تم النسخ" : "Copied",
-  start: l === "ar" ? "ابدأ" : "Start",
-  locked: l === "ar" ? "لا يمكنك مغادرة المعركة حتى تنتهي" : "You can't leave until the battle is over",
-  questionsCount: l === "ar" ? "عدد الأسئلة" : "Number of questions",
-  createNow: l === "ar" ? "إنشاء الغرفة" : "Create room",
-  startSolo: l === "ar" ? "ابدأ الحل" : "Start solving",
-  uploadFile: l === "ar" ? "ارفع ملف الدراسة" : "Upload study file",
-  uploadHint: l === "ar" ? "PDF أو DOCX أو TXT" : "PDF, DOCX, or TXT",
-  noFile: l === "ar" ? "اختر ملفاً أولاً" : "Pick a file first",
-  generating: l === "ar" ? "جارٍ توليد الأسئلة…" : "Generating questions…",
-  reading: l === "ar" ? "جارٍ قراءة الملف…" : "Reading file…",
-  noText: l === "ar" ? "تعذرت قراءة النص من الملف" : "Could not read text from this file",
-  genFailed: l === "ar" ? "تعذّر توليد الأسئلة" : "Failed to generate questions",
-});
-
-type Phase =
-  | "menu"
-  | "soloSetup"
-  | "soloPlaying"
-  | "soloDone"
-  | "randomSetup"
-  | "matchmaking"
-  | "createSettings"
-  | "join"
-  | "lobby"
-  | "countdown"
-  | "playing"
-  | "done";
-
-const SUBJECT_OPTIONS: { key: BattleSubject; ar: string; en: string }[] = [
-  { key: "physics",   ar: "فيزياء",   en: "Physics" },
-  { key: "chemistry", ar: "كيمياء",   en: "Chemistry" },
-  { key: "biology",   ar: "أحياء",     en: "Biology" },
-  { key: "arabic",    ar: "عربي",     en: "Arabic" },
-  { key: "english",   ar: "إنجليزي", en: "English" },
-  { key: "french",    ar: "فرنسي",   en: "French" },
-  { key: "islamic",   ar: "إسلامية", en: "Islamic" },
-];
-
-/** Questions for a profile-to-profile challenge: chosen subject / curriculum / chapter. */
-async function buildChallengeQuestions(
-  subject: BattleSubject,
-  chapter: number,
-  lang: "ar" | "en",
-  count: number,
-  seed: number,
-): Promise<MCQ[]> {
-  let s = seed || 1;
-  const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-  try {
-    const { data } = await supabase
-      .from("mcq_banks")
-      .select("question, choices, answer_index")
-      .eq("subject", subject)
-      .eq("chapter", chapter)
-      .eq("language", lang)
-      .limit(300);
-    const rows = (data ?? []).filter((r: any) => Array.isArray(r.choices) && r.choices.length >= 2);
-    if (rows.length >= 3) {
-      const arr = rows.slice();
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(rand() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr.slice(0, Math.max(1, count)).map((r: any) => ({
-        q: r.question as string,
-        choices: (r.choices as string[]).map(String),
-        answer: Number(r.answer_index) || 0,
-        subject,
-      }));
-    }
-  } catch { /* fall through to the offline pool */ }
-  return buildBattleMcqs(subject, count, seed);
-}
+const LABELS: Record<string, { ar: string; en: string }> = {
+  physics: { ar: "الفيزياء", en: "Physics" }, chemistry: { ar: "الكيمياء", en: "Chemistry" },
+  biology: { ar: "الأحياء", en: "Biology" }, math: { ar: "الرياضيات", en: "Math" },
+  arabic: { ar: "العربية", en: "Arabic" }, english: { ar: "الإنكليزي", en: "English" },
+  english_literature: { ar: "الأدب الإنكليزي", en: "English literature" },
+  french: { ar: "الفرنسية", en: "French" }, islamic: { ar: "الإسلامية", en: "Islamic studies" },
+};
+type QueueChannel = ReturnType<typeof supabase.channel>;
 
 export default function LiveBattle({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
   useFeatureUsed("live_battle");
-  const t = T(language);
-  const [phase, setPhase] = useState<Phase>("menu");
-  const [name, setName] = useState<string>(() => localStorage.getItem("app_display_name_v1") || (language === "ar" ? "لاعب" : "Player"));
-  const [code, setCode] = useState<string>("");
-  const [joinInput, setJoinInput] = useState<string>("");
-  const [isHost, setIsHost] = useState(false);
-  const [players, setPlayers] = useState<{ id: string; name: string }[]>([]);
-  const [questions, setQuestions] = useState<MCQ[]>([]);
-  const [qIdx, setQIdx] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [answered, setAnswered] = useState<number | null>(null);
-  const [answeredFor, setAnsweredFor] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<null | "correct" | "wrong">(null);
-  const [countdown, setCountdown] = useState(3);
-  const [subject, setSubject] = useState<Subject>("general");
-  const [qCount, setQCount] = useState<number>(10);
-  const [file, setFile] = useState<File | null>(null);
-  const [creating, setCreating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const ar = language === "ar";
+  const text = useCallback((arabic: string, english: string) => ar ? arabic : english, [ar]);
+  const [name, setName] = useState(() => localStorage.getItem("app_display_name_v1") || text("لاعب", "Player"));
+  const [bankLanguage, setBankLanguage] = useState<AppLanguage>(language);
+  const [bank, setBank] = useState<RaceQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [partial, setPartial] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [subject, setSubject] = useState("physics");
+  const [chapter, setChapter] = useState(0);
+  const [count, setCount] = useState(10);
+  const [joinCode, setJoinCode] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [message, setMessage] = useState("");
+  const cache = useRef(new Map<AppLanguage, { questions: RaceQuestion[]; partial: boolean }>());
+  const pending = useRef<ReturnType<typeof consumePendingBattle>>(null);
+  const pendingRead = useRef(false);
+  const battle = useLiveBattle(name);
+  const battleRef = useRef(battle);
+  battleRef.current = battle;
+  const [solo, setSolo] = useState<null | { questions: LiveBattleQuestion[]; index: number; score: number; picked: number | null; done: boolean; started: number }>(null);
+  const soloRef = useRef(solo);
+  soloRef.current = solo;
+  const [soloSeconds, setSoloSeconds] = useState(BATTLE_QUESTION_SECONDS);
+  const soloAnswered = useRef(false);
+  const soloId = useRef("");
+  const queue = useRef<QueueChannel | null>(null);
+  const queueGeneration = useRef(0);
+  const queueTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueLeave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const matched = useRef(false);
+  const awarded = useRef(new Set<string>());
 
-  // Solo mode state
-  const [soloScore, setSoloScore] = useState(0);
-  const [soloAnswered, setSoloAnswered] = useState<number | null>(null);
-  const [soloFeedback, setSoloFeedback] = useState<null | "correct" | "wrong">(null);
-  const [soloTimeLeft, setSoloTimeLeft] = useState(SOLO_QUESTION_TIME);
-  const soloAdvanceTimer = useRef<number | null>(null);
+  const stopQueue = useCallback(() => {
+    queueGeneration.current++;
+    if (queueTimeout.current !== null) clearTimeout(queueTimeout.current);
+    if (queueLeave.current !== null) clearTimeout(queueLeave.current);
+    queueTimeout.current = null; queueLeave.current = null;
+    const old = queue.current; queue.current = null;
+    if (old) void supabase.removeChannel(old);
+  }, []);
+  useEffect(() => () => stopQueue(), [stopQueue]);
+  const reset = () => { stopQueue(); matched.current = false; setSearching(false); battle.reset(); setSolo(null); setMessage(""); };
 
-  // Random matchmaking state
-  const [randomSubject, setRandomSubject] = useState<BattleSubject>("physics");
-  const [randomChapter, setRandomChapter] = useState<number>(1);
-  const matchmakingRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const matchedRef = useRef(false);
-  const matchTimeoutRef = useRef<number | null>(null);
-
-  const meId = useRef<string>(Math.random().toString(36).slice(2, 10));
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const questionsRef = useRef<MCQ[]>([]);
-  useEffect(() => { questionsRef.current = questions; }, [questions]);
-
-  // Lock navigation while a battle is in progress
-  const isLocked = phase === "countdown" || phase === "playing";
   useEffect(() => {
-    (window as any).__battleLocked = isLocked;
-    window.dispatchEvent(new CustomEvent("app:battle-lock", { detail: { locked: isLocked } }));
-    if (!isLocked) return;
-    const beforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    window.addEventListener("beforeunload", beforeUnload);
+    if (!pendingRead.current) {
+      pendingRead.current = true;
+      pending.current = consumePendingBattle();
+      if (pending.current) {
+        const p = pending.current;
+        setBankLanguage(p.lang ?? language); setSubject(p.subject ?? "physics"); setChapter(p.chapter ?? 1); setCount(p.count ?? 10);
+        if (!p.host) { battleRef.current.connect(p.code, false); pending.current = null; }
+      }
+    }
+  }, [language]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setBank([]); setMessage("");
+    const saved = cache.current.get(bankLanguage);
+    const load = saved && retry === 0 ? Promise.resolve(saved) : loadRaceQuestionBank(bankLanguage, controller.signal);
+    void load.then((result) => {
+      if (controller.signal.aborted) return;
+      if (!result.partial) cache.current.set(bankLanguage, result);
+      setBank(result.questions); setPartial(result.partial); setLoading(false);
+      const p = pending.current;
+      if (p?.host && (p.lang ?? language) === bankLanguage) {
+        pending.current = null;
+        const qs = selectBattleQuestions(result.questions, p.subject ?? "physics", p.chapter ?? 1, p.count ?? 10, Number(p.code));
+        if (qs.length) battleRef.current.connect(p.code, true, qs);
+        else setMessage(text("ماكو أسئلة بالبنك لهذا الفصل والمنهج. اختَر فصلاً آخر.", "No bank questions for this chapter and curriculum. Choose another chapter."));
+      }
+    }).catch(() => {
+      if (!controller.signal.aborted) { setLoading(false); setPartial(true); setMessage(text("تعذّر تحميل البنك، حاول مرة ثانية.", "Could not load the bank. Try again.")); }
+    });
+    return () => controller.abort();
+  }, [bankLanguage, retry, language, text]);
+
+  const subjects = useMemo(() => [...new Set(bank.map((q) => q.subject))].sort(), [bank]);
+  const selectedSubject = subjects.includes(subject) ? subject : subjects[0] ?? "";
+  const chapters = useMemo(() => [...new Set(bank.filter((q) => q.subject === selectedSubject).map((q) => q.chapter))].sort((a, b) => a - b), [bank, selectedSubject]);
+  const selectedChapter = chapter && chapters.includes(chapter) ? chapter : 0;
+  const available = useMemo(() => bank.filter((q) => q.subject === selectedSubject && (!selectedChapter || q.chapter === selectedChapter)), [bank, selectedSubject, selectedChapter]);
+  const roundCount = Math.min(count, available.length);
+  const pick = (seed: number) => selectBattleQuestions(bank, selectedSubject, selectedChapter, count, seed);
+  const ready = !loading && roundCount > 0;
+  const busy = searching || battle.phase !== "idle" || solo !== null;
+
+  const award = useCallback(async (key: string, source: string, points: number) => {
+    if (points <= 0 || awarded.current.has(key)) return;
+    awarded.current.add(key);
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        const { error } = await supabase.rpc("award_points_safe", { _source: source, _points: points, _ref_id: key });
+        if (!error) window.dispatchEvent(new CustomEvent("app:progress-updated"));
+      }
+    } catch { /* The battle result is still available if the points service is offline. */ }
+  }, []);
+  const myScore = battle.scores[battle.meId] ?? 0;
+  const opponent = battle.players.find((p) => p.id !== battle.meId);
+  const opponentScore = opponent ? battle.scores[opponent.id] ?? 0 : 0;
+  useEffect(() => {
+    if (battle.phase === "done") void award(battle.code, "live_battle", myScore * 2 + (myScore > opponentScore ? battle.questions.length : 0));
+  }, [battle.phase, battle.code, battle.questions.length, myScore, opponentScore, award]);
+  useEffect(() => {
+    if (solo?.done) void award(soloId.current, "mcq", Math.min(5, solo.score));
+  }, [solo?.done, solo?.score, award]);
+
+  const locked = battle.phase === "countdown" || battle.phase === "playing";
+  useEffect(() => {
+    (window as Window & { __battleLocked?: boolean }).__battleLocked = locked;
+    window.dispatchEvent(new CustomEvent("app:battle-lock", { detail: { locked } }));
+    const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    if (locked) window.addEventListener("beforeunload", beforeUnload);
     return () => {
       window.removeEventListener("beforeunload", beforeUnload);
+      (window as Window & { __battleLocked?: boolean }).__battleLocked = false;
+      window.dispatchEvent(new CustomEvent("app:battle-lock", { detail: { locked: false } }));
     };
-  }, [isLocked]);
-  useEffect(() => () => {
-    (window as any).__battleLocked = false;
-    window.dispatchEvent(new CustomEvent("app:battle-lock", { detail: { locked: false } }));
-  }, []);
+  }, [locked]);
 
-  const guardedBack = () => {
-    if (isLocked) { toast.error(t.locked); return; }
-    onBack();
-  };
-
-  const cleanup = () => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    if (matchmakingRef.current) {
-      supabase.removeChannel(matchmakingRef.current);
-      matchmakingRef.current = null;
-    }
-  };
-  useEffect(() => () => cleanup(), []);
-
-  // A challenge sent/accepted from a student profile drops us straight into
-  // the shared room: the challenger hosts, the other player joins.
   useEffect(() => {
-    const pending = consumePendingBattle();
-    if (!pending) return;
-    setCode(pending.code);
-    setIsHost(pending.host);
-    setPhase("lobby");
-    if (pending.host) {
-      const seed = Number(pending.code) >>> 0;
-      void buildChallengeQuestions(
-        pending.subject ?? "physics",
-        pending.chapter ?? 1,
-        pending.lang ?? (language === "ar" ? "ar" : "en"),
-        pending.count ?? 10,
-        seed,
-      ).then((qs) => setupChannel(pending.code, true, qs));
-    } else {
-      setupChannel(pending.code, false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Close the realtime battle channel once the match is over — no reason to
-  // keep a subscription open on the results screen.
-  useEffect(() => {
-    if (phase !== "done") return;
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-  }, [phase]);
-
-  // Question timer
-  useEffect(() => {
-    if (phase !== "playing") return;
-    setTimeLeft(QUESTION_TIME);
-    setAnswered(null);
-    setAnsweredFor(null);
-    setFeedback(null);
-    const start = Date.now();
-    const iv = setInterval(() => {
-      const left = Math.max(0, QUESTION_TIME - Math.floor((Date.now() - start) / 1000));
-      setTimeLeft(left);
-      if (left <= 0) {
-        clearInterval(iv);
-        // advance after a brief pause; host orchestrates
-        if (isHost) setTimeout(() => advanceQuestion(), 800);
-      }
+    const run = soloRef.current;
+    if (!run || run.done || run.picked !== null) return;
+    const deadline = run.started + BATTLE_QUESTION_SECONDS * 1000;
+    const timer = setInterval(() => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSoloSeconds(left);
+      if (!left) { soloAnswered.current = true; clearInterval(timer); }
     }, 200);
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, qIdx]);
+    return () => clearInterval(timer);
+  }, [solo?.index, solo?.done, solo?.started, solo?.picked]);
 
-  // Countdown
-  useEffect(() => {
-    if (phase !== "countdown") return;
-    setCountdown(3);
-    const start = Date.now();
-    const iv = setInterval(() => {
-      const c = 3 - Math.floor((Date.now() - start) / 1000);
-      if (c <= 0) {
-        clearInterval(iv);
-        setPhase("playing");
-        setQIdx(0);
-      } else {
-        setCountdown(c);
-      }
-    }, 100);
-    return () => clearInterval(iv);
-  }, [phase]);
-
-  const setupChannel = (roomCode: string, host: boolean, seedQuestions?: MCQ[]) => {
-    cleanup();
-    const ch = supabase.channel(`battle:${roomCode}`, {
-      config: { presence: { key: meId.current } },
-    });
-    channelRef.current = ch;
-
-    ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState() as Record<string, Array<{ name: string }>>;
-      const list = Object.entries(state).map(([id, metas]) => ({ id, name: metas[0]?.name || "?" }));
-      setPlayers(list);
-      // Host auto-starts when 2 players
-      if (host && list.length === 2 && seedQuestions) {
-        // small delay to let everyone settle
-        setTimeout(() => {
-          ch.send({ type: "broadcast", event: "start", payload: { questions: seedQuestions, players: list } });
-          setQuestions(seedQuestions);
-          setScores(Object.fromEntries(list.map((p) => [p.id, 0])));
-          setPhase("countdown");
-        }, 400);
-      }
-    });
-
-    ch.on("broadcast", { event: "start" }, ({ payload }) => {
-      setQuestions(payload.questions);
-      setPlayers(payload.players);
-      setScores(Object.fromEntries(payload.players.map((p: any) => [p.id, 0])));
-      setPhase("countdown");
-    });
-
-    ch.on("broadcast", { event: "answer" }, ({ payload }) => {
-      const { playerId, qIdx: aIdx, correct } = payload;
-      if (correct) {
-        setScores((prev) => ({ ...prev, [playerId]: (prev[playerId] || 0) + 1 }));
-      }
-      // host advances if both answered
-      if (host) {
-        hostAnswers.current[aIdx] = (hostAnswers.current[aIdx] || 0) + 1;
-        if (hostAnswers.current[aIdx] >= 2) {
-          setTimeout(() => advanceQuestion(), 600);
-        }
-      }
-    });
-
-    ch.on("broadcast", { event: "next" }, ({ payload }) => {
-      const { qIdx: nextIdx } = payload;
-      if (nextIdx >= (questionsRef.current.length || 10)) setPhase("done");
-      else setQIdx(nextIdx);
-    });
-
-    ch.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
-        await ch.track({ name });
-      }
-    });
+  const startSolo = () => {
+    if (!ready) return;
+    soloId.current = `solo:${crypto.randomUUID()}`;
+    soloAnswered.current = false; setSoloSeconds(BATTLE_QUESTION_SECONDS);
+    setSolo({ questions: pick(Date.now()), index: 0, score: 0, picked: null, done: false, started: Date.now() });
   };
-
-  const hostAnswers = useRef<Record<number, number>>({});
-
-  const advanceQuestion = () => {
-    if (!channelRef.current) return;
-    const tot = questionsRef.current.length || 10;
-    setQIdx((cur) => {
-      const next = cur + 1;
-      hostAnswers.current = {};
-      channelRef.current!.send({ type: "broadcast", event: "next", payload: { qIdx: next } });
-      if (next >= tot) {
-        setPhase("done");
-      }
-      return next >= tot ? cur : next;
-    });
+  const soloAnswer = (choice: number) => {
+    const run = soloRef.current;
+    if (!run || run.done || soloAnswered.current || Date.now() >= run.started + BATTLE_QUESTION_SECONDS * 1000) return;
+    soloAnswered.current = true;
+    setSolo({ ...run, picked: choice, score: run.score + Number(run.questions[run.index].answer === choice) });
   };
-
-  const onPickFile = (f: File | null) => {
-    if (!f) return;
-    if (f.size > 100 * 1024 * 1024) { toast.error("Max 100MB"); return; }
-    const ok = /\.(pdf|docx|txt)$/i.test(f.name) || f.type === "application/pdf" || f.type.startsWith("text/");
-    if (!ok) { toast.error("PDF / DOCX / TXT only"); return; }
-    setFile(f);
-  };
-
-  const createRoom = async () => {
-    if (!file) { toast.error(t.noFile); return; }
-    setCreating(true);
-    try {
-      toast.loading(t.reading, { id: "battle-ext" });
-      const material = await extractStudyMaterial(file);
-      toast.dismiss("battle-ext");
-      if ((!material.text || material.text.trim().length < 50) && !material.pageImages?.length) {
-        toast.error(t.noText);
-        setCreating(false);
-        return;
-      }
-      toast.loading(t.generating, { id: "battle-gen" });
-      const { data, error } = await supabase.functions.invoke("generate-mcq", {
-        body: { text: material.text, pageImages: material.pageImages, count: qCount, language },
-      });
-      toast.dismiss("battle-gen");
-      if (error) throw new Error(await edgeErrorMessage(error, t.genFailed));
-      if (data?.error) throw new Error(data.message || data.error);
-      const raw: any[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
-      if (!raw.length) throw new Error(t.genFailed);
-      const qs: MCQ[] = raw.slice(0, qCount).map((q) => ({
-        q: q.question,
-        choices: q.choices,
-        answer: q.answer_index,
-        subject: "general" as BattleSubject,
-      }));
-
-      const c = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
-      setCode(c);
-      setIsHost(true);
-      setupChannel(c, true, qs);
-      setPhase("lobby");
-    } catch (e: any) {
-      toast.dismiss();
-      toast.error(e?.message || t.genFailed);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const joinRoom = () => {
-    const c = joinInput.trim();
-    if (!/^\d{6}$/.test(c)) { toast.error(t.invalidCode); return; }
-    setCode(c);
-    setIsHost(false);
-    setupChannel(c, false);
-    setPhase("lobby");
-  };
-
-  const submitAnswer = (idx: number) => {
-    if (answered !== null || !channelRef.current) return;
-    setAnswered(idx);
-    setAnsweredFor(qIdx);
-    const correct = questions[qIdx]?.answer === idx;
-    setFeedback(correct ? "correct" : "wrong");
-    if (correct) {
-      setScores((prev) => ({ ...prev, [meId.current]: (prev[meId.current] || 0) + 1 }));
-      // Award 1 point per correct answer (deduped by ref_id)
-      (async () => {
-        try {
-          const { data: u } = await supabase.auth.getUser();
-          if (u.user) {
-            await supabase.rpc("award_points_safe", {
-              _source: "live_battle",
-              _points: 1,
-              _ref_id: `${code}:${qIdx}`,
-            });
-          }
-        } catch { /* ignore */ }
-      })();
-    }
-    channelRef.current.send({
-      type: "broadcast",
-      event: "answer",
-      payload: { playerId: meId.current, qIdx, correct },
-    });
-  };
-
-  // Award points on completion
-  const awardedRef = useRef(false);
-  useEffect(() => {
-    if (phase !== "done" || awardedRef.current) return;
-    awardedRef.current = true;
-    const myScore = scores[meId.current] || 0;
-    const oppId = players.find((p) => p.id !== meId.current)?.id;
-    const oppScore = oppId ? (scores[oppId] || 0) : 0;
-    const won = myScore > oppScore;
-    const earned = myScore * 2 + (won ? (questionsRef.current.length || 10) : 0);
-    (async () => {
-      try {
-        const { data: u } = await supabase.auth.getUser();
-        if (u.user && earned > 0) {
-          await supabase.rpc("award_points_safe", {
-            _source: "live_battle",
-            _points: earned,
-            _ref_id: code,
-          });
-        }
-      } catch { /* ignore */ }
-    })();
-  }, [phase, scores, players, code]);
-
-  const restart = () => {
-    cleanup();
-    stopMatchmaking();
-    if (soloAdvanceTimer.current) { window.clearTimeout(soloAdvanceTimer.current); soloAdvanceTimer.current = null; }
-    setPhase("menu");
-    setCode("");
-    setJoinInput("");
-    setQuestions([]);
-    setQIdx(0);
-    setScores({});
-    setPlayers([]);
-    setSoloScore(0);
-    setSoloAnswered(null);
-    setSoloFeedback(null);
-    setFile(null);
-    awardedRef.current = false;
-    hostAnswers.current = {};
-    matchedRef.current = false;
-  };
-
-  /* ---------------- Solo mode ---------------- */
-
-  const startSolo = async () => {
-    if (!file) { toast.error(t.noFile); return; }
-    setCreating(true);
-    try {
-      toast.loading(t.reading, { id: "solo-ext" });
-      const material = await extractStudyMaterial(file);
-      toast.dismiss("solo-ext");
-      if ((!material.text || material.text.trim().length < 50) && !material.pageImages?.length) {
-        toast.error(t.noText);
-        setCreating(false);
-        return;
-      }
-      toast.loading(t.generating, { id: "solo-gen" });
-      const { data, error } = await supabase.functions.invoke("generate-mcq", {
-        body: { text: material.text, pageImages: material.pageImages, count: qCount, language },
-      });
-      toast.dismiss("solo-gen");
-      if (error) throw new Error(await edgeErrorMessage(error, t.genFailed));
-      if (data?.error) throw new Error(data.message || data.error);
-      const raw: any[] = (data?.questions || []).filter((q: any) => q?.choices?.length === 4);
-      if (!raw.length) throw new Error(t.genFailed);
-      const qs: MCQ[] = raw.slice(0, qCount).map((q) => ({
-        q: q.question, choices: q.choices, answer: q.answer_index, subject: "general" as BattleSubject,
-      }));
-      setQuestions(qs);
-      setQIdx(0);
-      setSoloScore(0);
-      setSoloAnswered(null);
-      setSoloFeedback(null);
-      setPhase("soloPlaying");
-    } catch (e: any) {
-      toast.dismiss();
-      toast.error(e?.message || t.genFailed);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  // Solo timer + auto-advance
-  useEffect(() => {
-    if (phase !== "soloPlaying") return;
-    setSoloTimeLeft(SOLO_QUESTION_TIME);
-    setSoloAnswered(null);
-    setSoloFeedback(null);
-    const start = Date.now();
-    const iv = window.setInterval(() => {
-      const left = Math.max(0, SOLO_QUESTION_TIME - Math.floor((Date.now() - start) / 1000));
-      setSoloTimeLeft(left);
-      if (left <= 0) {
-        window.clearInterval(iv);
-        soloAdvanceTimer.current = window.setTimeout(soloNext, 600);
-      }
-    }, 200);
-    return () => window.clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, qIdx]);
-
   const soloNext = () => {
-    if (soloAdvanceTimer.current) { window.clearTimeout(soloAdvanceTimer.current); soloAdvanceTimer.current = null; }
-    setQIdx((cur) => {
-      const next = cur + 1;
-      if (next >= questionsRef.current.length) {
-        setPhase("soloDone");
-        return cur;
-      }
-      return next;
-    });
+    const run = soloRef.current;
+    if (!run) return;
+    if (run.index + 1 >= run.questions.length) { setSolo({ ...run, done: true }); return; }
+    soloAnswered.current = false; setSoloSeconds(BATTLE_QUESTION_SECONDS);
+    setSolo({ ...run, index: run.index + 1, picked: null, started: Date.now() });
   };
-
-  const soloAnswer = (idx: number) => {
-    if (soloAnswered !== null) return;
-    const q = questions[qIdx];
-    if (!q) return;
-    const correct = q.answer === idx;
-    setSoloAnswered(idx);
-    setSoloFeedback(correct ? "correct" : "wrong");
-    if (correct) setSoloScore((s) => s + 1);
-    soloAdvanceTimer.current = window.setTimeout(soloNext, 800);
+  const createRoom = () => {
+    if (!ready) return;
+    const code = newRoomCode();
+    battle.connect(code, true, pick(Number(code)));
   };
-
-  // Award points once solo run finishes
-  const soloAwardedRef = useRef(false);
-  useEffect(() => {
-    if (phase !== "soloDone" || soloAwardedRef.current) return;
-    soloAwardedRef.current = true;
-    (async () => {
-      try {
-        const { data: u } = await supabase.auth.getUser();
-        if (u.user && soloScore > 0) {
-          await supabase.rpc("award_points_safe", {
-            _source: "mcq",
-            _points: Math.min(5, soloScore),
-            _ref_id: `solo:${Date.now()}`,
-          });
-        }
-      } catch { /* ignore */ }
-    })();
-  }, [phase, soloScore]);
-
-  /* ---------------- Random matchmaking ---------------- */
-
-  const stopMatchmaking = () => {
-    if (matchTimeoutRef.current) {
-      window.clearTimeout(matchTimeoutRef.current);
-      matchTimeoutRef.current = null;
-    }
-    if (matchmakingRef.current) {
-      supabase.removeChannel(matchmakingRef.current);
-      matchmakingRef.current = null;
-    }
+  const joinRoom = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!/^\d{6}$/.test(joinCode)) return;
+    battle.connect(joinCode, false);
   };
-
-  const findRandomMatch = () => {
-    stopMatchmaking();
-    matchedRef.current = false;
-    setPhase("matchmaking");
-    const lobbyName = `battle:lobby:${randomSubject}:${randomChapter}`;
-    const ch = supabase.channel(lobbyName, {
-      config: {
-        presence: { key: meId.current },
-        broadcast: { self: true, ack: true },
-      },
-    });
-    matchmakingRef.current = ch;
-
+  const findOpponent = () => {
+    if (!ready) return;
+    stopQueue(); matched.current = false; setSearching(true); setMessage("");
+    const token = queueGeneration.current;
+    // Language and question count are part of matching, not just subject/chapter.
+    const ch = supabase.channel(`battle:lobby:${bankLanguage}:${selectedSubject}:${selectedChapter}:${count}`, { config: { presence: { key: battle.meId } } });
+    queue.current = ch;
+    const active = () => token === queueGeneration.current && queue.current === ch;
     ch.on("presence", { event: "sync" }, () => {
-      if (matchedRef.current) return;
-      const state = ch.presenceState() as Record<string, Array<{ name: string; ts: number }>>;
-      const ids = Object.keys(state);
-      if (ids.length < 2) return;
-
-      // Deterministic host = smallest id
-      const sorted = ids.slice().sort();
-      const hostId = sorted[0];
-      const partnerId = sorted[1];
-      if (meId.current !== hostId && meId.current !== partnerId) return;
-
-      matchedRef.current = true;
-      const iAmHost = meId.current === hostId;
-
-      // Deterministic room code from the two player IDs so both sides join the
-      // same battle room without needing a broadcast handshake.
-      const combined = `${hostId}:${partnerId}`;
+      if (!active() || matched.current) return;
+      const ids = Object.keys(ch.presenceState()).sort();
+      if (ids.length < 2 || !ids.slice(0, 2).includes(battle.meId)) return;
+      matched.current = true;
+      if (queueTimeout.current !== null) clearTimeout(queueTimeout.current);
       let hash = 0;
-      for (let i = 0; i < combined.length; i++) {
-        hash = ((hash << 5) - hash + combined.charCodeAt(i)) | 0;
-      }
-      const roomCode = String(100000 + (Math.abs(hash) % 900000));
-
-      let qs: MCQ[] | undefined;
-      if (iAmHost) {
-        const seed = (Math.abs(hash) ^ (randomChapter * 9973)) >>> 0;
-        qs = buildBattleMcqs(randomSubject, 10, seed);
-      }
-
-      toast.success(t.matchFound);
-      setCode(roomCode);
-      setIsHost(iAmHost);
-      setupChannel(roomCode, iAmHost, qs);
-      if (!iAmHost && qs) setQuestions(qs);
-      setPhase("lobby");
-      // Delay leaving the lobby so both peers have time to see each other
-      // in the presence state before either untracks.
-      setTimeout(() => stopMatchmaking(), 1500);
+      for (const char of ids.slice(0, 2).join(":")) hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+      const code = String(100000 + (Math.abs(hash) % 900000));
+      const host = ids[0] === battle.meId;
+      battle.connect(code, host, host ? pick(Math.abs(hash)) : undefined);
+      setSearching(false);
+      // Give both students time to observe the same pair before leaving the queue.
+      queueLeave.current = setTimeout(() => { if (active()) stopQueue(); }, 1500);
     });
-
     ch.subscribe(async (status) => {
+      if (!active()) return;
       if (status === "SUBSCRIBED") {
-        await ch.track({ name, ts: Date.now() });
+        try { await ch.track({ name }); } catch { if (active()) { stopQueue(); setSearching(false); setMessage(text("تعذّر الاتصال. حاول مرة ثانية.", "Connection failed. Try again.")); } }
+      } else if (["CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(status) && !matched.current) {
+        stopQueue(); setSearching(false); setMessage(text("تعذّر الاتصال. حاول مرة ثانية.", "Connection failed. Try again."));
       }
     });
-
-    // Don't keep a presence channel open forever if nobody shows up.
-    matchTimeoutRef.current = window.setTimeout(() => {
-      if (matchedRef.current) return;
-      stopMatchmaking();
-      setPhase("randomSetup");
-      toast.error(t.noMatchFound);
-    }, 75000);
+    queueTimeout.current = setTimeout(() => {
+      if (!active() || matched.current) return;
+      stopQueue(); setSearching(false); setMessage(text("ما لكينا منافس هسه. جرّب تحدّي صديق أو تدرّب وحدك.", "No opponent right now. Challenge a friend or practise solo."));
+    }, 60000);
   };
 
-  const cancelMatchmaking = () => {
-    stopMatchmaking();
-    setPhase("randomSetup");
+  const question = solo && !solo.done ? solo.questions[solo.index] : battle.questions[battle.index];
+  const playing = (solo && !solo.done) || battle.phase === "playing";
+  const picked = solo ? solo.picked : battle.answered;
+  const seconds = solo ? soloSeconds : battle.seconds;
+  const revealed = picked !== null || seconds === 0;
+  const index = solo ? solo.index : battle.index;
+  const total = solo ? solo.questions.length : battle.questions.length;
+  const copyCode = async () => {
+    try { await navigator.clipboard.writeText(battle.code); toast.success(text("تم نسخ الرمز", "Code copied")); }
+    catch { toast.error(text("انسخ الرمز الظاهر وشاركه ويا صديقك.", "Copy the displayed code and share it with your friend.")); }
   };
-
-  const me = players.find((p) => p.id === meId.current);
-  const opp = players.find((p) => p.id !== meId.current);
-  const myScore = scores[meId.current] || 0;
-  const oppScore = opp ? (scores[opp.id] || 0) : 0;
-
-  const cur = questions[qIdx];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4 pb-24" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <Button variant="ghost" size="sm" onClick={guardedBack} disabled={isLocked}>
-            <ArrowLeft className="w-4 h-4" /> {t.back}
-          </Button>
-        </div>
+    <main className="min-h-screen bg-background p-4 pb-28" dir={ar ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-2xl space-y-5">
+        <Button variant="ghost" disabled={locked} onClick={() => busy ? reset() : onBack()}><ArrowLeft className={ar ? "h-4 w-4 rotate-180" : "h-4 w-4"} />{text("رجوع", "Back")}</Button>
+        <header className="space-y-2">
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-primary"><Swords className="h-5 w-5" />LIVE BATTLE</span>
+          <h1 className="text-2xl font-black">{text("تحدّي سريع، وأسئلة جاهزة", "Quick battle. Ready questions.")}</h1>
+          {!busy && <p className="text-sm leading-6 text-muted-foreground">{text("اختَر المادة والفصل، والعب من بنك الـMCQ الموجود بتميّزك.", "Choose a subject and chapter, then play from Tamayzak’s MCQ bank.")}</p>}
+        </header>
+        {message && <p role="status" className="rounded-xl border bg-secondary p-4 text-sm">{message}</p>}
 
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="text-center mb-6"
-        >
-          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold">
-            <motion.span
-              animate={{ rotate: [-12, 12, -12] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-              className="inline-flex"
-            >
-              <Swords className="w-7 h-7 text-rose-500" />
-            </motion.span>
-            <span className="bg-gradient-to-r from-fuchsia-600 via-rose-500 to-orange-500 bg-clip-text text-transparent">
-              {t.title}
-            </span>
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
-            </span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
-        </motion.div>
-
-        {phase === "menu" && (
-          <motion.div
-            initial="hidden"
-            animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
-            className="space-y-4"
-          >
-            <div className="rounded-2xl border bg-card p-4">
-              <label className="text-sm font-medium">{t.name}</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-2" />
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              <motion.button
-                onClick={() => setPhase("soloSetup")}
-                variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-                whileHover={{ y: -3, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative rounded-2xl p-5 text-left overflow-hidden bg-gradient-to-br from-sky-500 via-cyan-500 to-teal-500 text-white shadow-lg"
-              >
-                <User className="w-8 h-8 mb-2 drop-shadow" />
-                <div className="font-bold text-lg">{t.soloMode}</div>
-                <div className="text-sm opacity-90">{t.soloDesc}</div>
-              </motion.button>
-
-              <motion.button
-                onClick={() => setPhase("randomSetup")}
-                variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-                whileHover={{ y: -3, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative rounded-2xl p-5 text-left overflow-hidden bg-gradient-to-br from-fuchsia-600 via-rose-500 to-orange-500 text-white shadow-lg"
-              >
-                <Shuffle className="w-8 h-8 mb-2 drop-shadow" />
-                <div className="font-bold text-lg">{t.randomMode}</div>
-                <div className="text-sm opacity-90">{t.randomDesc}</div>
-              </motion.button>
-
-              <motion.button
-                onClick={() => setPhase("createSettings")}
-                variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }}
-                whileHover={{ y: -3, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative rounded-2xl p-5 text-left overflow-hidden bg-card border-2 border-primary/20 hover:border-primary/60 transition"
-              >
-                <Users className="w-8 h-8 mb-2 text-primary" />
-                <div className="font-bold text-lg">{t.friendMode}</div>
-                <div className="text-sm text-muted-foreground">{t.friendDesc}</div>
-              </motion.button>
-
-              <Button variant="outline" onClick={() => setPhase("join")} className="w-full">
-                {t.join}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {phase === "join" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border bg-card p-4">
-              <label className="text-sm font-medium">{t.code}</label>
-              <Input aria-label="123456"
-                value={joinInput}
-                onChange={(e) => setJoinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="123456"
-                className="mt-2 text-center text-2xl font-mono tracking-widest"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setPhase("menu")} className="flex-1">{t.back}</Button>
-              <Button onClick={joinRoom} className="flex-1">{t.join}</Button>
-            </div>
-          </div>
-        )}
-
-        {phase === "createSettings" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.uploadFile}</label>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer border-2 border-dashed border-primary/30 hover:border-primary rounded-xl p-6 text-center transition"
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.docx,.txt,application/pdf,text/plain"
-                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-                />
-                {file ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <FileText className="w-8 h-8 text-primary" />
-                    <p className="font-medium text-sm truncate max-w-full">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <Upload className="w-8 h-8 text-primary" />
-                    <p className="font-medium text-sm">{t.uploadFile}</p>
-                    <p className="text-xs text-muted-foreground">{t.uploadHint}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.questionsCount}</label>
-              <div className="grid grid-cols-4 gap-2">
-                {[5, 10, 15, 20].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setQCount(n)}
-                    className={`rounded-xl border p-3 text-sm font-bold transition ${
-                      qCount === n ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setPhase("menu")} className="flex-1" disabled={creating}>{t.back}</Button>
-              <Button onClick={createRoom} className="flex-1" disabled={creating || !file}>
-                {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.generating}</> : t.createNow}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {phase === "lobby" && (
-          <div className="space-y-4 text-center">
-            <div className="rounded-2xl border bg-card p-6">
-              <div className="text-sm text-muted-foreground mb-2">{t.shareCode}</div>
-              <div className="flex items-center justify-center gap-3">
-                <div className="text-4xl font-mono font-bold tracking-widest">{code}</div>
-                <Button aria-label="Copy / نسخ" variant="ghost" size="icon" onClick={() => { navigator.clipboard.writeText(code); toast.success(t.copied); }}>
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-card p-4">
-              <div className="text-sm font-medium mb-2 flex items-center justify-center gap-2">
-                <Users className="w-4 h-4" /> {players.length}/2
-              </div>
-              <div className="space-y-1">
-                {players.map((p) => (
-                  <div key={p.id} className="text-sm">{p.name}{p.id === meId.current ? ` (${t.you})` : ""}</div>
-                ))}
-              </div>
-              {players.length < 2 && (
-                <div className="mt-3 text-xs text-muted-foreground flex items-center justify-center gap-2">
-                  <Loader2 className="w-3 h-3 animate-spin" /> {t.waiting}
-                </div>
-              )}
-            </div>
-            <Button variant="ghost" onClick={restart}>{t.back}</Button>
-          </div>
-        )}
-
-        {phase === "countdown" && (
-          <div className="text-center py-20">
-            <div className="text-sm text-muted-foreground mb-4">{t.starting}</div>
-            <div className="text-8xl font-bold text-primary animate-pulse">{countdown}</div>
-          </div>
-        )}
-
-        {phase === "playing" && cur && (
-          <div className="space-y-4">
+        {!busy && <>
+          <section className="space-y-4 rounded-2xl border bg-card p-4">
+            <div className="flex items-center gap-2 text-sm font-bold"><BookOpen className="h-4 w-4 text-primary" />{text("أسئلة من البنك", "Questions from the bank")}</div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border bg-card p-3">
-                <div className="text-xs text-muted-foreground truncate">{me?.name || t.you}</div>
-                <div className="text-2xl font-bold text-primary">{myScore}</div>
-              </div>
-              <div className="rounded-xl border bg-card p-3">
-                <div className="text-xs text-muted-foreground truncate">{opp?.name || t.opp}</div>
-                <div className="text-2xl font-bold">{oppScore}</div>
-              </div>
+              <label className="min-w-0 space-y-2 text-sm">{text("المادة", "Subject")}
+                <select className="block min-h-11 min-w-0 w-full rounded-xl border bg-background px-3" value={selectedSubject} disabled={loading || !subjects.length} onChange={(e) => { setSubject(e.target.value); setChapter(0); }}>
+                  {!subjects.length && <option value="">{text("لا توجد مواد متاحة", "No subjects available")}</option>}
+                  {subjects.map((s) => <option key={s} value={s}>{LABELS[s]?.[language] ?? s}</option>)}
+                </select>
+              </label>
+              <label className="min-w-0 space-y-2 text-sm">{text("الفصل", "Chapter")}
+                <select className="block min-h-11 min-w-0 w-full rounded-xl border bg-background px-3" value={selectedChapter} disabled={loading || !chapters.length} onChange={(e) => setChapter(Number(e.target.value))}>
+                  <option value={0}>{text("كل الفصول المتاحة", "All available chapters")}</option>
+                  {chapters.map((c) => <option key={c} value={c}>{text(`الفصل ${c}`, `Chapter ${c}`)}</option>)}
+                </select>
+              </label>
             </div>
-
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>{t.q} {qIdx + 1} {t.of} {questions.length}</span>
-              <span className={timeLeft <= 5 ? "text-destructive font-bold" : ""}>{timeLeft}s</span>
-            </div>
-            <Progress value={(timeLeft / QUESTION_TIME) * 100} className="h-2" />
-
-            <motion.div
-              key={qIdx}
-              animate={feedback === "wrong" ? { x: [0, -10, 10, -8, 8, -4, 4, 0] } : {}}
-              transition={{ duration: 0.5 }}
-              className="relative rounded-2xl border bg-card p-6 overflow-hidden"
-            >
-              <AnimatePresence>
-                {feedback === "correct" && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-green-400/20 via-emerald-300/10 to-transparent"
-                  />
-                )}
-                {feedback === "wrong" && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-red-500/20 via-rose-400/10 to-transparent"
-                  />
-                )}
-              </AnimatePresence>
-              <div className="text-lg font-medium mb-4">{cur.q}</div>
-              <div className="grid gap-2">
-                {cur.choices.map((c, i) => {
-                  const hasAnswered = answered !== null && answeredFor === qIdx;
-                  const isMine = hasAnswered && answered === i;
-                  const isCorrect = cur.answer === i;
-                  return (
-                    <motion.button
-                      key={i}
-                      disabled={hasAnswered}
-                      onClick={() => submitAnswer(i)}
-                      animate={
-                        hasAnswered && isCorrect
-                          ? { scale: [1, 1.04, 1] }
-                          : hasAnswered && isMine && !isCorrect
-                            ? { x: [0, -6, 6, -4, 4, 0] }
-                            : {}
-                      }
-                      transition={{ duration: 0.45 }}
-                      className={`relative rounded-xl border p-3 text-left transition ${
-                        hasAnswered
-                          ? isCorrect
-                            ? "bg-green-100 border-green-500 text-green-900 shadow-[0_0_24px_rgba(34,197,94,0.5)]"
-                            : isMine
-                              ? "bg-red-100 border-red-500 text-red-900 shadow-[0_0_18px_rgba(239,68,68,0.45)]"
-                              : "opacity-60"
-                          : "hover:bg-accent"
-                      }`}
-                    >
-                      <span className="font-mono text-xs me-2 opacity-60">{String.fromCharCode(65 + i)}.</span>
-                      {c}
-                      {hasAnswered && isCorrect && (
-                        <Check className="w-5 h-5 text-green-600 absolute top-1/2 -translate-y-1/2 end-3" />
-                      )}
-                      {hasAnswered && isMine && !isCorrect && (
-                        <X className="w-5 h-5 text-red-600 absolute top-1/2 -translate-y-1/2 end-3" />
-                      )}
-                    </motion.button>
-                  );
-                })}
+            <details className="rounded-xl border p-3">
+              <summary className="cursor-pointer text-sm font-medium">{text("خيارات الجولة", "Round options")}</summary>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className="min-w-0 space-y-2 text-sm">{text("لغة الأسئلة", "Question language")}
+                  <select className="block min-h-11 min-w-0 w-full rounded-xl border bg-background px-3" value={bankLanguage} onChange={(e) => { setBankLanguage(e.target.value as AppLanguage); setChapter(0); setRetry(0); }}>
+                    <option value="ar">عربي</option><option value="en">English</option>
+                  </select>
+                </label>
+                <label className="min-w-0 space-y-2 text-sm">{text("عدد الأسئلة", "Questions")}
+                  <select className="block min-h-11 min-w-0 w-full rounded-xl border bg-background px-3" value={count} onChange={(e) => setCount(Number(e.target.value))}>{[5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}</select>
+                </label>
+                <label className="col-span-2 space-y-2 text-sm">{text("اسمك", "Your name")}<Input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} /></label>
               </div>
-            </motion.div>
-
-            <AnimatePresence>
-              {feedback === "correct" && (
-                <motion.div
-                  key={`fb-c-${qIdx}`}
-                  initial={{ scale: 0.4, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: "spring", stiffness: 280, damping: 18 }}
-                  className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
-                >
-                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white px-6 py-4 shadow-2xl">
-                    <Sparkles className="w-7 h-7" />
-                    <div>
-                      <div className="text-lg font-extrabold leading-none">
-                        {language === "ar" ? "إجابة صحيحة!" : "Correct!"}
-                      </div>
-                      <div className="text-sm opacity-90">+1 {language === "ar" ? "نقطة" : "point"}</div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              {feedback === "wrong" && (
-                <motion.div
-                  key={`fb-w-${qIdx}`}
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1, x: [0, -8, 8, -6, 6, 0] }}
-                  exit={{ opacity: 0, scale: 0.85 }}
-                  transition={{ duration: 0.5 }}
-                  className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
-                >
-                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white px-6 py-4 shadow-2xl">
-                    <X className="w-7 h-7" />
-                    <div className="text-lg font-extrabold">
-                      {language === "ar" ? "خطأ!" : "Wrong!"}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            </details>
+            {loading ? <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" />{text("جاري تحميل البنك…", "Loading bank…")}</p>
+              : <p className="text-sm text-muted-foreground">{text(`${roundCount} أسئلة · ٢٥ ثانية للسؤال · ${available.length} سؤال متاح`, `${roundCount} questions · 25 seconds each · ${available.length} available`)}</p>}
+            {!loading && (partial || !available.length) && <div className="min-w-0 space-y-2 text-sm"><p>{partial ? text("بعض أسئلة البنك ما تحمّلت. نعرض المتاح حالياً.", "Some bank questions could not load. Showing available questions.") : text("ماكو أسئلة بهذا الاختيار. غيّر المادة أو لغة الأسئلة.", "No questions for this selection. Change the subject or question language.")}</p><Button variant="outline" size="sm" onClick={() => setRetry((n) => n + 1)}>{text("إعادة التحميل", "Retry loading")}</Button></div>}
+          </section>
+          <Button size="lg" className="min-h-14 w-full gap-2 rounded-2xl text-base font-bold" disabled={!ready} onClick={createRoom}><Users className="h-5 w-5" />{text("تحدّ صديق", "Challenge a friend")}</Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" className="min-h-14 gap-2 rounded-2xl px-2 text-xs sm:px-4 sm:text-sm" disabled={!ready} onClick={findOpponent}><Shuffle className="h-4 w-4" />{text("منافس عشوائي", "Random opponent")}</Button>
+            <Button variant="outline" className="min-h-14 gap-2 rounded-2xl px-2 text-xs sm:px-4 sm:text-sm" disabled={!ready} onClick={startSolo}><User className="h-4 w-4" />{text("تدرّب وحدك", "Practise solo")}</Button>
           </div>
-        )}
+          <form onSubmit={joinRoom} className="space-y-3 rounded-2xl border bg-card p-4">
+            <label htmlFor="battle-code" className="block text-sm font-bold">{text("عندك رمز من صديقك؟", "Have a friend’s room code?")}</label>
+            <div className="flex gap-2"><Input id="battle-code" value={joinCode} placeholder="123456" inputMode="numeric" autoComplete="off" maxLength={6} dir="ltr" className="min-w-0 text-center font-mono tracking-widest" onChange={(e) => setJoinCode(e.target.value.replace(/[٠-٩]/g, (n) => String(n.charCodeAt(0) - 1632)).replace(/\D/g, "").slice(0, 6))} /><Button type="submit" disabled={!/^\d{6}$/.test(joinCode)}>{text("انضم", "Join")}</Button></div>
+          </form>
+        </>}
 
-        {phase === "done" && (
-          null
-        )}
-        {phase === "soloSetup" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.uploadFile}</label>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer border-2 border-dashed border-primary/30 hover:border-primary rounded-xl p-6 text-center transition"
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.docx,.txt,application/pdf,text/plain"
-                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-                />
-                {file ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <FileText className="w-8 h-8 text-primary" />
-                    <p className="font-medium text-sm truncate max-w-full">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <Upload className="w-8 h-8 text-primary" />
-                    <p className="font-medium text-sm">{t.uploadFile}</p>
-                    <p className="text-xs text-muted-foreground">{t.uploadHint}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.questionsCount}</label>
-              <div className="grid grid-cols-4 gap-2">
-                {[5, 10, 15, 20].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setQCount(n)}
-                    className={`rounded-xl border p-3 text-sm font-bold transition ${
-                      qCount === n ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={restart} className="flex-1" disabled={creating}>{t.back}</Button>
-              <Button onClick={startSolo} className="flex-1" disabled={creating || !file}>
-                {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.generating}</> : t.startSolo}
-              </Button>
-            </div>
-          </div>
-        )}
+        {searching && <section className="space-y-4 rounded-2xl border p-6 text-center"><Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" /><h2 className="font-bold">{text("ندورلك على منافس…", "Finding an opponent…")}</h2><p className="text-sm text-muted-foreground">{LABELS[selectedSubject]?.[language] ?? selectedSubject} · {selectedChapter ? text(`الفصل ${selectedChapter}`, `Chapter ${selectedChapter}`) : text("كل الفصول", "All chapters")} · {bankLanguage === "ar" ? "عربي" : "English"}</p><Button variant="outline" onClick={reset}>{text("إلغاء البحث", "Cancel search")}</Button></section>}
+        {battle.phase === "lobby" && <section className="space-y-5 rounded-2xl border bg-card p-6 text-center"><h2 className="font-bold">{text("شارك الرمز ويا صديقك", "Share the code with your friend")}</h2><div className="flex items-center justify-center gap-2"><span dir="ltr" className="font-mono text-4xl font-black tracking-widest">{battle.code}</span><Button variant="ghost" size="icon" aria-label={text("نسخ الرمز", "Copy code")} onClick={() => void copyCode()}><Copy className="h-4 w-4" /></Button></div><p role="status" className="text-sm text-muted-foreground">{text("بانتظار اللاعب الثاني… الجولة تبدأ تلقائياً.", "Waiting for the second player… The round starts automatically.")}</p><Button variant="outline" onClick={reset}>{text("إلغاء الغرفة", "Cancel room")}</Button></section>}
+        {battle.phase === "countdown" && <div className="space-y-4 py-12 text-center"><p>{text("جهّز نفسك!", "Get ready!")}</p><div className="text-7xl font-black text-primary">{battle.countdown}</div></div>}
 
-        {phase === "soloPlaying" && cur && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>{t.q} {qIdx + 1} {t.of} {questions.length}</span>
-              <span className={soloTimeLeft <= 5 ? "text-destructive font-bold" : ""}>{soloTimeLeft}s</span>
-            </div>
-            <Progress value={(soloTimeLeft / SOLO_QUESTION_TIME) * 100} className="h-2" />
-            <motion.div
-              key={qIdx}
-              animate={soloFeedback === "wrong" ? { x: [0, -10, 10, -8, 8, -4, 4, 0] } : {}}
-              transition={{ duration: 0.5 }}
-              className="rounded-2xl border bg-card p-6"
-            >
-              <div className="text-lg font-medium mb-4">{cur.q}</div>
-              <div className="grid gap-2">
-                {cur.choices.map((c, i) => {
-                  const hasAnswered = soloAnswered !== null;
-                  const isMine = hasAnswered && soloAnswered === i;
-                  const isCorrect = cur.answer === i;
-                  return (
-                    <button
-                      key={i}
-                      disabled={hasAnswered}
-                      onClick={() => soloAnswer(i)}
-                      className={`relative rounded-xl border p-3 text-left transition ${
-                        hasAnswered
-                          ? isCorrect
-                            ? "bg-green-100 border-green-500 text-green-900"
-                            : isMine
-                              ? "bg-red-100 border-red-500 text-red-900"
-                              : "opacity-60"
-                          : "hover:bg-accent"
-                      }`}
-                    >
-                      <span className="font-mono text-xs me-2 opacity-60">{String.fromCharCode(65 + i)}.</span>
-                      {c}
-                      {hasAnswered && isCorrect && <Check className="w-5 h-5 text-green-600 absolute top-1/2 -translate-y-1/2 end-3" />}
-                      {hasAnswered && isMine && !isCorrect && <X className="w-5 h-5 text-red-600 absolute top-1/2 -translate-y-1/2 end-3" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {playing && question && <section className="space-y-4">
+          {!solo && <div className="grid grid-cols-2 gap-3">{battle.players.map((p) => <div key={p.id} className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3"><span className="truncate text-sm">{p.id === battle.meId ? text("أنت", "You") : p.name}</span><b>{battle.scores[p.id] ?? 0}</b></div>)}</div>}
+          <div className="flex justify-between text-sm"><span>{text("السؤال", "Question")} {index + 1} / {total}</span><span className={seconds <= 5 ? "font-bold text-destructive" : ""}>{seconds} {text("ثانية", "seconds")}</span></div>
+          <Progress value={seconds / BATTLE_QUESTION_SECONDS * 100} className="h-2" />
+          <article className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6">
+            <h2 dir="auto" className="break-words whitespace-pre-wrap text-lg font-bold leading-8">{question.q}</h2>
+            <div className="grid gap-3">{question.choices.map((choice, i) => <button key={i} disabled={revealed} dir="auto" onClick={() => {
+              if (solo) soloAnswer(i);
+              else if (battle.answer(i) === true) void award(`${battle.code}:${index}`, "live_battle", 1);
+            }} className={`flex min-h-14 items-center justify-between gap-3 rounded-xl border p-4 text-start leading-7 transition-colors ${revealed ? i === question.answer ? "border-emerald-500 bg-emerald-50 text-emerald-950" : picked === i ? "border-rose-500 bg-rose-50 text-rose-950" : "opacity-60" : "hover:border-primary hover:bg-primary/5"}`}><span className="min-w-0 break-words whitespace-pre-wrap">{choice}</span>{revealed && i === question.answer && <Check className="h-5 w-5 shrink-0" />}{revealed && picked === i && i !== question.answer && <X className="h-5 w-5 shrink-0" />}</button>)}</div>
+            {revealed && <div role="status" className="min-w-0 space-y-2 text-sm"><p className="font-bold">{picked === null ? text("خلص الوقت. هاي الإجابة الصحيحة.", "Time’s up. Here is the correct answer.") : picked === question.answer ? text("عاشت إيدك! إجابة صحيحة.", "Correct! Well done.") : text("مو مشكلة، راجع الإجابة الصحيحة.", "Review the correct answer and keep going.")}</p>{solo && question.explanation && <p dir="auto" className="whitespace-pre-wrap leading-7 text-muted-foreground">{question.explanation}</p>}{!solo && <p className="text-muted-foreground">{text("ننتقل بعد جواب الطرفين أو انتهاء الوقت.", "Next question after both answers or when time runs out.")}</p>}</div>}
+          </article>
+          {solo && revealed && <Button className="w-full" onClick={soloNext}>{index + 1 === total ? text("شوف النتيجة", "See result") : text("السؤال التالي", "Next question")}</Button>}
+        </section>}
 
-        {phase === "soloDone" && (
-          <div className="text-center space-y-6 py-8">
-            <Trophy className="w-20 h-20 text-amber-500 mx-auto" />
-            <div className="text-3xl font-bold">{t.soloDone}</div>
-            <div className="text-lg text-muted-foreground">
-              {t.correctCount}: <span className="font-bold text-foreground">{soloScore}</span> / {questions.length}
-            </div>
-            <Button onClick={restart} size="lg">{t.playAgain}</Button>
-          </div>
-        )}
-
-        {phase === "randomSetup" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.subject}</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {SUBJECT_OPTIONS.map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => setRandomSubject(s.key)}
-                    className={`rounded-xl border p-3 text-sm font-bold transition ${
-                      randomSubject === s.key ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-                    }`}
-                  >
-                    {language === "ar" ? s.ar : s.en}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-card p-4 space-y-3">
-              <label className="text-sm font-medium">{t.chapter}</label>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                {[1,2,3,4,5,6,7,8].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setRandomChapter(n)}
-                    className={`rounded-xl border p-3 text-sm font-bold transition ${
-                      randomChapter === n ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={restart} className="flex-1">{t.back}</Button>
-              <Button onClick={findRandomMatch} className="flex-1">{t.findMatch}</Button>
-            </div>
-          </div>
-        )}
-
-        {phase === "matchmaking" && (
-          <div className="text-center space-y-6 py-12">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="mx-auto w-16 h-16 rounded-full border-4 border-primary border-t-transparent"
-            />
-            <div className="text-lg font-bold">{t.searching}</div>
-            <div className="text-sm text-muted-foreground">
-              {t.subject}: <b>{SUBJECT_OPTIONS.find(s => s.key === randomSubject)?.[language] ?? randomSubject}</b>
-              {" · "}{t.chapter} {randomChapter}
-            </div>
-            <Button variant="outline" onClick={cancelMatchmaking}>{t.cancelSearch}</Button>
-          </div>
-        )}
-
-        {phase === "done" && (
-          <div className="text-center space-y-6 py-8">
-            <Trophy className="w-20 h-20 text-amber-500 mx-auto" />
-            <div className="text-3xl font-bold">
-              {myScore === oppScore ? t.tie : myScore > oppScore ? t.youWin : t.youLose}
-            </div>
-            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground">{me?.name || t.you}</div>
-                <div className="text-3xl font-bold text-primary">{myScore}</div>
-              </div>
-              <div className="rounded-xl border bg-card p-4">
-                <div className="text-xs text-muted-foreground">{opp?.name || t.opp}</div>
-                <div className="text-3xl font-bold">{oppScore}</div>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {t.pointsEarned}: <span className="font-bold text-foreground">{myScore * 2 + (myScore > oppScore ? questions.length : 0)}</span>
-            </div>
-            <Button onClick={restart} size="lg">{t.playAgain}</Button>
-          </div>
-        )}
+        {(battle.phase === "done" || solo?.done) && <section className="space-y-5 rounded-2xl border bg-card p-6 text-center"><Trophy className="mx-auto h-16 w-16 text-amber-500" /><h2 className="text-2xl font-black">{solo ? text("خلصت الجولة!", "Round complete!") : myScore === opponentScore ? text("تعادل!", "It’s a tie!") : myScore > opponentScore ? text("فزت بالتحدّي!", "You won!") : text("محاولة حلوة، جرّب مرة ثانية!", "Good effort. Try again!")}</h2><p className="text-lg">{solo ? `${solo.score} / ${solo.questions.length}` : `${myScore} — ${opponentScore}`}</p><Button onClick={reset}>{text("العب مرة ثانية", "Play again")}</Button></section>}
+        {battle.phase === "disconnected" && <section className="space-y-4 rounded-2xl border p-6 text-center"><h2 className="font-bold">{text("انقطع الاتصال بالغرفة", "Room connection lost")}</h2><p className="text-sm text-muted-foreground">{text("ممكن اللاعب غادر أو الاتصال انقطع. ارجع وأنشئ تحدّياً جديداً.", "A player left or the connection was interrupted. Start a new challenge.")}</p><Button onClick={reset}>{text("رجوع للتحدّيات", "Back to battles")}</Button></section>}
       </div>
     </main>
   );
