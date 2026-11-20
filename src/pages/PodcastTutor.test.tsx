@@ -243,7 +243,7 @@ it("keeps the same section after a partial answer and returns to the understandi
   expect(api.invoke).toHaveBeenCalledWith("tts-speak", {
     body: expect.objectContaining({
       purpose: "podcast",
-      voice: "onyx",
+      voice: "fable",
       speed: 1,
     }),
   });

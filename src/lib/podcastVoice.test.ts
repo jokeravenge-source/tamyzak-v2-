@@ -7,7 +7,7 @@ it("selects a steady Iraqi tutor delivery for podcast speech", () => {
     voice: "shimmer",
     speed: 2,
   });
-  expect(result.voice).toBe("onyx");
+  expect(result.voice).toBe("fable");
   expect(result.speed).toBe(1);
   expect(result.instructions).toContain("العراقية");
 });

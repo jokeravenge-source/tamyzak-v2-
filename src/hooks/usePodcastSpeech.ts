@@ -86,7 +86,7 @@ export function usePodcastSpeech() {
             body: {
               text: value,
               language: "ar",
-              voice: "onyx",
+              voice: "fable",
               speed: 1,
               purpose: "podcast",
             },

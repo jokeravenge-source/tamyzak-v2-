@@ -3,7 +3,7 @@ type SpeechOptions = { purpose?: unknown; voice?: unknown; speed?: unknown };
 export function speechSettings({ purpose, voice, speed }: SpeechOptions) {
   if (purpose === "podcast") {
     return {
-      voice: "onyx",
+      voice: "fable",
       speed: 1,
       instructions:
         "تحدث باللهجة العراقية الطبيعية بصوت رجالي دافئ وواضح كمدرس ودود يراجع ويا طالب. نبرة مشجعة وخفيفة دم من دون مبالغة. اقرأ النص كما هو، مع وقفات قصيرة بين الأفكار، وتمهّل عند القوانين والأرقام والمصطلحات العلمية. لا تضف كلمات أو ضحكات من عندك.",
