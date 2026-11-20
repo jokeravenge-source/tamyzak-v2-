@@ -22,6 +22,11 @@ one official attempt, persisted in `nadawi_contest_attempts`.
 - Completed attempts rank by score descending, then total elapsed milliseconds
   ascending. Exact equality in both shares a dense rank. The UI shows the current
   standings, refreshed every 15 seconds; no contest closing date was specified.
+  After completion, the student’s current rank is shown prominently above the
+  standings. The home contest dialog also has a Competition leaderboard button,
+  available before or after participation without starting an attempt. It shows
+  the top 20 finishers plus the caller’s own result, even outside the top 20.
+  Loading, sign-in, empty and retry states are explicit; admin tests stay excluded.
 - Q4 remains optional letter-writing practice after the result, manually marked,
   outside the timed 41-point competition. Its draft is not sent to the teacher.
 
@@ -75,3 +80,13 @@ private table, so resets and results cannot alter official attempts or appear
 in the student leaderboard. The database validation script applies both
 migrations and checks non-admin denial, role revocation, full scoring, reset and
 official-result isolation.
+
+## Mistake review
+
+Apply `20261120220000_nadawi_mistakes.sql` after the admin-test migration before
+publishing. Completed result screens have a Review my mistakes section. Its RPC
+returns only the caller’s incorrect/expired questions from the saved shuffled
+attempt, with the submitted choice text or word and accepted correct answers.
+It refuses unfinished attempts and anonymous callers; preview review additionally
+verifies the admin role. No other student’s answers or active answer keys are
+exposed, and review never changes points, times or standings.

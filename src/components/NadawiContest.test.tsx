@@ -20,6 +20,7 @@ it("sends only the selected option and never a client score or time", () => {
   fireEvent.click(screen.getByRole("button", { name: "Second" }));
   fireEvent.click(screen.getByRole("button", { name: "Submit and continue" }));
   expect(api.submit).toHaveBeenCalledWith("1");
+  expect(screen.queryByText("Review my mistakes")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Previous" })).not.toBeInTheDocument();
   expect(screen.queryByText(/Correct answer:/)).not.toBeInTheDocument();
 });
@@ -37,7 +38,10 @@ it("shows the persisted score, precise total time and official ranking", async (
   api.ranks.mockResolvedValue([{ rank: 1, display_name: "Sara", score: 41, elapsed_ms: 60000, is_me: false }, { rank: 2, display_name: "Ali", score: 31, elapsed_ms: 91234, is_me: true }]);
   render(<NadawiContest language="en" />);
   expect(screen.getByText("31 / 41")).toBeInTheDocument();
+  expect(screen.getByText("Review my mistakes")).toBeInTheDocument();
   expect(await screen.findByText("Ali (you)")).toBeInTheDocument();
+  expect(screen.getByText("Your current rank")).toBeInTheDocument();
+  expect(screen.getByText("#2")).toBeInTheDocument();
   expect(screen.getByText("Sara")).toBeInTheDocument();
   expect(screen.getByText(/Letter writing|Original letter task/)).toBeInTheDocument();
 });

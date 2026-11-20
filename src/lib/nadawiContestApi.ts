@@ -7,6 +7,7 @@ export type TimedNadawiState =
   | (Base & { status: "active"; attempt_id: string; started_at: string; deadline_at: string; question_index: number; total_questions: number; question: TimedNadawiQuestion })
   | (Base & { status: "completed"; attempt_id: string; started_at: string; completed_at: string; total_questions: number; score: number; elapsed_ms: number });
 export type NadawiRank = { rank: number; display_name: string; score: number; elapsed_ms: number; is_me: boolean };
+export type NadawiMistake = { question_number: number; prompt: string; word_bank: string[]; user_answer: string | null; correct_answers: string[]; timed_out: boolean };
 
 // Keep the RPC boundary isolated until generated database types are refreshed after deployment.
 type ContestRpc = (name: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
@@ -43,6 +44,12 @@ export async function getNadawiRankings(): Promise<NadawiRank[]> {
     if (!Number.isFinite(Number(r.rank)) || typeof r.display_name !== "string" || !Number.isInteger(r.score) || !Number.isFinite(Number(r.elapsed_ms))) throw new Error("INVALID_RANKINGS");
     return { ...r, rank: Number(r.rank), elapsed_ms: Number(r.elapsed_ms) };
   });
+}
+export async function getNadawiMistakes(adminTest = false): Promise<NadawiMistake[]> {
+  const { data, error } = await rpc("get_nadawi_contest_mistakes", { _admin_test: adminTest });
+  if (error) throw new Error(error.message);
+  if (!Array.isArray(data) || !data.every((row: NadawiMistake) => row && Number.isInteger(row.question_number) && row.question_number >= 1 && row.question_number <= 41 && typeof row.prompt === "string" && Array.isArray(row.word_bank) && row.word_bank.every((word) => typeof word === "string") && (row.user_answer === null || typeof row.user_answer === "string") && Array.isArray(row.correct_answers) && row.correct_answers.length > 0 && row.correct_answers.every((answer) => typeof answer === "string") && typeof row.timed_out === "boolean")) throw new Error("INVALID_MISTAKES");
+  return data;
 }
 export function formatNadawiDuration(ms: number, precise = false) {
   const value = Math.max(0, Math.floor(ms));

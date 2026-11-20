@@ -53,6 +53,35 @@ await db.exec(`CREATE FUNCTION public.has_role(_user_id uuid,_role text) RETURNS
  SELECT coalesce(_role='admin' AND _user_id=nullif(current_setting('test.nadawi_admin',true),'')::uuid,false) $$;`);
 await db.query("SELECT set_config('test.nadawi_admin',$1,false)",[ids[0]]);
 await db.exec(await readFile(new URL('../supabase/migrations/20261120210000_nadawi_admin_test.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261120220000_nadawi_mistakes.sql',import.meta.url),'utf8'));
+const mistakes=(test=false)=>rpc('SELECT get_nadawi_contest_mistakes($1) AS result',[test]);
+await user(''); await assert.rejects(()=>mistakes(),/AUTH_REQUIRED/);
+await user(ids[0]); assert.deepEqual(await mistakes(),[]);
+await db.query('UPDATE nadawi_contest_attempts SET completed_at=NULL WHERE id=$1',[b.attempt_id]);
+await user(ids[1]); await assert.rejects(()=>mistakes(),/REVIEW_NOT_READY/);
+await db.query('UPDATE nadawi_contest_attempts SET completed_at=clock_timestamp() WHERE id=$1',[b.attempt_id]);
+await assert.rejects(()=>mistakes(true),/ADMIN_REQUIRED/);
+await db.query('UPDATE nadawi_contest_attempts SET completed_at=NULL,score=0,elapsed_ms=NULL,question_started_at=clock_timestamp() WHERE id=$1',[c.attempt_id]);
+await user(ids[2]); await assert.rejects(()=>mistakes(),/REVIEW_NOT_READY/);
+c=await state(); let wrongMcq=false,wrongShort=false;
+while(c.status==='active'){
+ let value=await key(c);
+ if(c.question.kind==='mcq'&&!wrongMcq){value=String((Number(value)+1)%c.question.choices.length);wrongMcq=true;}
+ else if(c.question.kind==='short'&&!wrongShort){value='wrong';wrongShort=true;}
+ c=await answer(c,value);
+}
+const errors=await mistakes(); assert.equal(errors.length,3); assert.equal(errors[0].timed_out,true);assert.equal(errors[0].user_answer,null);
+const snapshot=(await db.query('SELECT items FROM nadawi_contest_attempts WHERE id=$1',[c.attempt_id])).rows[0].items;
+for(const error of errors){
+ const item=snapshot[error.question_number-1]; assert.equal(error.prompt,item.prompt);
+ assert.deepEqual(error.correct_answers,item.kind==='mcq'?[item.answer_key.correct]:item.answer_key.answers);
+ if(!error.timed_out&&item.kind==='mcq')assert.ok(item.choices.includes(error.user_answer));
+ if(!error.timed_out&&item.kind==='short')assert.equal(error.user_answer,'wrong');
+}
+await user(ids[3]); const expired=await mistakes();assert.equal(expired.length,41);assert.ok(expired.every(e=>e.timed_out&&e.user_answer===null));
+await db.exec('SET ROLE authenticated;'); assert.equal((await mistakes()).length,41); await db.exec('RESET ROLE;');
+await user(ids[0]); assert.deepEqual(await mistakes(),[]);
+console.log('PASS: completed own-only mistake review, active/auth/admin denial, shuffled choice text, one-word corrections and expired questions.');
 await user(ids[1]);
 await assert.rejects(()=>rpc('SELECT start_nadawi_admin_test() AS result'),/ADMIN_REQUIRED/);
 await assert.rejects(()=>rpc('SELECT get_nadawi_admin_test_state() AS result'),/ADMIN_REQUIRED/);
@@ -64,17 +93,19 @@ const previewAnswer=(s,v)=>rpc('SELECT submit_nadawi_admin_test_answer($1,$2,$3)
 const previewKey=async s=>{const q=(await db.query('SELECT items->($2::integer) AS item FROM nadawi_contest_test_attempts WHERE id=$1',[s.attempt_id,s.question_index])).rows[0].item;return q.kind==='mcq'?String(q.choices.indexOf(q.answer_key.correct)):q.answer_key.answers[0];};
 assert.equal((await previewState()).status,'not_started');
 let preview=await previewStart(false); assert.equal(preview.status,'active');
+await assert.rejects(()=>mistakes(true),/REVIEW_NOT_READY/);
 assert.equal((await previewState()).attempt_id,preview.attempt_id);
 await user(ids[1]);await assert.rejects(()=>previewAnswer(preview,'0'),/ADMIN_REQUIRED/);await user(ids[0]);
 preview=await previewAnswer(preview,await previewKey(preview)); assert.equal(preview.question_index,1);
 const oldPreview=preview.attempt_id; preview=await previewStart(true); assert.notEqual(preview.attempt_id,oldPreview); assert.equal(preview.question_index,0);
 while(preview.status==='active')preview=await previewAnswer(preview,await previewKey(preview));
-assert.equal(preview.score,41);
+assert.equal(preview.score,41); assert.deepEqual(await mistakes(true),[]);
 const officialAfter=(await db.query('SELECT to_jsonb(a) AS a FROM nadawi_contest_attempts a WHERE user_id=$1',[ids[0]])).rows[0].a;
 assert.deepEqual(officialAfter,officialBefore);
 assert.equal((await db.query('SELECT * FROM get_nadawi_contest_leaderboard()')).rows.length,4);
 await db.query("SELECT set_config('test.nadawi_admin','',false)");
 await assert.rejects(previewState,/ADMIN_REQUIRED/);
+await assert.rejects(()=>mistakes(true),/ADMIN_REQUIRED/);
 await db.exec('SET ROLE authenticated;');
 await assert.rejects(()=>db.query('SELECT * FROM nadawi_contest_test_attempts'),/permission denied/);
 await db.exec('RESET ROLE;');

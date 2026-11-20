@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
-import { answerTimedNadawi, startTimedNadawi, formatNadawiDuration, parseTimedNadawiState } from "./nadawiContestApi";
+import { answerTimedNadawi, startTimedNadawi, formatNadawiDuration, parseTimedNadawiState, getNadawiMistakes } from "./nadawiContestApi";
 beforeEach(() => vi.clearAllMocks());
 it("formats millisecond precision so the time tie-break is visible", () => {
   expect(formatNadawiDuration(91234, true)).toBe("01:31.234"); expect(formatNadawiDuration(91234)).toBe("01:31");
@@ -23,4 +23,15 @@ it("uses separate preview endpoints without restarting the official attempt", as
   expect(rpc).toHaveBeenLastCalledWith("start_nadawi_admin_test", { _restart: true });
   await answerTimedNadawi("preview", 0, "1", true);
   expect(rpc).toHaveBeenLastCalledWith("submit_nadawi_admin_test_answer", { _attempt_id: "preview", _question_index: 0, _answer: "1" });
+});
+
+it("loads corrections through the own-attempt RPC and validates its response", async () => {
+  const row = { question_number: 2, prompt: "Choose", word_bank: [], user_answer: "wrong", correct_answers: ["right"], timed_out: false };
+  rpc.mockResolvedValue({ data: [row], error: null });
+  expect(await getNadawiMistakes()).toEqual([row]);
+  expect(rpc).toHaveBeenLastCalledWith("get_nadawi_contest_mistakes", { _admin_test: false });
+  await getNadawiMistakes(true);
+  expect(rpc).toHaveBeenLastCalledWith("get_nadawi_contest_mistakes", { _admin_test: true });
+  rpc.mockResolvedValue({ data: [{ ...row, correct_answers: [] }], error: null });
+  await expect(getNadawiMistakes()).rejects.toThrow("INVALID_MISTAKES");
 });

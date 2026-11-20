@@ -3,6 +3,7 @@ import { ArrowUpLeft, ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import NadawiContest from "./NadawiContest";
+import NadawiLeaderboardButton from "./NadawiLeaderboardButton";
 import NadawiAdminTestButton from "./NadawiAdminTestButton";
 import { canTestNadawiContest } from "@/lib/nadawiContestApi";
 import { NADAWI_CONTEST_START } from "@/lib/nadawiContestSettings";
@@ -74,6 +75,7 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
           <DialogTitle dir="rtl" className="text-xl font-black leading-9 sm:text-2xl">{title}</DialogTitle>
           <DialogDescription className="leading-6 text-blue-100">{appointment}</DialogDescription>
         </div>
+        <NadawiLeaderboardButton language={language} />
         {canTest && <NadawiAdminTestButton language={language} />}
         {arrived ? (
           <div className="space-y-4">

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContestCard from "./NadawiContestCard";
 const role = vi.hoisted(() => ({ allowed: vi.fn() }));
 vi.mock("@/lib/nadawiContestApi", () => ({ canTestNadawiContest: role.allowed }));
+vi.mock("./NadawiLeaderboard", () => ({ default: () => <div>Competition standings table</div> }));
 vi.mock("./NadawiContest", () => ({ default: ({ adminTest }: { adminTest?: boolean }) => <div>{adminTest ? "Admin timed test" : "Timed challenge"}</div> }));
 
 beforeEach(() => {
@@ -69,4 +70,15 @@ it("lets a verified admin open a test before the official countdown ends", async
   fireEvent.click(screen.getByRole("button", { name: "Test Nadawi competition" }));
   expect(screen.getByText("Admin timed test")).toBeInTheDocument();
   expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
+});
+
+it("opens standings before participation without starting an attempt", () => {
+  render(<NadawiContestCard language="en" />);
+  openCard();
+  fireEvent.click(screen.getByRole("button", { name: "Competition leaderboard" }));
+  expect(screen.getByRole("dialog", { name: "Mohammed Al-Nadawi competition leaderboard" })).toBeInTheDocument();
+  expect(screen.getByText("Competition standings table")).toBeInTheDocument();
+  expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close / إغلاق" }));
+  expect(screen.getByRole("timer")).toBeInTheDocument();
 });
