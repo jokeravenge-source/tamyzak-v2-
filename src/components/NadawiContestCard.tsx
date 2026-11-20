@@ -3,10 +3,11 @@ import { ArrowUpLeft, ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import NadawiContest from "./NadawiContest";
+import NadawiContestClosedNotice from "./NadawiContestClosedNotice";
 import NadawiLeaderboardButton from "./NadawiLeaderboardButton";
 import NadawiAdminTestButton from "./NadawiAdminTestButton";
 import { canTestNadawiContest } from "@/lib/nadawiContestApi";
-import { NADAWI_CONTEST_START } from "@/lib/nadawiContestSettings";
+import { NADAWI_CONTEST_CLOSED, NADAWI_CONTEST_START } from "@/lib/nadawiContestSettings";
 import englishIcon from "@/assets/english-contest-3d.svg";
 
 const title = "مسابقة الأستاذ محمد النداوي";
@@ -23,7 +24,7 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
   }, [open]);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    if (!open) return;
+    if (!open || NADAWI_CONTEST_CLOSED) return;
     setNow(Date.now());
     if (Date.now() >= NADAWI_CONTEST_START) return;
     const timer = window.setInterval(() => {
@@ -57,12 +58,12 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
           <span className="relative min-w-0 flex-1">
             <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber-200/25 bg-amber-100/10 px-2.5 py-1 text-[10px] font-bold text-amber-100 sm:text-xs">
               <Sparkles className="h-3 w-3" aria-hidden="true" />
-              {ar ? "تحدّي اللغة الإنكليزية" : "English challenge"}
+              {NADAWI_CONTEST_CLOSED ? (ar ? "المسابقة مغلقة" : "Competition closed") : (ar ? "تحدّي اللغة الإنكليزية" : "English challenge")}
             </span>
             <span dir="rtl" className="block text-base font-black leading-7 sm:text-2xl sm:leading-9">{title}</span>
             <span className="mt-2 flex items-center gap-1.5 text-xs leading-5 text-cyan-100 sm:text-sm">
               <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              {ar ? "اضغط لفتح المسابقة وموعدها" : "Open the challenge and its start time"}
+              {NADAWI_CONTEST_CLOSED ? (ar ? "متوقفة مؤقتاً" : "Temporarily closed") : (ar ? "اضغط لفتح المسابقة وموعدها" : "Open the challenge and its start time")}
             </span>
           </span>
           <Arrow aria-hidden="true" className="relative hidden h-9 w-9 shrink-0 rounded-full bg-white/10 p-2 sm:block" />
@@ -71,13 +72,13 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
       <DialogContent dir={ar ? "rtl" : "ltr"} className="gap-5 rounded-3xl border-cyan-200/20 bg-[#101f42] p-6 text-center text-white sm:p-8">
         <img src={englishIcon} width={240} height={240} alt="" className={arrived ? "mx-auto h-20 w-20" : "mx-auto h-36 w-36"} />
         <div className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-cyan-200">{ar ? "استعد لتحدّي الإنكليزي" : "Get ready for English"}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-cyan-200">{NADAWI_CONTEST_CLOSED ? (ar ? "متوقفة مؤقتاً" : "Temporarily closed") : (ar ? "استعد لتحدّي الإنكليزي" : "Get ready for English")}</p>
           <DialogTitle dir="rtl" className="text-xl font-black leading-9 sm:text-2xl">{title}</DialogTitle>
-          <DialogDescription className="leading-6 text-blue-100">{appointment}</DialogDescription>
+          <DialogDescription className="leading-6 text-blue-100">{NADAWI_CONTEST_CLOSED ? (ar ? "نعلن عن أي تحديث هنا." : "Updates will be announced here.") : appointment}</DialogDescription>
         </div>
-        <NadawiLeaderboardButton language={language} />
+        {!NADAWI_CONTEST_CLOSED && <NadawiLeaderboardButton language={language} />}
         {canTest && <NadawiAdminTestButton language={language} />}
-        {arrived ? (
+        {NADAWI_CONTEST_CLOSED ? <NadawiContestClosedNotice language={language} /> : arrived ? (
           <div className="space-y-4">
             {<p role="status" className="text-sm font-bold text-cyan-100">{ar ? "حان موعد المسابقة!" : "It’s time!"}</p>}
             <NadawiContest language={language} />

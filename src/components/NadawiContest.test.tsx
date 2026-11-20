@@ -2,10 +2,12 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContest from "./NadawiContest";
 import type { TimedNadawiState } from "@/lib/nadawiContestApi";
+const settings = vi.hoisted(() => ({ closed: false }));
+vi.mock("@/lib/nadawiContestSettings", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/nadawiContestSettings")>(), get NADAWI_CONTEST_CLOSED() { return settings.closed; } }));
 const api = vi.hoisted(() => ({ state: null as TimedNadawiState | null, seconds: 30, pending: false, error: "", submit: vi.fn(), start: vi.fn(), refresh: vi.fn(), ranks: vi.fn(), restart: vi.fn() }));
 vi.mock("@/hooks/useTimedNadawiContest", () => ({ useTimedNadawiContest: () => ({ ...api, elapsed: 2500 }) }));
 vi.mock("@/lib/nadawiContestApi", () => ({ formatNadawiDuration: (ms: number) => String(ms), getNadawiRankings: api.ranks }));
-beforeEach(() => { vi.clearAllMocks(); api.state = { status: "not_started", server_now: new Date().toISOString() }; api.seconds = 30; api.pending = false; api.error = ""; api.ranks.mockResolvedValue([]); });
+beforeEach(() => { settings.closed = false; vi.clearAllMocks(); api.state = { status: "not_started", server_now: new Date().toISOString() }; api.seconds = 30; api.pending = false; api.error = ""; api.ranks.mockResolvedValue([]); });
 afterEach(cleanup);
 const active = (kind: "mcq" | "short"  = "mcq"): Extract<TimedNadawiState, { status: "active" }> => ({ status: "active", attempt_id: "attempt", started_at: new Date().toISOString(), server_now: new Date().toISOString(), deadline_at: new Date(Date.now() + 30000).toISOString(), question_index: 0, total_questions: 41, question: { kind, prompt: "Choose your answer", choices: kind === "mcq" ? ["First", "Second"] : [], word_bank: [] } });
 it("explains the timed one-attempt ranking rules before starting", () => {
@@ -70,4 +72,20 @@ it("allows a full phrase only when the server question permits two words", () =>
   fireEvent.change(screen.getByLabelText("Type the missing word or full phrase"), { target: { value: "speeding ticket" } });
   fireEvent.click(screen.getByRole("button", { name: "Submit and continue" }));
   expect(api.submit).toHaveBeenCalledWith("speeding ticket");
+});
+
+it("replaces completed official results with the closed notice and hides standings", () => {
+  settings.closed = true;
+  api.state = { status: "completed", attempt_id: "a", started_at: new Date().toISOString(), server_now: new Date().toISOString(), completed_at: new Date().toISOString(), score: 40, total_questions: 41, elapsed_ms: 1000 };
+  render(<NadawiContest language="en" />);
+  expect(screen.getByRole("heading", { name: "The competition is currently closed" })).toBeInTheDocument();
+  expect(screen.queryByText("40 / 41")).not.toBeInTheDocument();
+  expect(api.ranks).not.toHaveBeenCalled();
+});
+
+it("honors a server closure even if the published client flag is still open", () => {
+  api.state = { status: "closed", server_now: new Date().toISOString() };
+  render(<NadawiContest language="en" />);
+  expect(screen.getByRole("heading", { name: "The competition is currently closed" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Start challenge" })).not.toBeInTheDocument();
 });

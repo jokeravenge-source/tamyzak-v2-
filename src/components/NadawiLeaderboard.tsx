@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
+import { NADAWI_CONTEST_CLOSED } from "@/lib/nadawiContestSettings";
 import { Loader2, Trophy } from "lucide-react";
 import type { AppLanguage } from "./LanguageGate";
 import { formatNadawiDuration, getNadawiRankings, type NadawiRank } from "@/lib/nadawiContestApi";
 
 export default function NadawiLeaderboard({ language, completed = false }: { language: AppLanguage; completed?: boolean }) {
+  if (NADAWI_CONTEST_CLOSED) return null;
+  return <OpenNadawiLeaderboard language={language} completed={completed} />;
+}
+
+function OpenNadawiLeaderboard({ language, completed }: { language: AppLanguage; completed: boolean }) {
   const ar = language === "ar";
   const [rankings, setRankings] = useState<NadawiRank[] | null>(null);
   const [error, setError] = useState("");

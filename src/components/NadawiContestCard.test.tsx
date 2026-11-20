@@ -1,12 +1,14 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContestCard from "./NadawiContestCard";
+const settings = vi.hoisted(() => ({ closed: false }));
+vi.mock("@/lib/nadawiContestSettings", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/nadawiContestSettings")>(), get NADAWI_CONTEST_CLOSED() { return settings.closed; } }));
 const role = vi.hoisted(() => ({ allowed: vi.fn() }));
 vi.mock("@/lib/nadawiContestApi", () => ({ canTestNadawiContest: role.allowed }));
 vi.mock("./NadawiLeaderboard", () => ({ default: () => <div>Competition standings table</div> }));
 vi.mock("./NadawiContest", () => ({ default: ({ adminTest }: { adminTest?: boolean }) => <div>{adminTest ? "Admin timed test" : "Timed challenge"}</div> }));
 
-beforeEach(() => {
+beforeEach(() => { settings.closed = false;
   role.allowed.mockResolvedValue(false);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-11-20T17:29:58Z"));
@@ -81,4 +83,24 @@ it("opens standings before participation without starting an attempt", () => {
   expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Close / إغلاق" }));
   expect(screen.getByRole("timer")).toBeInTheDocument();
+});
+
+it("closes official participation and hides the leaderboard even after release", async () => {
+  settings.closed = true;
+  vi.setSystemTime(new Date("2026-11-21T10:00:00Z"));
+  render(<NadawiContestCard language="en" />);
+  await act(async () => openCard());
+  expect(screen.getByRole("heading", { name: "The competition is currently closed" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Competition leaderboard" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
+  expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+});
+
+it("preserves the verified admin's separate practice access while closed", async () => {
+  settings.closed = true; role.allowed.mockResolvedValue(true);
+  render(<NadawiContestCard language="en" />);
+  await act(async () => openCard());
+  fireEvent.click(screen.getByRole("button", { name: "Test Nadawi competition" }));
+  expect(screen.getByText("Admin timed test")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Competition leaderboard" })).not.toBeInTheDocument();
 });

@@ -3,9 +3,11 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiLeaderboard from "./NadawiLeaderboard";
 import type { NadawiRank } from "@/lib/nadawiContestApi";
 
+const settings = vi.hoisted(() => ({ closed: false }));
+vi.mock("@/lib/nadawiContestSettings", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/nadawiContestSettings")>(), get NADAWI_CONTEST_CLOSED() { return settings.closed; } }));
 const api = vi.hoisted(() => ({ ranks: vi.fn() }));
 vi.mock("@/lib/nadawiContestApi", () => ({ getNadawiRankings: api.ranks, formatNadawiDuration: (ms: number) => String(ms) }));
-beforeEach(() => { api.ranks.mockReset(); });
+beforeEach(() => { settings.closed = false; api.ranks.mockReset(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 const mine: NadawiRank = { rank: 37, display_name: "Ali", score: 28, elapsed_ms: 91234, is_me: true };
 
@@ -66,4 +68,11 @@ it("does not overlap refreshes while a request is pending", async () => {
   expect(api.ranks).toHaveBeenCalledOnce();
   await act(async () => { resolve([mine]); });
   expect(screen.getByText("#37")).toBeInTheDocument();
+});
+
+it("never fetches or renders official standings while the competition is closed", () => {
+  settings.closed = true;
+  const view = render(<NadawiLeaderboard language="en" completed />);
+  expect(view.container).toBeEmptyDOMElement();
+  expect(api.ranks).not.toHaveBeenCalled();
 });

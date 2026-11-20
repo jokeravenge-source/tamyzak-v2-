@@ -175,4 +175,22 @@ const scoresBefore=(await db.query('SELECT id,score FROM nadawi_contest_attempts
 await db.exec(correctionSql);
 assert.deepEqual((await db.query('SELECT id,score FROM nadawi_contest_attempts ORDER BY id')).rows,scoresBefore);
 console.log('PASS: ticket/full phrase correction, old fine removal, retroactive scoring, timing/order preservation, retry safety and both live graders.');
+// Temporary closure freezes official attempts and hides ranking/review RPCs.
+const officialSnapshot=(await db.query('SELECT to_jsonb(a) AS a FROM nadawi_contest_attempts a ORDER BY id')).rows;
+await db.exec(await readFile(new URL('../supabase/migrations/20261121030000_close_nadawi_contest.sql',import.meta.url),'utf8'));
+await user('00000000-0000-4000-8000-000000000020');
+assert.equal((await state()).status,'closed'); assert.equal((await start()).status,'closed');
+const closedAttempt=officialSnapshot.find(row=>row.a.user_id==='00000000-0000-4000-8000-000000000020').a;
+assert.equal((await answer({attempt_id:closedAttempt.id,question_index:closedAttempt.question_index},'ticket')).status,'closed');
+await assert.rejects(()=>db.query('SELECT * FROM get_nadawi_contest_leaderboard()'),/CONTEST_CLOSED/);
+await assert.rejects(()=>mistakes(),/CONTEST_CLOSED/);
+await user(ids[0]);assert.equal((await state()).status,'closed');
+await assert.rejects(()=>mistakes(true),/REVIEW_NOT_READY/);
+let practice=await previewState(); const previousIndex=practice.question_index;
+practice=await previewAnswer(practice,await previewKey(practice));assert.equal(practice.question_index,previousIndex+1);
+assert.deepEqual((await db.query('SELECT to_jsonb(a) AS a FROM nadawi_contest_attempts a ORDER BY id')).rows,officialSnapshot);
+await db.exec('SET ROLE authenticated;');assert.equal((await state()).status,'closed');
+await assert.rejects(()=>db.query('SELECT * FROM get_nadawi_contest_leaderboard()'),/CONTEST_CLOSED/);
+await db.exec('RESET ROLE;');await user('');await assert.rejects(state,/AUTH_REQUIRED/);
+console.log('PASS: closed official entry points, hidden standings/review, unchanged results/progress and independent admin practice.');
 await db.close();

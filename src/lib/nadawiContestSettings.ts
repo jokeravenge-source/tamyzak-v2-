@@ -1,4 +1,6 @@
 /** Public competition settings only. Answer keys are not imported by the student UI. */
+// Keep official participation and standings hidden until the competition is reopened.
+export const NADAWI_CONTEST_CLOSED = true;
 export const NADAWI_CONTEST_START = Date.parse("2026-11-20T20:30:00+03:00");
 export const NADAWI_QUESTION_SECONDS = 30;
 export const NADAWI_QUESTION_COUNT = 41;

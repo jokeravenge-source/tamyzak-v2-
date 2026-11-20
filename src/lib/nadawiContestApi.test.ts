@@ -35,3 +35,8 @@ it("loads corrections through the own-attempt RPC and validates its response", a
   rpc.mockResolvedValue({ data: [{ ...row, correct_answers: [] }], error: null });
   await expect(getNadawiMistakes()).rejects.toThrow("INVALID_MISTAKES");
 });
+
+it("accepts a closed state without requiring an attempt or question", () => {
+  const closed = { status: "closed", server_now: new Date().toISOString() };
+  expect(parseTimedNadawiState(closed)).toEqual(closed);
+});

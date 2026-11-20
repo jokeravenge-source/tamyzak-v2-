@@ -1,5 +1,18 @@
 # Timed Nadawi Unit Two competition
 
+## Temporary closure
+
+Official participation and the leaderboard are currently hidden by
+`NADAWI_CONTEST_CLOSED`. Apply `20261121030000_close_nadawi_contest.sql` and
+publish the frontend. The database returns `closed` for official state/start/
+answer requests, refuses leaderboard and official mistake reads, and never runs
+expiry settlement through these entry points. Existing answers, scores, times
+and unfinished progress remain untouched. Admin-only practice is still available.
+
+Reopening requires a new migration restoring the official RPC implementations
+and accounting for time spent closed, plus disabling the frontend closure flag.
+Do not reopen by changing only the frontend flag.
+
 The home card keeps the fixed 20 November 2026, 20:30 Asia/Baghdad release.
 The database independently enforces the opening time. Authenticated students get
 one official attempt, persisted in `nadawi_contest_attempts`.

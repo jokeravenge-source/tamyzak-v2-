@@ -4,6 +4,7 @@ export type TimedNadawiQuestion = { kind: "mcq" | "short"; prompt: string; choic
 type Base = { server_now: string };
 export type TimedNadawiState =
   | (Base & { status: "not_started" })
+  | (Base & { status: "closed" })
   | (Base & { status: "active"; attempt_id: string; started_at: string; deadline_at: string; question_index: number; total_questions: number; question: TimedNadawiQuestion })
   | (Base & { status: "completed"; attempt_id: string; started_at: string; completed_at: string; total_questions: number; score: number; elapsed_ms: number });
 export type NadawiRank = { rank: number; display_name: string; score: number; elapsed_ms: number; is_me: boolean };
@@ -15,7 +16,7 @@ const rpc: ContestRpc = (name, args) => (supabase.rpc as unknown as ContestRpc).
 export function parseTimedNadawiState(value: unknown): TimedNadawiState {
   const s = value as TimedNadawiState;
   if (!s || !Number.isFinite(Date.parse(s.server_now))) throw new Error("INVALID_CONTEST_STATE");
-  if (s.status === "not_started") return s;
+  if (s.status === "not_started" || s.status === "closed") return s;
   if (!["active", "completed"].includes(s.status) || typeof s.attempt_id !== "string" || s.total_questions !== 41 || !Number.isFinite(Date.parse(s.started_at))) throw new Error("INVALID_CONTEST_STATE");
   if (s.status === "completed") {
     if (!Number.isInteger(s.score) || s.score < 0 || s.score > 41 || !Number.isFinite(s.elapsed_ms) || s.elapsed_ms < 0 || !Number.isFinite(Date.parse(s.completed_at))) throw new Error("INVALID_CONTEST_STATE");

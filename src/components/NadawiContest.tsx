@@ -3,23 +3,30 @@ import { Clock3, Loader2, Trophy } from "lucide-react";
 import type { AppLanguage } from "./LanguageGate";
 import { useTimedNadawiContest } from "@/hooks/useTimedNadawiContest";
 import { formatNadawiDuration } from "@/lib/nadawiContestApi";
-import { NADAWI_LETTER_PROMPT } from "@/lib/nadawiContestSettings";
+import { NADAWI_CONTEST_CLOSED, NADAWI_LETTER_PROMPT } from "@/lib/nadawiContestSettings";
 import NadawiLeaderboard from "./NadawiLeaderboard";
 import NadawiMistakes from "./NadawiMistakes";
+import NadawiContestClosedNotice from "./NadawiContestClosedNotice";
 const button = "min-h-11 rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40";
 
 export default function NadawiContest({ language, adminTest = false }: { language: AppLanguage; adminTest?: boolean }) {
+  if (NADAWI_CONTEST_CLOSED && !adminTest) return <NadawiContestClosedNotice language={language} />;
+  return <TimedNadawiContest language={language} adminTest={adminTest} />;
+}
+
+function TimedNadawiContest({ language, adminTest }: { language: AppLanguage; adminTest: boolean }) {
   const ar = language === "ar";
   const contest = useTimedNadawiContest(adminTest);
   const { state, pending, seconds, elapsed } = contest;
   const [answer, setAnswer] = useState<string | number>("");
   const [letter, setLetter] = useState("");
   const questionIndex = state?.status === "active" ? state.question_index : -1;
-  const attemptId = state && state.status !== "not_started" ? state.attempt_id : "";
+  const attemptId = state && (state.status === "active" || state.status === "completed") ? state.attempt_id : "";
   useEffect(() => { setAnswer(""); }, [questionIndex, attemptId]);
   const testControls = adminTest && <div className="space-y-2 rounded-xl border border-amber-200/40 bg-amber-100/10 p-3 text-sm text-amber-100"><p>{ar ? "تجربة أدمن — لا تدخل بترتيب الطلاب ولا تستهلك محاولتك الرسمية." : "Admin test — excluded from student rankings and your official attempt."}</p>{state && state.status !== "not_started" && <button className={button} disabled={pending} onClick={() => void contest.restart()}>{ar ? "بدء تجربة جديدة" : "Restart test"}</button>}</div>;
   const error = contest.error && <div role="alert" className="space-y-2 rounded-xl border border-amber-200/30 bg-amber-100/5 p-3 text-sm leading-6 text-amber-100"><p>{contest.error.includes("ADMIN_REQUIRED") ? (ar ? "هذه التجربة متاحة لحساب أدمن فقط." : "This test requires an administrator account.") : contest.error.includes("AUTH_REQUIRED") ? (ar ? "سجّل دخولك حتى تدخل المسابقة وينحفظ ترتيبك." : "Sign in to enter and save your ranking.") : (ar ? "تعذّر الاتصال بالمسابقة. حاول مرة ثانية؛ الوقت بالمحاولة الجارية يستمر." : "Could not connect to the competition. Retry; an active attempt’s time keeps running.")}</p><button className={button} disabled={pending} onClick={() => void contest.refresh()}>{ar ? "إعادة الاتصال" : "Retry connection"}</button></div>;
   if (!state) return <div className="space-y-3">{testControls}{error || <p role="status" className="flex items-center justify-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" />{ar ? "جاري فتح المسابقة…" : "Opening competition…"}</p>}</div>;
+  if (state.status === "closed") return <NadawiContestClosedNotice language={language} />;
   if (state.status === "not_started") return <section className="space-y-4 text-start">
     {testControls}{error}<h2 className="text-lg font-black">{ar ? "جاهز للتحدّي؟" : "Ready for the challenge?"}</h2>
     <ul className="space-y-2 text-sm leading-7 text-blue-100"><li>{ar ? "٤١ سؤال: ٢٤ MCQ و١٧ إجابة بكلمة واحدة." : "41 questions: 24 MCQs and 17 one-word answers."}</li><li>{ar ? "٣٠ ثانية لكل سؤال. الصحيح نقطة، والخطأ أو انتهاء الوقت صفر." : "30 seconds per question. Correct = 1 point; wrong or timed out = 0."}</li><li>{ar ? "الفائز صاحب أعلى نقاط؛ عند التعادل، الأقل وقتاً كلياً." : "Higher score wins; total completion time breaks a score tie."}</li><li>{adminTest ? (ar ? "نفس الأسئلة والمؤقت، وتگدر تعيد التجربة من جديد." : "The same questions and timer; you can restart the test.") : (ar ? "ترتيب الأسئلة والاختيارات عشوائي لكل طالب. محاولة رسمية واحدة." : "Questions and choices are shuffled for each student. One official attempt.")}</li></ul>
