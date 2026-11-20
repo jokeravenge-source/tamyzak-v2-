@@ -264,7 +264,7 @@ export default function PodcastTutor({
 
       try {
         const result = await invoke<{ audio?: string; mime?: string }>("tts-speak", {
-          body: { text: chunks[index++], language: "ar", voice: "shimmer", speed: 1.05 },
+          body: { text: chunks[index++], language: "ar", voice: "onyx", speed: 1, purpose: "podcast" },
         });
         if (runId !== speechRunRef.current) return;
         if (!result.audio) throw new Error("No audio returned");
