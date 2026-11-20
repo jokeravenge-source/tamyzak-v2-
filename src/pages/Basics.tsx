@@ -27,6 +27,7 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
+import NadawiContestCard from "@/components/NadawiContestCard";
 import challenge3dIcon from "@/assets/challenge-3d-icon.png";
 import houdiniHoodieIcon from "@/assets/houdini-hoodie-icon.png";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
@@ -1416,6 +1417,8 @@ const Basics = ({
               </span>
             </button>
           </header>
+
+          <NadawiContestCard language={language} />
 
           {/* Join the challenge + Buy from Houdini — horizontally scrollable
               list; each card keeps its own color and shows 3D icon left, text right. */}

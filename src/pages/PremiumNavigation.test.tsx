@@ -92,5 +92,7 @@ describe("simplified home navigation", () => {
     expect(screen.getByRole("button", { name: /اختَر مادة/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /راجع أخطاءك/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /كل الأدوات/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "مسابقة الأستاذ محمد النداوي" }));
+    expect(screen.getByRole("dialog", { name: "مسابقة الأستاذ محمد النداوي" })).toBeInTheDocument();
   });
 });

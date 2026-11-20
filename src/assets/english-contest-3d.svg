@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="cover" x1="57" y1="40" x2="170" y2="179" gradientUnits="userSpaceOnUse"><stop stop-color="#70cfff"/><stop offset=".45" stop-color="#3888ff"/><stop offset="1" stop-color="#1744ad"/></linearGradient>
+    <linearGradient id="spine" x1="43" y1="47" x2="70" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#2557b9"/><stop offset="1" stop-color="#10224e"/></linearGradient>
+    <linearGradient id="paper" x1="75" y1="160" x2="165" y2="197" gradientUnits="userSpaceOnUse"><stop stop-color="white"/><stop offset="1" stop-color="#bed8f1"/></linearGradient>
+    <linearGradient id="bubble" x1="143" y1="48" x2="219" y2="115" gradientUnits="userSpaceOnUse"><stop stop-color="#d9ffff"/><stop offset=".5" stop-color="#76f1f2"/><stop offset="1" stop-color="#16a6b9"/></linearGradient>
+    <linearGradient id="gold" x1="26" y1="153" x2="66" y2="194" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0b2"/><stop offset="1" stop-color="#edaa39"/></linearGradient>
+    <filter id="shadow" x="-40%" y="-30%" width="190%" height="190%"><feDropShadow dx="0" dy="13" stdDeviation="8" flood-color="#020b2c" flood-opacity=".35"/></filter>
+  </defs>
+  <ellipse cx="120" cy="213" rx="74" ry="10" fill="#061631" opacity=".22"/>
+  <g filter="url(#shadow)">
+    <path d="M47 52Q45 42 55 40L145 28Q153 27 157 35L193 170Q196 181 185 185L91 207Q80 209 76 198Z" fill="#102b70"/>
+    <path d="M54 54L147 39L182 169L88 191Z" fill="url(#spine)"/>
+    <path d="M74 176L173 154L181 181L91 201Q83 202 80 194Z" fill="url(#paper)"/>
+    <path d="M84 183L174 163M86 189L177 170M89 195L179 177" stroke="#a4bcd9" stroke-width="1.5"/>
+    <path d="M47 51Q47 45 54 43L65 41L103 178L89 182Q80 184 77 175Z" fill="url(#spine)"/>
+    <path d="M63 41L148 28Q155 27 157 35L193 164Q195 171 187 173L103 193L91 181L55 53Q53 45 63 41Z" fill="url(#cover)"/>
+    <path d="M66 45L146 34Q151 33 153 39L187 161" stroke="#c6edff" stroke-opacity=".65" stroke-width="2" stroke-linecap="round"/>
+    <g transform="translate(69 73) rotate(-14)">
+      <text x="0" y="49" fill="#113680" opacity=".5" font-family="Arial,sans-serif" font-size="37" font-weight="900">ABC</text>
+      <text x="0" y="45" fill="white" font-family="Arial,sans-serif" font-size="37" font-weight="900">ABC</text>
+      <rect y="62" width="66" height="4" rx="2" fill="#baeaff"/>
+      <rect y="72" width="44" height="3" rx="1.5" fill="#baeaff" opacity=".55"/>
+    </g>
+    <path d="M150 161L160 159L168 188L162 184L158 190Z" fill="#ffc75d"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M159 47L205 54Q216 56 214 69L210 99Q208 112 196 110L181 107L167 118L169 105L154 102Q144 100 146 89L150 59Q151 46 159 47Z" fill="#078798"/>
+    <path d="M157 41L203 48Q214 50 212 63L208 93Q206 106 194 104L179 101L165 112L167 99L152 96Q142 94 144 83L148 53Q149 40 157 41Z" fill="url(#bubble)"/>
+    <text x="153" y="78" transform="rotate(8 153 78)" fill="#124e6b" font-family="Arial,sans-serif" font-size="24" font-weight="900">EN</text>
+    <path d="M153 50L196 56" stroke="white" stroke-opacity=".6" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <path d="M39 148L46 162L62 164L50 175L53 191L39 183L25 191L28 175L16 164L32 162Z" fill="url(#gold)" filter="url(#shadow)"/>
+  <path d="M202 140L205 147L213 150L205 153L202 161L199 153L191 150L199 147Z" fill="#b4f8ff"/>
+  <circle cx="49" cy="25" r="4" fill="#b9f2ff"/>
+</svg>
