@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContestCard from "./NadawiContestCard";
+vi.mock("./NadawiContest", () => ({ default: () => <div>Timed challenge</div> }));
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -49,15 +50,10 @@ it("does not restart a passed competition as a new daily event", () => {
   expect(screen.getByRole("status")).toHaveTextContent("حان موعد المسابقة!");
 });
 
-it("opens the prepared contest only after the start time and retains answers when the dialog closes", () => {
-  vi.setSystemTime(new Date("2026-11-20T17:30:00Z"));
+it("opens the timed contest only after the start time", () => {
   render(<NadawiContestCard language="en" />);
   openCard();
-  fireEvent.click(screen.getByRole("button", { name: "Start challenge" }));
-  fireEvent.click(screen.getByRole("button", { name: "Because the law covers many different situations." }));
-  fireEvent.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByRole("heading", { name: "How can witnesses help the police?" })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Close / إغلاق" }));
-  openCard();
-  expect(screen.getByRole("heading", { name: "How can witnesses help the police?" })).toBeInTheDocument();
+  expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
+  act(() => vi.advanceTimersByTime(2000));
+  expect(screen.getByText("Timed challenge")).toBeInTheDocument();
 });

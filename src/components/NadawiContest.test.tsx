@@ -1,35 +1,43 @@
-import { useState } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContest from "./NadawiContest";
-import { NADAWI_QUESTIONS, newNadawiAttempt, type NadawiAttempt } from "@/data/nadawiContestUnit2";
+import type { TimedNadawiState } from "@/lib/nadawiContestApi";
+const api = vi.hoisted(() => ({ state: null as TimedNadawiState | null, seconds: 30, pending: false, error: "", submit: vi.fn(), start: vi.fn(), refresh: vi.fn(), ranks: vi.fn() }));
+vi.mock("@/hooks/useTimedNadawiContest", () => ({ useTimedNadawiContest: () => ({ ...api, elapsed: 2500 }) }));
+vi.mock("@/lib/nadawiContestApi", () => ({ formatNadawiDuration: (ms: number) => String(ms), getNadawiRankings: api.ranks }));
+beforeEach(() => { vi.clearAllMocks(); api.state = { status: "not_started", server_now: new Date().toISOString() }; api.seconds = 30; api.pending = false; api.error = ""; api.ranks.mockResolvedValue([]); });
 afterEach(cleanup);
-function View({ initial = newNadawiAttempt() }: { initial?: NadawiAttempt }) {
-  const [attempt, setAttempt] = useState(initial);
-  return <NadawiContest language="en" attempt={attempt} setAttempt={setAttempt} />;
-}
-it("requires one typed word rather than offering multiple-choice buttons for vocabulary", () => {
-  render(<View initial={{ ...newNadawiAttempt(), started: true, index: 24 }} />);
-  const input = screen.getByLabelText("Type one word");
-  fireEvent.change(input, { target: { value: "will arrest" } });
-  expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-  expect(screen.queryByRole("button", { name: "arrest" })).not.toBeInTheDocument();
-  fireEvent.change(input, { target: { value: "arrest" } });
-  expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
-  expect(screen.queryByText(/Correct answer/)).not.toBeInTheDocument();
-});
-it("lets students complete every automatic question and keeps the full letter outside its score", () => {
-  render(<View />);
+const active = (kind: "mcq" | "short" = "mcq"): TimedNadawiState => ({ status: "active", attempt_id: "attempt", started_at: new Date().toISOString(), server_now: new Date().toISOString(), deadline_at: new Date(Date.now() + 30000).toISOString(), question_index: 0, total_questions: 41, question: { kind, prompt: "Choose your answer", choices: kind === "mcq" ? ["First", "Second"] : [], word_bank: [] } });
+it("explains the timed one-attempt ranking rules before starting", () => {
+  render(<NadawiContest language="en" />);
+  expect(screen.getByText(/30 seconds per question/)).toBeInTheDocument();
+  expect(screen.getByText(/Higher score wins/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Start challenge" }));
-  for (let i = 0; i < NADAWI_QUESTIONS.length; i++) {
-    const q = NADAWI_QUESTIONS[i];
-    if (q.kind === "mcq") fireEvent.click(screen.getByRole("button", { name: q.choices[q.correct] }));
-    else fireEvent.change(screen.getByLabelText("Type one word"), { target: { value: q.answers[0] } });
-    fireEvent.click(screen.getByRole("button", { name: i === 40 ? "Continue to letter" : "Next" }));
-  }
-  expect(screen.getByRole("heading", { name: /Write a letter to your friend/ })).toBeInTheDocument();
-  expect(screen.getByText(/does not count towards the automatic score/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Finish and show result" }));
-  expect(screen.getByText("41 / 41")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Q4 · Letter — manual marking" })).toBeInTheDocument();
+  expect(api.start).toHaveBeenCalledOnce();
+});
+it("sends only the selected option and never a client score or time", () => {
+  api.state = active(); render(<NadawiContest language="en" />);
+  fireEvent.click(screen.getByRole("button", { name: "Second" }));
+  fireEvent.click(screen.getByRole("button", { name: "Submit and continue" }));
+  expect(api.submit).toHaveBeenCalledWith("1");
+  expect(screen.queryByRole("button", { name: "Previous" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Correct answer:/)).not.toBeInTheDocument();
+});
+it("disables answers on timeout and rejects multiword short answers", () => {
+  api.state = active("short"); const view = render(<NadawiContest language="en" />);
+  fireEvent.change(screen.getByLabelText("Type one word"), { target: { value: "will arrest" } });
+  expect(screen.getByRole("button", { name: "Submit and continue" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Type one word"), { target: { value: "arrest" } });
+  expect(screen.getByRole("button", { name: "Submit and continue" })).toBeEnabled();
+  api.seconds = 0; view.rerender(<NadawiContest language="en" />);
+  expect(screen.getByRole("button", { name: /Time’s up/ })).toBeDisabled();
+});
+it("shows the persisted score, precise total time and official ranking", async () => {
+  api.state = { status: "completed", attempt_id: "attempt", started_at: new Date().toISOString(), server_now: new Date().toISOString(), completed_at: new Date().toISOString(), score: 31, total_questions: 41, elapsed_ms: 91234 };
+  api.ranks.mockResolvedValue([{ rank: 1, display_name: "Sara", score: 41, elapsed_ms: 60000, is_me: false }, { rank: 2, display_name: "Ali", score: 31, elapsed_ms: 91234, is_me: true }]);
+  render(<NadawiContest language="en" />);
+  expect(screen.getByText("31 / 41")).toBeInTheDocument();
+  expect(await screen.findByText("Ali (you)")).toBeInTheDocument();
+  expect(screen.getByText("Sara")).toBeInTheDocument();
+  expect(screen.getByText(/Letter writing|Original letter task/)).toBeInTheDocument();
 });

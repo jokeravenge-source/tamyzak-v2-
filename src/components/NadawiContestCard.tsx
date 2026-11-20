@@ -3,7 +3,7 @@ import { ArrowUpLeft, ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import NadawiContest from "./NadawiContest";
-import { NADAWI_CONTEST_START, newNadawiAttempt } from "@/data/nadawiContestUnit2";
+import { NADAWI_CONTEST_START } from "@/lib/nadawiContestSettings";
 import englishIcon from "@/assets/english-contest-3d.svg";
 
 const title = "مسابقة الأستاذ محمد النداوي";
@@ -11,7 +11,6 @@ const title = "مسابقة الأستاذ محمد النداوي";
 export default function NadawiContestCard({ language }: { language: AppLanguage }) {
   const ar = language === "ar";
   const [open, setOpen] = useState(false);
-  const [attempt, setAttempt] = useState(newNadawiAttempt);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     if (!open) return;
@@ -68,8 +67,8 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
         </div>
         {arrived ? (
           <div className="space-y-4">
-            {!attempt.started && <p role="status" className="text-sm font-bold text-cyan-100">{ar ? "حان موعد المسابقة!" : "It’s time!"}</p>}
-            <NadawiContest language={language} attempt={attempt} setAttempt={setAttempt} />
+            {<p role="status" className="text-sm font-bold text-cyan-100">{ar ? "حان موعد المسابقة!" : "It’s time!"}</p>}
+            <NadawiContest language={language} />
           </div>
         ) : (
           <div>
