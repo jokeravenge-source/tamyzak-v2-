@@ -77,6 +77,12 @@ verify_jwt = false
 [functions.get-session-status]
 verify_jwt = false
 
+[functions.skip-podcast-section]
+verify_jwt = false
+
+[functions.ask-podcast-question]
+verify_jwt = false
+
 [functions.english-reading-practice]
 verify_jwt = false
 

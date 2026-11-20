@@ -12,6 +12,7 @@ export function planPodcastBreak(
   const completed = sections.filter((section) => section.completed_at).length;
   if (
     sections.length < 2 ||
+    !sections.some(section => section.completed_at && section.verdict === "correct") ||
     completed < Math.ceil(sections.length / 2) ||
     completed >= sections.length
   )
@@ -31,7 +32,7 @@ export function planPodcastBreak(
   const struggling = Math.max(
     earlierStruggles,
     sections.filter(
-      (section) => section.completed_at && section.verdict !== "correct",
+      (section) => section.completed_at && (section.verdict === "partial" || section.verdict === "incorrect"),
     ).length,
   );
   if (words > 900 || formulaCount >= 12 || struggling >= 2)

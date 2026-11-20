@@ -25,6 +25,9 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
 import PodcastPractice from "@/components/PodcastPractice";
 import PodcastBreak from "@/components/PodcastBreak";
+import PodcastQuestion from "@/components/PodcastQuestion";
+import PodcastSpeakingText from "@/components/PodcastSpeakingText";
+import { usePodcastSpeech } from "@/hooks/usePodcastSpeech";
 import { planPodcastBreak, type PodcastBreakPlan } from "@/lib/podcastBreak";
 import { extractStudyMaterial, materializeFile } from "@/lib/fileText";
 
@@ -66,25 +69,6 @@ const verdictCopy: Record<Verdict, { label: string; style: string }> = {
   partial: { label: "إجابة جزئية", style: "border-amber-400/30 bg-amber-500/15 text-amber-100" },
   incorrect: { label: "تحتاج مراجعة", style: "border-rose-400/30 bg-rose-500/15 text-rose-100" },
 };
-
-function speechChunks(text: string, maxLength = 1800): string[] {
-  const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!؟؛:])\s+/);
-  const chunks: string[] = [];
-  let current = "";
-  for (const sentence of sentences) {
-    if (!sentence) continue;
-    if (current && `${current} ${sentence}`.length > maxLength) {
-      chunks.push(current);
-      current = sentence;
-    } else {
-      current = current ? `${current} ${sentence}` : sentence;
-    }
-  }
-  if (current) chunks.push(current);
-  return chunks.flatMap((chunk) => chunk.length <= maxLength
-    ? [chunk]
-    : chunk.match(new RegExp(`.{1,${maxLength}}(?:\\s|$)`, "g"))?.map((part) => part.trim()).filter(Boolean) ?? [chunk]);
-}
 
 async function invoke<T>(name: string, options?: { body?: unknown }): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, options);
@@ -132,8 +116,10 @@ export default function PodcastTutor({
   const [answerText, setAnswerText] = useState("");
   const [recordPlaying, setRecordPlaying] = useState(false);
   const recordAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
-  const speechRunRef = useRef(0);
+  const speech = usePodcastSpeech();
+  const [questionOpen, setQuestionOpen] = useState(false);
+  const [skipBusy, setSkipBusy] = useState(false);
+  const [spokenArea, setSpokenArea] = useState<"narration" | "checkpoint" | "correction">("narration");
   const checkpointStruggles = useRef<Record<string, number>>({});
 
   const current = segments[currentIndex] ?? null;
@@ -141,9 +127,7 @@ export default function PodcastTutor({
 
   useEffect(() => () => {
     recordAudioRef.current?.pause();
-    ttsAudioRef.current?.pause();
-    speechRunRef.current += 1;
-    ttsAudioRef.current = null;
+    speech.stop();
   }, []);
 
   const loadHistory = useCallback(async () => {
@@ -154,9 +138,9 @@ export default function PodcastTutor({
   }, []);
 
   const loadSession = useCallback(async (id: string) => {
-    ttsAudioRef.current?.pause();
+    setQuestionOpen(false);
+    speech.stop();
     recordAudioRef.current?.pause();
-    speechRunRef.current += 1;
     setRecordPlaying(false);
     const result = await invoke<{ session: PodcastSession; segments: PodcastSegment[] }>("get-session-status", {
       body: { session_id: id },
@@ -228,65 +212,46 @@ export default function PodcastTutor({
     onEnd: () => void,
     onFailure?: () => void,
   ) => {
-    const chunks = speechChunks(text);
-    if (!chunks.length) {
-      onEnd();
-      return;
-    }
-    const runId = ++speechRunRef.current;
-    ttsAudioRef.current?.pause();
-    const audio = new Audio();
-    audio.preload = "auto";
-    ttsAudioRef.current = audio;
     setError(null);
     if (speakingPhase) setPhase("preparing_audio");
-    let index = 0;
-    let started = false;
-    let failed = false;
-
-    const fail = () => {
-      if (failed || runId !== speechRunRef.current) return;
-      failed = true;
-      audio.pause();
-      if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
-      if (speakingPhase) setPhase("idle");
-      setError("تعذّر تجهيز الصوت الآن. تحقق من الاتصال ثم اضغط تشغيل مرة أخرى.");
-      onFailure?.();
-    };
-
-    const speakNext = async () => {
-      if (runId !== speechRunRef.current) return;
-      if (index >= chunks.length) {
-        if (ttsAudioRef.current === audio) ttsAudioRef.current = null;
-        onEnd();
-        return;
-      }
-
-      try {
-        const result = await invoke<{ audio?: string; mime?: string }>("tts-speak", {
-          body: { text: chunks[index++], language: "ar", voice: "onyx", speed: 1, purpose: "podcast" },
-        });
-        if (runId !== speechRunRef.current) return;
-        if (!result.audio) throw new Error("No audio returned");
-        audio.onended = () => { void speakNext(); };
-        audio.onerror = fail;
-        audio.src = `data:${result.mime || "audio/mpeg"};base64,${result.audio}`;
-        await audio.play();
-        if (!started && runId === speechRunRef.current) {
-          started = true;
-          if (speakingPhase) setPhase(speakingPhase);
-        }
-      } catch {
-        fail();
-      }
-    };
-    void speakNext();
-  }, []);
+    speech.play(text, {
+      onStart: () => { if (speakingPhase) setPhase(speakingPhase); },
+      onEnd,
+      onError: () => {
+        if (speakingPhase) setPhase("idle");
+        setError("تعذّر تجهيز الصوت. جرّب تشغيله مرة ثانية.");
+        onFailure?.();
+      },
+    });
+  }, [speech.play]);
 
   const playNarration = useCallback(() => {
     if (!current) return;
-    speakArabic(`${current.narration_text}. ${current.checkpoint_prompt}`, "narration", () => setPhase("listening"));
+    setSpokenArea("narration");
+    speakArabic(current.narration_text, "narration", () => {
+      setSpokenArea("checkpoint");
+      speakArabic(current.checkpoint_prompt, "narration", () => setPhase("listening"));
+    });
   }, [current, speakArabic]);
+
+  const skipSection = async () => {
+    if (!current || skipBusy || phase === "grading") return;
+    speech.pause();
+    setSkipBusy(true);
+    setError(null);
+    let saved = false;
+    try {
+      await invoke("skip-podcast-section", { body: { segment_id: current.id } });
+      saved = true;
+      speech.stop();
+      setQuestionOpen(false);
+      await loadSession(current.session_id);
+      await loadHistory();
+    } catch (failure) {
+      if (saved) setPhase("idle");
+      setError(failure instanceof Error ? failure.message : "تعذّر تخطي الجزء.");
+    } finally { setSkipBusy(false); }
+  };
 
   const advance = async () => {
     if (!session) return;
@@ -333,6 +298,7 @@ export default function PodcastTutor({
       } : item));
       setAnswerText("");
       if (data.correction_text) {
+        setSpokenArea("correction");
         speakArabic(data.correction_text, "correction", () => {
           if (data.verdict === "correct") void advance();
           else setPhase("listening");
@@ -359,8 +325,7 @@ export default function PodcastTutor({
   const playStudyRecord = () => {
     if (!studyRecord.length) return;
     recordAudioRef.current?.pause();
-    ttsAudioRef.current?.pause();
-    speechRunRef.current += 1;
+    speech.stop();
     setRecordPlaying(true);
     const playNext = (index: number) => {
       if (index >= studyRecord.length) {
@@ -386,18 +351,15 @@ export default function PodcastTutor({
 
   const stopStudyRecord = () => {
     recordAudioRef.current?.pause();
-    ttsAudioRef.current?.pause();
-    speechRunRef.current += 1;
-    ttsAudioRef.current = null;
+    speech.stop();
     setRecordPlaying(false);
   };
 
   const resetHome = () => {
     recordAudioRef.current?.pause();
-    ttsAudioRef.current?.pause();
-    speechRunRef.current += 1;
-    ttsAudioRef.current = null;
+    speech.stop();
     setSession(null);
+    setQuestionOpen(false);
     setBreakPlan(null);
     setSegments([]);
     setAnswerText("");
@@ -422,6 +384,8 @@ export default function PodcastTutor({
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/20"><Podcast className="h-6 w-6" /></div>
           </div>
         </header>
+        {speech.active && <div className="mb-5 flex justify-center"><button className="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 font-bold" onClick={speech.paused ? speech.resume : speech.pause}>{speech.paused ? "متابعة الصوت" : "إيقاف الصوت مؤقتاً"}</button></div>}
+        {questionOpen && current && <PodcastQuestion key={current.id} segmentId={current.id} onClose={() => setQuestionOpen(false)} />}
 
         {!session ? (
           <div className="grid gap-6 lg:grid-cols-[1.12fr_.88fr]">
@@ -487,10 +451,17 @@ export default function PodcastTutor({
             phase={phase}
             answerText={answerText}
             error={error}
+            onAsk={() => { speech.pause(); setQuestionOpen(true); }}
+            onSkip={() => { void skipSection(); }}
+            skipBusy={skipBusy}
+            spokenPhrase={speech.phrase}
+            spokenOffset={speech.offset}
+            spokenArea={spokenArea}
+            voicePaused={speech.active && speech.paused}
             onPlay={playNarration}
             onAnswerChange={setAnswerText}
             onSubmitAnswer={() => { void submitTextAnswer(); }}
-            onReplayCorrection={() => current?.correction_text && speakArabic(current.correction_text, "correction", () => setPhase("idle"))}
+            onReplayCorrection={() => { if (current?.correction_text) { setSpokenArea("correction"); speakArabic(current.correction_text, "correction", () => setPhase("idle")); } }}
             onAdvance={() => void advance()}
           />
         )}
@@ -524,6 +495,7 @@ function HistoryPanel({ history, onOpen }: { history: PodcastSession[]; onOpen: 
 function SessionView(props: {
   session: PodcastSession; segments: PodcastSegment[]; current: PodcastSegment | null; currentIndex: number;
   phase: TutorPhase; answerText: string; error: string | null;
+  onAsk: () => void; onSkip: () => void; skipBusy: boolean; spokenPhrase: string; spokenOffset: number; spokenArea: string; voicePaused: boolean;
   onPlay: () => void; onAnswerChange: (value: string) => void; onSubmitAnswer: () => void; onReplayCorrection: () => void; onAdvance: () => void;
 }) {
   const { session, segments, current, currentIndex, phase } = props;
@@ -534,9 +506,11 @@ function SessionView(props: {
     <div className="mb-5 flex items-center justify-between text-sm"><div><p className="font-black">{session.title || "جلسة صوتية"}</p><p className="mt-1 text-xs text-slate-500">المقطع {currentIndex + 1} من {segments.length}</p></div><div className="h-2 w-32 overflow-hidden rounded-full bg-white/10"><motion.div className="h-full rounded-full bg-gradient-to-l from-cyan-300 to-indigo-400" animate={{ width: `${progress}%` }} /></div></div>
     <GlassCard className="relative overflow-hidden p-6 sm:p-9">
       <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+      <div className="relative mb-5 flex flex-wrap justify-center gap-3"><button disabled={phase === "grading" || props.skipBusy} onClick={props.onAsk} className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-bold disabled:opacity-50">عندي سؤال</button><button disabled={phase === "grading" || props.skipBusy} onClick={props.onSkip} className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-bold disabled:opacity-50">{props.skipBusy ? "جاري التخطي…" : "تخطّي الجزء"}</button></div>
       <AnimatePresence mode="wait">
-        <motion.div key={`${current.id}-${phase}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
-          {phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
+        <motion.div key={current.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
+          {props.voicePaused ? <StateIcon icon={<Pause className="h-9 w-9" />} label="الصوت متوقف مؤقتاً" />
+          : phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
           : phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
           : phase === "listening" ? <StateIcon icon={<PenLine className="h-9 w-9" />} label="جاوب أسئلة الجزء بكلماتك" />
           : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
@@ -545,7 +519,8 @@ function SessionView(props: {
 
           {phase === "idle" && !answered && <button onClick={props.onPlay} className="mx-auto mt-5 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-7 py-3.5 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110"><Play className="h-5 w-5 fill-current" /> تشغيل الشرح الصوتي</button>}
 
-          <p className="mx-auto mt-6 max-w-2xl text-right text-base leading-8 text-slate-200 sm:text-lg">{current.narration_text}</p>
+          <p className="mx-auto mt-6 max-w-2xl text-right text-base leading-8 text-slate-200 sm:text-lg"><PodcastSpeakingText text={current.narration_text} phrase={props.spokenArea === "narration" ? props.spokenPhrase : ""} offset={props.spokenOffset} /></p>
+          {phase === "narration" && props.spokenArea === "checkpoint" && <p className="mt-5 leading-8"><PodcastSpeakingText text={current.checkpoint_prompt} phrase={props.spokenPhrase} offset={props.spokenOffset} /></p>}
           {phase === "listening" && <>
             <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-base font-black text-cyan-100">{current.checkpoint_prompt}</div>
             <div className="mt-4 rounded-[24px] border border-white/15 bg-slate-950/35 p-3 text-right shadow-inner shadow-slate-950/30 focus-within:border-cyan-300/50 focus-within:bg-slate-950/50">
@@ -568,7 +543,7 @@ function SessionView(props: {
               </div>
             </div>
           </>}
-          {current.verdict && <div className="mt-5 text-right"><span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-black ${verdictCopy[current.verdict].style}`}>{verdictCopy[current.verdict].label}</span>{current.student_answer_text && <p className="mt-3 rounded-2xl bg-slate-950/30 p-4 text-sm leading-7 text-slate-300"><span className="font-black text-white">إجابتك: </span>{current.student_answer_text}</p>}{current.correction_text && <p className="mt-3 rounded-2xl border border-indigo-300/15 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100"><span className="font-black">تصحيح المعلّم: </span>{current.correction_text}</p>}</div>}
+          {current.verdict && <div className="mt-5 text-right"><span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-black ${verdictCopy[current.verdict].style}`}>{verdictCopy[current.verdict].label}</span>{current.student_answer_text && <p className="mt-3 rounded-2xl bg-slate-950/30 p-4 text-sm leading-7 text-slate-300"><span className="font-black text-white">إجابتك: </span>{current.student_answer_text}</p>}{current.correction_text && <p className="mt-3 rounded-2xl border border-indigo-300/15 bg-indigo-400/10 p-4 text-sm leading-7 text-indigo-100"><span className="font-black">تصحيح المعلّم: </span><PodcastSpeakingText text={current.correction_text} phrase={props.spokenArea === "correction" ? props.spokenPhrase : ""} offset={props.spokenOffset} /></p>}</div>}
           {props.error && <div className="mt-5"><ErrorBanner message={props.error} /></div>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -592,6 +567,6 @@ function SummaryView({ session, segments, recordPlaying, onPlay, onStop }: { ses
     <GlassCard className="mb-5 p-6 sm:p-8">
       <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-right"><div className="grid h-20 w-20 shrink-0 place-items-center rounded-[28px] bg-emerald-400/15 text-emerald-200"><Check className="h-10 w-10" /></div><div className="flex-1"><p className="text-sm font-bold text-emerald-200">اكتملت الجلسة</p><h2 className="mt-1 text-2xl font-black">{session.title || "مراجعتك الصوتية"}</h2><p className="mt-2 text-sm text-slate-400">أتقنت {correct} من {segments.length} مقاطع خلال الجلسة.</p></div><button onClick={recordPlaying ? onStop : onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">{recordPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}{recordPlaying ? "إيقاف السجل" : "تشغيل سجل الجلسة"}</button></div>
     </GlassCard>
-    <div className="space-y-3">{segments.map((item) => <GlassCard key={item.id} className="p-5"><div className="flex items-start gap-4"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-sm font-black">{item.segment_order}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black">المقطع {item.segment_order}</h3>{item.verdict && <span className={`rounded-full border px-3 py-1 text-xs font-black ${verdictCopy[item.verdict].style}`}>{verdictCopy[item.verdict].label}</span>}</div>{item.student_answer_text && <p className="mt-3 text-sm leading-7 text-slate-300"><span className="font-bold text-white">تلخيصك: </span>{item.student_answer_text}</p>}{item.correction_text && <p className="mt-2 text-sm leading-7 text-indigo-200"><span className="font-bold">التصحيح: </span>{item.correction_text}</p>}</div></div></GlassCard>)}</div>
+    <div className="space-y-3">{segments.map((item) => <GlassCard key={item.id} className="p-5"><div className="flex items-start gap-4"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-sm font-black">{item.segment_order}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black">المقطع {item.segment_order}</h3>{item.completed_at && !item.verdict && <span className="text-sm text-amber-200">تم تخطي هذا الجزء</span>}{item.verdict && <span className={`rounded-full border px-3 py-1 text-xs font-black ${verdictCopy[item.verdict].style}`}>{verdictCopy[item.verdict].label}</span>}</div>{item.student_answer_text && <p className="mt-3 text-sm leading-7 text-slate-300"><span className="font-bold text-white">تلخيصك: </span>{item.student_answer_text}</p>}{item.correction_text && <p className="mt-2 text-sm leading-7 text-indigo-200"><span className="font-bold">التصحيح: </span>{item.correction_text}</p>}</div></div></GlassCard>)}</div>
   </div>;
 }
