@@ -4579,6 +4579,10 @@ export type Database = {
           score: number
         }[]
       }
+      get_nadawi_contest_mistakes: {
+        Args: { _admin_test?: boolean }
+        Returns: Json
+      }
       get_nadawi_contest_state: { Args: never; Returns: Json }
       has_active_premium: {
         Args: { check_env?: string; user_uuid: string }
