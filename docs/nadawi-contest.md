@@ -90,3 +90,13 @@ attempt, with the submitted choice text or word and accepted correct answers.
 It refuses unfinished attempts and anonymous callers; preview review additionally
 verifies the admin role. No other student’s answers or active answer keys are
 exposed, and review never changes points, times or standings.
+
+## Speeding correction
+
+Apply `20261120230000_nadawi_speeding_ticket.sql` before publishing. Q3C.6
+accepts `ticket` or `speeding ticket`, not `fine`. Q3C.4 accepts `named` or
+`alerted` as requested by the competition owner. This question alone allows a
+two-word response. The migration updates the bank and saved official/admin
+attempts, regrades the affected answer and adjusts scores without changing
+question order, submitted text, progress, deadlines or elapsed times. Rankings
+and the mistake review use the corrected score and key.

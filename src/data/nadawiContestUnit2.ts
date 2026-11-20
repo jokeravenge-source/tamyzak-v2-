@@ -1,8 +1,8 @@
 /** Complete coverage of the two supplied Mohammed Al-Nadawi Unit Two exam pages. */
-type BaseQuestion = { id: string; source: string; section: "reading" | "grammar" | "vocabulary" | "spelling"; original: string; prompt: string; explanation: string; wordBank?: string[] };
+type BaseQuestion = { id: string; source: string; section: "reading" | "grammar" | "vocabulary" | "spelling"; original: string; prompt: string; explanation: string; wordBank?: string[]; maxWords?: number };
 export type NadawiQuestion = BaseQuestion & ({ kind: "mcq"; choices: string[]; correct: number } | { kind: "short"; answers: string[] });
 const mcq = (source: string, section: BaseQuestion["section"], original: string, prompt: string, choices: string[], correct: number, explanation: string): NadawiQuestion => ({ id: source, source, section, original, prompt, kind: "mcq", choices, correct, explanation });
-const short = (source: string, section: BaseQuestion["section"], original: string, prompt: string, answer: string, explanation: string): NadawiQuestion => ({ id: source, source, section, original, prompt, kind: "short", answers: [answer], explanation, ...(source.startsWith("Q3A.") ? { wordBank: ["essential", "powder", "solid", "arrest", "base", "valuables"] } : {}) });
+const short = (source: string, section: BaseQuestion["section"], original: string, prompt: string, answer: string, explanation: string, alternatives: string[] = []): NadawiQuestion => ({ id: source, source, section, original, prompt, kind: "short", answers: [answer, ...alternatives], maxWords: Math.max(...[answer, ...alternatives].map((value) => value.split(/\s+/).length)), explanation, ...(source.startsWith("Q3A.") ? { wordBank: ["essential", "powder", "solid", "arrest", "base", "valuables"] } : {}) });
 export const NADAWI_QUESTIONS: NadawiQuestion[] = [
   mcq("Q1.1", "reading", "Why do police have a lot of duties?", "Why do police officers have many different duties?", ["Because they work only at airports.", "Because the law covers many different situations.", "Because they do not investigate crimes.", "Because drivers choose their duties."], 1, "تعدّد القوانين يفرض واجبات متنوّعة على الشرطة."),
   mcq("Q1.2", "reading", "How can witnesses help the police?", "How can witnesses help the police?", ["By repairing the police cars.", "By deciding the prison sentence.", "By describing the suspect and saying when the crime happened.", "By replacing fingerprint experts."], 2, "الشاهد يزوّد الشرطة بمعلومات مثل وصف المجرم ووقت وقوع الجريمة."),
@@ -42,9 +42,9 @@ export const NADAWI_QUESTIONS: NadawiQuestion[] = [
   short("Q3C.1", "spelling", "The abbreviation of 'frequent' is ........ .", "Write the abbreviation of 'frequent'.", "freq.", "الاختصار freq.؛ تقبل الإجابة مع النقطة النهائية أو من دونها."),
   short("Q3C.2", "spelling", "play, player - teach, ........ .", "play → player; teach → ___", "teacher", "اسم الشخص الذي يدرّس: teacher."),
   short("Q3C.3", "spelling", "The opposite of 'military' is ........ .", "The opposite of 'military' is ___.", "civilian", "civilian تعني مدني، وهي مقابل military."),
-  short("Q3C.4", "spelling", "hurt, injured - called, ........ .", "hurt → injured; called → ___", "named", "called وnamed مترادفتان بمعنى مُسمّى."),
+  short("Q3C.4", "spelling", "hurt, injured - called, ........ .", "hurt → injured; called → ___", "named", "يُقبل named أو alerted حسب مفتاح المسابقة.", ["alerted"]),
   short("Q3C.5", "spelling", "Engl., English - driving lic., ........ .", "Engl. → English; driving lic. → driving ___ (British English)", "licence", "الصيغة البريطانية للاسم هي licence؛ كلمة driving معطاة."),
-  short("Q3C.6", "spelling", "Radar speed, gun - speeding, ........ .", "radar speed → gun; speeding → ___", "fine", "التركيب speeding fine يعني غرامة تجاوز السرعة."),
+  short("Q3C.6", "spelling", "Radar speed, gun - speeding, ........ .", "radar speed → gun; speeding → ___", "ticket", "التركيب المطلوب هو speeding ticket؛ كلمة الفراغ ticket وتُقبل العبارة كاملة أيضاً.", ["speeding ticket"]),
 ];
 export const NADAWI_WRITING = { id: "Q4", prompt: 'Write a letter to your friend "Ahmed" of about 100 to 120 words giving him advice on how to get a security guard job.', minWords: 100, maxWords: 120 };
 export const NADAWI_CONTEST_START = Date.parse("2026-11-20T20:30:00+03:00");
@@ -53,7 +53,7 @@ export const newNadawiAttempt = (): NadawiAttempt => ({ started: false, index: 0
 export function singleWord(value: string) { return value.trim().length > 0 && !/\s/.test(value.trim()); }
 export function nadawiCorrect(question: NadawiQuestion, value: unknown) {
   if (question.kind === "mcq") return typeof value === "number" && value === question.correct;
-  if (typeof value !== "string" || !singleWord(value)) return false;
-  const normalized = value.trim().toLowerCase().replace(/[.!?,;:]+$/, "");
+  if (typeof value !== "string" || !value.trim() || value.trim().split(/\s+/).length > (question.maxWords ?? 1)) return false;
+  const normalized = value.trim().toLowerCase().replace(/[.!?,;:]+$/, "").replace(/\s+/g, " ");
   return question.answers.some((a) => a.toLowerCase().replace(/[.!?,;:]+$/, "") === normalized);
 }

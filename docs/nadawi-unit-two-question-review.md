@@ -443,7 +443,7 @@ civilian تعني مدني، وهي مقابل military.
 hurt → injured; called → ___
 
 
-**Answer:** named
+**Answer:** named (also accepted: alerted, per competition correction)
 
 called وnamed مترادفتان بمعنى مُسمّى.
 
@@ -461,9 +461,9 @@ Engl. → English; driving lic. → driving ___ (British English)
 radar speed → gun; speeding → ___
 
 
-**Answer:** fine
+**Answer:** ticket (also accepted: speeding ticket)
 
-التركيب speeding fine يعني غرامة تجاوز السرعة.
+التركيب المطلوب speeding ticket؛ يُقبل ticket أو speeding ticket، ولا يُقبل fine.
 
 ## Q4 · Letter writing
 

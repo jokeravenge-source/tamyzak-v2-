@@ -63,3 +63,11 @@ it("clears the previous answer when an admin restarts at question zero", () => {
   view.rerender(<NadawiContest language="en" adminTest />);
   expect(screen.getByLabelText("Type one word")).toHaveValue("");
 });
+
+it("allows a full phrase only when the server question permits two words", () => {
+  api.state = active("short"); api.state.question.max_words = 2;
+  render(<NadawiContest language="en" />);
+  fireEvent.change(screen.getByLabelText("Type the missing word or full phrase"), { target: { value: "speeding ticket" } });
+  fireEvent.click(screen.getByRole("button", { name: "Submit and continue" }));
+  expect(api.submit).toHaveBeenCalledWith("speeding ticket");
+});

@@ -110,4 +110,69 @@ await db.exec('SET ROLE authenticated;');
 await assert.rejects(()=>db.query('SELECT * FROM nadawi_contest_test_attempts'),/permission denied/);
 await db.exec('RESET ROLE;');
 console.log('PASS: admin previews, role enforcement/revocation, restart, identical 41-point grading and isolation from official attempts/rankings.');
+// Correct the original key and all saved attempts without changing their timing.
+await db.query("SELECT set_config('test.nadawi_admin',$1,false)",[ids[0]]);
+const correctionFixtures=[];
+const template=(await db.query('SELECT * FROM nadawi_contest_attempts WHERE user_id=$1',[ids[0]])).rows[0];
+const speedingIndex=template.items.findIndex(item=>item.id==='Q3C.6');
+for(const [index,submitted] of ['ticket','SPEEDING   TICKET.','fine',null].entries()){
+ const uid=`00000000-0000-4000-8000-00000000001${index}`;
+ await db.query('INSERT INTO auth.users VALUES($1)',[uid]);
+ const answers=structuredClone(template.answers); const entry=answers.find(e=>e.index===speedingIndex);
+ entry.answer=submitted; entry.correct=submitted==='fine';entry.timed_out=submitted===null;
+ if(index===0){const called=answers.find(e=>template.items[e.index].id==='Q3C.4');called.answer='alerted';called.correct=false;}
+ const score=answers.filter(e=>e.correct).length;
+ await db.query(`INSERT INTO nadawi_contest_attempts(user_id,items,started_at,question_started_at,question_index,answers,score,completed_at,elapsed_ms)
+ VALUES($1,$2,$3,$3,41,$4,$5,$6,$7)`,[uid,JSON.stringify(template.items),template.started_at,JSON.stringify(answers),score,template.completed_at,template.elapsed_ms]);
+ correctionFixtures.push(uid);
+}
+const beforeCorrection=(await db.query("SELECT 'official' AS mode,to_jsonb(a) AS a FROM nadawi_contest_attempts a UNION ALL SELECT 'test',to_jsonb(a) FROM nadawi_contest_test_attempts a")).rows;
+const correctionSql=await readFile(new URL('../supabase/migrations/20261120230000_nadawi_speeding_ticket.sql',import.meta.url),'utf8');
+await db.exec(correctionSql);
+const bank=(await db.query("SELECT item FROM nadawi_contest_questions WHERE id='Q3C.6'")).rows[0].item;
+assert.deepEqual(bank.answer_key.answers,['ticket','speeding ticket']);assert.equal(bank.max_words,2);
+for(const {mode,a:old} of beforeCorrection){
+ const table=mode==='official'?'nadawi_contest_attempts':'nadawi_contest_test_attempts';
+ const updated=(await db.query(`SELECT to_jsonb(a) AS a FROM ${table} a WHERE id=$1`,[old.id])).rows[0].a;
+ for(const field of ['id','user_id','started_at','question_started_at','question_index','completed_at','elapsed_ms'])assert.deepEqual(updated[field],old[field]);
+ assert.deepEqual(updated.items.map(q=>q.id),old.items.map(q=>q.id));
+ let delta=0;
+ for(let i=0;i<old.answers.length;i++){
+  const prior=old.answers[i]; const item=old.items[prior.index];
+  if(!['Q3C.4','Q3C.6'].includes(item.id)){assert.deepEqual(updated.answers[i],prior);continue;}
+  const normalized=String(prior.answer??'').trim().toLowerCase().replace(/[.!?,;:]+$/,'').replace(/\s+/g,' ');
+  const correct=!prior.timed_out&&(item.id==='Q3C.6'?['ticket','speeding ticket']:['named','alerted']).includes(normalized);
+  delta+=Number(correct)-Number(prior.correct);
+  assert.deepEqual(updated.answers[i],{...prior,correct});
+ }
+ assert.equal(updated.score,old.score+delta);
+}
+for(const [index,uid] of correctionFixtures.entries()){
+ await user(uid);const errors=await mistakes();
+ assert.equal(errors.some(e=>e.prompt===bank.prompt),index>=2);
+ if(index===0)assert.equal(errors.some(e=>e.prompt.includes('called')),false);
+ if(index>=2)assert.deepEqual(errors.find(e=>e.prompt===bank.prompt).correct_answers,['ticket','speeding ticket']);
+}
+// Exercise the updated official and preview graders with a two-word response.
+for(const test of [false,true]){
+ const uid=test?ids[0]:'00000000-0000-4000-8000-000000000020';
+ if(!test)await db.query('INSERT INTO auth.users VALUES($1)',[uid]);
+ await user(uid); let s=test?await previewStart(true):await start();
+ const table=test?'nadawi_contest_test_attempts':'nadawi_contest_attempts';
+ await db.query(`UPDATE ${table} SET items=(SELECT jsonb_agg(item ORDER BY (item->>'id'='Q3C.6') DESC,n) FROM jsonb_array_elements(items) WITH ORDINALITY q(item,n)) WHERE id=$1`,[s.attempt_id]);
+ s=test?await previewState():await state();assert.equal(s.question.max_words,2);assert.equal(s.question.prompt,bank.prompt);
+ s=test?await previewAnswer(s,'SPEEDING   TICKET.'):await answer(s,'SPEEDING   TICKET.');
+ assert.equal((await db.query(`SELECT score FROM ${table} WHERE id=$1`,[s.attempt_id])).rows[0].score,1);
+ while(s.status==='active'){
+  if(s.question.kind==='short')break;
+  s=test?await previewAnswer(s,await previewKey(s)):await answer(s,await key(s));
+ }
+ assert.equal(s.question.max_words,1);
+ await assert.rejects(()=>test?previewAnswer(s,'two words'):answer(s,'two words'),/ONE_WORD_REQUIRED/);
+}
+// Re-running the correction is safe and never awards a second point.
+const scoresBefore=(await db.query('SELECT id,score FROM nadawi_contest_attempts ORDER BY id')).rows;
+await db.exec(correctionSql);
+assert.deepEqual((await db.query('SELECT id,score FROM nadawi_contest_attempts ORDER BY id')).rows,scoresBefore);
+console.log('PASS: ticket/full phrase correction, old fine removal, retroactive scoring, timing/order preservation, retry safety and both live graders.');
 await db.close();

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type TimedNadawiQuestion = { kind: "mcq" | "short"; prompt: string; choices: string[]; word_bank: string[] };
+export type TimedNadawiQuestion = { kind: "mcq" | "short"; prompt: string; choices: string[]; word_bank: string[]; max_words?: number };
 type Base = { server_now: string };
 export type TimedNadawiState =
   | (Base & { status: "not_started" })
@@ -20,7 +20,7 @@ export function parseTimedNadawiState(value: unknown): TimedNadawiState {
   if (s.status === "completed") {
     if (!Number.isInteger(s.score) || s.score < 0 || s.score > 41 || !Number.isFinite(s.elapsed_ms) || s.elapsed_ms < 0 || !Number.isFinite(Date.parse(s.completed_at))) throw new Error("INVALID_CONTEST_STATE");
   } else {
-    if (!Number.isInteger(s.question_index) || s.question_index < 0 || s.question_index >= 41 || !Number.isFinite(Date.parse(s.deadline_at)) || !s.question || !["mcq", "short"].includes(s.question.kind) || typeof s.question.prompt !== "string" || !Array.isArray(s.question.choices) || !s.question.choices.every((c) => typeof c === "string") || (s.question.kind === "mcq" && s.question.choices.length < 2) || !Array.isArray(s.question.word_bank)) throw new Error("INVALID_CONTEST_STATE");
+    if (!Number.isInteger(s.question_index) || s.question_index < 0 || s.question_index >= 41 || !Number.isFinite(Date.parse(s.deadline_at)) || !s.question || !["mcq", "short"].includes(s.question.kind) || typeof s.question.prompt !== "string" || !Array.isArray(s.question.choices) || !s.question.choices.every((c) => typeof c === "string") || (s.question.kind === "mcq" && s.question.choices.length < 2) || !Array.isArray(s.question.word_bank) || (s.question.max_words !== undefined && ![1, 2].includes(s.question.max_words))) throw new Error("INVALID_CONTEST_STATE");
   }
   return s;
 }
