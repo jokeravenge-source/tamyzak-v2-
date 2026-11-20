@@ -1969,6 +1969,60 @@ export type Database = {
         }
         Relationships: []
       }
+      nadawi_contest_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          elapsed_ms: number | null
+          id: string
+          items: Json
+          question_index: number
+          question_started_at: string
+          score: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          elapsed_ms?: number | null
+          id?: string
+          items: Json
+          question_index?: number
+          question_started_at: string
+          score?: number
+          started_at: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          elapsed_ms?: number | null
+          id?: string
+          items?: Json
+          question_index?: number
+          question_started_at?: string
+          score?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nadawi_contest_questions: {
+        Row: {
+          id: string
+          item: Json
+        }
+        Insert: {
+          id: string
+          item: Json
+        }
+        Update: {
+          id?: string
+          item?: Json
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           created_at: string
@@ -4275,6 +4329,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _nadawi_contest_step: {
+        Args: {
+          _accept?: boolean
+          _answer?: string
+          _id: string
+          _index?: number
+        }
+        Returns: Json
+      }
       adjust_parent_student_score: {
         Args: { _delta: number; _link_id: string; _student_user_id: string }
         Returns: number
@@ -4457,6 +4520,17 @@ export type Database = {
       get_literature_mcq_set: { Args: { set_id: string }; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
+      get_nadawi_contest_leaderboard: {
+        Args: never
+        Returns: {
+          display_name: string
+          elapsed_ms: number
+          is_me: boolean
+          rank: number
+          score: number
+        }[]
+      }
+      get_nadawi_contest_state: { Args: never; Returns: Json }
       has_active_premium: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
@@ -4588,6 +4662,7 @@ export type Database = {
         }
       }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      start_nadawi_contest: { Args: never; Returns: Json }
       study_flight_inbox_internal: { Args: { _uid: string }; Returns: Json }
       study_flight_periods_internal: {
         Args: { _destination: string; _uid: string }
@@ -4616,6 +4691,10 @@ export type Database = {
       }
       submit_literature_mcq: {
         Args: { selections: Json; set_id: string }
+        Returns: Json
+      }
+      submit_nadawi_contest_answer: {
+        Args: { _answer?: string; _attempt_id: string; _question_index: number }
         Returns: Json
       }
       sync_my_study_flights: { Args: never; Returns: Json }

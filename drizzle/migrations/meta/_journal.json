@@ -295,6 +295,27 @@
       "when": 1795129905424,
       "tag": "0041_race_account_points",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795194120204,
+      "tag": "0042_battle_invite_realtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1795194134234,
+      "tag": "0043_timed_nadawi_contest",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1795194249554,
+      "tag": "0044_timed_nadawi_contest_bank_and_functions",
+      "breakpoints": true
     }
   ]
 }
