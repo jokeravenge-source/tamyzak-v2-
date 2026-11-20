@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { answerTimedNadawi, getTimedNadawiState, startTimedNadawi, type TimedNadawiState } from "@/lib/nadawiContestApi";
 
 type Reply = { state: TimedNadawiState; clockOffset: number };
-export function useTimedNadawiContest() {
+export function useTimedNadawiContest(adminTest = false) {
   const [state, setState] = useState<TimedNadawiState | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -24,13 +24,14 @@ export function useTimedNadawiContest() {
       if (alive.current) { setError(e instanceof Error ? e.message : "CONTEST_UNAVAILABLE"); nextSync.current = Date.now() + 3000; }
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }, []);
-  const refresh = useCallback(() => perform(getTimedNadawiState), [perform]);
-  const start = useCallback(() => perform(startTimedNadawi), [perform]);
+  const refresh = useCallback(() => perform(() => getTimedNadawiState(adminTest)), [perform, adminTest]);
+  const start = useCallback(() => perform(() => startTimedNadawi(adminTest)), [perform, adminTest]);
+  const restart = useCallback(() => adminTest ? perform(() => startTimedNadawi(true, true)) : Promise.resolve(), [perform, adminTest]);
   const submit = useCallback((answer: string | null) => {
     const current = stateRef.current;
     if (current?.status !== "active") return Promise.resolve();
-    return perform(() => answerTimedNadawi(current.attempt_id, current.question_index, answer));
-  }, [perform]);
+    return perform(() => answerTimedNadawi(current.attempt_id, current.question_index, answer, adminTest));
+  }, [perform, adminTest]);
   useEffect(() => {
     alive.current = true; void refresh();
     const visible = () => { if (document.visibilityState === "visible") void refresh(); };
@@ -49,7 +50,7 @@ export function useTimedNadawiContest() {
     return () => clearInterval(timer);
   }, [state?.status, submit]);
   const serverNow = now + offset.current;
-  return { state, pending, error, refresh, start, submit,
+  return { state, pending, error, refresh, start, restart, submit,
     seconds: state?.status === "active" ? Math.max(0, Math.min(30, Math.ceil((Date.parse(state.deadline_at) - serverNow) / 1000))) : 0,
     elapsed: state?.status === "active" ? Math.max(0, serverNow - Date.parse(state.started_at)) : state?.status === "completed" ? state.elapsed_ms : 0 };
 }

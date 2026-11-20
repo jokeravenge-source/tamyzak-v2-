@@ -1,9 +1,12 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import NadawiContestCard from "./NadawiContestCard";
-vi.mock("./NadawiContest", () => ({ default: () => <div>Timed challenge</div> }));
+const role = vi.hoisted(() => ({ allowed: vi.fn() }));
+vi.mock("@/lib/nadawiContestApi", () => ({ canTestNadawiContest: role.allowed }));
+vi.mock("./NadawiContest", () => ({ default: ({ adminTest }: { adminTest?: boolean }) => <div>{adminTest ? "Admin timed test" : "Timed challenge"}</div> }));
 
 beforeEach(() => {
+  role.allowed.mockResolvedValue(false);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-11-20T17:29:58Z"));
 });
@@ -56,4 +59,14 @@ it("opens the timed contest only after the start time", () => {
   expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
   act(() => vi.advanceTimersByTime(2000));
   expect(screen.getByText("Timed challenge")).toBeInTheDocument();
+});
+
+it("lets a verified admin open a test before the official countdown ends", async () => {
+  role.allowed.mockResolvedValue(true);
+  render(<NadawiContestCard language="en" />);
+  await act(async () => openCard());
+  expect(screen.getByRole("timer")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Test Nadawi competition" }));
+  expect(screen.getByText("Admin timed test")).toBeInTheDocument();
+  expect(screen.queryByText("Timed challenge")).not.toBeInTheDocument();
 });

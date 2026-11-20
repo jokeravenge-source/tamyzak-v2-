@@ -60,3 +60,18 @@ To run the database check without adding a project dependency:
 npm install --prefix /tmp/nadawi-db-check @electric-sql/pglite
 NADAWI_PGLITE_MODULE=/tmp/nadawi-db-check/node_modules/@electric-sql/pglite/dist/index.js node scripts/test-nadawi-contest-db.mjs
 ```
+
+## Administrator tests
+
+Apply `20261120210000_nadawi_admin_test.sql` after the timed competition migration.
+The admin dashboard has a Test Nadawi competition button below its header. The
+home card also exposes it after checking the authenticated admin role. It opens
+an independent test dialog before or after release, with the same 30-second
+questions, shuffle and grading, plus Restart test. The current test can be resumed.
+
+The test RPCs verify `has_role(auth.uid(), 'admin')` on every request, including
+answers and state reads. They use `nadawi_contest_test_attempts`, a separate
+private table, so resets and results cannot alter official attempts or appear
+in the student leaderboard. The database validation script applies both
+migrations and checks non-admin denial, role revocation, full scoring, reset and
+official-result isolation.

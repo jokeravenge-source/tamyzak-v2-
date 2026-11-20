@@ -31,9 +31,9 @@ async function stateRequest(name: string, args?: Record<string, unknown>) {
   const state = parseTimedNadawiState(data);
   return { state, clockOffset: Date.parse(state.server_now) - (started + finished) / 2 };
 }
-export const getTimedNadawiState = () => stateRequest("get_nadawi_contest_state");
-export const startTimedNadawi = () => stateRequest("start_nadawi_contest");
-export const answerTimedNadawi = (attemptId: string, index: number, answer: string | null) => stateRequest("submit_nadawi_contest_answer", { _attempt_id: attemptId, _question_index: index, _answer: answer });
+export const getTimedNadawiState = (adminTest = false) => stateRequest(adminTest ? "get_nadawi_admin_test_state" : "get_nadawi_contest_state");
+export const startTimedNadawi = (adminTest = false, restart = false) => adminTest ? stateRequest("start_nadawi_admin_test", { _restart: restart }) : stateRequest("start_nadawi_contest");
+export const answerTimedNadawi = (attemptId: string, index: number, answer: string | null, adminTest = false) => stateRequest(adminTest ? "submit_nadawi_admin_test_answer" : "submit_nadawi_contest_answer", { _attempt_id: attemptId, _question_index: index, _answer: answer });
 export async function getNadawiRankings(): Promise<NadawiRank[]> {
   const { data, error } = await rpc("get_nadawi_contest_leaderboard");
   if (error) throw new Error(error.message);
@@ -49,4 +49,13 @@ export function formatNadawiDuration(ms: number, precise = false) {
   const minutes = Math.floor(value / 60000);
   const seconds = String(Math.floor(value / 1000) % 60).padStart(2, "0");
   return `${String(minutes).padStart(2, "0")}:${seconds}${precise ? `.${String(value % 1000).padStart(3, "0")}` : ""}`;
+}
+
+export async function canTestNadawiContest(): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return false;
+    const result = await rpc("has_role", { _user_id: data.user.id, _role: "admin" });
+    return !result.error && result.data === true;
+  } catch { return false; }
 }

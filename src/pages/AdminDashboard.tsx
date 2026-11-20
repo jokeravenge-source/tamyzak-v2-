@@ -18,6 +18,7 @@ import AdminFrenchFlashcardsTab from "@/components/AdminFrenchFlashcardsTab";
 import AdminMalazamTab from "@/components/AdminMalazamTab";
 import AdminCouponsTab from "@/components/AdminCouponsTab";
 import { Button } from "@/components/ui/button";
+import NadawiAdminTestButton from "@/components/NadawiAdminTestButton";
 import WhoIsBest from "./WhoIsBest";
 import RegenerateDailyGamesButton from "@/components/RegenerateDailyGamesButton";
 import DailyGamesListButton from "@/components/DailyGamesListButton";
@@ -792,6 +793,8 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           </button>
         </div>
       </header>
+      <div className="relative mx-auto mb-6 max-w-6xl"><NadawiAdminTestButton /></div>
+
 
       <div className="max-w-6xl mx-auto relative z-10">
         <label className="mb-5 block max-w-md">

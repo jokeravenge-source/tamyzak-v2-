@@ -46,4 +46,37 @@ assert.deepEqual(ranks.slice(2).map(r=>[r.display_name,Number(r.rank),r.score,Nu
 assert.equal(ranks.find(r=>r.display_name==='Ali').is_me,true);
 await db.exec('SET ROLE authenticated;');await assert.rejects(()=>db.query('SELECT * FROM nadawi_contest_questions'),/permission denied/);await assert.rejects(()=>db.query('UPDATE nadawi_contest_attempts SET score=41'),/permission denied/);await assert.rejects(()=>db.query('SELECT _nadawi_contest_step($1)',[a.attempt_id]),/permission denied/);assert.equal((await state()).score,41);
 await db.exec('RESET ROLE;');await user('');await assert.rejects(start,/AUTH_REQUIRED/);
-console.log('PASS: SQL migration, authentication, random/resumable order, private keys, grading, replay protection, foreign-attempt rejection, timeouts, persisted duration and score/time ranking.');await db.close();
+console.log('PASS: SQL migration, authentication, random/resumable order, private keys, grading, replay protection, foreign-attempt rejection, timeouts, persisted duration and score/time ranking.');
+
+// Apply and exercise the admin-only extension against the same official fixtures.
+await db.exec(`CREATE FUNCTION public.has_role(_user_id uuid,_role text) RETURNS boolean LANGUAGE sql STABLE AS $$
+ SELECT coalesce(_role='admin' AND _user_id=nullif(current_setting('test.nadawi_admin',true),'')::uuid,false) $$;`);
+await db.query("SELECT set_config('test.nadawi_admin',$1,false)",[ids[0]]);
+await db.exec(await readFile(new URL('../supabase/migrations/20261120210000_nadawi_admin_test.sql',import.meta.url),'utf8'));
+await user(ids[1]);
+await assert.rejects(()=>rpc('SELECT start_nadawi_admin_test() AS result'),/ADMIN_REQUIRED/);
+await assert.rejects(()=>rpc('SELECT get_nadawi_admin_test_state() AS result'),/ADMIN_REQUIRED/);
+await user(ids[0]);
+const officialBefore=(await db.query('SELECT to_jsonb(a) AS a FROM nadawi_contest_attempts a WHERE user_id=$1',[ids[0]])).rows[0].a;
+const previewState=()=>rpc('SELECT get_nadawi_admin_test_state() AS result');
+const previewStart=restart=>rpc('SELECT start_nadawi_admin_test($1) AS result',[restart]);
+const previewAnswer=(s,v)=>rpc('SELECT submit_nadawi_admin_test_answer($1,$2,$3) AS result',[s.attempt_id,s.question_index,v]);
+const previewKey=async s=>{const q=(await db.query('SELECT items->($2::integer) AS item FROM nadawi_contest_test_attempts WHERE id=$1',[s.attempt_id,s.question_index])).rows[0].item;return q.kind==='mcq'?String(q.choices.indexOf(q.answer_key.correct)):q.answer_key.answers[0];};
+assert.equal((await previewState()).status,'not_started');
+let preview=await previewStart(false); assert.equal(preview.status,'active');
+assert.equal((await previewState()).attempt_id,preview.attempt_id);
+await user(ids[1]);await assert.rejects(()=>previewAnswer(preview,'0'),/ADMIN_REQUIRED/);await user(ids[0]);
+preview=await previewAnswer(preview,await previewKey(preview)); assert.equal(preview.question_index,1);
+const oldPreview=preview.attempt_id; preview=await previewStart(true); assert.notEqual(preview.attempt_id,oldPreview); assert.equal(preview.question_index,0);
+while(preview.status==='active')preview=await previewAnswer(preview,await previewKey(preview));
+assert.equal(preview.score,41);
+const officialAfter=(await db.query('SELECT to_jsonb(a) AS a FROM nadawi_contest_attempts a WHERE user_id=$1',[ids[0]])).rows[0].a;
+assert.deepEqual(officialAfter,officialBefore);
+assert.equal((await db.query('SELECT * FROM get_nadawi_contest_leaderboard()')).rows.length,4);
+await db.query("SELECT set_config('test.nadawi_admin','',false)");
+await assert.rejects(previewState,/ADMIN_REQUIRED/);
+await db.exec('SET ROLE authenticated;');
+await assert.rejects(()=>db.query('SELECT * FROM nadawi_contest_test_attempts'),/permission denied/);
+await db.exec('RESET ROLE;');
+console.log('PASS: admin previews, role enforcement/revocation, restart, identical 41-point grading and isolation from official attempts/rankings.');
+await db.close();

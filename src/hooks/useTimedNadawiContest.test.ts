@@ -11,7 +11,7 @@ it("automatically submits a timeout at 30 seconds and advances from the server r
   expect(h.result.current.seconds).toBe(30);
   await act(async () => vi.advanceTimersByTime(29900)); expect(api.answer).not.toHaveBeenCalled();
   await act(async () => vi.advanceTimersByTime(100));
-  expect(api.answer).toHaveBeenCalledWith("attempt", 0, null);
+  expect(api.answer).toHaveBeenCalledWith("attempt", 0, null, false);
   expect(h.result.current.state).toMatchObject({ status: "active", question_index: 1 });
 });
 it("prevents concurrent sends and keeps time running while the answer is in flight", async () => {
@@ -36,4 +36,14 @@ it("resumes the server attempt when the student returns to the tab", async () =>
   api.get.mockResolvedValue(active(3));
   await act(async () => document.dispatchEvent(new Event("visibilitychange")));
   expect(h.result.current.state).toMatchObject({ status: "active", question_index: 3 });
+});
+
+it("routes an admin test through the preview APIs and permits restarting it", async () => {
+  const h = renderHook(() => useTimedNadawiContest(true)); await act(async () => {});
+  expect(api.get).toHaveBeenCalledWith(true);
+  api.start.mockResolvedValue(active());
+  await act(async () => h.result.current.restart());
+  expect(api.start).toHaveBeenCalledWith(true, true);
+  await act(async () => h.result.current.submit("0"));
+  expect(api.answer).toHaveBeenCalledWith("attempt", 0, "0", true);
 });
