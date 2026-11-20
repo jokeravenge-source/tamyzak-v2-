@@ -115,6 +115,9 @@ it("keeps the same section after a partial answer and returns to the understandi
     await screen.findByRole("button", { name: "تشغيل الشرح الصوتي" }),
   );
   const input = await screen.findByRole("textbox");
+  expect(api.invoke).toHaveBeenCalledWith("tts-speak", {
+    body: expect.objectContaining({ purpose: "podcast", voice: "onyx", speed: 1 }),
+  });
   fireEvent.change(input, { target: { value: "ملخص ناقص" } });
   fireEvent.click(screen.getByRole("button", { name: "أرسل الإجابة" }));
   await screen.findByText("تذكر العلاقة بين الأفكار");

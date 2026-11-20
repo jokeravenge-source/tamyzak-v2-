@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       title: pdf?.name.replace(/\.pdf$/i, "") ?? null,
       subject: subject || null,
       status: "processing",
-      voice_id: "browser-arabic",
+      voice_id: "lovable-onyx",
     })
     .select("id, status")
     .single();

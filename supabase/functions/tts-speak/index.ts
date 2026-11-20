@@ -1,5 +1,6 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import { speechSettings } from "../_shared/speechSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +16,7 @@ Deno.serve(async (req) => {
     if (!auth.ok) {
       return new Response(JSON.stringify({ error: auth.error }), { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { text, language, voice, speed } = await req.json();
+    const { text, language, voice, speed, purpose } = await req.json();
     if (!text || typeof text !== "string") {
       return new Response(JSON.stringify({ error: "Missing text" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -30,9 +31,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "openai/gpt-4o-mini-tts",
         input,
-        voice: voice || "alloy",
+        ...speechSettings({ purpose, voice, speed }),
         response_format: "mp3",
-        speed: typeof speed === "number" && speed >= 0.25 && speed <= 4.0 ? speed : 1.25,
       }),
     });
     if (!res.ok) {
