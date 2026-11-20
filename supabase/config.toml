@@ -83,6 +83,9 @@ verify_jwt = false
 [functions.ask-podcast-question]
 verify_jwt = false
 
+[functions.podcast-practice-topics]
+verify_jwt = false
+
 [functions.english-reading-practice]
 verify_jwt = false
 

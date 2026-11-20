@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { loadPodcastTopics, type PodcastTopic } from "@/lib/podcastTopics";
 import {
   loadPodcastPractice,
   type PracticeKind,
@@ -20,16 +21,20 @@ const button =
   "rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-bold disabled:opacity-50";
 
 export default function PodcastPractice({
-  title,
+  sessionId,
   subject,
   onSpeak,
 }: {
-  title: string;
+  sessionId: string;
   subject: string | null;
   onSpeak: (text: string) => void;
 }) {
   const [choice, setChoice] = useState<PracticeKind | "later" | null>(null);
-  const [topic, setTopic] = useState(title);
+  const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState<PodcastTopic[]>([]);
+  const [resolving, setResolving] = useState(false);
+  const [topicError, setTopicError] = useState("");
+  const topicRequest = useRef<AbortController | null>(null);
   const [selectedSubject, setSelectedSubject] = useState(
     Object.entries(subjects).find(
       ([key, label]) => subject === key || subject === label,
@@ -49,9 +54,30 @@ export default function PodcastPractice({
     () => () => {
       revision.current++;
       request.current?.abort();
+      topicRequest.current?.abort();
+      topicRequest.current = null;
     },
     [],
   );
+  const prepareTopics = async () => {
+    if (resolving || topics.length) return;
+    const controller = new AbortController();
+    topicRequest.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 60000);
+    setResolving(true);
+    setTopicError("");
+    try {
+      const found = await loadPodcastTopics(sessionId, controller.signal);
+      if (controller.signal.aborted) throw new Error("Request timed out");
+      setTopics(found);
+      setTopic((value) => value || found[0].ar);
+    } catch {
+      if (topicRequest.current === controller) setTopicError("تعذّر تحديد مفاهيم الدرس. جرّب مرة ثانية أو اكتب المفهوم بنفسك.");
+    } finally {
+      window.clearTimeout(timeout);
+      if (topicRequest.current === controller) setResolving(false);
+    }
+  };
   const current = questions[index];
   const load = async () => {
     if (!choice || choice === "later" || !topic.trim() || !selectedSubject)
@@ -69,9 +95,13 @@ export default function PodcastPractice({
     setAnswer("");
     setRevealed(false);
     try {
+      const selected = topics.find((item) => item.ar === topic.trim() || item.en === topic.trim());
+      const concepts = selected ? [selected] : await loadPodcastTopics(sessionId, controller.signal, topic.trim());
+      if (controller.signal.aborted) throw new Error("Request timed out");
+      if (id !== revision.current) return;
       const result = await loadPodcastPractice(
         selectedSubject,
-        topic,
+        concepts.flatMap((item) => [item.ar, item.en]),
         language,
         choice,
         controller.signal,
@@ -84,7 +114,7 @@ export default function PodcastPractice({
         new Set(result.questions.map((q) => q.kind)).size < 2;
       setMessage(
         !result.questions.length
-          ? "ما لكينا أسئلة مطابقة بالبنك. جرّب اسم المفهوم أو كلمات أدق، أو لغة المصدر الثانية."
+          ? "ما لكينا أسئلة مطابقة لهذا المفهوم بالبنك واللغة المختارة. اختَر مفهوماً آخر أو لغة الأسئلة الثانية."
           : result.partial
             ? "بعض أسئلة البنك ما تحمّلت. هاي الأسئلة المتاحة حالياً."
             : missing
@@ -125,6 +155,7 @@ export default function PodcastPractice({
               setChoice(value);
               setQuestions([]);
               setMessage("");
+              if (value !== "later") void prepareTopics();
             }}
           >
             {label}
@@ -133,6 +164,15 @@ export default function PodcastPractice({
       </div>
       {choice && choice !== "later" && (
         <>
+          {resolving && <p role="status">جاري تحديد مفاهيم الدرس…</p>}
+          {topicError && <div role="status">{topicError} <button className={button} disabled={resolving} onClick={() => void prepareTopics()}>إعادة تحديد المفاهيم</button></div>}
+          {topics.length > 0 && <label className="block">
+            مفاهيم مستخرجة من الدرس
+            <select className="mt-2 block w-full rounded-xl bg-slate-900 p-3" value={topics.find((item) => item.ar === topic || item.en === topic)?.ar ?? ""} disabled={busy} onChange={(e) => setTopic(e.target.value)}>
+              <option value="">اختَر مفهوماً أو اكتبه أدناه</option>
+              {topics.map((item) => <option key={item.ar} value={item.ar}>{item.ar} · {item.en}</option>)}
+            </select>
+          </label>}
           <label className="block">
             المادة
             <select
@@ -154,6 +194,7 @@ export default function PodcastPractice({
             <input
               className="mt-2 block w-full rounded-xl bg-slate-900 p-3"
               value={topic}
+              maxLength={160}
               disabled={busy}
               onChange={(e) => setTopic(e.target.value)}
               placeholder="مثلاً: الحث الكهرومغناطيسي"

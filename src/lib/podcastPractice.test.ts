@@ -34,3 +34,12 @@ it("combines requested bank categories, deduplicates sources and excludes unrela
   expect(result.questions.map(q => q.kind)).toEqual(["ministerial", "mcq"]);
   expect(result.questions[1].answer).toBe("ب");
 });
+
+it("matches bilingual concepts against question or answer without confusing binary topics", () => {
+  const items = [
+    { id: "fission", kind: "ministerial" as const, question: "How do bacteria reproduce?", answer: "By binary fission." },
+    { id: "unrelated", kind: "mcq" as const, question: "What is a binary star?", answer: "Two stars." },
+    { id: "ar", kind: "ministerial" as const, question: "عرف انشطار ثنائي", answer: "تكاثر لاجنسي" },
+  ];
+  expect(relatedPractice(items, ["الانشطار الثنائي", "Binary fission"]).map(q => q.id)).toEqual(["fission", "ar"]);
+});

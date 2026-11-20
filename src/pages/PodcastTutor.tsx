@@ -440,7 +440,7 @@ export default function PodcastTutor({
         ) : isComplete ? (
           <>
             <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} onPlay={playStudyRecord} onStop={stopStudyRecord} />
-            <PodcastPractice key={session.id} title={session.title ?? ""} subject={session.subject} onSpeak={text => { stopStudyRecord(); speakArabic(text, "narration", () => setPhase("idle")); }} />
+            <PodcastPractice key={session.id} sessionId={session.id} subject={session.subject} onSpeak={text => { stopStudyRecord(); speakArabic(text, "narration", () => setPhase("idle")); }} />
           </>
         ) : (
           <SessionView

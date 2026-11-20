@@ -35,22 +35,26 @@ const stopWords = new Set([
 
 export function relatedPractice(
   items: PodcastPracticeQuestion[],
-  topic: string,
+  topic: string | string[],
 ) {
-  const terms = [
+  const aliases = (Array.isArray(topic) ? topic : [topic]).map((name) => [
     ...new Set(
-      normalizeStudySearch(topic)
+      normalizeStudySearch(name)
         .split(/[^\p{L}\p{N}]+/u)
-        .filter((term) => term.length >= 3 && !stopWords.has(term)),
+        .filter((term) => term.length >= 3 && !stopWords.has(term))
+        .map((term) => /^[\u0621-\u064a]+$/.test(term) ? term.replace(/^ال/, "") : term),
     ),
-  ];
-  if (!terms.length) return [];
+  ]).filter((terms) => terms.length);
+  if (!aliases.length) return [];
   return items
     .map((item) => {
-      const text = normalizeStudySearch(item.question);
+      const text = normalizeStudySearch(`${item.question} ${item.answer} ${item.explanation ?? ""}`);
       return {
         item,
-        score: terms.filter((term) => text.includes(term)).length,
+        score: Math.max(...aliases.map((terms) => {
+          const matched = terms.filter((term) => text.includes(term)).length;
+          return matched >= Math.ceil(terms.length * 0.6) ? matched / terms.length : 0;
+        })),
       };
     })
     .filter((row) => row.score > 0)
@@ -60,7 +64,7 @@ export function relatedPractice(
 
 export async function loadPodcastPractice(
   subject: string,
-  topic: string,
+  topic: string | string[],
   language: "ar" | "en",
   kind: PracticeKind,
   signal: AbortSignal,
