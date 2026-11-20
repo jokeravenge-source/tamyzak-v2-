@@ -330,6 +330,13 @@
       "when": 1795202228304,
       "tag": "0046_nadawi_mistakes",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795203358220,
+      "tag": "0047_nadawi_speeding_ticket",
+      "breakpoints": true
     }
   ]
 }
