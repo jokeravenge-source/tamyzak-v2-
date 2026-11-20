@@ -2,20 +2,25 @@ import { useEffect, useState } from "react";
 import { ArrowUpLeft, ArrowUpRight, Clock3, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import NadawiContest from "./NadawiContest";
+import { NADAWI_CONTEST_START, newNadawiAttempt } from "@/data/nadawiContestUnit2";
 import englishIcon from "@/assets/english-contest-3d.svg";
 
-// A single announced event: never roll the countdown over to tomorrow.
-const NADAWI_CONTEST_START = new Date("2026-11-20T20:30:00+03:00").getTime();
 const title = "مسابقة الأستاذ محمد النداوي";
 
 export default function NadawiContestCard({ language }: { language: AppLanguage }) {
   const ar = language === "ar";
   const [open, setOpen] = useState(false);
+  const [attempt, setAttempt] = useState(newNadawiAttempt);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     if (!open) return;
     setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    if (Date.now() >= NADAWI_CONTEST_START) return;
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= NADAWI_CONTEST_START) window.clearInterval(timer);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [open]);
   const remaining = Math.max(0, Math.ceil((NADAWI_CONTEST_START - now) / 1000));
@@ -48,23 +53,24 @@ export default function NadawiContestCard({ language }: { language: AppLanguage 
             <span dir="rtl" className="block text-base font-black leading-7 sm:text-2xl sm:leading-9">{title}</span>
             <span className="mt-2 flex items-center gap-1.5 text-xs leading-5 text-cyan-100 sm:text-sm">
               <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              {ar ? "اضغط وشوف شكد باقي للموعد" : "Tap to see the countdown"}
+              {ar ? "اضغط لفتح المسابقة وموعدها" : "Open the challenge and its start time"}
             </span>
           </span>
           <Arrow aria-hidden="true" className="relative hidden h-9 w-9 shrink-0 rounded-full bg-white/10 p-2 sm:block" />
         </button>
       </DialogTrigger>
       <DialogContent dir={ar ? "rtl" : "ltr"} className="gap-5 rounded-3xl border-cyan-200/20 bg-[#101f42] p-6 text-center text-white sm:p-8">
-        <img src={englishIcon} width={240} height={240} alt="" className="mx-auto h-36 w-36" />
+        <img src={englishIcon} width={240} height={240} alt="" className={arrived ? "mx-auto h-20 w-20" : "mx-auto h-36 w-36"} />
         <div className="space-y-3">
           <p className="text-xs font-bold uppercase tracking-widest text-cyan-200">{ar ? "استعد لتحدّي الإنكليزي" : "Get ready for English"}</p>
           <DialogTitle dir="rtl" className="text-xl font-black leading-9 sm:text-2xl">{title}</DialogTitle>
           <DialogDescription className="leading-6 text-blue-100">{appointment}</DialogDescription>
         </div>
         {arrived ? (
-          <p role="status" className="rounded-2xl border border-cyan-200/20 bg-cyan-200/10 p-5 font-bold text-cyan-100">
-            {ar ? "حان الموعد! انتظر فتح المسابقة هنا." : "It’s time! The competition will open here when ready."}
-          </p>
+          <div className="space-y-4">
+            {!attempt.started && <p role="status" className="text-sm font-bold text-cyan-100">{ar ? "حان موعد المسابقة!" : "It’s time!"}</p>}
+            <NadawiContest language={language} attempt={attempt} setAttempt={setAttempt} />
+          </div>
         ) : (
           <div>
             <p className="mb-4 text-sm text-blue-100">{ar ? "باقي على موعد المسابقة" : "Time until the competition"}</p>

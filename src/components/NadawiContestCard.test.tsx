@@ -46,5 +46,18 @@ it("does not restart a passed competition as a new daily event", () => {
   render(<NadawiContestCard language="ar" />);
   openCard();
   expect(screen.queryByRole("timer")).not.toBeInTheDocument();
-  expect(screen.getByRole("status")).toHaveTextContent("حان الموعد! انتظر فتح المسابقة هنا.");
+  expect(screen.getByRole("status")).toHaveTextContent("حان موعد المسابقة!");
+});
+
+it("opens the prepared contest only after the start time and retains answers when the dialog closes", () => {
+  vi.setSystemTime(new Date("2026-11-20T17:30:00Z"));
+  render(<NadawiContestCard language="en" />);
+  openCard();
+  fireEvent.click(screen.getByRole("button", { name: "Start challenge" }));
+  fireEvent.click(screen.getByRole("button", { name: "Because the law covers many different situations." }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByRole("heading", { name: "How can witnesses help the police?" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close / إغلاق" }));
+  openCard();
+  expect(screen.getByRole("heading", { name: "How can witnesses help the police?" })).toBeInTheDocument();
 });
