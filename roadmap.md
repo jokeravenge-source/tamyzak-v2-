@@ -4,6 +4,7 @@
 - Real-video notes verification awaits a Premium-enabled test account; the available signed-in account is blocked by the Premium screen.
 
 ## Done
+- Deployed the missing battle-channel function; signed-in channel publication returned 200 and showed the waiting screen, then cancelled the test invitation without deleting records. All 15 relevant tests passed.
 - Upgraded notes to Gemini 4 Argon via the server-only SDK, removed optional output caps, bypassed prior-model caches, and deployed; seven coverage/math tests pass.
 - Deployed full-video coverage corrections: retain complete transcripts, prioritize all topics within the existing token budget, bypass older partial caches, and reject token-truncated output. Six coverage/math tests pass; preview build is clean.
 - Added admin Premium coupons with hours, days and calendar months; verified signed-in creation, redemption, repeat deadline, editing, disabling, reload and mobile layout. Test coupon removed.
