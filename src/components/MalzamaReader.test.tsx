@@ -4,7 +4,7 @@ import MalzamaReader from "./MalzamaReader";
 import type { ReactNode } from "react";
 
 const mocks = vi.hoisted(() => ({ getDocument: vi.fn(), getPage: vi.fn(), destroy: vi.fn() }));
-vi.mock("pdfjs-dist", () => ({ GlobalWorkerOptions: {}, getDocument: mocks.getDocument }));
+vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({ GlobalWorkerOptions: {}, getDocument: mocks.getDocument }));
 vi.mock("@/lib/malazamPdf", () => ({ downloadMalzamaPdf: vi.fn() }));
 vi.mock("@/components/ui/dialog", () => ({
   Dialog: ({ children }: { children: ReactNode }) => <>{children}</>,
