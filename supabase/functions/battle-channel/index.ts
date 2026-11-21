@@ -3,6 +3,7 @@ import { requireAdmin, requireUser } from "../_shared/auth.ts";
 import { protect } from "../_shared/guard.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { callTelegramGateway, TAMAYZAK_BOT_USERNAME, verifyTamayzakBotConnection } from "../_shared/telegram-gateway.ts";
+import { botCanPostToGroup, isTelegramGroupLink, resolvedGroupId, telegramGroupTarget } from "../_shared/battle-group-target.ts";
 import { battleChannelMessage, sendBattleChannelPost } from "../_shared/battle-channel-message.ts";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -36,19 +37,24 @@ Deno.serve(async (req) => {
       const enabled = body.enabled === true;
       const chatId = String(body.chat_id ?? "").trim();
       const invite = String(body.invite_url ?? "").trim();
-      if (enabled && !/^-100\d{5,16}$/.test(chatId)) return json({ error: "INVALID_CHANNEL_ID" }, 400);
-      if (invite && !/^https:\/\/t\.me\/(?:\+[A-Za-z0-9_-]+|joinchat\/[A-Za-z0-9_-]+|[A-Za-z0-9_]{5,64})$/.test(invite)) return json({ error: "INVALID_CHANNEL_LINK" }, 400);
+      const target = telegramGroupTarget(chatId, invite);
+      if (enabled && !target) return json({ error: "INVALID_GROUP_ID" }, 400);
+      if (invite && !isTelegramGroupLink(invite)) return json({ error: "INVALID_GROUP_LINK" }, 400);
+      let destination = target || chatId;
       if (enabled) {
         const bot = await verifyTamayzakBotConnection();
         if (!bot.ok) return json({ error: bot.error }, 503);
         const me = await callTelegramGateway("getMe", {});
         const user = me.data?.result as { id?: number } | undefined;
-        const chat = await callTelegramGateway("getChat", { chat_id: chatId });
-        const member = await callTelegramGateway("getChatMember", { chat_id: chatId, user_id: user?.id });
-        const details = member.data?.result as { status?: string; can_post_messages?: boolean } | undefined;
-        if (!chat.ok || (chat.data?.result as { type?: string } | undefined)?.type !== "channel" || !member.ok || !["administrator", "creator"].includes(details?.status ?? "") || (details?.status !== "creator" && details?.can_post_messages !== true)) return json({ error: "BOT_CHANNEL_PERMISSION_REQUIRED" }, 409);
+        const chat = await callTelegramGateway("getChat", { chat_id: target });
+        if (!chat.ok) return json({ error: "GROUP_UNAVAILABLE" }, 409);
+        const groupId = resolvedGroupId(chat.data?.result);
+        if (!groupId) return json({ error: "GROUP_REQUIRED" }, 409);
+        const member = await callTelegramGateway("getChatMember", { chat_id: groupId, user_id: user?.id });
+        if (!member.ok || !botCanPostToGroup(chat.data?.result, member.data?.result)) return json({ error: "BOT_GROUP_PERMISSION_REQUIRED" }, 409);
+        destination = groupId;
       }
-      const { error } = await admin.from("battle_channel_settings").update({ enabled, chat_id: chatId, invite_url: invite, updated_at: new Date().toISOString() }).eq("id", true);
+      const { error } = await admin.from("battle_channel_settings").update({ enabled, chat_id: destination, invite_url: invite, updated_at: new Date().toISOString() }).eq("id", true);
       if (error) throw new Error("CONFIG_SAVE_FAILED");
       return json({ ok: true });
     }
@@ -57,16 +63,23 @@ Deno.serve(async (req) => {
     if (body.action === "publish") {
       const { data: config, error: configError } = await admin.from("battle_channel_settings").select("enabled,chat_id").eq("id", true).single();
       if (configError || !config?.enabled || !config.chat_id) return json({ error: "CHANNEL_UNAVAILABLE" }, 409);
+      // Resolve the stored destination before posting: group permissions are not
+      // channel can_post_messages rights, and private chats are never accepted.
+      const chat = await callTelegramGateway("getChat", { chat_id: config.chat_id });
+      if (!chat.ok) return json({ error: "GROUP_UNAVAILABLE" }, 409);
+      const groupId = resolvedGroupId(chat.data?.result);
+      if (!groupId) return json({ error: "GROUP_REQUIRED" }, 409);
+      if (groupId !== config.chat_id) await admin.from("battle_channel_settings").update({ chat_id: groupId }).eq("id", true).eq("chat_id", config.chat_id);
       const { data: room, error } = await caller.rpc("create_channel_battle", { _id: id, _subject: body.subject, _chapter: body.chapter, _language: body.language, _question_count: body.question_count });
       if (error) return json({ error: error.message }, 409);
       if (room.status !== "waiting") return json({ error: "ROOM_EXPIRED" }, 409);
-      const { data: reservation, error: reservationError } = await admin.from("channel_battles").update({ telegram_state: "sending", telegram_chat_id: config.chat_id }).eq("id", id).eq("host_user_id", auth.userId).eq("telegram_state", "pending").eq("status", "waiting").select("id").maybeSingle();
+      const { data: reservation, error: reservationError } = await admin.from("channel_battles").update({ telegram_state: "sending", telegram_chat_id: groupId }).eq("id", id).eq("host_user_id", auth.userId).eq("telegram_state", "pending").eq("status", "waiting").select("id").maybeSingle();
       if (reservationError) throw new Error("PUBLISH_FAILED");
       if (!reservation) {
         const { data: previous } = await admin.from("channel_battles").select("telegram_state").eq("id", id).eq("host_user_id", auth.userId).single();
         return previous?.telegram_state === "sent" ? json({ room }) : json({ error: "PUBLISH_UNCONFIRMED" }, 409);
       }
-      const delivery = await sendBattleChannelPost(room, config.chat_id, callTelegramGateway, origin);
+      const delivery = await sendBattleChannelPost(room, groupId, callTelegramGateway, origin);
       const { error: saveError } = await admin.from("channel_battles").update({ telegram_state: delivery.state, telegram_message_id: delivery.messageId }).eq("id", id);
       if (saveError || delivery.state !== "sent") {
         await caller.rpc("close_channel_battle", { _id: id });

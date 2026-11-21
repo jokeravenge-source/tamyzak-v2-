@@ -49,6 +49,8 @@ export function battleChannelError(error: unknown, ar: boolean) {
   if (/ROOM_EXPIRED|ROOM_TAKEN|ROOM_NOT_FOUND/.test(code)) return ar ? "هذا التحدّي امتلأ أو انتهى. اختَر تحدّي ثاني." : "This challenge is full or expired. Choose another one.";
   if (/CHANNEL_RATE_LIMIT|ALREADY_WAITING|RATE_LIMIT/.test(code)) return ar ? "انتظر دقيقة قبل نشر تحدّي جديد، وألغِ بحثك السابق إذا بعده مفتوح." : "Wait a minute before posting again and cancel any previous search.";
   if (/PUBLISH_UNCONFIRMED/.test(code)) return ar ? "ما گدرنا نؤكد النشر. أغلقنا الدعوة حتى ما تتكرر الرسالة؛ جرّب بعد دقيقة." : "Delivery could not be confirmed. The invite was closed to prevent duplicate posts. Retry in a minute.";
+  if (/GROUP_REQUIRED/.test(code)) return ar ? "هدف النشر لازم يكون كروب، مو قناة. أبلغ الأدمن بتصحيح الربط." : "The publishing destination must be a group. Ask an admin to correct it.";
+  if (/GROUP_UNAVAILABLE|BOT_GROUP_PERMISSION_REQUIRED/.test(code)) return ar ? "البوت ما يگدر يدز بالكروب حالياً. أبلغ الأدمن بفحص عضويته وصلاحية إرسال الرسائل." : "The bot cannot post to the group. Ask an admin to check its membership and send permission.";
   if (/AUTH_REQUIRED/.test(code)) return ar ? "سجّل دخولك بحساب تميّزك حتى تنضم للتحدّي." : "Sign in to Tamayzak to join the challenge.";
-  return ar ? "تعذّر ربط التحدّي بالقناة. تگدر تستعمل رمز الغرفة أو تعيد المحاولة." : "Could not connect this challenge to the channel. Use a room code or retry.";
+  return ar ? "تعذّر ربط التحدّي بالكروب. تگدر تستعمل رمز الغرفة أو تعيد المحاولة." : "Could not connect this challenge to the group. Use a room code or retry.";
 }

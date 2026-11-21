@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callTelegramGateway, verifyTamayzakBotConnection } from "../_shared/telegram-gateway.ts";
+import { callTelegramGateway, TAMAYZAK_BOT_USERNAME, verifyTamayzakBotConnection } from "../_shared/telegram-gateway.ts";
 import { forwardedChannelId } from "../_shared/battle-channel-message.ts";
+import { groupIdCommand } from "../_shared/battle-group-target.ts";
 
 async function deriveSecret(apiKey: string): Promise<string> {
   const data = new TextEncoder().encode(`telegram-webhook:${apiKey}`);
@@ -68,12 +69,18 @@ Deno.serve(async (req) => {
   const text: string = message?.text ?? "";
 
   if (!chatId || !fromId) return new Response(JSON.stringify({ ok: true }));
-  // Only handle 1:1 chats — never reply inside groups/channels the bot belongs to.
+  // Group setup is read-only and responds only to an explicit command.
+  const groupId = groupIdCommand(message, TAMAYZAK_BOT_USERNAME);
+  if (groupId) {
+    await tg("sendMessage", { chat_id: chatId, text: `معرّف هذا الكروب: ${groupId}\n\nانسخه إلى قسم «كروب التحدّيات» بلوحة أدمن تميّزك. هذا الأمر ما يغيّر إعدادات النشر.` });
+    return new Response(JSON.stringify({ ok: true }));
+  }
+  // Account binding still handles 1:1 chats only; other group messages are ignored.
   if (chatType !== "private") return new Response(JSON.stringify({ ok: true, ignored: "non_private_chat" }));
 
   const channelId = forwardedChannelId(message);
   if (channelId) {
-    await tg("sendMessage", { chat_id: chatId, text: `معرّف القناة: ${channelId}\n\nانسخه إلى إعدادات «قناة التحدّيات» داخل لوحة أدمن تميّزك. إعادة التوجيه هنا لا تغيّر إعدادات الموقع.` });
+    await tg("sendMessage", { chat_id: chatId, text: `معرّف القناة: ${channelId}\n\nنشر التحدّيات حالياً للكروبات. للكروب العام استخدم رابطه، وللخاص أرسل /groupid داخل الكروب للحصول على معرّفه. إعادة التوجيه هنا لا تغيّر إعدادات الموقع.` });
     return new Response(JSON.stringify({ ok: true }));
   }
 

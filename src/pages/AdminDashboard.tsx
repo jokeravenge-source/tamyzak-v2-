@@ -51,7 +51,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     return "pending";
   });
   const sectionLabels: Record<Tab, string> = {
-    battleChannel: "قناة التحدّيات", literatureCourse: "دورة الأدب", pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
+    battleChannel: "كروب التحدّيات", literatureCourse: "دورة الأدب", pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
     frenchFlashcards: "French Flashcards", malazam: "Al-Malazam Library",
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",

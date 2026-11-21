@@ -116,7 +116,7 @@ it("posts the chosen round to the channel, connects only after a claim, and canc
   });
   view(); await act(async () => {});
   fireEvent.change(screen.getByLabelText("Chapter"), { target: { value: "2" } });
-  fireEvent.click(screen.getByRole("button", { name: "Find an opponent in the channel" }));
+  fireEvent.click(screen.getByRole("button", { name: "Find an opponent in the group" }));
   await act(async () => {});
   expect(api.invoke).toHaveBeenCalledWith("battle-channel", { body: expect.objectContaining({ action: "publish", subject: "physics", chapter: 2, language: "en", question_count: 1 }) });
   expect(screen.getByText("Your challenge is posted — waiting for an opponent")).toBeInTheDocument();
