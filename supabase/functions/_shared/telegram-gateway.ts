@@ -26,9 +26,12 @@ export async function callTelegramGateway(method: string, body: unknown): Promis
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8_000),
     });
-    const data = await response.json().catch(() => ({} as Record<string, unknown>));
+    const responseBody = await response.text();
+    let data: Record<string, unknown>;
+    try { data = JSON.parse(responseBody); } catch { data = {}; }
     const description = typeof data.description === "string" ? data.description : null;
     const ok = response.ok && data.ok === true;
+    if (!ok) console.error(`Telegram ${method} failed [${response.status}]: ${responseBody}`);
     return {
       ok,
       data,

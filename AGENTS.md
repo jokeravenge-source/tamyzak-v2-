@@ -1,5 +1,7 @@
 # Project rules
 
+- Battle publishing accepts Telegram groups and channels, checks destination-specific bot posting rights before reserving an invitation, and never automatically retries uncertain deliveries; this prevents unusable rooms and duplicate posts.
+
 - Use the compatibility PDF.js build with its matching compatibility worker for the booklet reader so older Safari versions can open valid PDFs without native Promise.withResolvers.
 
 - Manage adjustable Premium coupons through the admin-verified `admin_premium_coupons` RPC; redeem via the existing promo flow and preserve issued subscription deadlines so edits affect only future redemptions. Calendar months use Baghdad time.

@@ -1,5 +1,14 @@
 import { expect, it } from "vitest";
-import { botCanPostToGroup, groupIdCommand, isTelegramGroupId, resolvedGroupId, telegramGroupTarget } from "../../supabase/functions/_shared/battle-group-target";
+import { botCanPostBattle, resolvedBattleChatId, botCanPostToGroup, groupIdCommand, isTelegramGroupId, resolvedGroupId, telegramGroupTarget } from "../../supabase/functions/_shared/battle-group-target";
+
+it("supports the configured channel only with channel posting rights", () => {
+  const chat = { id: -1003704428795, type: "channel" };
+  expect(resolvedBattleChatId(chat)).toBe("-1003704428795");
+  expect(botCanPostBattle(chat, { status: "administrator", can_post_messages: true })).toBe(true);
+  expect(botCanPostBattle(chat, { status: "administrator", can_post_messages: false })).toBe(false);
+  expect(botCanPostBattle(chat, { status: "member" })).toBe(false);
+  expect(resolvedBattleChatId({ id: 123456789, type: "private" })).toBeNull();
+});
 
 it("resolves the selected public group link without a manually supplied ID", () => {
   expect(telegramGroupTarget("", "https://t.me/tamayzak")).toBe("@tamayzak");

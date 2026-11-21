@@ -16,7 +16,18 @@ export function telegramGroupTarget(id: string, invite: string): string | null {
 }
 
 type GroupChat = { id?: unknown; type?: unknown; permissions?: { can_send_messages?: unknown } };
-type GroupMember = { status?: unknown; is_member?: unknown; can_send_messages?: unknown };
+type GroupMember = { status?: unknown; is_member?: unknown; can_send_messages?: unknown; can_post_messages?: unknown };
+export function resolvedBattleChatId(value: unknown): string | null {
+  const chat = value as GroupChat | null;
+  return chat?.type === "channel" && isTelegramGroupId(chat.id) ? String(chat.id) : resolvedGroupId(value);
+}
+
+export function botCanPostBattle(chatValue: unknown, memberValue: unknown): boolean {
+  const chat = chatValue as GroupChat | null;
+  const member = memberValue as GroupMember | null;
+  if (chat?.type === "channel") return !!resolvedBattleChatId(chat) && !!member && (member.status === "creator" || (member.status === "administrator" && member.can_post_messages === true));
+  return botCanPostToGroup(chatValue, memberValue);
+}
 export function resolvedGroupId(value: unknown): string | null {
   const chat = value as GroupChat | null;
   return chat && ["group", "supergroup"].includes(String(chat.type)) && isTelegramGroupId(chat.id) ? String(chat.id) : null;
