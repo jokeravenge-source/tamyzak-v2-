@@ -404,7 +404,7 @@ Put English-only questions in review_questions, not in notes.` : `بنية ال�
 
 تقسيم إجباري: قسّم الفيديو كاملاً إلى أجزاء موضوعية متتابعة تشمل البداية والمنتصف والنهاية دون فجوات، ولا تفرض عدداً ثابتاً من الأجزاء. البنية أعلاه دليل تنظيم، وليست أقساماً يجب تكرارها كاملة في كل جزء؛ استخدم فقط الأقسام المناسبة للمحتوى لتوفير المساحة. لا تكرّر النظرة العامة أو الخلاصة بين الأجزاء. استخدم شرحاً واضحاً ومتكاملاً، وامنح كل موضوع وأمثلة الحل مساحة كافية دون حد مختصر مصطنع. قبل التسليم تحقّق أن آخر موضوع وآخر مثال في المصدر موجودان في الملاحظات. أعد المخرجات عبر استدعاء الأداة submit_video_notes فقط.`;
     // Use the frontier video-capable model for both complete transcripts and videos.
-    const notesModel = "google/gemini-4-argon";
+    const notesModel = "google/gemini-3.8-flash";
     let lastGeminiError: any = null;
     let parts: { title: string; notes: string }[] = [];
     let notes = "";

@@ -5,7 +5,7 @@
 - Manage adjustable Premium coupons through the admin-verified `admin_premium_coupons` RPC; redeem via the existing promo flow and preserve issued subscription deadlines so edits affect only future redemptions. Calendar months use Baghdad time.
 
 - Mind map generation accepts extracted PDF text/page images, not a separate topic, and uses the server-only AI Gateway SDK to keep the deployed request contract aligned with the upload page.
-- Video notes use a frontier video-capable model through the server-only AI Gateway SDK, without optional output caps or automatic cross-model replay, so upgraded notes retain detail without duplicate billed attempts.
+- Video notes use a cost-efficient Flash model through the server-only AI Gateway SDK, without optional output caps or automatic cross-model replay, to keep per-lecture credit cost low without duplicate billed attempts.
 - Video notes are generated in consecutive sections (transcript chunks or time ranges) requested one by one by the page, version cache keys when coverage changes, and reject token-truncated output; this keeps each request within time limits without dropping lecture content.
 
 - Resolve Nadia lecture counts through `getNadiaLectureCount` in both teacher entry points so curriculum-specific limits remain consistent.
