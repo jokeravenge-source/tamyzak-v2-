@@ -1,11 +1,10 @@
 # Task Roadmap
 
 ## In Progress
-- Successful Telegram publication awaits the channel owner adding @sovforcejoin_bot as administrator with posting rights; Telegram confirms missing administrator rights.
 - Real-video notes verification awaits a Premium-enabled test account; the available signed-in account is blocked by the Premium screen.
 
 ## Done
-- Diagnosed challenge publishing, restored channel support alongside groups, added pre-publication permission checks and an explicit permission warning; signed-in verification awaits the external Telegram permission change.
+- Diagnosed challenge publishing, restored channel support alongside groups, and added pre-publication permission checks; after the owner restored bot rights, signed-in readback confirmed a sent Telegram invitation and a started battle. All 23 regression tests passed; no records deleted.
 - Deployed the missing battle-channel function; signed-in channel publication returned 200 and showed the waiting screen, then cancelled the test invitation without deleting records. All 15 relevant tests passed.
 - Upgraded notes to Gemini 4 Argon via the server-only SDK, removed optional output caps, bypassed prior-model caches, and deployed; seven coverage/math tests pass.
 - Deployed full-video coverage corrections: retain complete transcripts, prioritize all topics within the existing token budget, bypass older partial caches, and reject token-truncated output. Six coverage/math tests pass; preview build is clean.
