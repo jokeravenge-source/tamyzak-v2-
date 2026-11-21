@@ -105,3 +105,26 @@ it("accepts a challenge while Live Battle is already mounted", async () => {
   expect(api.channel).toHaveBeenLastCalledWith("battle:654321", expect.anything());
   expect(screen.getByText("654321")).toBeInTheDocument();
 });
+
+it("posts the chosen round to the channel, connects only after a claim, and cancels the same invitation", async () => {
+  vi.useFakeTimers();
+  let room: import("@/lib/battleChannel").ChannelBattle;
+  api.rpc.mockImplementation(async (name) => name === "get_battle_channel_config" ? { data: { enabled: true, invite_url: "https://t.me/+test" }, error: null } : name === "get_channel_battle" ? { data: room, error: null } : { error: null });
+  api.invoke.mockImplementation(async (_, { body }) => {
+    if (body.action === "publish") room = { id: body.id, host_name: "Student", room_key: "20000000-0000-4000-8000-000000000001", ...body, status: "waiting", is_host: true, expires_at: new Date(Date.now() + 180000).toISOString(), server_now: new Date().toISOString() };
+    return { data: { room }, error: null };
+  });
+  view(); await act(async () => {});
+  fireEvent.change(screen.getByLabelText("Chapter"), { target: { value: "2" } });
+  fireEvent.click(screen.getByRole("button", { name: "Find an opponent in the channel" }));
+  await act(async () => {});
+  expect(api.invoke).toHaveBeenCalledWith("battle-channel", { body: expect.objectContaining({ action: "publish", subject: "physics", chapter: 2, language: "en", question_count: 1 }) });
+  expect(screen.getByText("Your challenge is posted — waiting for an opponent")).toBeInTheDocument();
+  expect(api.channel).not.toHaveBeenCalledWith("battle:tg:20000000-0000-4000-8000-000000000001", expect.anything());
+  room!.status = "claimed";
+  await act(async () => vi.advanceTimersByTimeAsync(5000));
+  expect(api.channel).toHaveBeenCalledWith("battle:tg:20000000-0000-4000-8000-000000000001", expect.anything());
+  fireEvent.click(screen.getByRole("button", { name: "Cancel room" }));
+  await act(async () => {});
+  expect(api.invoke).toHaveBeenCalledWith("battle-channel", { body: { action: "close", id: room!.id, started: false } });
+});

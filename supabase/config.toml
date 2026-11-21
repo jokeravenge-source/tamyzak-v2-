@@ -91,3 +91,6 @@ verify_jwt = false
 
 [functions.malazam-download]
 verify_jwt = false
+
+[functions.battle-channel]
+verify_jwt = false

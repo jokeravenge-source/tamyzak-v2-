@@ -16,6 +16,7 @@ import AdminAnnouncementsTab from "@/components/AdminAnnouncementsTab";
 import AdminTeachersTab from "@/components/AdminTeachersTab";
 import AdminFrenchFlashcardsTab from "@/components/AdminFrenchFlashcardsTab";
 import AdminMalazamTab from "@/components/AdminMalazamTab";
+import AdminBattleChannelTab from "@/components/AdminBattleChannelTab";
 import AdminCouponsTab from "@/components/AdminCouponsTab";
 import { Button } from "@/components/ui/button";
 import NadawiAdminTestButton from "@/components/NadawiAdminTestButton";
@@ -41,7 +42,7 @@ type Row = {
 };
 
 const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
-  type Tab = "literatureCourse" | "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest" | "coupons";
+  type Tab = "literatureCourse" | "pending" | "approved" | "flashcards" | "frenchFlashcards" | "malazam" | "notifications" | "news" | "users" | "usernames" | "aifiles" | "notes" | "bank" | "analytics" | "credits" | "points" | "announcements" | "mistakes" | "teachers" | "whoIsBest" | "coupons" | "battleChannel";
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "french-flashcards") {
       return "frenchFlashcards";
@@ -50,7 +51,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     return "pending";
   });
   const sectionLabels: Record<Tab, string> = {
-    literatureCourse: "دورة الأدب", pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
+    battleChannel: "قناة التحدّيات", literatureCourse: "دورة الأدب", pending: "Summaries — Pending", approved: "Summaries — Approved", flashcards: "Flashcards",
     frenchFlashcards: "French Flashcards", malazam: "Al-Malazam Library",
     notifications: "Notifications", news: "News", users: "Users", usernames: "Username Requests",
     aifiles: "AI Files", notes: "Notes & Enrichments", bank: "Question Bank", analytics: "Analytics",
@@ -903,7 +904,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
           )}
         </div>
 
-        {tab === "coupons" ? (
+        {tab === "battleChannel" ? (<AdminBattleChannelTab />) : tab === "coupons" ? (
           <AdminCouponsTab />
         ) : tab === "whoIsBest" ? (
           <WhoIsBest language="en" isAdmin onBack={() => setTab("pending")} />

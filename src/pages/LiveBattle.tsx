@@ -11,6 +11,9 @@ import { consumePendingBattle, newRoomCode } from "@/lib/battleInvite";
 import { loadRaceQuestionBank, type RaceQuestion } from "@/lib/raceQuestionBank";
 import { selectBattleQuestions, type LiveBattleQuestion } from "@/lib/liveBattleBank";
 import { toast } from "sonner";
+import { useBattleChannel } from "@/hooks/useBattleChannel";
+import { battleChannelError } from "@/lib/battleChannel";
+import { clearBattleChannelLink, pendingBattleChannelId } from "@/lib/battleChannelLink";
 import BattleJoinPanel from "@/components/BattleJoinPanel";
 import { battleChallengeStatus, BATTLE_INVITE_LIFETIME, cancelBattleChallenge, sendBattleChallenge, type BattleStudent } from "@/lib/battleChallenges";
 
@@ -61,6 +64,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
   const queueLeave = useRef<ReturnType<typeof setTimeout> | null>(null);
   const matched = useRef(false);
   const awarded = useRef(new Set<string>());
+  const publicQuestions = useRef<LiveBattleQuestion[]>([]);
 
   const stopQueue = useCallback(() => {
     queueGeneration.current++;
@@ -76,12 +80,27 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
     if (id) void cancelBattleChallenge(id).catch(() => {});
   }, []);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; clearInvitation(); }; }, [clearInvitation]);
-  const reset = () => { clearInvitation(); setOutgoing(null); stopQueue(); matched.current = false; setSearching(false); battle.reset(); setSolo(null); setMessage(""); };
+  const publicBattle = useBattleChannel((room) => {
+    stopQueue(); setSearching(false); setSolo(null);
+    if (room.is_host && !publicQuestions.current.length) { setMessage(text("تعذّر استعادة أسئلة الغرفة. أنشئ تحدّي جديد.", "Could not restore the room questions. Create a new challenge.")); return; }
+    setBankLanguage(room.language); setSubject(room.subject); setChapter(room.chapter); setCount([5, 10, 15, 20].find((value) => value >= room.question_count) ?? 20);
+    battleRef.current.connect(`tg:${room.room_key}`, room.is_host, room.is_host ? publicQuestions.current : undefined);
+  }, () => { battleRef.current.reset(); });
+  const { join: joinPublishedBattle, markStarted: markPublishedBattleStarted, cancel: cancelPublishedBattle } = publicBattle;
+  useEffect(() => {
+    const id = pendingBattleChannelId();
+    if (id) void joinPublishedBattle(id).then(clearBattleChannelLink);
+  }, [joinPublishedBattle]);
+  useEffect(() => {
+    if (battle.phase === "countdown" || battle.phase === "playing") markPublishedBattleStarted();
+  }, [battle.phase, markPublishedBattleStarted]);
+  const reset = () => { publicBattle.cancel(); clearInvitation(); setOutgoing(null); stopQueue(); matched.current = false; setSearching(false); battle.reset(); setSolo(null); setMessage(""); };
 
   useEffect(() => {
     const receive = () => {
       const p = consumePendingBattle();
       if (!p) return;
+      cancelPublishedBattle();
       clearInvitation(); setOutgoing(null); stopQueue(); setSearching(false); setSolo(null); battleRef.current.reset();
       pending.current = p;
       setBankLanguage(p.lang ?? language); setSubject(p.subject ?? "physics"); setChapter(p.chapter ?? 1); setCount([5, 10, 15, 20].includes(p.count ?? 10) ? p.count ?? 10 : 10);
@@ -92,7 +111,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
     window.addEventListener("app:join-battle", receive);
     window.addEventListener("app:open-battle", receive);
     return () => { window.removeEventListener("app:join-battle", receive); window.removeEventListener("app:open-battle", receive); };
-  }, [language, clearInvitation, stopQueue]);
+  }, [language, clearInvitation, stopQueue, cancelPublishedBattle]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,7 +143,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
   const roundCount = Math.min(count, available.length);
   const pick = (seed: number) => selectBattleQuestions(bank, selectedSubject, selectedChapter, count, seed);
   const ready = !loading && roundCount > 0;
-  const busy = searching || battle.phase !== "idle" || solo !== null;
+  const busy = searching || battle.phase !== "idle" || solo !== null || publicBattle.pending || publicBattle.room !== null;
 
   const award = useCallback(async (key: string, source: string, points: number) => {
     if (points <= 0 || awarded.current.has(key)) return;
@@ -190,6 +209,12 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
     if (run.index + 1 >= run.questions.length) { setSolo({ ...run, done: true }); return; }
     soloAnswered.current = false; setSoloSeconds(BATTLE_QUESTION_SECONDS);
     setSolo({ ...run, index: run.index + 1, picked: null, started: Date.now() });
+  };
+  const findChannelOpponent = () => {
+    if (!ready || publicBattle.pending) return;
+    publicQuestions.current = pick(Date.now());
+    setMessage("");
+    void publicBattle.publish({ subject: selectedSubject, chapter: selectedChapter, language: bankLanguage, question_count: publicQuestions.current.length });
   };
   const createRoom = () => {
     if (!ready) return;
@@ -299,6 +324,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
           <h1 className="text-2xl font-black">{text("تحدّي سريع، وأسئلة جاهزة", "Quick battle. Ready questions.")}</h1>
           {!busy && <p className="text-sm leading-6 text-muted-foreground">{text("اختَر المادة والفصل، والعب من بنك الـMCQ الموجود بتميّزك.", "Choose a subject and chapter, then play from Tamayzak’s MCQ bank.")}</p>}
         </header>
+        {publicBattle.error && <p role="status" className="rounded-xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950">{battleChannelError(publicBattle.error, ar)}</p>}
         {message && <p role="status" className="rounded-xl border bg-secondary p-4 text-sm">{message}</p>}
 
         {!busy && <>
@@ -336,6 +362,12 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
               : <p className="text-sm text-muted-foreground">{text(`${roundCount} أسئلة · ٢٥ ثانية للسؤال · ${available.length} سؤال متاح`, `${roundCount} questions · 25 seconds each · ${available.length} available`)}</p>}
             {!loading && (partial || !available.length) && <div className="min-w-0 space-y-2 text-sm"><p>{partial ? text("بعض أسئلة البنك ما تحمّلت. نعرض المتاح حالياً.", "Some bank questions could not load. Showing available questions.") : text("ماكو أسئلة بهذا الاختيار. غيّر المادة أو لغة الأسئلة.", "No questions for this selection. Change the subject or question language.")}</p><Button variant="outline" size="sm" onClick={() => setRetry((n) => n + 1)}>{text("إعادة التحميل", "Retry loading")}</Button></div>}
           </section>
+          {publicBattle.config.enabled && <section className="space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+            <h2 className="font-bold">{text("تحدّيات القناة", "Channel challenges")}</h2>
+            <p className="text-sm leading-6 text-muted-foreground">{text("البوت ينشر اسمك وتفاصيل الجولة بالقناة حتى أول منافس ينضم إلك. خلي الصفحة مفتوحة؛ الدعوة تنتهي بعد ٣ دقائق.", "The bot posts your display name and round details to the channel. The first opponent joins you. Keep this page open; the invite lasts 3 minutes.")}</p>
+            <Button className="min-h-12 w-full gap-2" disabled={!ready || !!sendingId} onClick={findChannelOpponent}><Users className="h-4 w-4" />{text("دوّر منافس بالقناة", "Find an opponent in the channel")}</Button>
+            {publicBattle.config.invite_url && <a href={publicBattle.config.invite_url} target="_blank" rel="noopener noreferrer" className="block py-2 text-center text-sm font-bold text-primary underline">{text("افتح قناة التحدّيات", "Open the challenge channel")}</a>}
+          </section>}
           <BattleJoinPanel language={language} canCreate={ready} sendingId={sendingId} onCreate={createRoom} onJoin={joinRoom} onChallenge={(student) => void challengeStudent(student)} />
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" className="min-h-14 gap-2 rounded-2xl px-2 text-xs sm:px-4 sm:text-sm" disabled={!ready || !!sendingId} onClick={findOpponent}><Shuffle className="h-4 w-4" />{text("منافس عشوائي", "Random opponent")}</Button>
@@ -343,8 +375,10 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
           </div>
         </>}
 
+        {publicBattle.pending && <section className="space-y-3 rounded-2xl border p-6 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /><p role="status">{text("جاري ربط التحدّي بالقناة…", "Connecting the challenge to the channel…")}</p><Button variant="outline" onClick={reset}>{text("إلغاء", "Cancel")}</Button></section>}
+        {publicBattle.room?.status === "waiting" && <section className="space-y-4 rounded-2xl border bg-card p-6 text-center"><Swords className="mx-auto h-10 w-10 text-primary" /><h2 className="font-bold">{text("نشرنا تحدّيك بالقناة — بانتظار منافس", "Your challenge is posted — waiting for an opponent")}</h2><p className="text-sm text-muted-foreground">{text("خلي هالصفحة مفتوحة. أول طالب ينضم تبدي الجولة وياه تلقائياً.", "Keep this page open. The first student to join starts the round with you.")}</p><p className="text-sm tabular-nums">{publicBattle.remaining} {text("ثانية متبقية للدعوة", "seconds left on the invite")}</p><Button variant="outline" onClick={reset}>{text("إلغاء التحدّي", "Cancel challenge")}</Button></section>}
         {searching && <section className="space-y-4 rounded-2xl border p-6 text-center"><Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" /><h2 className="font-bold">{text("ندورلك على منافس…", "Finding an opponent…")}</h2><p className="text-sm text-muted-foreground">{LABELS[selectedSubject]?.[language] ?? selectedSubject} · {selectedChapter ? text(`الفصل ${selectedChapter}`, `Chapter ${selectedChapter}`) : text("كل الفصول", "All chapters")} · {bankLanguage === "ar" ? "عربي" : "English"}</p><Button variant="outline" onClick={reset}>{text("إلغاء البحث", "Cancel search")}</Button></section>}
-        {battle.phase === "lobby" && <section className="space-y-5 rounded-2xl border bg-card p-6 text-center"><h2 className="font-bold">{text("شارك الرمز ويا صديقك", "Share the code with your friend")}</h2><div className="flex items-center justify-center gap-2"><span dir="ltr" className="font-mono text-4xl font-black tracking-widest">{battle.code}</span><Button variant="ghost" size="icon" aria-label={text("نسخ الرمز", "Copy code")} onClick={() => void copyCode()}><Copy className="h-4 w-4" /></Button></div><p role="status" className="text-sm text-muted-foreground">{outgoing ? text(`تم إرسال الدعوة إلى ${outgoing.name}. بانتظار قبوله…`, `Invitation sent to ${outgoing.name}. Waiting for acceptance…`) : text("بانتظار اللاعب الثاني… الجولة تبدأ تلقائياً.", "Waiting for the second player… The round starts automatically.")}</p><Button variant="outline" onClick={reset}>{text("إلغاء الغرفة", "Cancel room")}</Button></section>}
+        {battle.phase === "lobby" && <section className="space-y-5 rounded-2xl border bg-card p-6 text-center"><h2 className="font-bold">{publicBattle.room ? text("المنافس انضم، ننتظر اتصال الطرفين…", "Opponent joined; connecting both players…") : text("شارك الرمز ويا صديقك", "Share the code with your friend")}</h2>{!publicBattle.room && <div className="flex items-center justify-center gap-2"><span dir="ltr" className="font-mono text-4xl font-black tracking-widest">{battle.code}</span><Button variant="ghost" size="icon" aria-label={text("نسخ الرمز", "Copy code")} onClick={() => void copyCode()}><Copy className="h-4 w-4" /></Button></div>}<p role="status" className="text-sm text-muted-foreground">{outgoing ? text(`تم إرسال الدعوة إلى ${outgoing.name}. بانتظار قبوله…`, `Invitation sent to ${outgoing.name}. Waiting for acceptance…`) : text("بانتظار اللاعب الثاني… الجولة تبدأ تلقائياً.", "Waiting for the second player… The round starts automatically.")}</p><Button variant="outline" onClick={reset}>{text("إلغاء الغرفة", "Cancel room")}</Button></section>}
         {battle.phase === "countdown" && <div className="space-y-4 py-12 text-center"><p>{text("جهّز نفسك!", "Get ready!")}</p><div className="text-7xl font-black text-primary">{battle.countdown}</div></div>}
 
         {playing && question && <section className="space-y-4">
