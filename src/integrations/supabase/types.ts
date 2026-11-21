@@ -342,6 +342,30 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_channel_settings: {
+        Row: {
+          chat_id: string
+          enabled: boolean
+          id: boolean
+          invite_url: string
+          updated_at: string
+        }
+        Insert: {
+          chat_id?: string
+          enabled?: boolean
+          id?: boolean
+          invite_url?: string
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: string
+          enabled?: boolean
+          id?: boolean
+          invite_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       battle_invites: {
         Row: {
           chapter: number
@@ -544,6 +568,66 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      channel_battles: {
+        Row: {
+          chapter: number
+          created_at: string
+          expires_at: string
+          guest_user_id: string | null
+          host_name: string
+          host_seen_at: string
+          host_user_id: string
+          id: string
+          language: string
+          question_count: number
+          room_key: string
+          status: string
+          subject: string
+          telegram_chat_id: string | null
+          telegram_message_id: number | null
+          telegram_state: string
+          telegram_synced_status: string | null
+        }
+        Insert: {
+          chapter: number
+          created_at?: string
+          expires_at?: string
+          guest_user_id?: string | null
+          host_name: string
+          host_seen_at?: string
+          host_user_id: string
+          id: string
+          language: string
+          question_count: number
+          room_key?: string
+          status?: string
+          subject: string
+          telegram_chat_id?: string | null
+          telegram_message_id?: number | null
+          telegram_state?: string
+          telegram_synced_status?: string | null
+        }
+        Update: {
+          chapter?: number
+          created_at?: string
+          expires_at?: string
+          guest_user_id?: string | null
+          host_name?: string
+          host_seen_at?: string
+          host_user_id?: string
+          id?: string
+          language?: string
+          question_count?: number
+          room_key?: string
+          status?: string
+          subject?: string
+          telegram_chat_id?: string | null
+          telegram_message_id?: number | null
+          telegram_state?: string
+          telegram_synced_status?: string | null
         }
         Relationships: []
       }
@@ -4368,6 +4452,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _channel_battle_payload: {
+        Args: { a: Database["public"]["Tables"]["channel_battles"]["Row"] }
+        Returns: Json
+      }
       _nadawi_admin_contest_step: {
         Args: {
           _accept?: boolean
@@ -4510,6 +4598,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_channel_battle: { Args: { _id: string }; Returns: Json }
       claim_daily_feature: { Args: { _feature: string }; Returns: boolean }
       claim_daily_feature_limit: {
         Args: { _feature: string; _limit?: number }
@@ -4538,9 +4627,23 @@ export type Database = {
         }[]
       }
       cleanup_inactive_study_room_members: { Args: never; Returns: number }
+      close_channel_battle: {
+        Args: { _id: string; _started?: boolean }
+        Returns: Json
+      }
       coupon_access_end: {
         Args: { _amount: number; _start: string; _unit: string }
         Returns: string
+      }
+      create_channel_battle: {
+        Args: {
+          _chapter: number
+          _id: string
+          _language: string
+          _question_count: number
+          _subject: string
+        }
+        Returns: Json
       }
       create_literature_codes: {
         Args: {
@@ -4557,6 +4660,11 @@ export type Database = {
       }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       french_flashcard_access: { Args: never; Returns: Json }
+      get_battle_channel_config: { Args: never; Returns: Json }
+      get_channel_battle: {
+        Args: { _heartbeat?: boolean; _id: string }
+        Returns: Json
+      }
       get_due_mcq_bank_reviews: {
         Args: never
         Returns: {
