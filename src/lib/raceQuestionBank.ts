@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import { getBuiltInPhysicsCh3 } from "@/lib/physicsChapter3Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
 import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
@@ -45,6 +46,7 @@ export async function loadRaceQuestionBank(
   rows.push(
     ...getBuiltInBiologyChapter2(language),
     ...getBuiltInPhysicsCh2(language),
+    ...getBuiltInPhysicsCh3(language),
     ...getBuiltInEnglishLiteratureSection1(language),
     ...getBuiltInEnglishLiteratureSection2(language),
     ...getBuiltInEnglishLiteratureSection3(language),
