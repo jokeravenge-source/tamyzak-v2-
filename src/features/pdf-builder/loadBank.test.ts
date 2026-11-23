@@ -64,6 +64,32 @@ describe("PDF bank adapters", () => {
       answer: "مغزلي الشكل ذا نتوءين",
     });
   });
+  it("includes all supplied English Physics Chapter 4 MCQs in custom PDFs", async () => {
+    const result = await loadPdfBank({ ...selection, subject: "physics", chapter: "4", language: "en", list: "haydar-diwan" });
+    const supplied = result.questions.filter((question) => question.kind === "mcq");
+    expect(supplied).toHaveLength(77);
+    expect(supplied[0]).toMatchObject({
+      question: "A static point charge generates:",
+      answer: "an electric field only",
+    });
+    expect(supplied.at(-1)).toMatchObject({
+      question: "The frequency of an electromagnetic wave with wavelength 12 m is:",
+      answer: "25 MHz",
+    });
+  });
+  it("includes all supplied Arabic Physics Chapter 5 MCQs in custom PDFs", async () => {
+    const result = await loadPdfBank({ ...selection, subject: "physics", chapter: "5", language: "ar", list: "haydar-diwan" });
+    const supplied = result.questions.filter((question) => question.kind === "mcq");
+    expect(supplied).toHaveLength(70);
+    expect(supplied[0]).toMatchObject({
+      question: "في التداخل البناء تكون سعة الموجة الناتجة:",
+      answer: "مساوية لضعف سعة أي من الموجتين الأصليتين",
+    });
+    expect(supplied.at(-1)).toMatchObject({
+      question: expect.stringContaining("الزاوية الحرجة للأشعة الضوئية لمادة العقيق الأزرق"),
+      answer: "60.5°",
+    });
+  });
   it("honors Ahmed's edited and deleted cards and fails if corrections cannot load", async () => {
     const s = { ...selection, subject: "chemistry", chapter: "7", list: "ahmed-al-nadawi" } as BankSelection;
     const original = await loadSource("chemistry:ahmed-al-nadawi:ar:7");

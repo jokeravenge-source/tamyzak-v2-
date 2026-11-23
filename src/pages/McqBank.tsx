@@ -32,6 +32,9 @@ import { recordMistake } from "@/lib/mistakes";
 import { categoryLabel, loadTopicPractice, recordTopicPractice, type PracticeAttempt } from "@/lib/topicMastery";
 import { buildTopicQuiz, TOPIC_PRACTICE_TARGET_KEY, topicBaseline, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
 import { getBuiltInPhysicsCh2 } from "@/lib/physicsChapter2Mcqs";
+import { getBuiltInPhysicsCh3 } from "@/lib/physicsChapter3Mcqs";
+import { getBuiltInPhysicsCh4 } from "@/lib/physicsChapter4Mcqs";
+import { getBuiltInPhysicsCh5 } from "@/lib/physicsChapter5Mcqs";
 import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
@@ -165,7 +168,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
         `${row.subject}\u0000${row.chapter}\u0000${row.question.trim()}`;
       const existingQuestions = new Set(databaseRows.map(rowKey));
-      const chapterTwoFallback = getBuiltInPhysicsCh2(lang).filter(
+      const physicsFallback = [...getBuiltInPhysicsCh2(lang), ...getBuiltInPhysicsCh3(lang), ...getBuiltInPhysicsCh4(lang), ...getBuiltInPhysicsCh5(lang)].filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
       const biologyChapterTwoFallback = getBuiltInBiologyChapter2(lang).filter(
@@ -180,7 +183,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const literatureSectionThreeFallback = getBuiltInEnglishLiteratureSection3(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
-      setRows([...databaseRows, ...chapterTwoFallback, ...biologyChapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
+      setRows([...databaseRows, ...physicsFallback, ...biologyChapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
       setTopicAttempts(priorAttempts);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
@@ -594,7 +597,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border text-xs font-black transition-colors ${isAnswer ? "border-emerald-500 bg-emerald-500 text-white" : isWrongPick ? "border-rose-500 bg-rose-500 text-white" : "border-border bg-secondary text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"}`}>
                       {String.fromCharCode(65 + i)}
                     </span>
-                    <span className="flex-1 font-medium leading-relaxed">{c}</span>
+                    <span className="flex-1 font-medium leading-relaxed"><bdi>{c}</bdi></span>
                     {submitting && picked === i && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                     {isAnswer && <Check className="w-5 h-5 text-emerald-500" />}
                     {isWrongPick && <X className="w-5 h-5 text-rose-500" />}
