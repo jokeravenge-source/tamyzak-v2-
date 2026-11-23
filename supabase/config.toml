@@ -1,5 +1,8 @@
 project_id = "mwksmqcthfwgvldgbggy"
 
+[functions.session-telegram]
+verify_jwt = false
+
 [functions.youtube-playlist]
 verify_jwt = false
 

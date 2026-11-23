@@ -7,7 +7,7 @@ import type { AppLanguage } from "@/components/LanguageGate";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
 import { BATTLE_QUESTION_SECONDS, useLiveBattle } from "@/hooks/useLiveBattle";
 import { supabase } from "@/integrations/supabase/client";
-import { consumePendingBattle, newRoomCode } from "@/lib/battleInvite";
+import { consumePendingBattle, isGroupBattleCode, newRoomCode } from "@/lib/battleInvite";
 import { loadRaceQuestionBank, type RaceQuestion } from "@/lib/raceQuestionBank";
 import { selectBattleQuestions, type LiveBattleQuestion } from "@/lib/liveBattleBank";
 import { toast } from "sonner";
@@ -15,6 +15,8 @@ import { useBattleChannel } from "@/hooks/useBattleChannel";
 import { battleChannelError } from "@/lib/battleChannel";
 import { clearBattleChannelLink, pendingBattleChannelId } from "@/lib/battleChannelLink";
 import BattleJoinPanel from "@/components/BattleJoinPanel";
+import StudyRoyale from "@/components/StudyRoyale";
+import { createRoyale, getRoyale } from "@/lib/sessionRoyale";
 import { battleChallengeStatus, BATTLE_INVITE_LIFETIME, cancelBattleChallenge, sendBattleChallenge, type BattleStudent } from "@/lib/battleChallenges";
 
 const LABELS: Record<string, { ar: string; en: string }> = {
@@ -40,6 +42,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
   const [chapter, setChapter] = useState(0);
   const [count, setCount] = useState(10);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [royale, setRoyale] = useState<{ id: string; host: boolean } | null>(null);
   const [outgoing, setOutgoing] = useState<{ id: string; name: string; expiresAt: number } | null>(null);
   const outgoingRef = useRef<string | null>(null);
   const mounted = useRef(true);
@@ -102,6 +105,11 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
       if (!p) return;
       cancelPublishedBattle();
       clearInvitation(); setOutgoing(null); stopQueue(); setSearching(false); setSolo(null); battleRef.current.reset();
+      if (isGroupBattleCode(p.code)) {
+        setRoyale({ id: p.code.slice(3), host: p.host });
+        return;
+      }
+      setRoyale(null);
       pending.current = p;
       setBankLanguage(p.lang ?? language); setSubject(p.subject ?? "physics"); setChapter(p.chapter ?? 1); setCount([5, 10, 15, 20].includes(p.count ?? 10) ? p.count ?? 10 : 10);
       if (!p.host) { battleRef.current.connect(p.code, false); pending.current = null; }
@@ -241,6 +249,27 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
       sending.current = false; if (mounted.current) setSendingId(null);
     }
   };
+  const challengeGroup = async (students: BattleStudent[]) => {
+    if (!ready || sending.current) return;
+    sending.current = true;
+    setSendingId("group");
+    setMessage("");
+    try {
+      const id = await createRoyale(students.map((student) => student.user_id), {
+        subject: selectedSubject, chapter: selectedChapter, language: bankLanguage,
+      }, pick(Date.now()));
+      if (!mounted.current) { void getRoyale(id, "leave").catch(() => {}); return; }
+      setRoyale({ id, host: true });
+      toast.success(text("تم إرسال الدعوات لنفس الغرفة", "Invitations sent for the same room"));
+    } catch (error) {
+      if (mounted.current) setMessage(error instanceof Error && error.message === "ROOM_ALREADY_OPEN"
+        ? text("عدك غرفة مفتوحة. انتظر انتهاء مهلة الدعوات قبل ما تفتح غيرها.", "You already have an open room. Wait for its invitation window to end.")
+        : text("تعذّر إرسال الدعوات. تأكد من اتصالك وحاول مرة ثانية.", "Could not send the invitations. Check your connection and retry."));
+    } finally {
+      sending.current = false;
+      if (mounted.current) setSendingId(null);
+    }
+  };
   useEffect(() => {
     if (!outgoing) return;
     let active = true;
@@ -315,6 +344,12 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
     catch { toast.error(text("انسخ الرمز الظاهر وشاركه ويا صديقك.", "Copy the displayed code and share it with your friend.")); }
   };
 
+  if (royale) return <main className="min-h-screen bg-background px-4 py-6 pb-28">
+    <div className="mx-auto max-w-2xl">
+      <StudyRoyale key={royale.id} id={royale.id} language={language} existingMember={royale.host} onBack={() => setRoyale(null)} />
+    </div>
+  </main>;
+
   return (
     <main className="min-h-screen bg-background p-4 pb-28" dir={ar ? "rtl" : "ltr"}>
       <div className="mx-auto max-w-2xl space-y-5">
@@ -368,7 +403,7 @@ export default function LiveBattle({ language, onBack }: { language: AppLanguage
             <Button className="min-h-12 w-full gap-2" disabled={!ready || !!sendingId} onClick={findChannelOpponent}><Users className="h-4 w-4" />{text("دوّر منافس بالكروب", "Find an opponent in the group")}</Button>
             {publicBattle.config.invite_url && <a href={publicBattle.config.invite_url} target="_blank" rel="noopener noreferrer" className="block py-2 text-center text-sm font-bold text-primary underline">{text("افتح كروب التحدّيات", "Open the challenge group")}</a>}
           </section>}
-          <BattleJoinPanel language={language} canCreate={ready} sendingId={sendingId} onCreate={createRoom} onJoin={joinRoom} onChallenge={(student) => void challengeStudent(student)} />
+          <BattleJoinPanel language={language} canCreate={ready} sendingId={sendingId} onCreate={createRoom} onJoin={joinRoom} onChallenge={(student) => void challengeStudent(student)} onGroupChallenge={(students) => void challengeGroup(students)} />
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" className="min-h-14 gap-2 rounded-2xl px-2 text-xs sm:px-4 sm:text-sm" disabled={!ready || !!sendingId} onClick={findOpponent}><Shuffle className="h-4 w-4" />{text("منافس عشوائي", "Random opponent")}</Button>
             <Button variant="outline" className="min-h-14 gap-2 rounded-2xl px-2 text-xs sm:px-4 sm:text-sm" disabled={!ready || !!sendingId} onClick={startSolo}><User className="h-4 w-4" />{text("تدرّب وحدك", "Practise solo")}</Button>

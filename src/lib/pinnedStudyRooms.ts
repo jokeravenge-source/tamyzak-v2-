@@ -5,8 +5,9 @@ const SUBJECT_ROOM_CODES: Record<string, string> = {
   math: "TMZMTH", physics: "TMZPHY", chemistry: "TMZCHM", biology: "TMZBIO",
 };
 
+export const SESSION_ROOM_CODE = "37ECJK";
 export const PINNED_STUDY_ROOMS = [
-  { code: "37ECJK", subject: null, ar: "تميّزك", en: "Tamayzak" },
+  { code: SESSION_ROOM_CODE, subject: null, ar: "تميّزك", en: "Tamayzak" },
   ...SUBJECTS_ORDER.map((s) => ({ ...s, code: SUBJECT_ROOM_CODES[s.code], subject: s.code })),
 ];
 
