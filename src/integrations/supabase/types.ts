@@ -3204,6 +3204,159 @@ export type Database = {
         }
         Relationships: []
       }
+      session_royale_answers: {
+        Row: {
+          choice: number
+          correct: boolean
+          question_index: number
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          choice: number
+          correct: boolean
+          question_index: number
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          choice?: number
+          correct?: boolean
+          question_index?: number
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_royale_answers_round_id_user_id_fkey"
+            columns: ["round_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "session_royale_players"
+            referencedColumns: ["round_id", "user_id"]
+          },
+        ]
+      }
+      session_royale_players: {
+        Row: {
+          name: string
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          name: string
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          name?: string
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_royale_players_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "session_royales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_royale_votes: {
+        Row: {
+          cast_at: string
+          chapter: number
+          language: string
+          round_id: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          cast_at?: string
+          chapter: number
+          language: string
+          round_id: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          cast_at?: string
+          chapter?: number
+          language?: string
+          round_id?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_royale_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "session_royales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_royales: {
+        Row: {
+          cancelled: boolean
+          chapter: number | null
+          expires_at: string
+          host_id: string | null
+          id: string
+          language: string | null
+          questions: Json
+          slot: string | null
+          starts_at: string | null
+          subject: string | null
+        }
+        Insert: {
+          cancelled?: boolean
+          chapter?: number | null
+          expires_at: string
+          host_id?: string | null
+          id?: string
+          language?: string | null
+          questions?: Json
+          slot?: string | null
+          starts_at?: string | null
+          subject?: string | null
+        }
+        Update: {
+          cancelled?: boolean
+          chapter?: number | null
+          expires_at?: string
+          host_id?: string | null
+          id?: string
+          language?: string | null
+          questions?: Json
+          slot?: string | null
+          starts_at?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      session_telegram_posts: {
+        Row: {
+          kind: string
+          slot: string
+          state: string
+          telegram_message_id: string | null
+        }
+        Insert: {
+          kind: string
+          slot: string
+          state?: string
+          telegram_message_id?: string | null
+        }
+        Update: {
+          kind?: string
+          slot?: string
+          state?: string
+          telegram_message_id?: string | null
+        }
+        Relationships: []
+      }
       signup_attribution: {
         Row: {
           code: string | null
@@ -4474,6 +4627,13 @@ export type Database = {
         }
         Returns: Json
       }
+      _royale_bank: {
+        Args: { _chapter: number; _language: string; _subject: string }
+        Returns: Json
+      }
+      _royale_finalize: { Args: { _slot: string }; Returns: string }
+      _royale_slot: { Args: { _at: string }; Returns: string }
+      _royale_study_member: { Args: { _user: string }; Returns: boolean }
       adjust_parent_student_score: {
         Args: { _delta: number; _link_id: string; _student_user_id: string }
         Returns: number
@@ -4658,6 +4818,16 @@ export type Database = {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
         Returns: string
       }
+      create_study_royale: {
+        Args: {
+          _chapter: number
+          _invitees: string[]
+          _language: string
+          _questions: Json
+          _subject: string
+        }
+        Returns: string
+      }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       french_flashcard_access: { Args: never; Returns: Json }
       get_battle_channel_config: { Args: never; Returns: Json }
@@ -4822,6 +4992,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
       set_site_visits: { Args: { _count: number }; Returns: number }
       start_nadawi_admin_test: { Args: { _restart?: boolean }; Returns: Json }
       start_nadawi_contest: { Args: never; Returns: Json }
@@ -4848,6 +5019,15 @@ export type Database = {
           _destination_id?: string
           _flight_id?: string
           _invitee_id?: string
+        }
+        Returns: Json
+      }
+      study_royale: {
+        Args: {
+          _action?: string
+          _choice?: number
+          _id: string
+          _index?: number
         }
         Returns: Json
       }
