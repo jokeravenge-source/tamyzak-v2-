@@ -4645,15 +4645,6 @@ export type Database = {
         }
         Returns: Json
       }
-      create_study_royale: {
-        Args: { _invitees: string[]; _subject: string; _chapter: number; _language: string; _questions: Json }
-        Returns: string
-      }
-      session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
-      study_royale: {
-        Args: { _id: string; _action?: string; _index?: number; _choice?: number }
-        Returns: Json
-      }
       create_literature_codes: {
         Args: {
           code_label?: string
