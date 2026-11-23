@@ -90,6 +90,19 @@ describe("PDF bank adapters", () => {
       answer: "60.5°",
     });
   });
+  it("includes all supplied English Physics Chapter 5 MCQs in custom PDFs", async () => {
+    const result = await loadPdfBank({ ...selection, subject: "physics", chapter: "5", language: "en", list: "haydar-diwan" });
+    const supplied = result.questions.filter((question) => question.kind === "mcq");
+    expect(supplied).toHaveLength(61);
+    expect(supplied[0]).toMatchObject({
+      question: "When two waves of equal amplitude meet in phase, the resulting amplitude is:",
+      answer: "Twice the amplitude of one wave",
+    });
+    expect(supplied.at(-1)).toMatchObject({
+      question: "Scattering of visible light happens on particles whose diameter is:",
+      answer: "Comparable to or smaller than λ",
+    });
+  });
   it("honors Ahmed's edited and deleted cards and fails if corrections cannot load", async () => {
     const s = { ...selection, subject: "chemistry", chapter: "7", list: "ahmed-al-nadawi" } as BankSelection;
     const original = await loadSource("chemistry:ahmed-al-nadawi:ar:7");

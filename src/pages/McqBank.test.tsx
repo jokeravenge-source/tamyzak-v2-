@@ -62,6 +62,14 @@ describe("MCQ bank flashcard divisions", () => {
     expect(screen.getByText("في التداخل البناء تكون سعة الموجة الناتجة:")).toBeInTheDocument();
     expect(screen.getByText("مساوية لضعف سعة أي من الموجتين الأصليتين")).toBeInTheDocument();
   });
+  it("opens all 61 supplied Physical Optics questions under English Physics", async () => {
+    render(<McqBank language="en" onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Physics/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Physical Optics/ }));
+    expect(screen.getByText("Question 1 of 61")).toBeInTheDocument();
+    expect(screen.getByText("When two waves of equal amplitude meet in phase, the resulting amplitude is:")).toBeInTheDocument();
+    expect(screen.getByText("Twice the amplitude of one wave")).toBeInTheDocument();
+  });
   it("opens the subject selected in Subjects instead of asking for it twice", async () => {
     mocks.rows = [row("physics", 1, "Capacitors")];
     sessionStorage.setItem("mcq_subject_focus_v1", "physics");
@@ -76,7 +84,7 @@ describe("MCQ bank flashcard divisions", () => {
     mocks.rows = [row("physics", 1, "Capacitors"), row("physics", 2, "Electromagnetic Induction")];
     render(<McqBank language="en" onBack={vi.fn()} />);
     fireEvent.click(await screen.findByRole("button", { name: /Physics/ }));
-    expect(screen.getByRole("button", { name: /Physical Optics/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Modern Physics/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: /Capacitors/ }));
     expect(screen.getByRole("heading", { name: "Physics · Capacitors" })).toBeInTheDocument();
     expect(screen.getByText("Question for physics 1")).toBeInTheDocument();
