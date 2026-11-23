@@ -54,6 +54,14 @@ describe("MCQ bank flashcard divisions", () => {
     expect(screen.getByText("A static point charge generates:")).toBeInTheDocument();
     expect(screen.getByText("an electric field only")).toBeInTheDocument();
   });
+  it("opens all 70 supplied Arabic Physical Optics questions", async () => {
+    render(<McqBank language="ar" onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /الفيزياء/ }));
+    fireEvent.click(screen.getByRole("button", { name: /البصريات الفيزيائية/ }));
+    expect(screen.getByText("السؤال 1 من 70")).toBeInTheDocument();
+    expect(screen.getByText("في التداخل البناء تكون سعة الموجة الناتجة:")).toBeInTheDocument();
+    expect(screen.getByText("مساوية لضعف سعة أي من الموجتين الأصليتين")).toBeInTheDocument();
+  });
   it("opens the subject selected in Subjects instead of asking for it twice", async () => {
     mocks.rows = [row("physics", 1, "Capacitors")];
     sessionStorage.setItem("mcq_subject_focus_v1", "physics");
