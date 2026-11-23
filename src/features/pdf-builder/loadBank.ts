@@ -83,6 +83,10 @@ export async function loadPdfBank(s: BankSelection): Promise<BankLoadResult> {
     const { getBuiltInPhysicsCh5 } = await import("@/lib/physicsChapter5Mcqs");
     mcqs.push(...getBuiltInPhysicsCh5(s.language));
   }
+  if (s.subject === "physics" && s.chapter === "6") {
+    const { getBuiltInPhysicsCh6 } = await import("@/lib/physicsChapter6Mcqs");
+    mcqs.push(...getBuiltInPhysicsCh6(s.language));
+  }
   if (s.subject === "biology" && s.chapter === "2") {
     const { getBuiltInBiologyChapter2 } = await import("@/lib/biologyChapter2Mcqs"); mcqs.push(...getBuiltInBiologyChapter2(s.language));
   }
