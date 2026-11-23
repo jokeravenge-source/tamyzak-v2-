@@ -46,6 +46,14 @@ describe("MCQ bank flashcard divisions", () => {
     expect(screen.getByText("ترسل القدرة الكهربائية بفولطية عالية وتيار واطئ لغرض:")).toBeInTheDocument();
     expect(screen.getByText("تقليل خسائر القدرة الحرارية في الأسلاك الناقلة")).toBeInTheDocument();
   });
+  it("opens all 77 supplied Electromagnetic Waves questions under English Physics", async () => {
+    render(<McqBank language="en" onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Physics/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Electromagnetic Waves/ }));
+    expect(screen.getByText("Question 1 of 77")).toBeInTheDocument();
+    expect(screen.getByText("A static point charge generates:")).toBeInTheDocument();
+    expect(screen.getByText("an electric field only")).toBeInTheDocument();
+  });
   it("opens the subject selected in Subjects instead of asking for it twice", async () => {
     mocks.rows = [row("physics", 1, "Capacitors")];
     sessionStorage.setItem("mcq_subject_focus_v1", "physics");
@@ -60,7 +68,7 @@ describe("MCQ bank flashcard divisions", () => {
     mocks.rows = [row("physics", 1, "Capacitors"), row("physics", 2, "Electromagnetic Induction")];
     render(<McqBank language="en" onBack={vi.fn()} />);
     fireEvent.click(await screen.findByRole("button", { name: /Physics/ }));
-    expect(screen.getByRole("button", { name: /Electromagnetic Waves/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Physical Optics/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: /Capacitors/ }));
     expect(screen.getByRole("heading", { name: "Physics · Capacitors" })).toBeInTheDocument();
     expect(screen.getByText("Question for physics 1")).toBeInTheDocument();
