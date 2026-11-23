@@ -1,13 +1,16 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { botCanPostBattle, resolvedBattleChatId, telegramGroupTarget } from "../_shared/battle-group-target.ts";
 import { makeSessionNotice, type SessionTopic } from "../_shared/session-notice.ts";
+import { authenticateCronRequest } from "../_shared/cron-auth.ts";
 import { callTelegramGateway, TAMAYZAK_BOT_USERNAME } from "../_shared/telegram-gateway.ts";
 
 Deno.serve(async (req) => {
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const url = Deno.env.get("SUPABASE_URL");
   if (req.method !== "POST") return Response.json({ error: "METHOD_NOT_ALLOWED" }, { status: 405 });
-  if (!key || !url || req.headers.get("authorization") !== `Bearer ${key}`) return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  const denied = authenticateCronRequest(req);
+  if (denied) return denied;
+  if (!key || !url) return Response.json({ error: "SERVER_CONFIG" }, { status: 500 });
   const admin = createClient(url, key);
   try {
     const now = Date.now();
