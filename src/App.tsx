@@ -1,4 +1,5 @@
 import { captureBattleChannelLink, pendingBattleChannelId } from "./lib/battleChannelLink";
+import { captureSessionRoomLink } from "./lib/sessionRoyale";
 import { useFlightStudySync } from "./hooks/useFlightStudySync";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -224,6 +225,7 @@ const McqBankDeepLink = () => {
 
 const App = () => {
   captureBattleChannelLink();
+  captureSessionRoomLink();
   normalizeNadiaTeacherLink();
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-review") return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}><McqReviewDashboard /></Suspense></TooltipProvider></QueryClientProvider>;
   if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/mcq-bank") return <McqBankDeepLink />;

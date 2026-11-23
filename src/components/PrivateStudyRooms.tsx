@@ -12,6 +12,7 @@ import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterA
 import StudentProfileDialog from "./StudentProfileDialog";
 import { Button } from "@/components/ui/button";
 import { PINNED_STUDY_ROOMS } from "@/lib/pinnedStudyRooms";
+import { clearSessionRoomLink, hasSessionRoomLink, SESSION_ROOM_CODE } from "@/lib/sessionRoyale";
 
 type Room = { id: string; code: string; name: string; owner_id: string; is_public: boolean; subject: string | null };
 type Member = { user_id: string; display_name: string; gender?: Gender; character?: CharacterTraits | null };
@@ -82,7 +83,7 @@ export default function PrivateStudyRooms({
   language: "en" | "ar";
   children?: React.ReactNode;
   subject?: string | null;
-  onRoomMembershipChange?: (joined: boolean, room?: { subject: string | null; is_public: boolean; name: string }) => void;
+  onRoomMembershipChange?: (joined: boolean, room?: { subject: string | null; is_public: boolean; name: string; code: string }) => void;
   timerSeconds?: number;
   timerRunning?: boolean;
   timerDisplayRunning?: boolean;
@@ -266,7 +267,7 @@ export default function PrivateStudyRooms({
   // Restore last room
   useEffect(() => {
     if (!userId) return;
-    if (new URLSearchParams(window.location.search).has("code")) return;
+    if (hasSessionRoomLink() || new URLSearchParams(window.location.search).has("code")) return;
     const saved = localStorage.getItem(LS_KEY);
     if (!saved) return;
     (async () => {
@@ -414,6 +415,7 @@ export default function PrivateStudyRooms({
       if (error) { toast.error(L.youBanned); return; }
       localStorage.setItem(LS_KEY, data.id);
       setRoom(data as Room);
+      if (code === SESSION_ROOM_CODE && hasSessionRoomLink()) clearSessionRoomLink();
       setJoinCode("");
       loadRoom(data.id);
       toast.success(L.joined);
@@ -424,10 +426,10 @@ export default function PrivateStudyRooms({
   const autoJoined = useRef(false);
   useEffect(() => {
     if (!userId || autoJoined.current) return;
-    const code = new URLSearchParams(window.location.search).get("code");
+    const code = new URLSearchParams(window.location.search).get("code") ?? (hasSessionRoomLink() ? SESSION_ROOM_CODE : null);
     if (!code) return;
     autoJoined.current = true;
-    joinByCode(code.trim().toUpperCase());
+    void joinByCode(code.trim().toUpperCase());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 

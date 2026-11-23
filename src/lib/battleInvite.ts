@@ -39,8 +39,12 @@ export function consumePendingBattle(): PendingBattle | null {
     if (!raw) return null;
     sessionStorage.removeItem(KEY);
     const p = JSON.parse(raw) as PendingBattle;
-    return /^\d{6}$/.test(p?.code || "") ? p : null;
+    return /^\d{6}$/.test(p?.code || "") || isGroupBattleCode(p?.code) ? p : null;
   } catch {
     return null;
   }
+}
+
+export function isGroupBattleCode(code: unknown): code is string {
+  return typeof code === "string" && /^br:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(code);
 }

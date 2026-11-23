@@ -6,7 +6,7 @@ const api = vi.hoisted(() => ({ bank: vi.fn(), channel: vi.fn(), remove: vi.fn()
 vi.mock("@/lib/battleChallenges", () => ({ BATTLE_INVITE_LIFETIME: 180000, searchBattleStudents: api.search, sendBattleChallenge: api.send, cancelBattleChallenge: api.cancel, battleChallengeStatus: async () => "pending" }));
 vi.mock("@/hooks/useFeatureUsed", () => ({ useFeatureUsed: vi.fn() }));
 vi.mock("@/lib/raceQuestionBank", () => ({ loadRaceQuestionBank: api.bank }));
-vi.mock("@/lib/battleInvite", () => ({ consumePendingBattle: api.pending, newRoomCode: () => "123456" }));
+vi.mock("@/lib/battleInvite", async (original) => ({ ...await original<typeof import("@/lib/battleInvite")>(), consumePendingBattle: api.pending, newRoomCode: () => "123456" }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { channel: api.channel, removeChannel: api.remove, functions: { invoke: api.invoke }, auth: { getUser: async () => ({ data: { user: { id: "student" } } }) }, rpc: api.rpc } }));
 const rows: RaceQuestion[] = [
   { id: "physics-1", subject: "physics", chapter: 1, question: "Physics one from bank", choices: ["P1 correct", "P1 wrong"], answer_index: 0, explanation: "Original explanation" },
@@ -90,12 +90,26 @@ it("searches by name, sends the selected bank settings and hosts the invited roo
   fireEvent.change(screen.getByLabelText("Chapter"), { target: { value: "2" } });
   fireEvent.click(screen.getByRole("button", { name: "Search by name" }));
   fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "Ali" } });
-  fireEvent.click(await screen.findByRole("button", { name: "Challenge Ali" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Select Ali" }));
+  fireEvent.click(screen.getByRole("button", { name: "Send battle invitations" }));
   await screen.findByText("Invitation sent to Ali. Waiting for acceptance…");
   expect(api.send).toHaveBeenCalledWith("friend", { code: "123456", subject: "physics", chapter: 2, language: "en", count: 1 });
   expect(api.channel).toHaveBeenCalledWith("battle:123456", expect.anything());
   fireEvent.click(screen.getByRole("button", { name: "Cancel room" }));
   expect(api.cancel).toHaveBeenCalledWith("invite-one");
+});
+it("sends multiple selected students to one room", async () => {
+  api.search.mockResolvedValue([{ user_id: "ali", display_name: "Ali" }, { user_id: "sara", display_name: "Sara" }]);
+  api.rpc.mockImplementation(async (name) => ({ data: name === "create_study_royale" ? "10000000-0000-4000-8000-000000000001" : null, error: null }));
+  view();
+  fireEvent.click(screen.getByRole("button", { name: "Search by name" }));
+  fireEvent.change(screen.getByLabelText("Student name"), { target: { value: "test" } });
+  fireEvent.click(await screen.findByRole("button", { name: "Select Ali" }));
+  fireEvent.click(screen.getByRole("button", { name: "Select Sara" }));
+  fireEvent.click(screen.getByRole("button", { name: "Send battle invitations" }));
+  await screen.findByRole("heading", { name: "Battle Royale" });
+  expect(api.rpc).toHaveBeenCalledWith("create_study_royale", expect.objectContaining({ _invitees: ["ali", "sara"] }));
+  expect(api.send).not.toHaveBeenCalled();
 });
 it("accepts a challenge while Live Battle is already mounted", async () => {
   view();

@@ -26,6 +26,8 @@ import quranTrackAsset from "@/assets/music/quran.mp3.asset.json";
 import SpotifyPlayerBlock from "@/components/SpotifyPlayerBlock";
 import StudyRoom from "@/components/StudyRoom";
 import PrivateStudyRooms from "@/components/PrivateStudyRooms";
+import SessionRoyalePanel from "@/components/SessionRoyalePanel";
+import { hasSessionRoomLink, SESSION_ROOM_CODE } from "@/lib/sessionRoyale";
 import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
@@ -530,6 +532,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
   const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | null>(() => {
+    if (hasSessionRoomLink() || (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/room" && new URLSearchParams(window.location.search).has("code"))) return "rooms";
     try { if (sessionStorage.getItem("tmz:sessions-entry") === "challenge") { sessionStorage.removeItem("tmz:sessions-entry"); return "challenge"; } } catch { /* ignore */ }
     return null;
   });
@@ -551,9 +554,11 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [joinedStudyRoom, setJoinedStudyRoom] = useState(false);
   const [joinedRoomName, setJoinedRoomName] = useState<string | null>(null);
-  const handleRoomMembershipChange = useCallback((joined: boolean, room?: { subject: string | null; is_public: boolean; name: string }) => {
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const handleRoomMembershipChange = useCallback((joined: boolean, room?: { subject: string | null; is_public: boolean; name: string; code: string }) => {
     setJoinedStudyRoom(joined);
     setJoinedRoomName(joined ? room?.name ?? null : null);
+    setRoomCode(joined ? room?.code ?? null : null);
     if (joined && room) setSubject(roomSessionSubject(room.subject));
   }, []);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -1435,6 +1440,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           </div>
         </header>
 
+        {userId && roomCode === SESSION_ROOM_CODE && <SessionRoyalePanel key={userId} language={language} />}
         {/* Keep the timer primary; optional session tools stay behind one menu. */}
         <PrivateStudyRooms language={language} subject={subject === "general" ? null : subject} onRoomMembershipChange={handleRoomMembershipChange} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started}>
         <div className="min-w-0 space-y-5 rounded-[2rem] border border-border/70 bg-card/95 p-3 sm:p-5 shadow-[0_20px_60px_-38px_rgba(0,0,0,0.55)] md:p-8">
