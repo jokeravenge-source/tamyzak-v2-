@@ -14,9 +14,27 @@ describe("English Physics Chapter 3", () => {
     expect(rows[28].question).toContain("power is consumed");
   });
 
-  it("keeps the supplied set in Alternating Current and out of the Arabic curriculum", () => {
-    expect(getBuiltInPhysicsCh3("ar")).toEqual([]);
+  it("groups the English set under Alternating Current", () => {
     expect(getMcqChapterGroups("physics", getBuiltInPhysicsCh3("en"), "en"))
       .toEqual(expect.arrayContaining([expect.objectContaining({ chapter: 3, title: "Alternating Current", count: 45 })]));
+  });
+});
+
+describe("Arabic Physics Chapter 3", () => {
+  it("includes the 57 supplied questions with four choices and the corrected key", () => {
+    const rows = getBuiltInPhysicsCh3("ar");
+    const englishIds = new Set(getBuiltInPhysicsCh3("en").map((row) => row.id));
+    expect(rows).toHaveLength(57);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(57);
+    expect(rows.every((row) => !englishIds.has(row.id) && new Set(row.choices).size === 4)).toBe(true);
+    expect(rows.map((row) => "أبجد"[row.answer_index]).join(""))
+      .toBe("جأبدبجدبججأدجأبببجأدجبدجبأبجأبجبأبجدأدأبجبجدبجأأجبجأبجدبأ");
+    expect(rows[19].choices[rows[19].answer_index]).toBe("مفتاح مغلق");
+    expect(rows[46].choices[0]).toBe("1 / (2π√(LC))");
+  });
+
+  it("groups the Arabic set under التيار المتناوب", () => {
+    expect(getMcqChapterGroups("physics", getBuiltInPhysicsCh3("ar"), "ar"))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ chapter: 3, title: "التيار المتناوب", count: 57 })]));
   });
 });

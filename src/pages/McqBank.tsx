@@ -595,7 +595,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border text-xs font-black transition-colors ${isAnswer ? "border-emerald-500 bg-emerald-500 text-white" : isWrongPick ? "border-rose-500 bg-rose-500 text-white" : "border-border bg-secondary text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"}`}>
                       {String.fromCharCode(65 + i)}
                     </span>
-                    <span className="flex-1 font-medium leading-relaxed">{c}</span>
+                    <span className="flex-1 font-medium leading-relaxed"><bdi>{c}</bdi></span>
                     {submitting && picked === i && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                     {isAnswer && <Check className="w-5 h-5 text-emerald-500" />}
                     {isWrongPick && <X className="w-5 h-5 text-rose-500" />}
