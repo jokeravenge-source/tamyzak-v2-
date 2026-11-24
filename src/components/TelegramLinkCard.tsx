@@ -10,7 +10,7 @@ type TelegramLinkVariant = "profile" | "home";
 
 const T = {
   en: {
-    eyebrow: "Tamayzak assistant", title: "Connect Telegram",
+    title: "Connect Telegram",
     desc: `Connect your account through @${TAMAYZAK_BOT_USERNAME} to receive useful reminders.`,
     linked: "Telegram connected",
     linkedDesc: "Reminders and important Tamayzak updates can reach you here.",
@@ -22,7 +22,7 @@ const T = {
     daily: "Daily gift", review: "Due reviews", updates: "Exam updates", secure: "Secure one-time link",
   },
   ar: {
-    eyebrow: "مساعد تميّزك", title: "اربط تيليجرام",
+    title: "اربط تيليجرام",
     desc: `اربط حسابك حصراً عبر @${TAMAYZAK_BOT_USERNAME} حتى تستلم التذكيرات المفيدة.`,
     linked: "تيليجرام مرتبط",
     linkedDesc: "توصلك تذكيرات الدراسة وتحديثات تميّزك المهمة هنا.",
@@ -125,29 +125,26 @@ export function TelegramLinkCard({ language, source = "profile", variant = "prof
   };
 
   if (variant === "home") {
-    if (loading) return <div className="mb-6 h-32 animate-pulse rounded-[1.5rem] border border-border bg-card" aria-hidden="true" />;
+    if (loading) return <div className="h-[8.5rem] animate-pulse rounded-[1.4rem] border border-border bg-card sm:h-40 lg:h-auto" aria-hidden="true" />;
     if (verified) return null;
     return (
-      <section className="mb-6 overflow-hidden rounded-[1.5rem] border border-sky-200 bg-sky-50 text-slate-950 shadow-[0_18px_45px_-34px_rgba(2,132,199,0.8)]" aria-labelledby="telegram-connect-title">
-        <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
-          <div className="flex items-start gap-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-sky-600 text-white shadow-sm"><Send className="h-5 w-5" /></span>
-            <div>
-              <p className="text-xs font-bold text-sky-700">{t.eyebrow}</p>
-              <h2 id="telegram-connect-title" className="mt-1 text-xl font-black tracking-tight">{t.title}</h2>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">{pending ? t.opened : t.desc}</p>
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-600">
-                <span className="inline-flex items-center gap-1.5"><Gift className="h-3.5 w-3.5 text-sky-700" />{t.daily}</span>
-                <span className="inline-flex items-center gap-1.5"><RefreshCw className="h-3.5 w-3.5 text-sky-700" />{t.review}</span>
-                <span className="inline-flex items-center gap-1.5"><BellRing className="h-3.5 w-3.5 text-sky-700" />{t.updates}</span>
-              </div>
-            </div>
+      <section className="home-illustrated-card overflow-hidden rounded-[1.4rem] border border-sky-400/25 p-3.5 text-white sm:p-5" aria-labelledby="telegram-connect-title">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">
+          <div className="min-w-0">
+            <h2 id="telegram-connect-title" className="text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{t.title}</h2>
+            <p className="mt-1.5 break-words text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{pending ? t.opened : t.desc}</p>
           </div>
-          <div className="flex gap-2 sm:flex-col">
-            <button type="button" onClick={openBot} disabled={busy} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 text-sm font-black text-white transition-colors hover:bg-sky-700 disabled:opacity-60 sm:min-w-48">
+          <span className="grid size-12 place-items-center rounded-2xl border border-sky-300/35 bg-sky-400/25 text-sky-100 sm:size-16"><Send aria-hidden="true" className="size-6 sm:size-8" /></span>
+          <div className="col-span-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold text-sky-100/90">
+            <span className="inline-flex items-center gap-1"><Gift aria-hidden="true" className="size-3" />{t.daily}</span>
+            <span className="inline-flex items-center gap-1"><RefreshCw aria-hidden="true" className="size-3" />{t.review}</span>
+            <span className="inline-flex items-center gap-1"><BellRing aria-hidden="true" className="size-3" />{t.updates}</span>
+          </div>
+          <div className="col-span-2 mt-0.5 flex gap-2">
+            <button type="button" onClick={openBot} disabled={busy} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-sky-950 transition-colors hover:bg-white disabled:opacity-60">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{t.connect}
             </button>
-            {pending && <button type="button" onClick={() => void recheck(false)} disabled={busy} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-sky-300 bg-white px-4 text-sm font-bold text-sky-800 hover:bg-sky-100 disabled:opacity-60"><CheckCircle2 className="h-4 w-4" /><span className="hidden sm:inline">{busy ? t.checking : t.check}</span></button>}
+            {pending && <button type="button" onClick={() => void recheck(false)} disabled={busy} aria-label={busy ? t.checking : t.check} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-300/35 bg-white/10 px-3 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-60"><CheckCircle2 aria-hidden="true" className="size-4" /><span className="hidden sm:inline">{busy ? t.checking : t.check}</span></button>}
           </div>
         </div>
       </section>

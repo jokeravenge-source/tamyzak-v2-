@@ -130,9 +130,11 @@ describe("simplified home navigation", () => {
     expect(onSelect).toHaveBeenCalledWith("todo");
 
     const highlights = screen.getByRole("group", { name: "Tamayzak highlights" });
-    expect(within(highlights).getByRole("button", { name: "Join the challenge" })).toBeInTheDocument();
+    fireEvent.click(within(highlights).getByRole("button", { name: "Join the challenge" }));
+    expect(onSelect).toHaveBeenCalledWith("sessions");
     expect(within(highlights).getByRole("link", { name: "Buy from Houdini" })).toHaveAttribute("href", "https://www.instagram.com/houdini_st0re/");
     expect(within(highlights).getByRole("region", { name: "Connect Telegram" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show card 1 of 3" })).toHaveAttribute("aria-current", "true");
     expect(plan.compareDocumentPosition(highlights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(highlights.compareDocumentPosition(screen.getByRole("button", { name: "Continue studying" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "What will you finish today?" })).not.toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
@@ -6,7 +6,8 @@ import {
   ArrowRight, ArrowLeft, Layers, AlertTriangle, BookMarked, FileText, GraduationCap, Microscope,
   X, ListChecks, Newspaper, Timer, ScrollText, Network, Search,
   Globe, Trophy, Target, HelpCircle, Headphones, Podcast, Lightbulb, Sparkles,
-  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock, Instagram,
+  Crown, UserCog, BookOpen, Heart, Users, Settings, Moon, PenLine, MousePointerClick, NotebookPen, Youtube, FlaskConical, Swords, Video, Palette, Lock,
+  CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Grid2X2, RefreshCw,
 } from "lucide-react";
 import { dueMistakesCount } from "@/lib/mistakes";
 import { unseenAdminNotesCount } from "@/lib/unseenAdminNotes";
@@ -28,9 +29,8 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
-import challenge3dIcon from "@/assets/challenge-3d-icon.png";
-import houdiniHoodieIcon from "@/assets/houdini-hoodie-icon.png";
-import { TelegramLinkCard } from "@/components/TelegramLinkCard";
+import studyBookArt from "@/assets/home-study-book.webp";
+import HomeHighlights from "@/components/home/HomeHighlights";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import { normalizeStudySearch } from "@/lib/studySearch";
@@ -362,56 +362,16 @@ const DEFAULT_HOME_TINT = {
   icon: "bg-primary text-primary-foreground shadow-lg shadow-primary/20",
 };
 
-const RANK_CARD_THEMES = {
-  coal: {
-    background: "linear-gradient(145deg, #f9fafb 0%, #d1d5db 48%, #9ca3af 100%)",
-    ink: "#111827",
-    accent: "#4b5563",
-    highlight: "#9ca3af",
-    glow: "rgba(75, 85, 99, 0.28)",
-    shadow: "rgba(31, 41, 55, 0.72)",
-  },
-  copper: {
-    background: "linear-gradient(145deg, #fff7ed 0%, #fdba74 48%, #b87333 100%)",
-    ink: "#7c2d12",
-    accent: "#9a3412",
-    highlight: "#fb923c",
-    glow: "rgba(184, 115, 51, 0.30)",
-    shadow: "rgba(154, 52, 18, 0.72)",
-  },
-  silver: {
-    background: "linear-gradient(145deg, #ffffff 0%, #e2e8f0 46%, #94a3b8 100%)",
-    ink: "#1e293b",
-    accent: "#475569",
-    highlight: "#cbd5e1",
-    glow: "rgba(148, 163, 184, 0.38)",
-    shadow: "rgba(71, 85, 105, 0.68)",
-  },
-  gold: {
-    background: "linear-gradient(145deg, #fffbeb 0%, #fde68a 46%, #f59e0b 100%)",
-    ink: "#78350f",
-    accent: "#b45309",
-    highlight: "#facc15",
-    glow: "rgba(245, 158, 11, 0.30)",
-    shadow: "rgba(180, 83, 9, 0.72)",
-  },
-  diamond: {
-    background: "linear-gradient(145deg, #ecfeff 0%, #a5f3fc 44%, #22d3ee 100%)",
-    ink: "#164e63",
-    accent: "#0e7490",
-    highlight: "#67e8f9",
-    glow: "rgba(34, 211, 238, 0.34)",
-    shadow: "rgba(8, 145, 178, 0.72)",
-  },
-  royal: {
-    background: "linear-gradient(145deg, #faf5ff 0%, #d8b4fe 44%, #a78bfa 100%)",
-    ink: "#581c87",
-    accent: "#7e22ce",
-    highlight: "#c084fc",
-    glow: "rgba(167, 139, 250, 0.34)",
-    shadow: "rgba(107, 33, 168, 0.72)",
-  },
+const HOME_RANK_NAME_COLOR = {
+  coal: "#4b5563",
+  copper: "#9a3412",
+  silver: "#475569",
+  gold: "#b45309",
+  diamond: "#0e7490",
+  royal: "#7e22ce",
 } as const;
+
+const HOME_ICON_TILE = "grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sky-950 dark:bg-cyan-950 dark:text-cyan-200";
 
 const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
   All: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
@@ -515,58 +475,6 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
-  const [highlights, setHighlights] = useState<HTMLDivElement | null>(null);
-  useLayoutEffect(() => {
-    if (!highlights) return;
-    const wide = window.matchMedia("(min-width: 640px)");
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      if (wide.matches || !highlights.clientWidth) {
-        highlights.style.removeProperty("--highlight-height");
-        return;
-      }
-      const rect = highlights.getBoundingClientRect();
-      const style = getComputedStyle(highlights);
-      const rtl = style.direction === "rtl";
-      const start = rtl ? rect.right - parseFloat(style.paddingRight) : rect.left + parseFloat(style.paddingLeft);
-      let cardHeight = 0;
-      let distance = Infinity;
-      for (const card of highlights.children) {
-        const bounds = card.getBoundingClientRect();
-        const offset = Math.abs((rtl ? bounds.right : bounds.left) - start);
-        if (offset < distance) {
-          cardHeight = bounds.height;
-          distance = offset;
-        }
-      }
-      const height = cardHeight + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-      highlights.style.setProperty("--highlight-height", `${Math.ceil(height)}px`);
-    };
-    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(measure); };
-    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
-    const watchCards = () => {
-      resize?.disconnect();
-      resize?.observe(highlights);
-      for (const card of highlights.children) resize?.observe(card);
-    };
-    const changes = new MutationObserver(() => {
-      watchCards();
-      schedule();
-    });
-    changes.observe(highlights, { childList: true });
-    watchCards();
-    measure();
-    highlights.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    return () => {
-      changes.disconnect();
-      resize?.disconnect();
-      highlights.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      window.cancelAnimationFrame(frame);
-    };
-  }, [highlights]);
   const [showRecommendedStudy, setShowRecommendedStudy] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("study") !== "today") return false;
@@ -673,7 +581,8 @@ const Basics = ({
   const planTasks = todos.filter((todo) => getTodoDay(todo.day) === baghdadToday);
   const planDone = planTasks.filter((todo) => todo.done).length;
   const nextPlanTask = planTasks.find((todo) => !todo.done);
-  const planProgress = planTasks.length ? Math.round(planDone * 100 / planTasks.length) : 0;
+  const planRatio = planTasks.length ? planDone / planTasks.length : 0;
+  const planSegments = Math.max(1, Math.min(5, planTasks.length));
   const heroProgressDone = todoTotal > 0 ? todoDone : missionsDone;
   const heroProgressTotal = todoTotal > 0 ? todoTotal : missionsTotal;
   const heroProgressPct = heroProgressTotal ? Math.min(100, Math.round((heroProgressDone / heroProgressTotal) * 100)) : 0;
@@ -742,7 +651,6 @@ const Basics = ({
   const stoneFill = nextRank
     ? Math.max(0, Math.min(1, (totalPoints - leaderboardRank.min) / (nextRank.min - leaderboardRank.min)))
     : 1;
-  const rankCardTheme = RANK_CARD_THEMES[currentRank] ?? RANK_CARD_THEMES.coal;
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -759,6 +667,9 @@ const Basics = ({
   }, []);
 
   const isRTL = language === "ar";
+  const homeNumber = (value: number) => value.toLocaleString(isRTL ? "ar-IQ" : "en");
+  const boardPosition = boardRank == null ? "—" : `#${homeNumber(boardRank)}`;
+  const HomeChevron = isRTL ? ChevronLeft : ChevronRight;
   // Onboarding-driven personalization (weak subject / weakest topic)
   const [onboarding, setOnboarding] = useState(() => readOnboarding());
   useEffect(() => {
@@ -1303,8 +1214,8 @@ const Basics = ({
   return (
     <div className="tmz-home min-h-screen w-full text-[var(--tmz-ink)]" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
-      <div className="sticky top-0 z-40 border-b border-[var(--tmz-line)] bg-[var(--tmz-canvas)]">
-        <div className={`mx-auto flex h-14 max-w-6xl items-center sm:px-6 lg:px-8 ${showAllTools ? "justify-between px-4" : "gap-1 px-2 sm:gap-3"}`}>
+      <div className={`sticky top-0 z-40 border-b border-[var(--tmz-line)] ${showAllTools ? "bg-[var(--tmz-canvas)]" : "bg-card/90 backdrop-blur"}`}>
+        <div className={`mx-auto flex max-w-6xl items-center sm:px-6 lg:px-8 ${showAllTools ? "h-14 justify-between px-4" : "h-16 gap-1 px-2 sm:gap-3"}`}>
           {showAllTools ? <div className="flex items-center gap-2">
             <img src="/app-icon-192.png" alt="" className="h-8 w-8 rounded-xl" />
             <p className="text-sm font-semibold leading-tight text-[var(--tmz-ink)]">{language === "ar" ? "تميّزك" : "Tamayzak"}</p>
@@ -1318,38 +1229,36 @@ const Basics = ({
               <span>{language === "ar" ? "خطة اليوم" : "Today's plan"}</span>
               {pendingTodos > 0 && <span className="tabular-nums text-[var(--tmz-muted)]">{pendingTodos}</span>}
             </button>
-          </div> : <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
-            <img src="/app-icon-192.png" alt="" className="h-8 w-8 shrink-0 rounded-xl" />
-            <h1 className="min-w-0 truncate text-sm font-semibold leading-tight" dir="auto"
-              title={username || undefined} style={{ color: rankCardTheme.ink }}>
-              {username || (isRTL ? "طالب تميّزك" : "Tamayzak student")}
-            </h1>
-            <span className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums text-[var(--tmz-ink)]"
+          </div> : <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3">
+            <img src="/app-icon-192.png" alt="" className="size-8 shrink-0 rounded-full border border-border/70 bg-card sm:size-10" />
+            <div className="flex min-w-0 items-center gap-0.5 sm:gap-1.5">
+              <h1 className="home-rank-name min-w-0 truncate text-base font-black leading-tight sm:text-xl" dir="auto"
+                title={username || undefined} style={{ "--home-rank-tone": HOME_RANK_NAME_COLOR[currentRank] } as CSSProperties}>
+                {username || (isRTL ? "طالب تميّزك" : "Tamayzak student")}
+              </h1>
+              <span className="grid size-5 shrink-0 place-items-center" title={rankLabel} role="img" aria-label={rankLabel}>
+                <RankStone rank={currentRank} size={19} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} />
+              </span>
+            </div>
+            <span className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-cyan-300/55 bg-cyan-100/85 px-1.5 text-xs font-extrabold tabular-nums text-sky-950 dark:border-cyan-600/40 dark:bg-cyan-950 dark:text-cyan-100 sm:px-3"
               aria-label={isRTL ? `${totalPoints} نقطة` : `${totalPoints} points`}>
-              <bdi>{totalPoints.toLocaleString(isRTL ? "ar-IQ" : "en")}</bdi> {isRTL ? "نقطة" : "pts"}
+              <bdi>{homeNumber(totalPoints)}</bdi>{isRTL ? "نقطة" : "pts"}
             </span>
             <button
               type="button"
               id="progress-details-trigger"
               onClick={() => openDetail("progress")}
-              aria-label={isRTL ? `مركزك بالترتيب ${boardRank ? `#${boardRank}` : "—"}` : `Leaderboard position ${boardRank ? `#${boardRank}` : "—"}`}
-              title={rankLabel}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-2xl border px-1.5 text-xs font-bold tabular-nums transition-all hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              style={{
-                background: rankCardTheme.background,
-                borderColor: rankCardTheme.highlight,
-                color: rankCardTheme.ink,
-                boxShadow: `0 14px 30px -22px ${rankCardTheme.shadow}, 0 0 24px -18px ${rankCardTheme.glow}`,
-              }}
+              aria-label={isRTL ? `مركزك بالترتيب ${boardPosition}` : `Leaderboard position ${boardPosition}`}
+              className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-muted/75 px-1.5 text-xs font-extrabold tabular-nums text-foreground transition-colors hover:bg-accent sm:px-3"
             >
-              <RankStone rank={currentRank} size={20} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} className="shrink-0" />
-              <bdi>{boardRank ? `#${boardRank}` : "—"}</bdi>
+              <bdi dir="ltr">{boardPosition}</bdi>
+              <span className="hidden min-[380px]:inline">{isRTL ? "ترتيبي" : "Rank"}</span>
             </button>
           </div>}
           <button
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className={`inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-xs text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] sm:min-w-[16rem] sm:px-3 ${showAllTools ? "min-w-[9rem] px-3" : "w-9 shrink-0 justify-center sm:w-auto"}`}
+            className={`inline-flex h-9 items-center gap-2 border border-[var(--tmz-line)] text-xs text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] sm:min-w-[16rem] sm:px-3 ${showAllTools ? "min-w-[9rem] rounded-xl bg-[var(--tmz-surface)] px-3" : "w-8 shrink-0 justify-center rounded-full bg-muted/50 sm:w-auto"}`}
           >
             <Search className="h-3.5 w-3.5 text-[var(--tmz-muted)]" />
             <span className={`flex-1 text-start truncate ${showAllTools ? "" : "hidden sm:inline"}`}>
@@ -1361,7 +1270,7 @@ const Basics = ({
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] ${showAllTools ? "ms-2" : "shrink-0"}`}
+            className={`inline-flex h-9 items-center justify-center border border-[var(--tmz-line)] text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] ${showAllTools ? "ms-2 w-9 rounded-xl bg-[var(--tmz-surface)]" : "w-8 shrink-0 rounded-full bg-muted/50 sm:w-9"}`}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -1369,7 +1278,7 @@ const Basics = ({
       </div>
 
       {/* Content */}
-      <main className="px-4 py-6 pb-48 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <main className={`pb-48 sm:px-6 sm:py-8 lg:px-8 lg:py-10 ${showAllTools ? "px-4 py-6" : "px-3 pt-4"}`}>
         <AnimatePresence mode="wait">
         {showAllTools ? (
           <div
@@ -1471,125 +1380,51 @@ const Basics = ({
           style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
         <div className="mx-auto max-w-6xl">
-          <section aria-labelledby="home-plan-title" className="mb-5 rounded-[2rem] border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(37,99,235,0.65)] sm:p-7">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Target className="h-4 w-4" /></span>
-              <h2 id="home-plan-title" className="text-base font-bold leading-tight text-slate-950 sm:text-lg">{isRTL ? "خطة اليوم" : "Today's plan"}</h2>
+          <section aria-labelledby="home-plan-title" className="mb-4 min-w-0 rounded-[1.4rem] border border-border bg-card p-3.5 text-card-foreground shadow-sm sm:p-5">
+            <div className="flex items-center gap-2.5">
+              <span className={HOME_ICON_TILE}><CalendarCheck aria-hidden="true" className="size-5" /></span>
+              <div className="min-w-0">
+                <h2 id="home-plan-title" className="text-lg font-black leading-snug sm:text-2xl">{isRTL ? "خطة اليوم" : "Today's plan"}</h2>
+                <p className="text-xs font-semibold text-muted-foreground sm:text-sm">
+                  {isRTL ? `${homeNumber(planDone)} من ${homeNumber(planTasks.length)} مهام منجزة` : `${planDone} of ${planTasks.length} tasks completed`}
+                </p>
+              </div>
             </div>
-            <p className="mt-3 text-sm text-slate-600">
-              <bdi className="font-bold tabular-nums">{planDone}/{planTasks.length}</bdi> {isRTL ? "مهام منجزة" : "tasks completed"}
-            </p>
-            <div role="progressbar" aria-labelledby="home-plan-title" aria-valuemin={0} aria-valuemax={100} aria-valuenow={planProgress}
-              className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${planProgress}%` }} />
+            <div role="progressbar" aria-labelledby="home-plan-title" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(planRatio * 100)}
+              className="my-3.5 flex gap-1.5 sm:my-4">
+              {Array.from({ length: planSegments }, (_, index) => (
+                <span key={index} className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border/40">
+                  <span className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500" style={{ width: `${Math.max(0, Math.min(1, planRatio * planSegments - index)) * 100}%` }} />
+                </span>
+              ))}
             </div>
-            <div className="my-3 space-y-1">
-              {nextPlanTask ? <>
-                <p className="text-xs text-slate-600">{isRTL ? "المهمة التالية" : "Next task"}</p>
-                <p dir="auto" className="break-words text-start text-sm font-bold text-slate-950">{nextPlanTask.text}</p>
-              </> : <p className="text-sm text-slate-600">{planTasks.length
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3 sm:gap-4">
+              {nextPlanTask ? <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                <span className={`${HOME_ICON_TILE} hidden min-[380px]:grid`}><ListChecks aria-hidden="true" className="size-4" /></span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-muted-foreground sm:text-xs">{isRTL ? "المهمة التالية" : "Next task"}</p>
+                  <p dir="auto" title={nextPlanTask.text} className="line-clamp-2 break-words text-start text-sm font-extrabold leading-snug">{nextPlanTask.text}</p>
+                </div>
+              </div> : <p className="text-xs font-semibold text-muted-foreground sm:text-sm">{planTasks.length
                 ? (isRTL ? "أنجزت كل مهام اليوم." : "All of today's tasks are complete.")
                 : (isRTL ? "ماكو مهام مجدولة لليوم." : "No tasks scheduled for today.")}</p>}
+              <button type="button" onClick={() => navigate("todo")}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-cyan-300/50 bg-gradient-to-br from-cyan-100 to-cyan-300 px-2.5 text-start text-xs font-black text-sky-950 hover:brightness-105 sm:px-4 sm:text-sm">
+                <CalendarDays aria-hidden="true" className="size-4 shrink-0" />{isRTL ? "افتح جدولي" : "Open my schedule"}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate("todo")}
-              className="flex min-h-11 w-full items-center gap-3 rounded-3xl border border-sky-200 bg-white/85 p-3 text-start text-sm font-bold text-slate-950 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><ListChecks className="h-5 w-5" /></span>
-              <span className="min-w-0 flex-1">{isRTL ? "افتح جدولي" : "Open my schedule"}</span>
-              <span className="shrink-0 text-primary">{isRTL ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</span>
-            </button>
           </section>
 
-          <div className="mb-5 -mx-4 min-w-0 sm:mx-0">
-            <div
-              ref={setHighlights}
-              className="flex h-[var(--highlight-height,auto)] min-w-0 snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-4 px-4 pb-3 pt-1 [scrollbar-width:none] after:shrink-0 after:basis-[calc(16%_-_0.75rem)] after:content-[''] sm:h-auto sm:scroll-px-0 sm:px-0 sm:after:hidden [&::-webkit-scrollbar]:hidden [&>*]:min-w-0 [&>*]:shrink-0 [&>*]:basis-[84%] [&>*]:snap-start [&>*]:snap-always sm:[&>*]:basis-[calc(50%_-_0.375rem)] lg:[&>*]:basis-[calc((100%_-_1.5rem)/3)] [&>section]:mb-0 [&>section>div]:grid-cols-1 [&>section_div]:min-w-0 [&>section_p]:break-words [&>section_button]:min-w-0"
-              role="group"
-              aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
-            >
-              <motion.button
-                type="button"
-                dir="ltr"
-                onClick={() => { try { sessionStorage.setItem("tmz:sessions-entry", "challenge"); } catch { /* ignore */ } navigate("sessions"); }}
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.99 }}
-                aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-                className="group flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
-              >
-                <img
-                  src={challenge3dIcon}
-                  alt=""
-                  width={816}
-                  height={816}
-                  loading="lazy"
-                  className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
-                />
-                <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-sm font-black leading-tight tracking-tight sm:text-2xl">
-                    {isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-                  </span>
-                  <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
-                    {isRTL
-                      ? "حل أسئلة التحدي أسرع من أصحابك وادخل الترتيب"
-                      : "Answer the challenge questions faster than your friends"}
-                  </span>
-                </span>
-                <ArrowRight
-                  className={`hidden h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:translate-x-1 sm:block ${isRTL ? "rotate-180" : ""}`}
-                  aria-hidden="true"
-                />
-              </motion.button>
+          <HomeHighlights
+            language={language}
+            onOpenChallenge={() => {
+              try { sessionStorage.setItem("tmz:sessions-entry", "challenge"); } catch { /* ignore */ }
+              navigate("sessions");
+            }}
+          />
 
-              <motion.a
-                href="https://www.instagram.com/houdini_st0re/"
-                target="_blank"
-                rel="noopener noreferrer"
-                dir="ltr"
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.99 }}
-                aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
-                className="group flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
-              >
-                <img
-                  src={houdiniHoodieIcon}
-                  alt=""
-                  width={816}
-                  height={816}
-                  loading="lazy"
-                  className="h-9 w-9 shrink-0 drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-20 sm:w-20"
-                />
-                <span dir={isRTL ? "rtl" : "ltr"} className="min-w-0 flex-1">
-                  <span className="block text-sm font-black leading-tight tracking-tight sm:text-2xl">
-                    {isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
-                  </span>
-                  <span className="mt-0.5 hidden text-sm leading-6 opacity-80 sm:mt-1 sm:block">
-                    {isRTL
-                      ? "هودي تميزك المحدود — اطلبه من صفحة هوديني على إنستغرام"
-                      : "The limited-edition hoodie — order from Houdini on Instagram"}
-                  </span>
-                </span>
-                <Instagram
-                  className="hidden h-5 w-5 shrink-0 opacity-80 transition-transform duration-300 group-hover:scale-110 sm:block"
-                  aria-hidden="true"
-                />
-              </motion.a>
-              <TelegramLinkCard language={language} source="home" variant="home" />
-            </div>
-          </div>
-
-          <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
-            <motion.div
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative min-h-52 overflow-hidden rounded-[1.75rem] border border-primary bg-primary p-6 text-start text-primary-foreground shadow-[0_24px_50px_-28px_hsl(var(--primary)/0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:p-8"
-            >
-              <span className="absolute -end-12 -top-16 h-48 w-48 rounded-full border-[28px] border-white/5" aria-hidden="true" />
-              <div className="absolute end-5 top-5 z-20 flex items-center gap-2 sm:end-7 sm:top-7">
-                <span className="hidden rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85 backdrop-blur sm:inline">{isRTL ? "هدية اليوم" : "Daily gift"}</span>
-                <GiftMcqButton language={language} compact />
-              </div>
+          <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-2.5 sm:gap-3">
+            <div className="home-illustrated-card relative overflow-hidden rounded-[1.4rem] border border-sky-400/25 text-white">
               <button
                 type="button"
                 aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
@@ -1599,30 +1434,33 @@ const Basics = ({
                   void dueMistakesCount().then(setDueMistakes).catch(() => {});
                   setShowRecommendedStudy(true);
                 }}
-                className="relative flex min-h-[160px] w-full flex-col justify-between gap-8 text-start focus-visible:outline-none"
+                className="group grid min-h-[6.75rem] w-full grid-cols-[minmax(0,1fr)_35%] items-center gap-2 rounded-[1.4rem] py-2 pe-14 ps-3 text-start hover:bg-white/5 focus-visible:!outline-offset-[-3px] sm:min-h-32 sm:grid-cols-[minmax(0,1fr)_28%] sm:gap-4 sm:pe-20 sm:ps-5"
               >
-                <span className="grid h-12 w-12 place-items-center self-start rounded-2xl bg-white/12"><BookOpen className="h-6 w-6" aria-hidden="true" /></span>
-                <span className="min-w-0 flex-1 pe-4 sm:pe-24">
-                  <span className="block text-2xl font-bold">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
-                  <span className="mt-2 block max-w-md text-sm leading-6 text-primary-foreground/75">
-                    {isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}
+                <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                  <span className="hidden size-8 shrink-0 place-items-center rounded-full border border-sky-300/30 bg-sky-300/20 min-[380px]:grid"><HomeChevron aria-hidden="true" className="size-5" /></span>
+                  <span className="min-w-0">
+                    <span className="block text-[clamp(1rem,5.1vw,1.625rem)] font-black leading-snug tracking-tight">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-sky-100/85 sm:text-sm">{isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}</span>
                   </span>
                 </span>
-                <span className="inline-flex items-center gap-2 text-sm font-bold">{isRTL ? "ابدأ الآن" : "Begin now"}<ArrowRight className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} /></span>
+                <img src={studyBookArt} alt="" width={384} height={192} className="mx-auto max-h-24 w-full max-w-44 object-contain drop-shadow-[0_10px_12px_rgba(0,0,0,0.42)] motion-safe:transition-transform motion-safe:group-hover:scale-105" />
               </button>
-            </motion.div>
+              <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-sky-300/30 [&>button]:bg-sky-300/20 [&>button]:bg-none [&>button]:text-sky-100 [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
+            </div>
 
-            <div className="grid gap-2 rounded-[1.75rem] border border-[var(--tmz-line)] bg-card p-2 shadow-sm">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
               {[
-                { key: "malazam", Icon: BookMarked, title: isRTL ? "بنك الملازم" : "Al Malazam", copy: isRTL ? "اقرأ واحفظ ملفات PDF" : "Read and save PDF booklets", action: () => navigate("malazam"), surface: "border-orange-200 bg-orange-50 hover:bg-orange-100/80", icon: "bg-orange-600 text-white" },
-                { key: "subjectsHub", Icon: Layers, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub"), surface: "border-sky-200 bg-sky-50 hover:bg-sky-100/80", icon: "bg-sky-600 text-white" },
-                { key: "mistakes", Icon: AlertTriangle, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${dueMistakes} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes"), surface: "border-amber-200 bg-amber-50 hover:bg-amber-100/80", icon: "bg-amber-400 text-amber-950" },
-                { key: "more", Icon: Search, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true), surface: "border-violet-200 bg-violet-50 hover:bg-violet-100/80", icon: "bg-violet-600 text-white" },
-              ].map(({ key, Icon, title, copy, action, surface, icon }) => (
-                <button key={key} type="button" aria-label={title} onClick={action} className={`group flex min-h-[66px] w-full items-center gap-3 rounded-2xl border px-3 text-start transition-colors ${surface}`}>
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-sm ${icon}`}><Icon className="h-4 w-4" /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{title}</span><span className="mt-0.5 block text-xs text-[var(--tmz-muted)]">{copy}</span></span>
-                  <ArrowRight className={`h-4 w-4 text-[var(--tmz-muted)] ${isRTL ? "rotate-180" : ""}`} />
+                { key: "malazam", Icon: Layers, title: isRTL ? "بنك الملازم" : "Al Malazam", copy: isRTL ? "اقرأ واحفظ ملفات PDF" : "Read and save PDF booklets", action: () => navigate("malazam") },
+                { key: "subjectsHub", Icon: FlaskConical, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub") },
+                { key: "mistakes", Icon: RefreshCw, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${homeNumber(dueMistakes)} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
+                { key: "more", Icon: Grid2X2, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
+              ].map(({ key, Icon, title, copy, action }) => (
+                <button key={key} type="button" aria-label={title} onClick={action} className="flex min-h-[3.6rem] min-w-0 items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-2 text-start text-card-foreground shadow-sm transition-colors hover:bg-accent/45 sm:min-h-16 sm:gap-3 sm:px-3">
+                  <span className={HOME_ICON_TILE}><Icon aria-hidden="true" className="size-[1.1rem]" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-black leading-snug sm:text-base">{title}</span>
+                    <span className={`mt-0.5 text-[11px] text-muted-foreground sm:text-xs ${key === "mistakes" && dueMistakes > 0 ? "block" : "hidden lg:block"}`}>{copy}</span>
+                  </span>
                 </button>
               ))}
             </div>
