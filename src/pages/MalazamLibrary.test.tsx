@@ -28,6 +28,7 @@ vi.mock("@/components/MalzamaReader", () => ({ default: ({ name, initialPage }: 
 const book = {
   id: "12345678-1234-4123-8123-123456789abc", subject: "physics", topic: "الفصل الأول",
   name: "ملزمة تجريبية", cover_path: "physics/cover.png", is_published: true, sort_order: 0,
+  library_section: "malazam",
   created_at: "2026-11-07T00:00:00Z",
 };
 
@@ -156,6 +157,14 @@ describe("Malazam library loading", () => {
     render(<MalazamLibrary />);
     expect(await screen.findByText("ماكو ملازم منشورة بهذا القسم حالياً")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows the marked-books section empty until an admin uploads books", async () => {
+    mocks.result.mockResolvedValue({ data: [], error: null });
+    render(<MalazamLibrary />);
+    fireEvent.click(await screen.findByRole("tab", { name: /الكتب المؤشّرة بتميّزك/ }));
+    expect(await screen.findByText("ماكو كتب مؤشّرة مضافة حالياً")).toBeInTheDocument();
+    expect(screen.getByText(/راح تظهر الكتب هنا من ترفعها الإدارة/)).toBeInTheDocument();
   });
 
   it("keeps missing detail links distinct from empty subject catalogs", async () => {
