@@ -3542,39 +3542,104 @@ export type Database = {
           },
         ]
       }
+      study_challenge_stakes: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          points: number
+          redemption_id: string | null
+          settled_at: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          points: number
+          redemption_id?: string | null
+          settled_at?: string | null
+          state?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          points?: number
+          redemption_id?: string | null
+          settled_at?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_challenge_stakes_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "study_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_challenges: {
         Row: {
+          challenge_type: string
           created_at: string
           creator_id: string
+          duration_days: number
           ends_at: string
           id: string
           is_public: boolean
+          lobby_expires_at: string | null
+          public_period_key: string | null
+          public_series: string | null
+          room_state: string
+          settled_at: string | null
           starts_at: string
           status: string
           title: string
           updated_at: string
+          wager_points: number | null
+          winner_id: string | null
         }
         Insert: {
+          challenge_type?: string
           created_at?: string
           creator_id: string
+          duration_days?: number
           ends_at: string
           id?: string
           is_public?: boolean
+          lobby_expires_at?: string | null
+          public_period_key?: string | null
+          public_series?: string | null
+          room_state?: string
+          settled_at?: string | null
           starts_at?: string
           status?: string
           title: string
           updated_at?: string
+          wager_points?: number | null
+          winner_id?: string | null
         }
         Update: {
+          challenge_type?: string
           created_at?: string
           creator_id?: string
+          duration_days?: number
           ends_at?: string
           id?: string
           is_public?: boolean
+          lobby_expires_at?: string | null
+          public_period_key?: string | null
+          public_series?: string | null
+          room_state?: string
+          settled_at?: string | null
           starts_at?: string
           status?: string
           title?: string
           updated_at?: string
+          wager_points?: number | null
+          winner_id?: string | null
         }
         Relationships: []
       }
@@ -4818,6 +4883,25 @@ export type Database = {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
         Returns: string
       }
+      create_study_challenge_v2: {
+        Args: {
+          _challenge_type?: string
+          _duration_days: number
+          _invitee_ids: string[]
+          _title: string
+        }
+        Returns: string
+      }
+      create_study_challenge_v3: {
+        Args: {
+          _challenge_type?: string
+          _duration_days: number
+          _invitee_ids: string[]
+          _title: string
+          _wager_points?: number
+        }
+        Returns: string
+      }
       create_study_royale: {
         Args: {
           _chapter: number
@@ -4828,6 +4912,7 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_tamayzak_public_challenges: { Args: never; Returns: undefined }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       french_flashcard_access: { Args: never; Returns: Json }
       get_battle_channel_config: { Args: never; Returns: Json }
@@ -4885,6 +4970,10 @@ export type Database = {
       is_literature_supervisor: { Args: never; Returns: boolean }
       is_study_room_member: { Args: { _room: string }; Returns: boolean }
       is_study_room_owner: { Args: { _room: string }; Returns: boolean }
+      leave_all_or_nothing_challenge: {
+        Args: { _challenge_id: string }
+        Returns: undefined
+      }
       list_literature_mcq_sets: { Args: never; Returns: Json }
       list_subject_chapters: {
         Args: { _subject: string }
@@ -4945,9 +5034,17 @@ export type Database = {
         Returns: Json
       }
       redeem_referral: { Args: { _code: string }; Returns: Json }
+      refund_all_or_nothing_stake: {
+        Args: { _challenge_id: string; _user_id: string }
+        Returns: undefined
+      }
       register_push_token: {
         Args: { _platform?: string; _token: string; _user_agent?: string }
         Returns: undefined
+      }
+      reserve_all_or_nothing_stake: {
+        Args: { _challenge_id: string; _points: number; _user_id: string }
+        Returns: number
       }
       resolve_mistake: {
         Args: { _correct: boolean; _id: string }
@@ -4994,8 +5091,20 @@ export type Database = {
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
+      start_all_or_nothing_challenge: {
+        Args: { _challenge_id: string }
+        Returns: Json
+      }
       start_nadawi_admin_test: { Args: { _restart?: boolean }; Returns: Json }
       start_nadawi_contest: { Args: never; Returns: Json }
+      study_challenge_totals: {
+        Args: { _challenge_id: string }
+        Returns: {
+          total_seconds: number
+          user_id: string
+        }[]
+      }
       study_flight_inbox_internal: { Args: { _uid: string }; Returns: Json }
       study_flight_periods_internal: {
         Args: { _destination: string; _uid: string }

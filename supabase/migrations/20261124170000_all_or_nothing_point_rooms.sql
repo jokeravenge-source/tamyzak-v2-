@@ -189,7 +189,7 @@ BEGIN
   IF NOT _is_all_or_nothing AND cardinality(_clean_invitees) < 1 THEN
     RAISE EXCEPTION 'Invite at least one friend';
   END IF;
-  IF cardinality(_clean_invitees) > CASE WHEN _is_all_or_nothing THEN 9 ELSE 20 END THEN
+  IF cardinality(_clean_invitees) > (CASE WHEN _is_all_or_nothing THEN 9 ELSE 20 END) THEN
     RAISE EXCEPTION 'This challenge has too many invited students';
   END IF;
 
@@ -604,17 +604,9 @@ GRANT EXECUTE ON FUNCTION public.cancel_study_challenge(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_study_challenges() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.settle_due_all_or_nothing_challenges() TO service_role;
 
-DO $$
-DECLARE _job_id bigint;
-BEGIN
-  FOR _job_id IN SELECT jobid FROM cron.job WHERE jobname = 'settle-all-or-nothing-challenges'
-  LOOP
-    PERFORM cron.unschedule(_job_id);
-  END LOOP;
-END $$;
-
+-- cron.schedule upserts by job name, so no unschedule lookup is needed.
 SELECT cron.schedule(
   'settle-all-or-nothing-challenges',
-  '*/5 * * * *',
+  '15 * * * *',
   'SELECT public.settle_due_all_or_nothing_challenges();'
 );

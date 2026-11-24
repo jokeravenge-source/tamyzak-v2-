@@ -241,15 +241,7 @@ COMMENT ON FUNCTION public.ensure_tamayzak_public_challenges() IS
 
 SELECT public.ensure_tamayzak_public_challenges();
 
-DO $$
-DECLARE _job_id bigint;
-BEGIN
-  FOR _job_id IN SELECT jobid FROM cron.job WHERE jobname = 'tamayzak-public-study-challenges'
-  LOOP
-    PERFORM cron.unschedule(_job_id);
-  END LOOP;
-END $$;
-
+-- cron.schedule upserts by job name, so no unschedule lookup is needed.
 SELECT cron.schedule(
   'tamayzak-public-study-challenges',
   '5 * * * *',

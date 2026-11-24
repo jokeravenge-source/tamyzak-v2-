@@ -379,6 +379,20 @@
       "when": 1795484024394,
       "tag": "0053_physics_ch5_arabic_mcq_bank_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795517042046,
+      "tag": "0054_public_study_challenges_and_all_or_nothing",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795517303441,
+      "tag": "0055_all_or_nothing_point_rooms",
+      "breakpoints": true
     }
   ]
 }
