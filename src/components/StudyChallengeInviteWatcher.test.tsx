@@ -57,4 +57,14 @@ describe("StudyChallengeInviteWatcher", () => {
     await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith("respond_study_challenge", { _challenge_id: "challenge-1", _accept: false }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
+
+  it("shows the exact points that will be reserved for an All or Nothing invite", async () => {
+    backend.rpc.mockImplementation(async (name: string) => {
+      if (name === "get_my_study_challenges") return { data: [{ ...invite, challengeType: "all_or_nothing", roomState: "lobby", wagerPoints: 400 }], error: null };
+      return { data: null, error: null };
+    });
+    render(<StudyChallengeInviteWatcher language="en" />);
+    expect(await screen.findByText("Stake reserved when you accept")).toBeTruthy();
+    expect(screen.getByText("400 points")).toBeTruthy();
+  });
 });

@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceRoleKey);
     const { data: challenge, error: challengeError } = await admin.from("study_challenges")
-      .select("id,title,creator_id,ends_at,status,challenge_type").eq("id", challengeId).maybeSingle();
+      .select("id,title,creator_id,ends_at,status,challenge_type,wager_points,room_state").eq("id", challengeId).maybeSingle();
     if (challengeError) return json({ error: challengeError.message }, 500);
     if (!challenge || challenge.creator_id !== auth.user.id) return json({ error: "Challenge not found" }, 404);
     if (challenge.status !== "active" || new Date(challenge.ends_at).getTime() <= Date.now()) return json({ error: "Challenge is not active" }, 409);
@@ -51,6 +51,9 @@ Deno.serve(async (req) => {
 
     const creatorName = String(creator?.display_name ?? "A friend").slice(0, 80);
     const challengeTitle = String(challenge.title).slice(0, 80);
+    const stakeLine = challenge.challenge_type === "all_or_nothing"
+      ? ` Accepting reserves ${Number(challenge.wager_points) || 0} points. | القبول يحجز ${Number(challenge.wager_points) || 0} نقطة من رصيدك.`
+      : "";
     let pushOk = false;
     let pushResult: Record<string, unknown> = {};
     try {
@@ -61,7 +64,7 @@ Deno.serve(async (req) => {
           title: challenge.challenge_type === "all_or_nothing"
             ? "All or Nothing 🔥 | تحدي الكل أو لا شيء"
             : "New study challenge ⚔️ | تحدي دراسة جديد",
-          body: `${creatorName} invited you to “${challengeTitle}”. Open Tamayzak to accept or decline. | ${creatorName} دعاك لتحدي «${challengeTitle}». افتح تميزك للقبول أو الرفض.`,
+          body: `${creatorName} invited you to “${challengeTitle}”.${stakeLine} Open Tamayzak to accept or decline. | ${creatorName} دعاك لتحدي «${challengeTitle}». افتح تميزك للقبول أو الرفض.`,
           link: "/?menu=sessions",
           target_user_ids: inviteeIds,
           message_id: `study-challenge-${challengeId}`,
@@ -93,7 +96,7 @@ Deno.serve(async (req) => {
         const safeCreator = escapeHtml(creatorName);
         const safeTitle = escapeHtml(challengeTitle);
         const modeLine = challenge.challenge_type === "all_or_nothing"
-          ? "\n🔥 <b>All or Nothing | الكل أو لا شيء</b>"
+          ? `\n🔥 <b>All or Nothing | الكل أو لا شيء</b>\n🪙 ${Number(challenge.wager_points) || 0} points will be reserved when you accept.\nراح تنحجز ${Number(challenge.wager_points) || 0} نقطة من رصيدك عند القبول.`
           : "";
         const message = `⚔️ <b>New Tamayzak study challenge</b>\n<b>تحدي دراسة جديد من تميزك</b>${modeLine}\n\n${safeCreator} invited you to “${safeTitle}”.\n${safeCreator} دعاك لتحدي «${safeTitle}».\n\nOpen Tamayzak to accept or decline.\nافتح تميزك حتى تقبل أو ترفض الدعوة.`;
 

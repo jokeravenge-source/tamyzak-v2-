@@ -13,6 +13,7 @@ const COPY = {
     eyebrow: "New friend challenge", title: "invited you to study",
     description: "Your saved Sessions study time will count toward this challenge.",
     allOrNothing: "All or Nothing",
+    stake: "Stake reserved when you accept", points: "points",
     duration: "Time remaining", participants: "Invited students",
     accept: "Accept challenge", decline: "Decline", accepted: "Challenge accepted",
     declined: "Invitation declined", failed: "Could not respond to this invitation",
@@ -21,6 +22,7 @@ const COPY = {
     eyebrow: "تحدي أصدقاء جديد", title: "دعاك لتحدي دراسة",
     description: "وقت دراستك المحفوظ داخل الجلسات راح ينحسب بهذا التحدي.",
     allOrNothing: "الكل أو لا شيء",
+    stake: "راح تنحجز من رصيدك عند القبول", points: "نقطة",
     duration: "الوقت المتبقي", participants: "الطلاب المدعوون",
     accept: "قبول التحدي", decline: "رفض", accepted: "تم قبول التحدي",
     declined: "تم رفض الدعوة", failed: "تعذّر الرد على الدعوة",
@@ -104,6 +106,7 @@ export default function StudyChallengeInviteWatcher({ language }: { language: Ap
 
         <div className="p-6 sm:p-7">
           <p className="text-sm leading-7 text-muted-foreground">{t.description}</p>
+          {invite.challengeType === "all_or_nothing" && <div className="mt-4 flex items-center justify-between rounded-2xl border border-rose-500/25 bg-rose-500/10 p-3"><span className="text-xs font-bold text-rose-700 dark:text-rose-300">{t.stake}</span><span className="font-black text-rose-700 dark:text-rose-300">{invite.wagerPoints ?? 0} {t.points}</span></div>}
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-border bg-secondary/45 p-3">
               <Clock3 className="h-4 w-4 text-violet-600" />

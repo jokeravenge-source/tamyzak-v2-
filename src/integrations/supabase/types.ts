@@ -3542,48 +3542,104 @@ export type Database = {
           },
         ]
       }
+      study_challenge_stakes: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          points: number
+          redemption_id: string | null
+          settled_at: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          points: number
+          redemption_id?: string | null
+          settled_at?: string | null
+          state?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          points?: number
+          redemption_id?: string | null
+          settled_at?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_challenge_stakes_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "study_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_challenges: {
         Row: {
           challenge_type: string
           created_at: string
           creator_id: string
+          duration_days: number
           ends_at: string
           id: string
           is_public: boolean
+          lobby_expires_at: string | null
           public_period_key: string | null
           public_series: string | null
+          room_state: string
+          settled_at: string | null
           starts_at: string
           status: string
           title: string
           updated_at: string
+          wager_points: number | null
+          winner_id: string | null
         }
         Insert: {
           challenge_type?: string
           created_at?: string
           creator_id: string
+          duration_days?: number
           ends_at: string
           id?: string
           is_public?: boolean
+          lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          room_state?: string
+          settled_at?: string | null
           starts_at?: string
           status?: string
           title: string
           updated_at?: string
+          wager_points?: number | null
+          winner_id?: string | null
         }
         Update: {
           challenge_type?: string
           created_at?: string
           creator_id?: string
+          duration_days?: number
           ends_at?: string
           id?: string
           is_public?: boolean
+          lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          room_state?: string
+          settled_at?: string | null
           starts_at?: string
           status?: string
           title?: string
           updated_at?: string
+          wager_points?: number | null
+          winner_id?: string | null
         }
         Relationships: []
       }
@@ -4836,6 +4892,16 @@ export type Database = {
         }
         Returns: string
       }
+      create_study_challenge_v3: {
+        Args: {
+          _challenge_type?: string
+          _duration_days: number
+          _invitee_ids: string[]
+          _title: string
+          _wager_points?: number | null
+        }
+        Returns: string
+      }
       create_study_royale: {
         Args: {
           _chapter: number
@@ -4864,6 +4930,10 @@ export type Database = {
       get_literature_mcq_set: { Args: { set_id: string }; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
+      leave_all_or_nothing_challenge: {
+        Args: { _challenge_id: string }
+        Returns: undefined
+      }
       ensure_tamayzak_public_challenges: { Args: never; Returns: undefined }
       get_nadawi_admin_test_state: { Args: never; Returns: Json }
       get_nadawi_contest_leaderboard: {
@@ -4932,6 +5002,11 @@ export type Database = {
       }
       my_referral_stats: { Args: never; Returns: Json }
       points_balance: { Args: never; Returns: number }
+      settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
+      start_all_or_nothing_challenge: {
+        Args: { _challenge_id: string }
+        Returns: Json
+      }
       poll_vote_counts: {
         Args: { _poll_id: string }
         Returns: {

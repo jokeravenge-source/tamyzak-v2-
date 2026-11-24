@@ -22,6 +22,9 @@ describe("study friend challenges", () => {
     expect(challengePhase(challenge, Date.parse("2026-10-30"))).toBe("active");
     expect(challengePhase(challenge, Date.parse("2026-11-02"))).toBe("completed");
     expect(challengePhase({ ...challenge, status: "cancelled" }, Date.parse("2026-10-30"))).toBe("cancelled");
+    expect(challengePhase({ ...challenge, challengeType: "all_or_nothing", roomState: "lobby" }, Date.parse("2026-10-30"))).toBe("lobby");
+    expect(challengePhase({ ...challenge, challengeType: "all_or_nothing", roomState: "lobby", myStatus: "open" }, Date.parse("2026-10-30"))).toBe("open");
+    expect(challengePhase({ ...challenge, challengeType: "all_or_nothing", roomState: "settled" }, Date.parse("2026-10-30"))).toBe("completed");
   });
 
   it("formats study totals and remaining time in both languages", () => {

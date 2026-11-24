@@ -17,11 +17,26 @@ export type StudyChallenge = {
   isPublic?: boolean;
   challengeType?: "standard" | "all_or_nothing";
   publicSeries?: "weekly" | "monthly" | null;
+  roomState?: "lobby" | "running" | "settled" | "cancelled";
+  wagerPoints?: number | null;
+  durationDays?: number;
+  lobbyExpiresAt?: string | null;
+  winnerId?: string | null;
+  settledAt?: string | null;
+  minimumPlayers?: number | null;
+  potPoints?: number | null;
   participants: StudyChallengeParticipant[];
 };
 
 export function challengePhase(challenge: StudyChallenge, now = Date.now()) {
-  if (challenge.status === "cancelled") return "cancelled" as const;
+  if (challenge.status === "cancelled" || challenge.roomState === "cancelled") return "cancelled" as const;
+  if (challenge.roomState === "settled") return "completed" as const;
+  if (challenge.challengeType === "all_or_nothing" && challenge.roomState === "lobby") {
+    if (challenge.lobbyExpiresAt && new Date(challenge.lobbyExpiresAt).getTime() <= now) return "cancelled" as const;
+    if (challenge.myStatus === "open") return "open" as const;
+    if (challenge.myStatus === "pending") return "invited" as const;
+    return "lobby" as const;
+  }
   if (new Date(challenge.endsAt).getTime() <= now) return "completed" as const;
   if (challenge.myStatus === "open") return "open" as const;
   if (challenge.myStatus === "pending") return "invited" as const;
