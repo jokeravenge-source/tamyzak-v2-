@@ -104,6 +104,22 @@ describe("simplified home navigation", () => {
     expect(screen.queryByRole("button", { name: /مسابقة الأستاذ محمد النداوي/ })).not.toBeInTheDocument();
   });
 
+  it.each([
+    ["en", "Open leaderboard, Gold rank", "Leaderboard position #12", /^View study progress/, "My progress and rank"],
+    ["ar", "افتح ترتيب الطلاب، رتبتك ذهبي", "مركزك بالترتيب #١٢", /^عرض تقدّمك/, "تقدمي ورتبتي"],
+  ] as const)("opens the leaderboard from either rank control in %s", async (language, stone, position, points, progressHeading) => {
+    const onNav = vi.fn();
+    await act(async () => { render(<Basics language={language} onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={onNav} />); });
+
+    fireEvent.click(screen.getByRole("button", { name: stone }));
+    expect(onNav).toHaveBeenNthCalledWith(1, "leaderboard");
+    fireEvent.click(screen.getByRole("button", { name: position }));
+    expect(onNav).toHaveBeenNthCalledWith(2, "leaderboard");
+
+    fireEvent.click(screen.getByRole("button", { name: points }));
+    expect(screen.getByRole("heading", { name: progressHeading })).toBeInTheDocument();
+  });
+
   it("places today's actual planner tasks and the three original cards above study actions", async () => {
     const week = getStudyWeek();
     const today = week.find((day) => day.isToday)!;
@@ -119,7 +135,7 @@ describe("simplified home navigation", () => {
     await act(async () => { render(<Basics language="en" onChangeLanguage={vi.fn()} onSelect={onSelect} onNav={vi.fn()} />); });
 
     expect(screen.getByRole("heading", { name: "An extra long signed-in student name" })).toBeInTheDocument();
-    expect(screen.getByLabelText("1840 points")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View study progress, 1,840 points" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Leaderboard position #12" })).toBeInTheDocument();
     const plan = screen.getByRole("region", { name: "Today's plan" });
     expect(within(plan).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "50");

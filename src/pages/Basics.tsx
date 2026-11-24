@@ -1236,18 +1236,28 @@ const Basics = ({
                 title={username || undefined} style={{ "--home-rank-tone": HOME_RANK_NAME_COLOR[currentRank] } as CSSProperties}>
                 {username || (isRTL ? "طالب تميّزك" : "Tamayzak student")}
               </h1>
-              <span className="grid size-5 shrink-0 place-items-center" title={rankLabel} role="img" aria-label={rankLabel}>
+              <button
+                type="button"
+                onClick={() => navigate("leaderboard")}
+                className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-accent"
+                title={rankLabel}
+                aria-label={isRTL ? `افتح ترتيب الطلاب، رتبتك ${rankLabel}` : `Open leaderboard, ${rankLabel} rank`}
+              >
                 <RankStone rank={currentRank} size={19} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} />
-              </span>
+              </button>
             </div>
-            <span className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-cyan-300/55 bg-cyan-100/85 px-1.5 text-xs font-extrabold tabular-nums text-sky-950 dark:border-cyan-600/40 dark:bg-cyan-950 dark:text-cyan-100 sm:px-3"
-              aria-label={isRTL ? `${totalPoints} نقطة` : `${totalPoints} points`}>
-              <bdi>{homeNumber(totalPoints)}</bdi>{isRTL ? "نقطة" : "pts"}
-            </span>
             <button
               type="button"
               id="progress-details-trigger"
               onClick={() => openDetail("progress")}
+              className="inline-flex h-8 !min-h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-cyan-300/55 bg-cyan-100/85 px-1.5 text-xs font-extrabold tabular-nums text-sky-950 hover:bg-cyan-100 dark:border-cyan-600/40 dark:bg-cyan-950 dark:text-cyan-100 dark:hover:bg-cyan-900 sm:px-3"
+              aria-label={isRTL ? `عرض تقدّمك، ${homeNumber(totalPoints)} نقطة` : `View study progress, ${homeNumber(totalPoints)} points`}
+            >
+              <bdi>{homeNumber(totalPoints)}</bdi>{isRTL ? "نقطة" : "pts"}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("leaderboard")}
               aria-label={isRTL ? `مركزك بالترتيب ${boardPosition}` : `Leaderboard position ${boardPosition}`}
               className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-muted/75 px-1.5 text-xs font-extrabold tabular-nums text-foreground transition-colors hover:bg-accent sm:px-3"
             >
