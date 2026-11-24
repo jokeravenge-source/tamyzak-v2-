@@ -1799,6 +1799,7 @@ export type Database = {
           file_path: string
           id: string
           is_published: boolean
+          library_section: string
           name: string
           sort_order: number
           subject: string
@@ -1812,6 +1813,7 @@ export type Database = {
           file_path: string
           id?: string
           is_published?: boolean
+          library_section?: string
           name: string
           sort_order?: number
           subject: string
@@ -1825,6 +1827,7 @@ export type Database = {
           file_path?: string
           id?: string
           is_published?: boolean
+          library_section?: string
           name?: string
           sort_order?: number
           subject?: string

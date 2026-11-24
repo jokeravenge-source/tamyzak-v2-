@@ -1,8 +1,8 @@
 export type SavedMalzama = {
   key: string; owner: string; id: string; name: string; subject: string;
-  topic: string; cover_path: string; savedAt: number; page: number;
+  topic: string; cover_path: string; library_section?: "malazam" | "marked_book"; savedAt: number; page: number;
 };
-export type MalzamaMetadata = Pick<SavedMalzama, "id" | "name" | "subject" | "topic" | "cover_path">;
+export type MalzamaMetadata = Pick<SavedMalzama, "id" | "name" | "subject" | "topic" | "cover_path" | "library_section">;
 const keyFor = (owner: string, id: string) => `${owner}:${id}`;
 
 function openDatabase(): Promise<IDBDatabase> {

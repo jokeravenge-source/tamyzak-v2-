@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookMarked, Copy, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
+import { BookMarked, BookOpen, Copy, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { malzamaUrl } from "@/lib/malazamLinks";
@@ -14,7 +14,10 @@ type Malzama = {
   is_published: boolean;
   sort_order: number;
   created_at: string;
+  library_section: LibrarySection;
 };
+
+type LibrarySection = "malazam" | "marked_book";
 
 const SUBJECTS = [
   ["physics", "الفيزياء"],
@@ -44,6 +47,7 @@ export default function AdminMalazamTab() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [coverName, setCoverName] = useState("");
   const [pdfName, setPdfName] = useState("");
+  const [activeSection, setActiveSection] = useState<LibrarySection>("malazam");
   const [form, setForm] = useState({ subject: "physics", topic: "", name: "", published: true });
 
   const load = useCallback(async () => {
@@ -52,7 +56,7 @@ export default function AdminMalazamTab() {
     try {
       const { data, error } = await supabase
         .from("malazam")
-        .select("id, subject, topic, name, cover_path, file_path, is_published, sort_order, created_at")
+        .select("id, subject, topic, name, cover_path, file_path, is_published, sort_order, created_at, library_section")
         .order("sort_order")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -95,8 +99,8 @@ export default function AdminMalazamTab() {
 
     setSaving(true);
     const key = crypto.randomUUID();
-    const coverPath = `${form.subject}/${key}.${safeExtension(cover, "webp")}`;
-    const filePath = `${form.subject}/${key}.pdf`;
+    const coverPath = `${activeSection}/${form.subject}/${key}.${safeExtension(cover, "webp")}`;
+    const filePath = `${activeSection}/${form.subject}/${key}.pdf`;
     let coverUploaded = false;
     let fileUploaded = false;
     try {
@@ -119,10 +123,11 @@ export default function AdminMalazamTab() {
         cover_path: coverPath,
         file_path: filePath,
         is_published: form.published,
+        library_section: activeSection,
       });
       if (insertError) throw insertError;
 
-      toast.success("تمت إضافة الملزمة");
+      toast.success(activeSection === "marked_book" ? "تمت إضافة الكتاب المؤشّر" : "تمت إضافة الملزمة");
       setForm({ subject: "physics", topic: "", name: "", published: true });
       setCoverName("");
       setPdfName("");
@@ -131,7 +136,7 @@ export default function AdminMalazamTab() {
     } catch (error) {
       if (fileUploaded) await supabase.storage.from("malazam-files").remove([filePath]);
       if (coverUploaded) await supabase.storage.from("malazam-covers").remove([coverPath]);
-      toast.error(error instanceof Error ? error.message : "تعذرت إضافة الملزمة");
+      toast.error(error instanceof Error ? error.message : activeSection === "marked_book" ? "تعذرت إضافة الكتاب المؤشّر" : "تعذرت إضافة الملزمة");
     } finally {
       setSaving(false);
     }
@@ -177,14 +182,29 @@ export default function AdminMalazamTab() {
     }
   };
 
+  const visibleItems = items.filter((item) => item.library_section === activeSection);
+  const isMarkedBooks = activeSection === "marked_book";
+  const itemLabel = isMarkedBooks ? "كتاب مؤشّر" : "ملزمة";
+
   return (
     <section className="space-y-6" dir="rtl">
+      <div className="grid gap-3 sm:grid-cols-2" role="tablist" aria-label="أقسام بنك الملفات">
+        <button type="button" role="tab" aria-selected={activeSection === "malazam"} onClick={() => setActiveSection("malazam")} className={`flex min-h-24 items-center gap-4 rounded-3xl border p-5 text-start transition ${activeSection === "malazam" ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "border-border bg-card hover:border-primary/40"}`}>
+          <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${activeSection === "malazam" ? "bg-white/15" : "bg-primary/10 text-primary"}`}><BookMarked className="size-6" /></span>
+          <span><span className="block text-lg font-black">الملازم</span><span className={`mt-1 block text-sm ${activeSection === "malazam" ? "text-primary-foreground/75" : "text-muted-foreground"}`}>إدارة الملازم الموجودة ورفع ملازم جديدة</span></span>
+        </button>
+        <button type="button" role="tab" aria-selected={activeSection === "marked_book"} onClick={() => setActiveSection("marked_book")} className={`flex min-h-24 items-center gap-4 rounded-3xl border p-5 text-start transition ${activeSection === "marked_book" ? "border-sky-600 bg-sky-700 text-white shadow-lg shadow-sky-700/20" : "border-border bg-card hover:border-sky-500/50"}`}>
+          <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${activeSection === "marked_book" ? "bg-white/15" : "bg-sky-500/10 text-sky-700"}`}><BookOpen className="size-6" /></span>
+          <span><span className="block text-lg font-black">الكتب المؤشّرة بتميّزك</span><span className={`mt-1 block text-sm ${activeSection === "marked_book" ? "text-white/75" : "text-muted-foreground"}`}>ارفع الكتب المؤشّرة لتظهر للطلاب بهذا القسم</span></span>
+        </button>
+      </div>
+
       <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-7">
         <div className="mb-6 flex items-center gap-3">
           <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary"><BookMarked className="size-5" /></span>
           <div>
-            <h2 className="text-xl font-black">إضافة ملزمة</h2>
-            <p className="text-sm text-muted-foreground">حدد المادة والموضوع، ثم ارفع الغلاف وملف PDF.</p>
+            <h2 className="text-xl font-black">إضافة {itemLabel}</h2>
+            <p className="text-sm text-muted-foreground">حدد المادة والموضوع، ثم ارفع الغلاف وملف PDF إلى قسم {isMarkedBooks ? "الكتب المؤشّرة" : "الملازم"}.</p>
           </div>
         </div>
 
@@ -200,15 +220,15 @@ export default function AdminMalazamTab() {
             <input value={form.topic} onChange={(event) => setForm((current) => ({ ...current, topic: event.target.value }))} maxLength={120} placeholder="مثال: الفصول الرابع إلى الثامن" className="min-h-12 w-full rounded-xl border border-border bg-background px-3" />
           </label>
           <label className="space-y-2 text-sm font-bold md:col-span-2">
-            <span>اسم الملزمة</span>
-            <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} maxLength={180} placeholder="مثال: معلمي بالفيزياء — الأستاذ عمار الربيعي" className="min-h-12 w-full rounded-xl border border-border bg-background px-3" />
+            <span>اسم {itemLabel}</span>
+            <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} maxLength={180} placeholder={isMarkedBooks ? "مثال: كتاب الفيزياء المؤشّر بتميّزك" : "مثال: معلمي بالفيزياء — الأستاذ عمار الربيعي"} className="min-h-12 w-full rounded-xl border border-border bg-background px-3" />
           </label>
           <label className="space-y-2 text-sm font-bold">
             <span>صورة الغلاف</span>
             <span className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 text-primary"><Upload className="size-4 shrink-0" /><span className="truncate">{coverName || "اختر صورة"}</span><input name="cover" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setCoverName(event.target.files?.[0]?.name ?? "")} className="sr-only" required /></span>
           </label>
           <label className="space-y-2 text-sm font-bold">
-            <span>ملف الملزمة <span className="font-medium text-muted-foreground">— الحد الأقصى 1 GB</span></span>
+            <span>ملف {itemLabel} <span className="font-medium text-muted-foreground">— الحد الأقصى 1 GB</span></span>
             <span className="flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 text-primary"><FileText className="size-4 shrink-0" /><span className="truncate">{pdfName || "اختر PDF"}</span><input name="pdf" type="file" accept="application/pdf,.pdf" onChange={(event) => setPdfName(event.target.files?.[0]?.name ?? "")} className="sr-only" required /></span>
           </label>
           <label className="flex items-center gap-2 text-sm font-bold md:col-span-2">
@@ -216,15 +236,15 @@ export default function AdminMalazamTab() {
           </label>
           <button type="submit" disabled={saving} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-black text-primary-foreground disabled:opacity-60 md:col-span-2">
             {saving ? <Loader2 className="size-5 animate-spin" /> : <Plus className="size-5" />}
-            {saving ? "جارٍ رفع الملزمة…" : "إضافة الملزمة"}
+            {saving ? `جارٍ رفع ${itemLabel}…` : `إضافة ${itemLabel}`}
           </button>
         </form>
       </div>
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-black">الملازم المضافة</h2>
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">{loading ? "جاري التحميل…" : loadError ? "تعذر التحميل" : `${items.length} ملزمة`}</span>
+          <h2 className="text-xl font-black">{isMarkedBooks ? "الكتب المؤشّرة المضافة" : "الملازم المضافة"}</h2>
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">{loading ? "جاري التحميل…" : loadError ? "تعذر التحميل" : `${visibleItems.length} ${itemLabel}`}</span>
         </div>
         {loading ? (
           <div className="grid min-h-40 place-items-center"><Loader2 className="size-6 animate-spin text-primary" /></div>
@@ -233,11 +253,11 @@ export default function AdminMalazamTab() {
             <p className="font-bold">تعذر تحميل الملازم، ولا يمكن تأكيد أن القائمة فارغة.</p>
             <button type="button" onClick={() => void load()} className="mx-auto mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-primary/30 px-4 font-bold text-primary"><RefreshCw className="size-4" />إعادة المحاولة</button>
           </div>
-        ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">ماكو ملازم مضافة حالياً.</div>
+        ) : visibleItems.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">{isMarkedBooks ? "ماكو كتب مؤشّرة مضافة حالياً. ارفع أول كتاب من النموذج أعلاه." : "ماكو ملازم مضافة حالياً."}</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <article key={item.id} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 <img src={coverUrl(item.cover_path)} alt={`غلاف ${item.name}`} className="aspect-[4/3] w-full bg-secondary object-cover" loading="lazy" />
                 <div className="p-4">

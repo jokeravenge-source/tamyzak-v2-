@@ -15,6 +15,7 @@ import {
 
 const MalzamaReader = lazy(() => import("@/components/MalzamaReader"));
 type FileAction = "open" | "download" | "save";
+type LibrarySection = "malazam" | "marked_book";
 
 type Malzama = {
   id: string;
@@ -25,6 +26,7 @@ type Malzama = {
   is_published: boolean;
   sort_order: number;
   created_at: string;
+  library_section: LibrarySection;
 };
 
 type DownloadGate =
@@ -49,7 +51,9 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
   const requestedCategory = getMalazamSeoCategory(slug);
   const legacyItem = getMalazamSeoItem(slug);
   const activeSubject = requestedCategory?.slug ?? legacyItem?.subject ?? null;
+  const initialSection: LibrarySection = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("section") === "marked-books" ? "marked_book" : "malazam";
   const [items, setItems] = useState<Malzama[]>([]);
+  const [librarySection, setLibrarySection] = useState<LibrarySection>(initialSection);
   const [detailItem, setDetailItem] = useState<Malzama | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -86,17 +90,21 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
   }, []);
   useEffect(() => { if (userId) void refreshSaved(userId); }, [userId, refreshSaved]);
 
+  const isMarkedBooks = librarySection === "marked_book";
+  const catalogTitle = isMarkedBooks
+    ? activeSubject ? `الكتب المؤشّرة بتميّزك — ${subjectName(activeSubject)}` : "الكتب المؤشّرة بتميّزك"
+    : requestedCategory?.title ?? "مكتبة ملازم السادس العلمي";
+  const catalogDescription = isMarkedBooks
+    ? `تصفّح الكتب المدرسية المؤشّرة من تميّزك${activeSubject ? ` لمادة ${subjectName(activeSubject)}` : " لجميع مواد السادس العلمي"}، واقرأها أو حمّلها بحسابك.`
+    : requestedCategory?.description ?? "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، واقرأ الملفات وحمّلها بحساب تميّزك.";
   const title = detailItem
     ? `${detailItem.name} ${subjectName(detailItem.subject)} PDF | تميزك`
     : legacyItem
     ? `${legacyItem.title} PDF | تميزك`
-    : requestedCategory
-      ? `${requestedCategory.title} | تميزك`
-      : "ملازم السادس العلمي 2027 PDF | تميزك";
+    : `${catalogTitle} PDF | تميزك`;
   const description = detailItem
     ? `تحميل ${detailItem.name} ضمن ${subjectName(detailItem.subject)} — ${detailItem.topic} لطلاب السادس العلمي بحساب تميّزك.`
-    : legacyItem?.description ?? requestedCategory?.description ??
-    "تصفح ملازم السادس العلمي 2027 لجميع المواد والأساتذة في العراق، واقرأ الملفات وحمّلها بحساب تميّزك.";
+    : legacyItem?.description ?? catalogDescription;
   const canonicalPath = detailItem ? malzamaPath(detailItem) : dynamicItemId ? pathname : slug ? `/malazam/${slug}/` : "/malazam/";
 
   const load = useCallback(async () => {
@@ -106,12 +114,13 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
       if (dynamicItemId) {
         const { data, error } = await supabase
           .from("malazam")
-          .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
+          .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at, library_section")
           .eq("id", dynamicItemId)
           .eq("is_published", true)
           .maybeSingle();
         if (error) throw error;
         const item = (data ?? null) as Malzama | null;
+        if (item?.library_section) setLibrarySection(item.library_section);
         setDetailItem(item);
         setItems(item ? [item] : []);
         return;
@@ -120,8 +129,9 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
       setDetailItem(null);
       let query = supabase
         .from("malazam")
-        .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at")
+        .select("id, subject, topic, name, cover_path, is_published, sort_order, created_at, library_section")
         .eq("is_published", true)
+        .eq("library_section", librarySection)
         .order("sort_order")
         .order("created_at", { ascending: false });
       if (activeSubject) query = query.eq("subject", activeSubject);
@@ -135,7 +145,7 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
     } finally {
       setLoading(false);
     }
-  }, [activeSubject, dynamicItemId]);
+  }, [activeSubject, dynamicItemId, librarySection]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -204,16 +214,17 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
     }
   };
 
-  const visibleHeading = detailItem?.name ?? legacyItem?.title ?? requestedCategory?.title ?? "مكتبة ملازم السادس العلمي";
+  const visibleHeading = detailItem?.name ?? legacyItem?.title ?? catalogTitle;
   const categoryLinks = useMemo(() => MALAZAM_SEO_CATEGORIES.filter((category) => category.slug !== "revision"), []);
-  const displayedItems = savedOnly ? savedItems.filter((item) => !activeSubject || item.subject === activeSubject) : items;
+  const displayedItems = savedOnly ? savedItems.filter((item) => (item.library_section ?? "malazam") === librarySection && (!activeSubject || item.subject === activeSubject)) : items;
   const actions = (item: MalzamaMetadata) => {
     const saved = savedItems.some((entry) => entry.id === item.id);
+    const markedBook = item.library_section === "marked_book";
     return <div className="mt-5 space-y-2">
       <button type="button" disabled={!!downloadId} onClick={() => void startAction(item, "open")} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 font-bold text-primary disabled:opacity-50"><BookOpen className="size-5" />قراءة داخل تميّزك</button>
       <div className="flex gap-2">
-        <button type="button" disabled={!!downloadId} onClick={() => void startAction(item, "download")} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 font-black text-primary-foreground disabled:opacity-50">{downloadId === item.id ? <Loader2 className="size-5 animate-spin" /> : <Download className="size-5" />}تحميل الملزمة</button>
-        <button type="button" aria-pressed={saved} disabled={!!downloadId} onClick={() => void startAction(item, "save")} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-primary/30 px-3 font-bold text-primary disabled:opacity-50"><Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />{saved ? "إزالة الحفظ" : "حفظ الملزمة"}</button>
+        <button type="button" disabled={!!downloadId} onClick={() => void startAction(item, "download")} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 font-black text-primary-foreground disabled:opacity-50">{downloadId === item.id ? <Loader2 className="size-5 animate-spin" /> : <Download className="size-5" />}{markedBook ? "تحميل الكتاب" : "تحميل الملزمة"}</button>
+        <button type="button" aria-pressed={saved} disabled={!!downloadId} onClick={() => void startAction(item, "save")} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-primary/30 px-3 font-bold text-primary disabled:opacity-50"><Bookmark className={`size-5 ${saved ? "fill-current" : ""}`} />{saved ? "إزالة الحفظ" : markedBook ? "حفظ الكتاب" : "حفظ الملزمة"}</button>
       </div>
     </div>;
   };
@@ -257,9 +268,20 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
           </div>
         </header>
 
+        {!dynamicItemId && <div className="mt-7 grid gap-3 sm:grid-cols-2" role="tablist" aria-label="أقسام بنك تميّزك">
+          <button type="button" role="tab" aria-selected={librarySection === "malazam"} onClick={() => { setLibrarySection("malazam"); setSavedOnly(false); }} className={`flex min-h-24 items-center gap-4 rounded-3xl border p-5 text-start transition ${librarySection === "malazam" ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "border-border bg-card hover:border-primary/40"}`}>
+            <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${librarySection === "malazam" ? "bg-white/15" : "bg-primary/10 text-primary"}`}><BookMarked className="size-6" /></span>
+            <span><span className="block text-lg font-black">الملازم</span><span className={`mt-1 block text-sm ${librarySection === "malazam" ? "text-primary-foreground/75" : "text-muted-foreground"}`}>جميع الملازم المرفوعة حالياً</span></span>
+          </button>
+          <button type="button" role="tab" aria-selected={librarySection === "marked_book"} onClick={() => { setLibrarySection("marked_book"); setSavedOnly(false); }} className={`flex min-h-24 items-center gap-4 rounded-3xl border p-5 text-start transition ${librarySection === "marked_book" ? "border-sky-600 bg-sky-700 text-white shadow-lg shadow-sky-700/20" : "border-border bg-card hover:border-sky-500/50"}`}>
+            <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${librarySection === "marked_book" ? "bg-white/15" : "bg-sky-500/10 text-sky-700"}`}><BookOpen className="size-6" /></span>
+            <span><span className="block text-lg font-black">الكتب المؤشّرة بتميّزك</span><span className={`mt-1 block text-sm ${librarySection === "marked_book" ? "text-white/75" : "text-muted-foreground"}`}>كتب مؤشّرة وجاهزة للدراسة</span></span>
+          </button>
+        </div>}
+
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {!dynamicItemId && <>
-            <button aria-pressed={!savedOnly} onClick={() => setSavedOnly(false)} className={`min-h-11 rounded-xl border px-4 font-bold ${!savedOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>كل الملازم</button>
+            <button aria-pressed={!savedOnly} onClick={() => setSavedOnly(false)} className={`min-h-11 rounded-xl border px-4 font-bold ${!savedOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}>{isMarkedBooks ? "كل الكتب المؤشّرة" : "كل الملازم"}</button>
             <button aria-pressed={savedOnly} onClick={() => setSavedOnly(true)} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 font-bold ${savedOnly ? "bg-primary text-primary-foreground" : "bg-card"}`}><Bookmark className="size-4" />المحفوظة ({savedItems.length})</button>
           </>}
           <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border bg-card px-4 font-bold"><FolderOpen className="size-4" />فتح PDF من جهازي
@@ -275,9 +297,9 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
         {actionError && <p role="alert" className="mt-4 rounded-xl bg-destructive/10 p-4 text-destructive">{actionError}</p>}
 
         {!dynamicItemId && <nav className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label="مواد الملازم">
-          <a href="/malazam/" className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${!activeSubject ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>الكل</a>
+          <a href={isMarkedBooks ? "/malazam/?section=marked-books" : "/malazam/"} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${!activeSubject ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}>الكل</a>
           {categoryLinks.map((category) => (
-            <a key={category.slug} href={`/malazam/${category.slug}/`} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${activeSubject === category.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}>{category.name}</a>
+            <a key={category.slug} href={`/malazam/${category.slug}/${isMarkedBooks ? "?section=marked-books" : ""}`} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold ${activeSubject === category.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`}>{category.name}</a>
           ))}
         </nav>}
 
@@ -305,18 +327,18 @@ export default function MalazamLibrary({ onBack }: { onBack?: () => void } = {})
           ) : displayedItems.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
               <FileText className="mx-auto size-10 text-muted-foreground" />
-              <h2 className="mt-4 text-xl font-black">{savedOnly ? "ما عندك ملازم محفوظة بهذا القسم بعد" : "ماكو ملازم منشورة بهذا القسم حالياً"}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{savedOnly ? "اضغط حفظ الملزمة بجانب زر التحميل حتى ترجع إلها هنا." : "راح تظهر هنا مباشرة من ينشرها الأدمن."}</p>
+              <h2 className="mt-4 text-xl font-black">{savedOnly ? (isMarkedBooks ? "ما عندك كتب مؤشّرة محفوظة بهذا القسم بعد" : "ما عندك ملازم محفوظة بهذا القسم بعد") : (isMarkedBooks ? "ماكو كتب مؤشّرة مضافة حالياً" : "ماكو ملازم منشورة بهذا القسم حالياً")}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{savedOnly ? (isMarkedBooks ? "اضغط حفظ الكتاب حتى ترجع إله هنا." : "اضغط حفظ الملزمة بجانب زر التحميل حتى ترجع إلها هنا.") : (isMarkedBooks ? "هذا القسم فارغ حالياً، وراح تظهر الكتب هنا من ترفعها الإدارة." : "راح تظهر هنا مباشرة من ينشرها الأدمن.")}</p>
             </div>
           ) : detailItem ? (
             <article className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg">
               <div className="grid md:grid-cols-[minmax(280px,420px)_1fr]">
                 <img src={coverUrl(detailItem.cover_path)} alt={`غلاف ${detailItem.name}`} className="h-full min-h-80 w-full bg-secondary object-cover" />
                 <div className="flex flex-col justify-center p-6 md:p-10">
-                  <a href={`/malazam/${detailItem.subject}/`} className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{subjectName(detailItem.subject)}</a>
+                  <a href={`/malazam/${detailItem.subject}/${detailItem.library_section === "marked_book" ? "?section=marked-books" : ""}`} className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{subjectName(detailItem.subject)}</a>
                   <p className="mt-5 text-sm font-black text-primary">{detailItem.topic}</p>
                   <h2 className="mt-2 text-3xl font-black leading-tight md:text-4xl">{detailItem.name}</h2>
-                  <p className="mt-4 leading-8 text-muted-foreground">ملزمة دراسية لطلاب السادس العلمي. سجّل دخولك بحساب تميّزك لقراءة الملف وتحميله وحفظه.</p>
+                  <p className="mt-4 leading-8 text-muted-foreground">{detailItem.library_section === "marked_book" ? "كتاب مؤشّر من تميّزك لطلاب السادس العلمي." : "ملزمة دراسية لطلاب السادس العلمي."} سجّل دخولك بحساب تميّزك لقراءة الملف وتحميله وحفظه.</p>
                   {actions(detailItem)}
                 </div>
               </div>
