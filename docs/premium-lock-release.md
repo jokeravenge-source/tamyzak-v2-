@@ -2,10 +2,17 @@
 
 Premium contact actions navigate to `https://www.instagram.com/s_o_v_e0/`. Opening Instagram does
 not grant access: activation uses the existing admin-managed live subscription.
-Existing valid memberships, including previously redeemed memberships, remain
-valid. New point redemption is no longer offered on the activation screen.
+Students can redeem 1,000 available points for 72 hours of Premium on the Premium
+page or a locked tool. Each redemption starts when the current entitlement ends
+or immediately if Premium is inactive. Existing memberships keep their deadlines.
 Daily AI usage caps are removed; this does not grant non-members access to
 Premium tools. Short-term request guards, provider limits, and reward rules stay.
+
+## Points redemption release
+
+Apply `supabase/migrations/20261124210000_premium_points_pass.sql` before publishing
+the frontend. Verify 999 available points cannot be spent, 1,000 points activate
+Premium, and a second redemption extends a timed membership by another 72 hours.
 
 ## Instagram contact and channel-requirement removal
 

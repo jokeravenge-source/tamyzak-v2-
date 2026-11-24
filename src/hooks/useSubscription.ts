@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { hasActivePremiumSubscription, PREMIUM_ENVIRONMENT, PREMIUM_PROMO_ENDS_AT } from "@/lib/premium";
+import { hasActivePremiumSubscription, PREMIUM_ACCESS_CHANGED_EVENT, PREMIUM_ENVIRONMENT, PREMIUM_PROMO_ENDS_AT } from "@/lib/premium";
 
 export type SubscriptionRow = {
   id: string;
@@ -74,20 +74,19 @@ export function useSubscription() {
         void fetchSub(uid);
       }
     };
-    const onFocus = () => {
-      if (!uid || document.hidden) return;
-      setNow(Date.now());
-      if (Date.now() - lastFetch < 30000) return;
+    const refresh = () => {
+      if (!uid) return;
       lastFetch = Date.now();
       void fetchSub(uid);
     };
+    const onFocus = () => {
+      if (!uid || document.hidden) return;
+      setNow(Date.now());
+      if (Date.now() - lastFetch >= 30000) refresh();
+    };
     const promoRemaining = PREMIUM_PROMO_ENDS_AT - Date.now();
     const promoTimer = promoRemaining > 0
-      ? window.setTimeout(() => {
-          if (!uid) return;
-          lastFetch = Date.now();
-          void fetchSub(uid);
-        }, Math.min(promoRemaining + 250, 2_147_483_647))
+      ? window.setTimeout(refresh, Math.min(promoRemaining + 250, 2_147_483_647))
       : null;
     // A root-level gate stays mounted across sign-in and sign-out.
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -96,6 +95,7 @@ export function useSubscription() {
       if (!session) setLoading(false);
     });
     window.addEventListener("focus", onFocus);
+    window.addEventListener(PREMIUM_ACCESS_CHANGED_EVENT, refresh);
     document.addEventListener("visibilitychange", onFocus);
     (async () => {
       const version = authVersion;
@@ -114,6 +114,7 @@ export function useSubscription() {
       ++requestVersion;
       authListener.subscription.unsubscribe();
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener(PREMIUM_ACCESS_CHANGED_EVENT, refresh);
       document.removeEventListener("visibilitychange", onFocus);
       if (promoTimer !== null) window.clearTimeout(promoTimer);
     };

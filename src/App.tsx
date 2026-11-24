@@ -893,7 +893,7 @@ const StudentApp = () => {
     setEnglishCategory(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
   };
-  const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const { isPremium, loading: subscriptionLoading, userId } = useSubscription();
   const chooseMenu = useCallback((choice: MenuChoice) => {
     if (choice !== "mcqBank") setPracticeReturnTarget(null);
     logFirstFeatureTouch(choice);
@@ -1149,7 +1149,7 @@ const StudentApp = () => {
       ) : ["mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "") ? (
         <div className="h-[calc(100dvh-var(--nav-safe,7rem))]"><MutamayizChat embedded language={language} onBack={resetMenu} onOpenTool={(key) => { if (isGuideToolKey(key)) chooseMenu(key as MenuChoice); }} /></div>
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (
-        <PremiumToolLock language={language} loading={subscriptionLoading} onBack={resetMenu} />
+        <PremiumToolLock language={language} loading={subscriptionLoading} userId={userId} onBack={resetMenu} />
       ) : !menuChoice || menuChoice === "basics" ? (
         <Basics
           language={language}

@@ -22,8 +22,8 @@ const PointsExplainer = ({ language }: { language: "en" | "ar" }) => {
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           {isAr
-            ? "كل نشاط دراسي تكمله يمنحك نقاطاً تُضاف إلى رصيدك الدائم. النقاط لا تنقص أبداً، وكلما ارتفع رصيدك فُتحت لك أدوات جديدة تلقائياً."
-            : "Every study action you complete grants points that add to your lifetime balance. Points never go down, and as your balance grows new tools unlock automatically."}
+            ? "كل نشاط دراسي تكمله يضيف نقاط إلى مجموع نقاطك، وكلما ارتفع المجموع تنفتح لك أدوات جديدة تلقائياً. استبدال النقاط ببريميوم يخصم من رصيدك المتاح ويظل مجموع نقاطك محفوظ."
+            : "Study activities add to your lifetime points total, which unlocks tools as it grows. Redeeming Premium uses your available points and keeps your lifetime total intact."}
         </p>
       </div>
 

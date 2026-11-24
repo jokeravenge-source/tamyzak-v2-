@@ -28,6 +28,12 @@ describe("Premium lock screen", () => {
     expect(screen.getByLabelText("Campaign code")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Unlock all tools" })).toBeInTheDocument();
   });
+  it("offers points redemption directly from a locked tool", async () => {
+    rpc.mockResolvedValue({ data: 1000, error: null });
+    render(<PremiumToolLock language="en" loading={false} userId="student" onBack={vi.fn()} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Redeem 1,000 points" })).toBeEnabled());
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("points_balance");
+  });
   it("redeems the Arabic campaign word and refreshes access", async () => {
     rpc.mockResolvedValue({ data: { ok: true, expires_at: "2026-11-08T07:00:00Z" }, error: null });
     const onUnlocked = vi.fn();

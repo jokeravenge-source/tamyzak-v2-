@@ -1,6 +1,7 @@
 export const PREMIUM_INSTAGRAM_URL = "https://www.instagram.com/s_o_v_e0/";
 // Manual activations are live subscriptions, independent of Paddle test mode.
 export const PREMIUM_ENVIRONMENT = "live";
+export const PREMIUM_ACCESS_CHANGED_EVENT = "app:premium-access-changed";
 
 // One policy for home cards, subject tools, and persisted/deep-linked screens.
 // Flashcards, both question banks, Malazam, and everyday study tracking stay free.

@@ -24,7 +24,7 @@ describe("Ibn Al-Baytar campaign activation", () => {
     render(<PremiumPromoCodeForm language="ar" onUnlocked={unlocked} />);
     fireEvent.change(screen.getByLabelText("كلمة الحملة"), { target: { value: "ابن البيطار" } });
     fireEvent.click(screen.getByRole("button", { name: "افتح كل الأدوات" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("لا تبدأ يوماً جديداً");
+    expect(await screen.findByRole("status")).toHaveTextContent("لا تبدأ مدة جديدة");
     expect(unlocked).not.toHaveBeenCalled();
   });
   it("does not claim success when the backend is unavailable", async () => {

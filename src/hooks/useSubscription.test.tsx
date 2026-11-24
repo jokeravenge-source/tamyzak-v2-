@@ -1,5 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PREMIUM_ACCESS_CHANGED_EVENT } from "@/lib/premium";
 import { useSubscription } from "./useSubscription";
 
 const mocks = vi.hoisted(() => ({
@@ -48,6 +49,15 @@ describe("subscription membership", () => {
     const { result } = renderHook(useSubscription);
     await waitFor(() => expect(result.current.isPremium).toBe(true));
     expect(result.current.subscription).toBeNull();
+  });
+  it("checks the new expiry immediately after a points redemption", async () => {
+    const { result } = renderHook(useSubscription);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const deadline = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    mocks.rpc.mockResolvedValue({ data: { is_premium: true, expires_at: deadline }, error: null });
+    act(() => window.dispatchEvent(new Event(PREMIUM_ACCESS_CHANGED_EVENT)));
+    await waitFor(() => expect(result.current.premiumExpiresAt).toBe(deadline));
+    expect(result.current.isPremium).toBe(true);
   });
   it("clears access immediately on sign-out and checks the next user's membership", async () => {
     mocks.order.mockResolvedValueOnce({ data: [row], error: null });

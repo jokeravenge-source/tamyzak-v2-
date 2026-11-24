@@ -6,6 +6,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
+import PremiumPointsRedemption from "@/components/PremiumPointsRedemption";
 import PremiumPromoCodeForm from "@/components/PremiumPromoCodeForm";
 
 const copy = {
@@ -49,7 +50,7 @@ const copy = {
 
 export default function Premium({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
   const t = copy[language];
-  const { isPremium, loading: subLoading, premiumExpiresAt } = useSubscription();
+  const { isPremium, loading: subLoading, premiumExpiresAt, userId } = useSubscription();
 
   useEffect(() => {
     if (subLoading) return;
@@ -86,6 +87,8 @@ export default function Premium({ language, onBack }: { language: AppLanguage; o
           <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">{t.title}</h1>
           <p className="text-muted-foreground">{t.subtitle}</p>
         </div>
+
+        {userId && <div className="mb-5"><PremiumPointsRedemption key={userId} language={language} userId={userId} /></div>}
 
         <motion.div
           whileHover={{ y: -4 }}
