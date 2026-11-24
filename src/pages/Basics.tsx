@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
 import { readOnboarding, weakTopicsFor, topicLabel } from "@/lib/onboarding";
@@ -20,6 +20,7 @@ import { isPremiumTool } from "@/lib/premium";
 import { missionsData, missionsOrder } from "@/data/missions";
 import VisitCounter from "@/components/VisitCounter";
 import { useTodos } from "@/lib/todoTopicProgress";
+import { getStudyWeek, getTodoDay } from "@/lib/todoSchedule";
 import StreakTree from "@/components/StreakTree";
 import ChapterProgressCircles from "@/components/ChapterProgressCircles";
 import { RETURN_TO_PROGRESS_KEY, type TopicPracticeTarget } from "@/lib/topicPracticeQuiz";
@@ -27,7 +28,6 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
-import NadawiContestCard from "@/components/NadawiContestCard";
 import challenge3dIcon from "@/assets/challenge-3d-icon.png";
 import houdiniHoodieIcon from "@/assets/houdini-hoodie-icon.png";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
@@ -515,6 +515,58 @@ const Basics = ({
   const [toolCategory, setToolCategory] = useState("All");
   const [toolQuery, setToolQuery] = useState("");
   const [showAllTools, setShowAllTools] = useState<boolean>(initialShowAllTools);
+  const [highlights, setHighlights] = useState<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (!highlights) return;
+    const wide = window.matchMedia("(min-width: 640px)");
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      if (wide.matches || !highlights.clientWidth) {
+        highlights.style.removeProperty("--highlight-height");
+        return;
+      }
+      const rect = highlights.getBoundingClientRect();
+      const style = getComputedStyle(highlights);
+      const rtl = style.direction === "rtl";
+      const start = rtl ? rect.right - parseFloat(style.paddingRight) : rect.left + parseFloat(style.paddingLeft);
+      let cardHeight = 0;
+      let distance = Infinity;
+      for (const card of highlights.children) {
+        const bounds = card.getBoundingClientRect();
+        const offset = Math.abs((rtl ? bounds.right : bounds.left) - start);
+        if (offset < distance) {
+          cardHeight = bounds.height;
+          distance = offset;
+        }
+      }
+      const height = cardHeight + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      highlights.style.setProperty("--highlight-height", `${Math.ceil(height)}px`);
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(measure); };
+    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    const watchCards = () => {
+      resize?.disconnect();
+      resize?.observe(highlights);
+      for (const card of highlights.children) resize?.observe(card);
+    };
+    const changes = new MutationObserver(() => {
+      watchCards();
+      schedule();
+    });
+    changes.observe(highlights, { childList: true });
+    watchCards();
+    measure();
+    highlights.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      changes.disconnect();
+      resize?.disconnect();
+      highlights.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [highlights]);
   const [showRecommendedStudy, setShowRecommendedStudy] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("study") !== "today") return false;
@@ -617,6 +669,11 @@ const Basics = ({
   const missionsPct = missionsTotal ? Math.min(100, Math.round((missionsDone / missionsTotal) * 100)) : 0;
   const todoDone = todos.filter((todo) => todo.done).length;
   const todoTotal = todos.length;
+  const baghdadToday = getStudyWeek().find((day) => day.isToday)?.key;
+  const planTasks = todos.filter((todo) => getTodoDay(todo.day) === baghdadToday);
+  const planDone = planTasks.filter((todo) => todo.done).length;
+  const nextPlanTask = planTasks.find((todo) => !todo.done);
+  const planProgress = planTasks.length ? Math.round(planDone * 100 / planTasks.length) : 0;
   const heroProgressDone = todoTotal > 0 ? todoDone : missionsDone;
   const heroProgressTotal = todoTotal > 0 ? todoTotal : missionsTotal;
   const heroProgressPct = heroProgressTotal ? Math.min(100, Math.round((heroProgressDone / heroProgressTotal) * 100)) : 0;
@@ -1247,8 +1304,8 @@ const Basics = ({
     <div className="tmz-home min-h-screen w-full text-[var(--tmz-ink)]" dir={isRTL ? "rtl" : "ltr"}>
       {/* Top utility bar */}
       <div className="sticky top-0 z-40 border-b border-[var(--tmz-line)] bg-[var(--tmz-canvas)]">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
+        <div className={`mx-auto flex h-14 max-w-6xl items-center sm:px-6 lg:px-8 ${showAllTools ? "justify-between px-4" : "gap-1 px-2 sm:gap-3"}`}>
+          {showAllTools ? <div className="flex items-center gap-2">
             <img src="/app-icon-192.png" alt="" className="h-8 w-8 rounded-xl" />
             <p className="text-sm font-semibold leading-tight text-[var(--tmz-ink)]">{language === "ar" ? "تميّزك" : "Tamayzak"}</p>
             <button
@@ -1261,14 +1318,41 @@ const Basics = ({
               <span>{language === "ar" ? "خطة اليوم" : "Today's plan"}</span>
               {pendingTodos > 0 && <span className="tabular-nums text-[var(--tmz-muted)]">{pendingTodos}</span>}
             </button>
-          </div>
+          </div> : <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
+            <img src="/app-icon-192.png" alt="" className="h-8 w-8 shrink-0 rounded-xl" />
+            <h1 className="min-w-0 truncate text-sm font-semibold leading-tight" dir="auto"
+              title={username || undefined} style={{ color: rankCardTheme.ink }}>
+              {username || (isRTL ? "طالب تميّزك" : "Tamayzak student")}
+            </h1>
+            <span className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums text-[var(--tmz-ink)]"
+              aria-label={isRTL ? `${totalPoints} نقطة` : `${totalPoints} points`}>
+              <bdi>{totalPoints.toLocaleString(isRTL ? "ar-IQ" : "en")}</bdi> {isRTL ? "نقطة" : "pts"}
+            </span>
+            <button
+              type="button"
+              id="progress-details-trigger"
+              onClick={() => openDetail("progress")}
+              aria-label={isRTL ? `مركزك بالترتيب ${boardRank ? `#${boardRank}` : "—"}` : `Leaderboard position ${boardRank ? `#${boardRank}` : "—"}`}
+              title={rankLabel}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-2xl border px-1.5 text-xs font-bold tabular-nums transition-all hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              style={{
+                background: rankCardTheme.background,
+                borderColor: rankCardTheme.highlight,
+                color: rankCardTheme.ink,
+                boxShadow: `0 14px 30px -22px ${rankCardTheme.shadow}, 0 0 24px -18px ${rankCardTheme.glow}`,
+              }}
+            >
+              <RankStone rank={currentRank} size={20} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} className="shrink-0" />
+              <bdi>{boardRank ? `#${boardRank}` : "—"}</bdi>
+            </button>
+          </div>}
           <button
             onClick={() => window.dispatchEvent(new Event("app:open-search"))}
             aria-label={language === "ar" ? "بحث" : "Search"}
-            className="inline-flex h-9 min-w-[9rem] items-center gap-2 rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] px-3 text-xs text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] sm:min-w-[16rem]"
+            className={`inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-xs text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] sm:min-w-[16rem] sm:px-3 ${showAllTools ? "min-w-[9rem] px-3" : "w-9 shrink-0 justify-center sm:w-auto"}`}
           >
             <Search className="h-3.5 w-3.5 text-[var(--tmz-muted)]" />
-            <span className="flex-1 text-start truncate">
+            <span className={`flex-1 text-start truncate ${showAllTools ? "" : "hidden sm:inline"}`}>
               {language === "ar" ? "ابحث عن أداة..." : "Search tools..."}
             </span>
             <kbd className="hidden sm:inline-block text-[10px] text-muted-foreground/70 border border-border rounded px-1">⌘K</kbd>
@@ -1277,7 +1361,7 @@ const Basics = ({
             onClick={() => onNav("account")}
             aria-label={language === "ar" ? "الإعدادات" : "Settings"}
             title={language === "ar" ? "الإعدادات" : "Settings"}
-            className="ms-2 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)]"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--tmz-line)] bg-[var(--tmz-surface)] text-[var(--tmz-muted)] transition-colors hover:text-[var(--tmz-ink)] ${showAllTools ? "ms-2" : "shrink-0"}`}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -1387,44 +1471,41 @@ const Basics = ({
           style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
         <div className="mx-auto max-w-6xl">
-          <header className="mb-7 flex flex-col gap-4 border-b border-[var(--tmz-line)] pb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-primary/70">{isRTL ? "مساحتك الدراسية" : "Your study space"}</p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {isRTL ? "شنو ننجز اليوم؟" : "What will you finish today?"}
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--tmz-muted)]">
-              {recommendationTopic
-                ? (isRTL ? `ابدأ بمراجعة ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}` : `Start with ${recommendationTopic} · ${subjectLabel(recommendationSubject, language)}`)
-                : (isRTL ? "ابدأ بمراجعة اليوم، أو اختَر مادة من فصولك." : "Start today's review, or choose a subject and chapter.")}
-              </p>
+          <section aria-labelledby="home-plan-title" className="mb-5 rounded-[2rem] border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(37,99,235,0.65)] sm:p-7">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Target className="h-4 w-4" /></span>
+              <h2 id="home-plan-title" className="text-base font-bold leading-tight text-slate-950 sm:text-lg">{isRTL ? "خطة اليوم" : "Today's plan"}</h2>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              <bdi className="font-bold tabular-nums">{planDone}/{planTasks.length}</bdi> {isRTL ? "مهام منجزة" : "tasks completed"}
+            </p>
+            <div role="progressbar" aria-labelledby="home-plan-title" aria-valuemin={0} aria-valuemax={100} aria-valuenow={planProgress}
+              className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${planProgress}%` }} />
+            </div>
+            <div className="my-3 space-y-1">
+              {nextPlanTask ? <>
+                <p className="text-xs text-slate-600">{isRTL ? "المهمة التالية" : "Next task"}</p>
+                <p dir="auto" className="break-words text-start text-sm font-bold text-slate-950">{nextPlanTask.text}</p>
+              </> : <p className="text-sm text-slate-600">{planTasks.length
+                ? (isRTL ? "أنجزت كل مهام اليوم." : "All of today's tasks are complete.")
+                : (isRTL ? "ماكو مهام مجدولة لليوم." : "No tasks scheduled for today.")}</p>}
             </div>
             <button
               type="button"
-              onClick={() => openDetail("progress")}
-              className="inline-flex min-h-11 items-center gap-3 self-start rounded-2xl border px-4 py-2 text-start transition-all hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              style={{
-                background: rankCardTheme.background,
-                borderColor: rankCardTheme.highlight,
-                color: rankCardTheme.ink,
-                boxShadow: `0 14px 30px -22px ${rankCardTheme.shadow}, 0 0 24px -18px ${rankCardTheme.glow}`,
-              }}
+              onClick={() => navigate("todo")}
+              className="flex min-h-11 w-full items-center gap-3 rounded-3xl border border-sky-200 bg-white/85 p-3 text-start text-sm font-bold text-slate-950 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
             >
-              <RankStone rank={currentRank} size={38} fillProgress={stoneFill} glow={currentRank === "diamond" || currentRank === "royal"} className="shrink-0" />
-              <span>
-                <span className="block text-[11px] font-semibold" style={{ color: rankCardTheme.accent }}>{isRTL ? "رتبتك" : "Your rank"}</span>
-                <span className="block text-sm font-bold">{rankLabel}</span>
-              </span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><ListChecks className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1">{isRTL ? "افتح جدولي" : "Open my schedule"}</span>
+              <span className="shrink-0 text-primary">{isRTL ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}</span>
             </button>
-          </header>
+          </section>
 
-          <NadawiContestCard language={language} />
-
-          {/* Join the challenge + Buy from Houdini — horizontally scrollable
-              list; each card keeps its own color and shows 3D icon left, text right. */}
-          <div className="mb-5 -mx-4 sm:mx-0">
+          <div className="mb-5 -mx-4 min-w-0 sm:mx-0">
             <div
-              className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              ref={setHighlights}
+              className="flex h-[var(--highlight-height,auto)] min-w-0 snap-x snap-mandatory items-start gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-4 px-4 pb-3 pt-1 [scrollbar-width:none] after:shrink-0 after:basis-[calc(16%_-_0.75rem)] after:content-[''] sm:h-auto sm:scroll-px-0 sm:px-0 sm:after:hidden [&::-webkit-scrollbar]:hidden [&>*]:min-w-0 [&>*]:shrink-0 [&>*]:basis-[84%] [&>*]:snap-start [&>*]:snap-always sm:[&>*]:basis-[calc(50%_-_0.375rem)] lg:[&>*]:basis-[calc((100%_-_1.5rem)/3)] [&>section]:mb-0 [&>section>div]:grid-cols-1 [&>section_div]:min-w-0 [&>section_p]:break-words [&>section_button]:min-w-0"
               role="group"
               aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
             >
@@ -1435,7 +1516,7 @@ const Basics = ({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.99 }}
                 aria-label={isRTL ? "انضم إلى التحدي" : "Join the challenge"}
-                className="group flex min-w-0 shrink-0 grow-0 basis-[calc(50%_-_0.375rem)] snap-start items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
+                className="group flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(37,99,235,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(37,99,235,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
               >
                 <img
                   src={challenge3dIcon}
@@ -1469,7 +1550,7 @@ const Basics = ({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.99 }}
                 aria-label={isRTL ? "اشتري من هوديني" : "Buy from Houdini"}
-                className="group flex min-w-0 shrink-0 grow-0 basis-[calc(50%_-_0.375rem)] snap-start items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
+                className="group flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-3 text-start text-white shadow-[0_18px_36px_-24px_rgba(168,85,247,0.9)] transition-shadow hover:shadow-[0_22px_44px_-22px_rgba(168,85,247,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400 focus-visible:ring-offset-2 sm:gap-4 sm:rounded-[1.75rem] sm:p-6"
               >
                 <img
                   src={houdiniHoodieIcon}
@@ -1494,10 +1575,9 @@ const Basics = ({
                   aria-hidden="true"
                 />
               </motion.a>
+              <TelegramLinkCard language={language} source="home" variant="home" />
             </div>
           </div>
-
-          <TelegramLinkCard language={language} source="home" variant="home" />
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-4 lg:grid-cols-[1.35fr_.65fr]">
             <motion.div
