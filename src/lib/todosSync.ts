@@ -19,7 +19,11 @@ export function getISOWeek(d = new Date()): string {
   return `${date.getUTCFullYear()}-W${weekNo}`;
 }
 
-export async function pushTodos(items: SyncedTodo[], expectedUserId?: string): Promise<boolean> {
+export async function pushTodos(
+  items: SyncedTodo[],
+  expectedUserId?: string,
+  knownIds?: ReadonlySet<string>,
+): Promise<boolean> {
   try {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user || (expectedUserId && u.user.id !== expectedUserId)) return false;
@@ -32,11 +36,13 @@ export async function pushTodos(items: SyncedTodo[], expectedUserId?: string): P
       .select("items")
       .eq("user_id", u.user.id)
       .maybeSingle();
-    // An assistant plan adds tasks; never replace an account copy we could not read.
-    if (expectedUserId && readError) return false;
+    // Merging a plan or calendar edit requires a readable account copy.
+    if ((expectedUserId || knownIds) && readError) return false;
     const remoteItems = Array.isArray(current?.items) ? (current.items as unknown as SyncedTodo[]) : [];
     const remoteById = new Map(remoteItems.map((item) => [String(item.id), item]));
-    const safeItems = items.map((item) => {
+    const safeItems = items.filter((item) =>
+      !knownIds || item.source !== "parent" || remoteById.has(String(item.id)),
+    ).map((item) => {
       const remote = remoteById.get(String(item.id));
       if (!remote || remote.source !== "parent") return item;
       return {
@@ -50,9 +56,12 @@ export async function pushTodos(items: SyncedTodo[], expectedUserId?: string): P
       };
     });
     const sentIds = new Set(safeItems.map((item) => String(item.id)));
-    const outgoingItems = expectedUserId
-      ? [...remoteItems.filter((item) => !sentIds.has(String(item.id))), ...safeItems]
-      : safeItems;
+    const newRemoteItems = remoteItems.filter((item) => {
+      const id = String(item.id);
+      return !sentIds.has(id) && !knownIds?.has(id);
+    });
+    const outgoingItems = knownIds ? [...safeItems, ...newRemoteItems]
+      : expectedUserId ? [...newRemoteItems, ...safeItems] : safeItems;
     const { error: writeError } = await supabase.from("student_todos").upsert(
       { user_id: u.user.id, items: outgoingItems as unknown as never, week_key: getISOWeek(), updated_at: new Date().toISOString() },
       { onConflict: "user_id" },
