@@ -30,6 +30,8 @@ const COPY = {
   en: {
     eyebrow: "Study with friends", title: "Friend challenges",
     description: "Choose a duration, invite friends, and see who records the most study time in Sessions.",
+    aonEyebrow: "High-stakes study rooms", aonPageTitle: "All or Nothing",
+    aonPageDescription: "Join an open points room or create one for your friends. The owner starts after at least five students are ready, and the winner takes the full pot.",
     create: "Create challenge", incoming: "Invitations", active: "Active challenges", finished: "Results",
     mode: "Challenge mode", classic: "Classic", classicDesc: "A friendly study-time leaderboard.",
     allOrNothing: "All or Nothing", allOrNothingDesc: "Every student stakes the same points. The winner takes the full pot.",
@@ -63,6 +65,8 @@ const COPY = {
   ar: {
     eyebrow: "ادرس ويا أصدقائك", title: "تحديات الأصدقاء",
     description: "حدد المدة، ادعُ أصدقاءك، وشوف منو يجمع وقت دراسة أكثر داخل الجلسات.",
+    aonEyebrow: "غرف دراسة برهان النقاط", aonPageTitle: "الكل أو لا شيء",
+    aonPageDescription: "ادخل غرفة نقاط مفتوحة أو سوِّ غرفة لأصدقائك. الأونر يبدي من يصيرون خمسة طلاب، والفائز ياخذ مجموع الرهان.",
     create: "إنشاء تحدي", incoming: "الدعوات", active: "التحديات الفعالة", finished: "النتائج",
     mode: "نوع التحدي", classic: "تحدي عادي", classicDesc: "منافسة ودّية على وقت الدراسة.",
     allOrNothing: "الكل أو لا شيء", allOrNothingDesc: "كل طالب يراهن بنفس عدد النقاط، والفائز ياخذ مجموع نقاط الغرفة.",
@@ -210,9 +214,10 @@ function ChallengeCard({
   );
 }
 
-export default function StudyChallengeHub({ language, onBack, onStudy }: { language: AppLanguage; onBack: () => void; onStudy: () => void }) {
+export default function StudyChallengeHub({ language, view = "standard", onBack, onStudy }: { language: AppLanguage; view?: "standard" | "all_or_nothing"; onBack: () => void; onStudy: () => void }) {
   const t = COPY[language];
   const dir = language === "ar" ? "rtl" : "ltr";
+  const isAonView = view === "all_or_nothing";
   const [userId, setUserId] = useState("");
   const [challenges, setChallenges] = useState<StudyChallenge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -274,12 +279,13 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
     return () => window.clearTimeout(timer);
   }, [createOpen, query, selected, userId]);
 
-  const openPublic = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "open" && challenge.challengeType !== "all_or_nothing"), [challenges, now]);
-  const openAllOrNothing = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "open" && challenge.challengeType === "all_or_nothing" && challenge.participants.filter((participant) => participant.status === "accepted").length < 10), [challenges, now]);
-  const incoming = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "invited"), [challenges, now]);
-  const lobbies = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "lobby"), [challenges, now]);
-  const active = useMemo(() => challenges.filter((challenge) => challengePhase(challenge, now) === "active"), [challenges, now]);
-  const finished = useMemo(() => challenges.filter((challenge) => ["completed", "cancelled"].includes(challengePhase(challenge, now))), [challenges, now]);
+  const visibleChallenges = useMemo(() => challenges.filter((challenge) => isAonView ? challenge.challengeType === "all_or_nothing" : challenge.challengeType !== "all_or_nothing"), [challenges, isAonView]);
+  const openPublic = useMemo(() => visibleChallenges.filter((challenge) => challengePhase(challenge, now) === "open"), [visibleChallenges, now]);
+  const openAllOrNothing = useMemo(() => visibleChallenges.filter((challenge) => challengePhase(challenge, now) === "open" && challenge.participants.filter((participant) => participant.status === "accepted").length < 10), [visibleChallenges, now]);
+  const incoming = useMemo(() => visibleChallenges.filter((challenge) => challengePhase(challenge, now) === "invited"), [visibleChallenges, now]);
+  const lobbies = useMemo(() => visibleChallenges.filter((challenge) => challengePhase(challenge, now) === "lobby"), [visibleChallenges, now]);
+  const active = useMemo(() => visibleChallenges.filter((challenge) => challengePhase(challenge, now) === "active"), [visibleChallenges, now]);
+  const finished = useMemo(() => visibleChallenges.filter((challenge) => ["completed", "cancelled"].includes(challengePhase(challenge, now))), [visibleChallenges, now]);
 
   const respond = async (challengeId: string, accept: boolean) => {
     setBusyId(challengeId);
@@ -344,18 +350,18 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
           <ArrowLeft className={`h-4 w-4 ${dir === "rtl" ? "rotate-180" : ""}`} />{language === "ar" ? "رجوع" : "Back"}
         </button>
 
-        <header className="mb-7 overflow-hidden rounded-[2rem] border border-violet-500/20 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-white shadow-[0_28px_80px_-44px_rgba(124,58,237,0.95)] md:p-9">
+        <header className="mb-7 overflow-hidden rounded-[2rem] border border-violet-500/20 p-6 text-white shadow-[0_28px_80px_-44px_rgba(124,58,237,0.95)] md:p-9" style={{ background: isAonView ? "linear-gradient(135deg, #071B45 0%, #123A78 52%, #087DB3 100%)" : "linear-gradient(135deg, #7C3AED 0%, #4F46E5 52%, #06B6D4 100%)" }}>
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="min-w-0 max-w-2xl">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black"><Swords className="h-3.5 w-3.5" />{t.eyebrow}</span>
-              <h1 className="mt-4 text-3xl font-black tracking-tight [overflow-wrap:anywhere] md:text-5xl">{t.title}</h1>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-white/80 md:text-base">{t.description}</p>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black">{isAonView ? <Flame className="h-3.5 w-3.5" /> : <Swords className="h-3.5 w-3.5" />}{isAonView ? t.aonEyebrow : t.eyebrow}</span>
+              <h1 className="mt-4 text-3xl font-black tracking-tight [overflow-wrap:anywhere] md:text-5xl">{isAonView ? t.aonPageTitle : t.title}</h1>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-white/80 md:text-base">{isAonView ? t.aonPageDescription : t.description}</p>
             </div>
-            <Button onClick={() => openCreate("standard")} className="h-12 shrink-0 gap-2 rounded-xl bg-white px-5 font-black text-violet-700 hover:bg-white/90"><Plus className="h-4 w-4" />{t.create}</Button>
+            <Button onClick={() => openCreate(isAonView ? "all_or_nothing" : "standard")} className="h-12 shrink-0 gap-2 rounded-xl bg-white px-5 font-black text-violet-700 hover:bg-white/90"><Plus className="h-4 w-4" />{isAonView ? t.createMyRoom : t.create}</Button>
           </div>
         </header>
 
-        <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-sky-300/20 bg-[linear-gradient(135deg,#071b45_0%,#123a78_52%,#087db3_100%)] p-5 text-white shadow-[0_28px_70px_-35px_rgba(14,116,205,0.85)] sm:p-7">
+        {isAonView && <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-sky-300/20 p-5 text-white shadow-[0_28px_70px_-35px_rgba(14,116,205,0.85)] sm:p-7" style={{ background: "linear-gradient(135deg, #071B45 0%, #123A78 52%, #087DB3 100%)" }}>
           <div aria-hidden="true" className="absolute -end-16 -top-20 h-52 w-52 rounded-full bg-cyan-300/20 blur-3xl" />
           <div aria-hidden="true" className="absolute -bottom-24 start-1/3 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
           <div className="relative flex items-start gap-4">
@@ -368,7 +374,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
           </div>
 
           <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
-            <button type="button" onClick={() => document.getElementById("all-or-nothing-lobbies")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="group relative min-h-36 overflow-hidden rounded-[1.5rem] border border-white/25 bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-400 p-5 text-start shadow-[0_18px_35px_-20px_rgba(34,211,238,0.95)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_45px_-18px_rgba(34,211,238,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            <button type="button" onClick={() => document.getElementById("all-or-nothing-lobbies")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="group relative min-h-36 overflow-hidden rounded-[1.5rem] border border-white/25 p-5 text-start text-white shadow-[0_18px_35px_-20px_rgba(34,211,238,0.95)] transition duration-300 hover:-translate-y-1 hover:brightness-110 hover:shadow-[0_24px_45px_-18px_rgba(34,211,238,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" style={{ background: "linear-gradient(135deg, #2563EB 0%, #0EA5E9 54%, #22D3EE 100%)" }}>
               <span aria-hidden="true" className="absolute -end-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-2xl transition group-hover:scale-125" />
               <span className="relative flex h-full items-center gap-4">
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 text-white shadow-inner ring-1 ring-white/35 backdrop-blur"><DoorOpen className="h-7 w-7" /></span>
@@ -376,7 +382,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
               </span>
             </button>
 
-            <button type="button" onClick={() => openCreate("all_or_nothing")} className="group relative min-h-36 overflow-hidden rounded-[1.5rem] border border-white/25 bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 p-5 text-start shadow-[0_18px_35px_-20px_rgba(217,70,239,0.95)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_45px_-18px_rgba(217,70,239,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            <button type="button" onClick={() => openCreate("all_or_nothing")} className="group relative min-h-36 overflow-hidden rounded-[1.5rem] border border-white/25 p-5 text-start text-white shadow-[0_18px_35px_-20px_rgba(217,70,239,0.95)] transition duration-300 hover:-translate-y-1 hover:brightness-110 hover:shadow-[0_24px_45px_-18px_rgba(217,70,239,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" style={{ background: "linear-gradient(135deg, #7C3AED 0%, #D946EF 54%, #EC4899 100%)" }}>
               <span aria-hidden="true" className="absolute -end-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-2xl transition group-hover:scale-125" />
               <span className="relative flex h-full items-center gap-4">
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 text-white shadow-inner ring-1 ring-white/35 backdrop-blur"><Plus className="h-7 w-7" /></span>
@@ -384,13 +390,13 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
               </span>
             </button>
           </div>
-        </section>
+        </section>}
 
         {loading ? (
           <div className="grid place-items-center py-24"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
         ) : (
           <div className="min-w-0 space-y-8">
-            <section id="all-or-nothing-lobbies" className="scroll-mt-5">
+            {isAonView && <section id="all-or-nothing-lobbies" className="scroll-mt-5">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-black"><Flame className="h-5 w-5 text-cyan-500" />{t.openRooms}</h2>
               {openAllOrNothing.length > 0 ? (
                 <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
@@ -398,7 +404,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
                     const accepted = challenge.participants.filter((participant) => participant.status === "accepted").length;
                     const pot = challenge.potPoints ?? accepted * (challenge.wagerPoints ?? 0);
                     return (
-                      <article key={challenge.id} className="group relative min-w-0 overflow-hidden rounded-[1.75rem] border border-sky-300/20 bg-[linear-gradient(140deg,#071b45_0%,#123d7b_58%,#0b78aa_100%)] p-5 text-white shadow-[0_24px_55px_-32px_rgba(14,116,205,0.95)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_65px_-30px_rgba(14,116,205,0.95)] sm:p-6">
+                      <article key={challenge.id} className="group relative min-w-0 overflow-hidden rounded-[1.75rem] border border-sky-300/20 p-5 text-white shadow-[0_24px_55px_-32px_rgba(14,116,205,0.95)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_65px_-30px_rgba(14,116,205,0.95)] sm:p-6" style={{ background: "linear-gradient(140deg, #071B45 0%, #123D7B 58%, #0B78AA 100%)" }}>
                         <span aria-hidden="true" className="absolute -end-12 -top-16 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl transition group-hover:scale-125" />
                         <div className="relative flex items-start justify-between gap-3">
                           <div className="min-w-0">
@@ -415,7 +421,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
                           <div className="rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur"><Trophy className="h-4 w-4 text-amber-300" /><p className="mt-2 text-xs text-blue-100/70">{t.pot}</p><p className="mt-0.5 font-black">{pot}</p></div>
                         </div>
 
-                        <Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id || pointsBalance < (challenge.wagerPoints ?? 0)} className="relative mt-5 min-h-12 w-full gap-2 rounded-2xl border border-white/25 bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-400 py-3 font-black text-white shadow-[0_14px_28px_-16px_rgba(34,211,238,0.95)] hover:from-blue-400 hover:via-sky-400 hover:to-cyan-300 hover:text-slate-950">
+                        <Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id || pointsBalance < (challenge.wagerPoints ?? 0)} className="relative mt-5 min-h-12 w-full gap-2 rounded-2xl border border-white/25 py-3 font-black text-white shadow-[0_14px_28px_-16px_rgba(34,211,238,0.95)] hover:brightness-110" style={{ background: "linear-gradient(90deg, #2563EB 0%, #0EA5E9 52%, #22D3EE 100%)" }}>
                           {busyId === challenge.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <DoorOpen className="h-5 w-5" />}{t.joinOpenRoom}
                         </Button>
                         <p className="relative mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-cyan-100/75"><ShieldCheck className="h-3.5 w-3.5" />{t.protectedStake}</p>
@@ -426,14 +432,14 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
               ) : (
                 <div className="rounded-[1.75rem] border border-dashed border-sky-300/30 bg-gradient-to-br from-sky-500/5 to-cyan-500/10 px-5 py-10 text-center text-sm text-muted-foreground"><DoorOpen className="mx-auto mb-3 h-7 w-7 text-sky-500" />{t.noOpenRooms}</div>
               )}
-            </section>
+            </section>}
 
-            {openPublic.length > 0 && (
+            {!isAonView && openPublic.length > 0 && (
               <section>
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2>
                 <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
                   {openPublic.map((challenge) => (
-                    <article key={challenge.id} className="group relative min-w-0 overflow-hidden rounded-[1.75rem] border border-indigo-300/20 bg-[linear-gradient(135deg,#102657_0%,#17488a_58%,#0f7cb5_100%)] p-5 text-white shadow-[0_24px_55px_-32px_rgba(37,99,235,0.9)] transition duration-300 hover:-translate-y-1 sm:p-6">
+                    <article key={challenge.id} className="group relative min-w-0 overflow-hidden rounded-[1.75rem] border border-indigo-300/20 p-5 text-white shadow-[0_24px_55px_-32px_rgba(37,99,235,0.9)] transition duration-300 hover:-translate-y-1 sm:p-6" style={{ background: "linear-gradient(135deg, #102657 0%, #17488A 58%, #0F7CB5 100%)" }}>
                       <span aria-hidden="true" className="absolute -end-12 -top-14 h-40 w-40 rounded-full bg-sky-300/20 blur-3xl transition group-hover:scale-125" />
                       <div className="relative flex items-start gap-4">
                         <span className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.25rem] bg-gradient-to-br from-amber-300 via-orange-400 to-rose-500 text-slate-950 shadow-[0_15px_32px_-14px_rgba(251,191,36,0.9)] ring-1 ring-white/30"><Trophy className="h-8 w-8" /></span>
@@ -447,7 +453,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
                         <span className="text-sm font-semibold text-blue-100/75">{t.timeLeft}</span>
                         <span className="inline-flex items-center gap-1.5 font-mono text-sm font-black"><Clock3 className="h-4 w-4 text-cyan-200" />{remainingLabel(challenge.endsAt, language, now)}</span>
                       </div>
-                      <Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="relative mt-4 min-h-12 w-full gap-2 rounded-2xl border border-white/25 bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-400 py-3 font-black text-white shadow-[0_14px_28px_-16px_rgba(34,211,238,0.95)] hover:from-blue-400 hover:via-sky-400 hover:to-cyan-300 hover:text-slate-950">
+                      <Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="relative mt-4 min-h-12 w-full gap-2 rounded-2xl border border-white/25 py-3 font-black text-white shadow-[0_14px_28px_-16px_rgba(34,211,238,0.95)] hover:brightness-110" style={{ background: "linear-gradient(90deg, #2563EB 0%, #0EA5E9 52%, #22D3EE 100%)" }}>
                         {busyId === challenge.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}{t.join}
                       </Button>
                     </article>
@@ -464,16 +470,15 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
 
             {finished.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.finished}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{finished.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} onStart={startChallenge} onLeave={leaveRoom} busyId={busyId} />)}</div></section>}
 
-            {challenges.length === 0 && <section className="rounded-[2rem] border border-dashed border-border bg-card/65 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><UsersRound className="h-7 w-7" /></span><p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">{t.empty}</p><Button onClick={() => openCreate("standard")} className="mt-5 gap-2 rounded-xl"><Plus className="h-4 w-4" />{t.create}</Button></section>}
+            {!isAonView && visibleChallenges.length === 0 && <section className="rounded-[2rem] border border-dashed border-border bg-card/65 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><UsersRound className="h-7 w-7" /></span><p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">{t.empty}</p><Button onClick={() => openCreate("standard")} className="mt-5 gap-2 rounded-xl"><Plus className="h-4 w-4" />{t.create}</Button></section>}
           </div>
         )}
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg" dir={dir}>
-          <DialogHeader><DialogTitle className="text-xl font-black">{t.create}</DialogTitle><DialogDescription>{t.startNow}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle className="text-xl font-black">{isAonView ? t.createMyRoom : t.create}</DialogTitle><DialogDescription>{isAonView ? t.allOrNothingDesc : t.classicDesc}</DialogDescription></DialogHeader>
           <div className="space-y-5 pt-2">
-            <fieldset><legend className="mb-2 text-sm font-bold">{t.mode}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><button type="button" onClick={() => setChallengeType("standard")} aria-pressed={challengeType === "standard"} className={`rounded-2xl border p-3 text-start transition ${challengeType === "standard" ? "border-violet-600 bg-violet-500/10 ring-1 ring-violet-600" : "border-border bg-card hover:border-violet-400"}`}><span className="block font-black">{t.classic}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t.classicDesc}</span></button><button type="button" onClick={() => setChallengeType("all_or_nothing")} aria-pressed={challengeType === "all_or_nothing"} className={`rounded-2xl border p-3 text-start transition ${challengeType === "all_or_nothing" ? "border-rose-500 bg-rose-500/10 ring-1 ring-rose-500" : "border-border bg-card hover:border-rose-400"}`}><span className="flex items-center gap-1.5 font-black"><Flame className="h-4 w-4 text-rose-600" />{t.allOrNothing}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t.allOrNothingDesc}</span></button></div></fieldset>
             <label className="block"><span className="mb-2 block text-sm font-bold">{t.titleLabel}</span><Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.titlePlaceholder} maxLength={80} /></label>
             <fieldset><legend className="mb-2 text-sm font-bold">{t.duration}</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{DURATIONS.map((days) => <button key={days} type="button" onClick={() => setDuration(days)} aria-pressed={duration === days} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${duration === days ? "border-violet-600 bg-violet-600 text-white" : "border-border bg-card hover:border-violet-400"}`}>{days}<span className="ms-1 text-xs font-semibold">{days === 1 ? t.oneDay : t.days}</span></button>)}</div></fieldset>
             {challengeType === "all_or_nothing" && <fieldset className="rounded-2xl border border-rose-500/25 bg-rose-500/5 p-4"><legend className="px-1 text-sm font-black">{t.wager}</legend><div className="mt-2 flex items-center gap-3"><input type="range" min={100} max={1000} step={100} value={wagerPoints} onChange={(event) => setWagerPoints(Number(event.target.value))} className="h-2 min-w-0 flex-1 accent-rose-600" /><span className="min-w-24 rounded-xl bg-background px-3 py-2 text-center font-black text-rose-700 dark:text-rose-300">{wagerPoints} {t.points}</span></div><div className="mt-3 flex items-center justify-between text-xs text-muted-foreground"><span>100</span><span>{t.balance}: <b className={pointsBalance < wagerPoints ? "text-destructive" : "text-foreground"}>{pointsBalance} {t.points}</b></span><span>1000</span></div></fieldset>}

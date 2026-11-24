@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu, UsersRound, PlaneTakeoff, Swords } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Trophy, Timer, Target, Music, SkipForward, Volume2, VolumeX, BookOpen, Languages, Globe, Sigma, Atom, FlaskConical, Leaf, Moon, Coffee, Trash2, ListChecks, ChevronDown, CheckCircle2, Circle, ArrowUpDown, ArrowDownUp, ArrowDown, ArrowUp, Sparkles, ChevronRight, Menu, UsersRound, PlaneTakeoff, Swords, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { Button } from "@/components/ui/button";
@@ -531,7 +531,7 @@ const T = {
 const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
-  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | null>(() => {
+  const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | "all_or_nothing" | null>(() => {
     if (hasSessionRoomLink() || (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/room" && new URLSearchParams(window.location.search).has("code"))) return "rooms";
     try { if (sessionStorage.getItem("tmz:sessions-entry") === "challenge") { sessionStorage.removeItem("tmz:sessions-entry"); return "challenge"; } } catch { /* ignore */ }
     return null;
@@ -550,6 +550,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [flightCharacter, setFlightCharacter] = useState<Partial<CharacterTraits> | null>(null);
   const [flightGender, setFlightGender] = useState<Gender | null>(null);
   const [challengeInviteCount, setChallengeInviteCount] = useState(0);
+  const [allOrNothingInviteCount, setAllOrNothingInviteCount] = useState(0);
   const [pomodoro, setPomodoro] = useState(false);
   const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [joinedStudyRoom, setJoinedStudyRoom] = useState(false);
@@ -941,8 +942,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   useEffect(() => {
     if (entryMode !== null || !userId) return;
     void supabase.rpc("get_my_study_challenges").then(({ data }) => {
-      const rows = Array.isArray(data) ? data as Array<{ myStatus?: string; status?: string; endsAt?: string }> : [];
-      setChallengeInviteCount(rows.filter((row) => row.myStatus === "pending" && row.status === "active" && new Date(row.endsAt ?? 0).getTime() > Date.now()).length);
+      const rows = Array.isArray(data) ? data as Array<{ myStatus?: string; status?: string; endsAt?: string; challengeType?: string }> : [];
+      const pending = rows.filter((row) => row.myStatus === "pending" && row.status === "active" && new Date(row.endsAt ?? 0).getTime() > Date.now());
+      setChallengeInviteCount(pending.filter((row) => row.challengeType !== "all_or_nothing").length);
+      setAllOrNothingInviteCount(pending.filter((row) => row.challengeType === "all_or_nothing").length);
     });
   }, [entryMode, userId]);
 
@@ -1279,6 +1282,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           challengeTitle: "تحدي الأصدقاء",
           challengeDescription: "حدد التحدي بالأيام، ادعُ صديق أو مجموعة، وتنافسون على أكثر وقت دراسة.",
           challengeAction: "أنشئ أو تابع تحدي",
+          allOrNothingTitle: "الكل أو لا شيء",
+          allOrNothingDescription: "ادخل غرفة مفتوحة أو سوِّ غرفتك، راهن من ١٠٠ إلى ١٠٠٠ نقطة، والفائز ياخذ مجموع الرهان.",
+          allOrNothingAction: "ادخل غرف الكل أو لا شيء",
           back: "رجوع",
         }
       : {
@@ -1294,6 +1300,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           challengeTitle: "Challenge friends",
           challengeDescription: "Set a challenge in days, invite one friend or a group, and compete for the most study time.",
           challengeAction: "Create or view challenges",
+          allOrNothingTitle: "All or Nothing",
+          allOrNothingDescription: "Join an open room or create your own, stake 100 to 1,000 points, and let the winner take the full pot.",
+          allOrNothingAction: "Enter All or Nothing rooms",
           back: "Back",
         };
 
@@ -1316,13 +1325,26 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
           {flightRepository && <div className="mb-6"><FlightInvitations repository={flightRepository} lang={language} onAccepted={() => setEntryMode("flight")} /></div>}
           <section aria-label={choices.title} className="grid gap-4 md:grid-cols-2 md:gap-6">
-            <button onClick={() => setEntryMode("challenge")} className="group relative min-h-[16rem] overflow-hidden rounded-[2rem] border border-violet-400/40 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-start text-white shadow-[0_26px_80px_-42px_rgba(124,58,237,0.95)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_30px_85px_-38px_rgba(124,58,237,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:col-span-2 md:p-8">
+            <button onClick={() => setEntryMode("challenge")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-violet-400/40 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 p-6 text-start text-white shadow-[0_26px_80px_-42px_rgba(124,58,237,0.95)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_30px_85px_-38px_rgba(124,58,237,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-8">
               <div aria-hidden="true" className="absolute -end-8 -top-16 h-52 w-52 rounded-full border-[34px] border-white/10" />
               {challengeInviteCount > 0 && <span className="absolute end-5 top-5 inline-flex min-w-7 items-center justify-center rounded-full bg-amber-400 px-2 py-1 text-xs font-black text-slate-950 shadow-lg">{challengeInviteCount}</span>}
               <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/20"><Swords className="h-7 w-7" /></span>
               <h2 className="relative mt-6 text-2xl font-black md:text-3xl">{choices.challengeTitle}</h2>
               <p className="relative mt-2 max-w-xl text-sm leading-7 text-white/80">{choices.challengeDescription}</p>
               <span className="relative mt-6 inline-flex items-center gap-2 text-sm font-black text-white">{choices.challengeAction}<ChevronRight className={`h-4 w-4 transition-transform ${dir === "rtl" ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} /></span>
+            </button>
+
+            <button onClick={() => setEntryMode("all_or_nothing")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-cyan-300/30 p-6 text-start text-white shadow-[0_26px_80px_-42px_rgba(14,116,205,0.95)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_30px_85px_-38px_rgba(14,116,205,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-8" style={{ background: "linear-gradient(135deg, #071B45 0%, #123A78 52%, #087DB3 100%)" }}>
+              <div aria-hidden="true" className="absolute -end-10 -top-12 h-44 w-44 rounded-full bg-cyan-300/20 blur-3xl transition-transform group-hover:scale-125" />
+              {allOrNothingInviteCount > 0 && <span className="absolute end-5 top-5 inline-flex min-w-7 items-center justify-center rounded-full bg-amber-400 px-2 py-1 text-xs font-black text-slate-950 shadow-lg">{allOrNothingInviteCount}</span>}
+              <span className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 via-sky-400 to-blue-600 text-white shadow-lg shadow-cyan-400/20 ring-1 ring-white/30">
+                <Flame className="h-8 w-8" />
+              </span>
+              <h2 className="relative mt-8 text-2xl font-black md:text-3xl">{choices.allOrNothingTitle}</h2>
+              <p className="relative mt-3 max-w-md text-sm leading-7 text-blue-100/85">{choices.allOrNothingDescription}</p>
+              <span className="relative mt-8 inline-flex items-center gap-2 text-sm font-black text-cyan-100">
+                {choices.allOrNothingAction}<ChevronRight className={`h-4 w-4 transition-transform ${dir === "rtl" ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+              </span>
             </button>
 
             <button onClick={() => setEntryMode("rooms")} className="group relative min-h-[19rem] overflow-hidden rounded-[2rem] border border-border/80 bg-card p-6 text-start shadow-[0_22px_70px_-44px_rgba(0,0,0,0.65)] transition-[border-color,box-shadow] hover:border-primary/45 hover:shadow-[0_26px_80px_-40px_hsl(var(--primary)/0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-8">
@@ -1355,7 +1377,11 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   }
 
   if (entryMode === "challenge") {
-    return <StudyChallengeHub language={language} onBack={() => setEntryMode(null)} onStudy={() => setEntryMode("rooms")} />;
+    return <StudyChallengeHub language={language} view="standard" onBack={() => setEntryMode(null)} onStudy={() => setEntryMode("rooms")} />;
+  }
+
+  if (entryMode === "all_or_nothing") {
+    return <StudyChallengeHub language={language} view="all_or_nothing" onBack={() => setEntryMode(null)} onStudy={() => setEntryMode("rooms")} />;
   }
 
   if (entryMode === "flight") {
