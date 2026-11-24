@@ -351,6 +351,34 @@
       "when": 1795398325617,
       "tag": "0049_session_royale",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795483815978,
+      "tag": "0050_physics_ch3_english_mcq_bank_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795483879192,
+      "tag": "0051_physics_ch3_arabic_mcq_bank_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795483948313,
+      "tag": "0052_physics_ch4_english_mcq_bank_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795484024394,
+      "tag": "0053_physics_ch5_arabic_mcq_bank_seed",
+      "breakpoints": true
     }
   ]
 }
