@@ -16,8 +16,8 @@ export default function AdminMalazamPortal({ onLogout }: AdminMalazamPortalProps
             </span>
             <div>
               <p className="text-xs font-black text-primary">لوحة فريق الملازم</p>
-              <h1 className="mt-1 text-2xl font-black">إدارة ملازم تميّزك</h1>
-              <p className="mt-1 text-sm text-muted-foreground">رفع الملازم ونشرها أو إخفاؤها وحذفها فقط.</p>
+              <h1 className="mt-1 text-2xl font-black">إدارة بنك تميّزك</h1>
+              <p className="mt-1 text-sm text-muted-foreground">رفع الملازم والكتب المؤشّرة ونشرها أو إخفاؤها وحذفها.</p>
             </div>
           </div>
           <button
