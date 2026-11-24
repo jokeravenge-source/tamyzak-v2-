@@ -15,9 +15,27 @@ describe("Arabic Physics Chapter 5", () => {
     expect(rows[66].choices[1]).toBe("4.9×10⁻⁵ m");
   });
 
-  it("groups the Arabic set under البصريات الفيزيائية only", () => {
-    expect(getBuiltInPhysicsCh5("en")).toEqual([]);
+  it("groups the Arabic set under البصريات الفيزيائية", () => {
     expect(getMcqChapterGroups("physics", getBuiltInPhysicsCh5("ar"), "ar"))
       .toEqual(expect.arrayContaining([expect.objectContaining({ chapter: 5, title: "البصريات الفيزيائية", count: 70 })]));
+  });
+});
+
+describe("English Physics Chapter 5", () => {
+  it("includes the 61 supplied questions with four choices and the supplied key", () => {
+    const rows = getBuiltInPhysicsCh5("en");
+    const arabicIds = new Set(getBuiltInPhysicsCh5("ar").map((row) => row.id));
+    expect(rows).toHaveLength(61);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(61);
+    expect(rows.every((row) => !arabicIds.has(row.id) && new Set(row.choices).size === 4)).toBe(true);
+    expect(rows.map((row) => "ABCD"[row.answer_index]).join(""))
+      .toBe("CBBACBABBCBCCCBBCABCADABCABBBCBBBBBBABBCACDDBCBDACDBBCCBCCBAB");
+    expect(rows[19].choices[2]).toBe("633 nm");
+    expect(rows[56].choices[2]).toBe("1/λ⁴");
+  });
+
+  it("groups the English set under Physical Optics", () => {
+    expect(getMcqChapterGroups("physics", getBuiltInPhysicsCh5("en"), "en"))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ chapter: 5, title: "Physical Optics", count: 61 })]));
   });
 });

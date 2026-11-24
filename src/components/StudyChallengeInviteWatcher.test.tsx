@@ -5,6 +5,13 @@ const backend = vi.hoisted(() => ({ rpc: vi.fn(), success: vi.fn(), error: vi.fn
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   auth: { getUser: async () => ({ data: { user: { id: "invitee" } } }) },
   rpc: backend.rpc,
+  channel: () => {
+    const realtime = { on: vi.fn(), subscribe: vi.fn() };
+    realtime.on.mockReturnValue(realtime);
+    realtime.subscribe.mockReturnValue(realtime);
+    return realtime;
+  },
+  removeChannel: vi.fn(),
 } }));
 vi.mock("sonner", () => ({ toast: { success: backend.success, error: backend.error } }));
 
@@ -49,5 +56,15 @@ describe("StudyChallengeInviteWatcher", () => {
     fireEvent.click(screen.getByRole("button", { name: "رفض" }));
     await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith("respond_study_challenge", { _challenge_id: "challenge-1", _accept: false }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("shows the exact points that will be reserved for an All or Nothing invite", async () => {
+    backend.rpc.mockImplementation(async (name: string) => {
+      if (name === "get_my_study_challenges") return { data: [{ ...invite, challengeType: "all_or_nothing", roomState: "lobby", wagerPoints: 400 }], error: null };
+      return { data: null, error: null };
+    });
+    render(<StudyChallengeInviteWatcher language="en" />);
+    expect(await screen.findByText("Stake reserved when you accept")).toBeTruthy();
+    expect(screen.getByText("400 points")).toBeTruthy();
   });
 });

@@ -1,0 +1,938 @@
+[
+  {
+    "n":1,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"What do all electronic devices depend on basically?",
+    "choices":[
+      "Crystal diodes and transistors",
+      "Vacuum tubes and magnetic coils",
+      "Electrolytic capacitors and transformers",
+      "Mechanical switches and relays"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000001",
+    "answer_index":0
+  },
+  {
+    "n":2,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"Which electrons participate in chemical reactions and determine the electronic properties of matter?",
+    "choices":[
+      "Core electrons in the innermost orbit",
+      "Valence electrons in the outer shell",
+      "Neutrons inside the atomic nucleus",
+      "Protons bound in the inner shells"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000002",
+    "answer_index":1
+  },
+  {
+    "n":3,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"Compared to electrons in inner shells close to the nucleus, valence electrons have:",
+    "choices":[
+      "Lower energy and stronger attractive force to the nucleus",
+      "Greater energy and minimum attractive force to the nucleus",
+      "Zero energy and no attraction to the nucleus",
+      "Equal energy and equal attraction regardless of shell"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000003",
+    "answer_index":1
+  },
+  {
+    "n":4,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"In a hydrogen atom, what is the meaning of the zero energy level (E = 0) and the lowest electron energy?",
+    "choices":[
+      "E = 0 is the lowest level; lowest energy is +13.6 eV",
+      "E = 0 is the highest level of atom energy; lowest energy is −13.6 eV",
+      "E = 0 is the ground state; lowest energy is 0 eV",
+      "E = 0 is the valence band edge; lowest energy is −1.1 eV"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000004",
+    "answer_index":1
+  },
+  {
+    "n":5,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"What happens when an electron in a single hydrogen atom at the ground state gains +13.6 eV of energy?",
+    "choices":[
+      "It falls into the nucleus",
+      "It shifts to the donor level",
+      "It escapes from the hydrogen atom",
+      "It forms an acceptor level"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000005",
+    "answer_index":2
+  },
+  {
+    "n":6,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"Which range represents the specific electrical resistance of conductors?",
+    "choices":[
+      "10¹⁰ to 10¹⁶ Ω·m",
+      "10⁻⁵ to 10⁸ Ω·m",
+      "10⁻⁸ to 10⁻⁵ Ω·m",
+      "10² to 10⁶ Ω·m"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000006",
+    "answer_index":2
+  },
+  {
+    "n":7,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"Which range represents the specific electrical resistance of insulators?",
+    "choices":[
+      "10¹⁰ to 10¹⁶ Ω·m",
+      "10⁻⁸ to 10⁻⁵ Ω·m",
+      "10⁻⁵ to 10⁻² Ω·m",
+      "10⁻¹² to 10⁻⁸ Ω·m"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000007",
+    "answer_index":0
+  },
+  {
+    "n":8,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"The specific electrical resistance of semiconductors lies around:",
+    "choices":[
+      "10¹² to 10¹⁸ Ω·m",
+      "10⁻⁵ to 10⁸ Ω·m",
+      "10⁻¹⁰ to 10⁻⁷ Ω·m",
+      "0 to 10⁻⁸ Ω·m"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000008",
+    "answer_index":1
+  },
+  {
+    "n":9,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"In solid materials made of massive numbers of atoms, why do energy levels divide into allowed secondary shells forming energy bands?",
+    "choices":[
+      "Because each atom is completely isolated with zero interaction",
+      "Because electrons of an atom are affected by electrons of neighboring atoms in the same material",
+      "Because the nucleus loses its positive charge",
+      "Because the forbidden energy gap disappears in all solids"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000009",
+    "answer_index":1
+  },
+  {
+    "n":10,
+    "section":"Atomic Shells, Energy Levels, Conductors, Insulators & Semiconductors",
+    "question":"What is the forbidden energy gap?",
+    "choices":[
+      "A region of high allowed energy levels full of free electrons",
+      "The gap between valence band and conduction band that has no allowed energy levels and cannot be occupied by electrons",
+      "The overlapping region inside metals",
+      "The shell closest to the nucleus"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000010",
+    "answer_index":1
+  },
+  {
+    "n":11,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"To move from the valence band to the conduction band across the forbidden energy gap, an electron must gain energy from an outer source (thermal, light, or electric field) that is:",
+    "choices":[
+      "Strictly less than the forbidden energy gap",
+      "Not less than the amount of the forbidden energy gap",
+      "Equal to zero",
+      "Independent of the forbidden energy gap"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000011",
+    "answer_index":1
+  },
+  {
+    "n":12,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Why do conductors (such as metals) have high electrical conductivity?",
+    "choices":[
+      "Their forbidden energy gap is about 5 eV",
+      "Valence bands overlap with conduction bands with no forbidden energy gap, so valence electrons move freely",
+      "Their conduction band is completely empty at all temperatures",
+      "Their valence electrons are bound with maximum force"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000012",
+    "answer_index":1
+  },
+  {
+    "n":13,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Why does the electrical conductivity of a metal decrease when its temperature increases?",
+    "choices":[
+      "Because electron-hole pairs stop generating",
+      "Because its electrical resistance increases due to an increased time rate of vibrational energy of atoms and molecules",
+      "Because a wide forbidden energy gap opens up",
+      "Because free electrons become bound to the nucleus"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000013",
+    "answer_index":1
+  },
+  {
+    "n":14,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Why does an insulator normally have no electrical conductivity?",
+    "choices":[
+      "Because its valence band is empty and conduction band is full",
+      "Because its forbidden energy gap is relatively wide (around 5 eV or more), preventing valence electrons from crossing when supplied energy is smaller",
+      "Because valence and conduction bands overlap",
+      "Because it has too many free electrons at room temperature"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000014",
+    "answer_index":1
+  },
+  {
+    "n":15,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"What happens when a huge electric field or heat is applied to an insulator?",
+    "choices":[
+      "Its forbidden energy gap increases to infinity",
+      "It may lead to collapse of the insulator and a very little current flows through it",
+      "It turns into a superconductor with zero resistance",
+      "Nothing happens under any condition"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000015",
+    "answer_index":1
+  },
+  {
+    "n":16,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Under which conditions does an intrinsic semiconductor behave like an insulator?",
+    "choices":[
+      "At room temperature (300 K) under bright light",
+      "At very low temperature (0 K, absolute zero) and in the absence of light",
+      "When doped with high levels of antimony",
+      "When exposed to a strong electric field at 300 K"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000016",
+    "answer_index":1
+  },
+  {
+    "n":17,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Which semiconductors are most commonly used in electronics applications?",
+    "choices":[
+      "Copper and gold",
+      "Germanium (Ge) and Silicon (Si)",
+      "Boron and aluminum",
+      "Silver and iron"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000017",
+    "answer_index":1
+  },
+  {
+    "n":18,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"At room temperature (300 K), what are the forbidden energy gap values for intrinsic silicon and intrinsic germanium?",
+    "choices":[
+      "0.72 eV for silicon and 1.1 eV for germanium",
+      "1.1 eV for intrinsic silicon and 0.72 eV for intrinsic germanium",
+      "5.0 eV for silicon and 1.1 eV for germanium",
+      "0.5 eV for silicon and 0.1 eV for germanium"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000018",
+    "answer_index":1
+  },
+  {
+    "n":19,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"When an intrinsic semiconductor is heated from 0 K to room temperature (300 K), why does its electrical conductivity increase?",
+    "choices":[
+      "Because its electrical resistance increases rapidly",
+      "Because valence electrons gain thermal energy to break covalent bonds, move to the conduction band, and increase electron-hole pair concentration",
+      "Because holes disappear completely",
+      "Because it becomes a pure metal"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000019",
+    "answer_index":1
+  },
+  {
+    "n":20,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"How is an electron-hole pair generated in a semiconductor?",
+    "choices":[
+      "When a free electron moves from the conduction band into the forbidden gap",
+      "When an electron moves from the valence band to the conduction band, leaving an empty space (hole) acting as a positive charge",
+      "When two holes combine in the conduction band",
+      "When donor atoms lose all valence electrons at 0 K"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000020",
+    "answer_index":1
+  },
+  {
+    "n":21,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"At room temperature (300 K) in an intrinsic semiconductor, how do the hole concentration in the valence band and free electron concentration in the conduction band compare?",
+    "choices":[
+      "Holes are much greater than free electrons",
+      "Free electrons are much greater than holes",
+      "The concentration of positive holes generated in the valence band equals free electrons in the conduction band",
+      "Both concentrations are zero"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000021",
+    "answer_index":2
+  },
+  {
+    "n":22,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"The time rate of generating electron-hole pairs in an intrinsic semiconductor depends on:",
+    "choices":[
+      "Temperature of the semiconductor and type of semiconductor material",
+      "Length of connecting wires and battery voltage",
+      "Only the mass of the nucleus",
+      "Only the reverse bias current"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000022",
+    "answer_index":0
+  },
+  {
+    "n":23,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"In an intrinsic semiconductor under an applied electric field, how do positive holes and free electrons move?",
+    "choices":[
+      "Both move in the same direction",
+      "Holes move in the direction of the electric field while free electrons move in the opposite direction (so holes move opposite to electrons)",
+      "Electrons move in the direction of the electric field while holes remain stationary",
+      "Neither moves when an electric field is applied"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000023",
+    "answer_index":1
+  },
+  {
+    "n":24,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"What is the total current flowing through an intrinsic semiconductor?",
+    "choices":[
+      "Only the electron current",
+      "Only the hole current",
+      "The sum of electron current and hole current (both called charge carriers)",
+      "The difference between hole current and electron current"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000024",
+    "answer_index":2
+  },
+  {
+    "n":25,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"What is the Fermi level?",
+    "choices":[
+      "The lowest energy level inside the core",
+      "The highest allowed energy level that an electron can occupy at absolute zero (0 K)",
+      "The average of all energy levels in a crystal",
+      "The energy level at the top of the valence band in all materials"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000025",
+    "answer_index":1
+  },
+  {
+    "n":26,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"In a conductor at 0 K, where does the Fermi level lie?",
+    "choices":[
+      "Below all occupied electron levels",
+      "Above the region full of electrons in the conduction band",
+      "Inside the wide forbidden gap",
+      "At the bottom of the valence band"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000026",
+    "answer_index":1
+  },
+  {
+    "n":27,
+    "section":"Energy Bands, Intrinsic Semiconductors & Fermi Level",
+    "question":"Where does the Fermi level lie in an intrinsic semiconductor?",
+    "choices":[
+      "Directly on top of the conduction band",
+      "In the middle of the forbidden energy gap between conduction band and valence band",
+      "Below the valence band",
+      "Inside the acceptor level"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000027",
+    "answer_index":1
+  },
+  {
+    "n":28,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Why do we resort to doping with trivalent or pentavalent impurities instead of relying only on thermal effect to control semiconductor conductivity?",
+    "choices":[
+      "Because thermal effect does not change conductivity at all",
+      "Because controlling electrical conductivity is not possible by thermal effect alone, whereas doping controls it and increases charge carriers significantly",
+      "Because doping removes all electrons from the crystal",
+      "Because impurities are added at a rate of 1 to 10⁸ to stop current"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000028",
+    "answer_index":1
+  },
+  {
+    "n":29,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"How is an N-type semiconductor obtained?",
+    "choices":[
+      "By doping an intrinsic semiconductor with trivalent atoms like boron",
+      "By carefully and controllably doping an intrinsic semiconductor (Si or Ge) with pentavalent atoms (such as antimony, Sb) at room temperature",
+      "By cooling silicon to 0 K",
+      "By adding pure copper atoms"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000029",
+    "answer_index":1
+  },
+  {
+    "n":30,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"When a pentavalent atom (like antimony) displaces a silicon atom and binds with four neighboring silicon atoms, what happens to its fifth valence electron?",
+    "choices":[
+      "It is captured by the nucleus permanently",
+      "It is left free in the crystalline structure",
+      "It turns into a positive hole in the valence band",
+      "It forms a covalent bond with a fifth atom"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000030",
+    "answer_index":1
+  },
+  {
+    "n":31,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Is a donor atom considered a charge carrier?",
+    "choices":[
+      "Yes, because it moves freely through the crystal",
+      "No, because it does not participate in electrical conductivity; it becomes a positive ion bound strongly with the crystalline structure",
+      "Yes, because it carries negative charge through the conduction band",
+      "Only at 0 K"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000031",
+    "answer_index":1
+  },
+  {
+    "n":32,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Where is the donor level located, and how does it affect the Fermi level in an N-type semiconductor?",
+    "choices":[
+      "Directly above the valence band; Fermi level drops",
+      "Within the forbidden energy gap and directly below the conduction band; Fermi level rises close to the conduction band",
+      "In the middle of the valence band; Fermi level stays at 0 eV",
+      "Above the conduction band; Fermi level disappears"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000032",
+    "answer_index":1
+  },
+  {
+    "n":33,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"In an N-type semiconductor at room temperature, what are the majority and minority charge carriers?",
+    "choices":[
+      "Holes are majority carriers; electrons are minority carriers",
+      "Electrons are majority carriers (from doping and thermal effect); positive holes are minority carriers (generated by thermal effect)",
+      "Donor ions are majority carriers; holes are minority carriers",
+      "There are no holes in an N-type semiconductor"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000033",
+    "answer_index":1
+  },
+  {
+    "n":34,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"What is the net total electrical charge of an N-type semiconductor crystal?",
+    "choices":[
+      "Negative",
+      "Positive",
+      "Zero (electrically neutral), because negative and positive charges are equal in number",
+      "Equal to the donor ion charge only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000034",
+    "answer_index":2
+  },
+  {
+    "n":35,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"How is a P-type semiconductor obtained?",
+    "choices":[
+      "By doping an intrinsic semiconductor with pentavalent atoms like antimony",
+      "By carefully and controllably doping an intrinsic semiconductor (Si or Ge) with trivalent impurities (like boron, B, aluminum, or indium) at room temperature",
+      "By removing all holes from germanium",
+      "By heating silicon to 1000 K"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000035",
+    "answer_index":1
+  },
+  {
+    "n":36,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Why is a trivalent impurity called an acceptor atom?",
+    "choices":[
+      "Because it donates five free electrons to the conduction band",
+      "Because each atom of trivalent impurity accepts an electron from the valence electrons to bind four covalent bonds with four silicon atoms",
+      "Because it becomes a free positive ion",
+      "Because it prevents holes from forming"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000036",
+    "answer_index":1
+  },
+  {
+    "n":37,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Is a negative ion formed by a trivalent acceptor impurity considered a charge carrier?",
+    "choices":[
+      "Yes, it moves freely as a negative charge carrier",
+      "No, because it binds with the crystalline structure strongly by covalent bonds and does not participate in electrical conductivity",
+      "Yes, it is the majority carrier in P-type crystals",
+      "Only when reverse biased"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000037",
+    "answer_index":1
+  },
+  {
+    "n":38,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"Where is the acceptor level located, and how does it affect the Fermi level in a P- type semiconductor?",
+    "choices":[
+      "Directly below the conduction band; Fermi level rises",
+      "Within the forbidden energy gap and directly above the valence band; Fermi level drops close to the valence band",
+      "Inside the conduction band; Fermi level rises",
+      "At the exact center of the gap with no shift"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000038",
+    "answer_index":1
+  },
+  {
+    "n":39,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"In a P-type semiconductor, what are the majority and minority charge carriers?",
+    "choices":[
+      "Electrons are majority carriers; holes are minority carriers",
+      "Positive holes in the valence band are majority carriers; electrons in the conduction band are minority carriers",
+      "Acceptor ions are majority carriers; holes are minority carriers",
+      "Only electrons conduct current"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000039",
+    "answer_index":1
+  },
+  {
+    "n":40,
+    "section":"Extrinsic Semiconductors (N-Type & P-Type)",
+    "question":"What is the net total charge of a P-type semiconductor crystal?",
+    "choices":[
+      "Positive",
+      "Negative",
+      "Zero (electrically neutral), because negative charges equal positive charges",
+      "Equal to the number of holes only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000040",
+    "answer_index":2
+  },
+  {
+    "n":41,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What are the practical applications of a PN diode in electrical and electronic circuits?",
+    "choices":[
+      "Only to store magnetic flux",
+      "To control the direction of current and to change or improve output signal shape",
+      "Only to amplify audio signals without a battery",
+      "To replace all resistors"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000041",
+    "answer_index":1
+  },
+  {
+    "n":42,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"How is the depletion region created in a PN diode?",
+    "choices":[
+      "Free electrons from N diffuse toward the junction creating positive ions in N, holes move creating negative ions in P, electrons and holes combine near the junction, leaving a thin region devoid of charge carriers",
+      "By applying a huge reverse voltage to melt the crystal",
+      "By filling the junction with free electrons and holes",
+      "By connecting the diode to an AC generator only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000042",
+    "answer_index":0
+  },
+  {
+    "n":43,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"In a PN diode depletion region, which ions are found in the N region and P region?",
+    "choices":[
+      "Negative ions in N region and positive ions in P region",
+      "Positive ions in N region and negative ions in P region",
+      "Only positive ions in both regions",
+      "Only negative ions in both regions"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000043",
+    "answer_index":1
+  },
+  {
+    "n":44,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"Why does electron diffusion through the PN junction stop at equilibrium?",
+    "choices":[
+      "Because the battery turns off automatically",
+      "Because positive and negative ions on both sides create an electric field whose potential difference (potential barrier) prevents additional electrons from crossing",
+      "Because holes stop existing in the P region",
+      "Because temperature reaches absolute zero"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000044",
+    "answer_index":1
+  },
+  {
+    "n":45,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"On what factors does the potential barrier in a PN diode depend?",
+    "choices":[
+      "Type of semiconductor, rate/percentage of doped impurities, and temperature of the material",
+      "Length of the external wire and color of the casing",
+      "Only the frequency of the input signal",
+      "Only the emitter current"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000045",
+    "answer_index":0
+  },
+  {
+    "n":46,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"How is a PN diode connected in the forward bias method?",
+    "choices":[
+      "Positive terminal of battery to N region; negative terminal to P region",
+      "Positive terminal of battery to P region; negative terminal to N region (with potential difference greater than that on the PN junction)",
+      "Both terminals connected to the P region only",
+      "Only a single wire connected to the junction"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000046",
+    "answer_index":1
+  },
+  {
+    "n":47,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What happens in a forward-biased PN diode?",
+    "choices":[
+      "Depletion region widens and potential barrier increases",
+      "Depletion region narrows and potential barrier decreases (applied field opposes and exceeds barrier field), resistance decreases, and a huge forward current flows",
+      "Current drops to zero for all voltages",
+      "Reverse current becomes dominant"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000047",
+    "answer_index":1
+  },
+  {
+    "n":48,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"How is a PN diode connected in the reverse bias method?",
+    "choices":[
+      "Positive terminal of battery to P region; negative terminal to N region",
+      "Negative terminal of battery to P region; positive terminal to N region",
+      "Connected in series with an LED",
+      "Connected directly across a 0 K source"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000048",
+    "answer_index":1
+  },
+  {
+    "n":49,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What happens when a PN diode is reversely biased?",
+    "choices":[
+      "Depletion region narrows and a huge forward current flows",
+      "Electrons in N are attracted to positive terminal and holes in P to negative terminal away from junction; depletion region and potential barrier increase, resistance increases, and only a very small (neglected) reverse current flows",
+      "The potential barrier drops to zero",
+      "It emits visible light"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000049",
+    "answer_index":1
+  },
+  {
+    "n":50,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"When voltage is increased in forward bias, what happens to the forward current? And what happens if polarity is reversed?",
+    "choices":[
+      "Forward current decreases; when reversed it becomes huge",
+      "Forward current increases; when polarity is reversed (reverse bias), the flowing current through the crystal diode is almost zero",
+      "Current stays constant in both cases",
+      "Current reverses sign with the same magnitude"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000050",
+    "answer_index":1
+  },
+  {
+    "n":51,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"Which of the following are listed types of diodes in Chapter 7?",
+    "choices":[
+      "Photosensitive diode, photovoltaic diode (solar cell), light emitting diode (LED), and current rectifier diode",
+      "Bipolar transistor, field-effect transistor, and transformer",
+      "Photodiode, varactor, and thyristor only",
+      "Zener diode and tunnel diode only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000051",
+    "answer_index":0
+  },
+  {
+    "n":52,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"How is a photosensitive diode connected before light falls on it, and what is the current before light is applied?",
+    "choices":[
+      "Forward biased; large current flows before light",
+      "Reverse biased before applying light; current in the circuit is zero when there is no light effect (thermal current is very weak and neglected)",
+      "Unbiased; current is maximum in the dark",
+      "Reverse biased; current is independent of light intensity"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000052",
+    "answer_index":1
+  },
+  {
+    "n":53,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What is the purpose of a photosensitive diode, and how does current relate to incident light intensity?",
+    "choices":[
+      "Converts electrical energy into light; current is inversely proportional to light intensity",
+      "Converts light energy into electrical energy when exposed to light; used in light detectors and light intensity meters; current is directly proportional to incident light intensity",
+      "Rectifies AC into DC only",
+      "Acts as a temperature sensor only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000053",
+    "answer_index":1
+  },
+  {
+    "n":54,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"For a photovoltaic diode (solar cell), what is the purpose of connecting cells in series versus parallel?",
+    "choices":[
+      "Series increases power; parallel increases potential",
+      "Series combination increases potential; parallel combination increases power",
+      "Both decrease potential and power",
+      "Neither changes potential or power"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000054",
+    "answer_index":1
+  },
+  {
+    "n":55,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What photon energy is required to generate an electron-hole pair in silicon and germanium, and what electromotive force (emf) is generated when exposed to incident light?",
+    "choices":[
+      "≥ 1.1 eV (emf 0.5 V) for silicon; ≥ 0.72 eV (emf 0.1 V) for germanium",
+      "≥ 0.72 eV (emf 0.5 V) for silicon; ≥ 1.1 eV (emf 0.1 V) for germanium",
+      "≥ 5.0 eV (emf 5.0 V) for silicon; ≥ 1.1 eV (emf 1.0 V) for germanium",
+      "≥ 1.1 eV (emf 0.1 V) for silicon; ≥ 0.72 eV (emf 0.5 V) for germanium"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000055",
+    "answer_index":0
+  },
+  {
+    "n":56,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"How is a Light Emitting Diode (LED) connected, and what does it convert?",
+    "choices":[
+      "Reverse biased; converts light energy into electrical energy",
+      "Forward biased; converts electrical energy into light energy, and is used in digital calculators, clocks, and seven-segment digital screens",
+      "Reverse biased; used only in light intensity meters",
+      "Forward biased; converts DC into AC"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000056",
+    "answer_index":1
+  },
+  {
+    "n":57,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What do the emitted color and light intensity of an LED depend on?",
+    "choices":[
+      "Color depends on the material it is made of (red, yellow, green, or infrared); intensity depends on the amount of flowing forward current (directly proportional)",
+      "Color depends on reverse voltage; intensity is inversely proportional to forward current",
+      "Both color and intensity depend only on ambient temperature",
+      "Color is always green; intensity is constant"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000057",
+    "answer_index":0
+  },
+  {
+    "n":58,
+    "section":"PN Junction Diode, Biasing & Special Diodes",
+    "question":"What happens when an alternating current (AC) passes through a PN current rectifier diode?",
+    "choices":[
+      "It amplifies the AC signal without changing shape",
+      "It converts AC into a rectified half-wave current: one half-wave (positive polarity) forward-biases the diode and passes current, while the other half-wave reverse-biases it and blocks current",
+      "It turns AC into a pure constant battery voltage",
+      "It blocks both half-waves completely"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000058",
+    "answer_index":1
+  },
+  {
+    "n":59,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"What are the three regions of a transistor, and how are their impurity doping levels ordered?",
+    "choices":[
+      "Emitter (high doping), Base (low doping), Collector (medium/average doping)",
+      "Emitter (low doping), Base (high doping), Collector (zero doping)",
+      "Emitter (medium doping), Base (high doping), Collector (low doping)",
+      "All three regions have identical doping"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000059",
+    "answer_index":0
+  },
+  {
+    "n":60,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"In a transistor, how are the emitter and collector biased, and why?",
+    "choices":[
+      "Emitter is reverse biased; collector is forward biased",
+      "Emitter is always forward biased because it supplies charge carriers; collector is reverse biased because it attracts these carriers through the base",
+      "Both emitter and collector are always forward biased",
+      "Both emitter and collector are always reverse biased"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000060",
+    "answer_index":1
+  },
+  {
+    "n":61,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"What are the majority charge carriers performing electrical conduction in a PNP transistor and in an NPN transistor?",
+    "choices":[
+      "Electrons in PNP; holes in NPN",
+      "Holes move from emitter to collector in PNP; electrons move from emitter to collector in NPN",
+      "Only ions in both PNP and NPN",
+      "Neither has majority charge carriers"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000061",
+    "answer_index":1
+  },
+  {
+    "n":62,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"Why is the base current (IB) very small compared to the emitter current (IE), and why is collector current (IC) never larger than emitter current (IE)?",
+    "choices":[
+      "Because the base is wide and heavily doped",
+      "Because the base is thin with low impurity doping (allowing maximum carriers to pass from emitter to collector), and recombination at the base gives IC = IE − IB",
+      "Because no carriers cross the base",
+      "Because IC = IE + IB"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000062",
+    "answer_index":1
+  },
+  {
+    "n":63,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"What is the basic function of a transistor, and what does choosing a transistor's type and shape for a particular application depend on?",
+    "choices":[
+      "Rectifying DC; depends on wire color",
+      "Amplifying entering signals; depends on input impedance and output impedance",
+      "Generating heat; depends on room temperature only",
+      "Storing charge like a battery; depends on frequency only"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000063",
+    "answer_index":1
+  },
+  {
+    "n":64,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"What are the characteristics of a common-base (grounded-base) PNP amplifier?",
+    "choices":[
+      "Small input impedance, very large output impedance, high voltage gain, current gain α = IC / IE less than 1, and output signal in the same phase as input signal",
+      "Large input impedance, small output impedance, current gain greater than 100, and 180° phase shift",
+      "Zero voltage gain and zero power gain",
+      "Output signal 180° out of phase with input signal"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000064",
+    "answer_index":0
+  },
+  {
+    "n":65,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"Why can a common-base PNP amplifier not be used for current amplification?",
+    "choices":[
+      "Because its voltage gain is zero",
+      "Because collector current IC is less than emitter current IE, so current gain α = IC / IE is less than integer 1",
+      "Because its input resistance is infinite",
+      "Because the emitter-base junction is reverse biased"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000065",
+    "answer_index":1
+  },
+  {
+    "n":66,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"In a common-emitter (grounded-emitter) PNP amplifier, why is the output signal out of phase with the input signal (phase difference 180°)?",
+    "choices":[
+      "Because collector current changes in the same direction as base current",
+      "Because collector current changes in the reverse direction to that of the base current",
+      "Because the load resistance is zero",
+      "Because the battery is disconnected during positive half-cycles"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000066",
+    "answer_index":1
+  },
+  {
+    "n":67,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"In a common-emitter transistor circuit, what are the formulas for current gain (α), voltage gain (AV), and power gain (G)?",
+    "choices":[
+      "α = IC / IB, AV = Vout / Vin, and G = α × AV = Pout / Pin",
+      "α = IB / IC, AV = Vin / Vout, and G = α + AV",
+      "α = IE / IC, AV = IC Rin, and G = AV / α",
+      "α = Vout / IB, AV = IE Rout, and G = α − AV"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000067",
+    "answer_index":0
+  },
+  {
+    "n":68,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"(Ex 1) In a common-base amplifier circuit with IE = 3 mA, IC = 2.94 mA, Rin = 500 Ω, and Rout = 400 kΩ, what are the current gain (α) and voltage gain (AV)?",
+    "choices":[
+      "α = 0.98 and AV = 784",
+      "α = 1.02 and AV = 784",
+      "α = 0.98 and AV = 4500",
+      "α = 9 and AV = 784"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000068",
+    "answer_index":0
+  },
+  {
+    "n":69,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"(Ex 2) In a common-base amplifier with G = 768, AV = 784, and IE = 3 × 10⁻³ A, what is the base current (IB)?",
+    "choices":[
+      "2.94 × 10⁻³ A",
+      "0.06 × 10⁻³ A (6 × 10⁻⁵ A)",
+      "3.06 × 10⁻³ A",
+      "0.98 A"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000069",
+    "answer_index":1
+  },
+  {
+    "n":70,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"(Q9) In a common-emitter circuit with IE = 0.4 mA, IB = 40 μA, Rin = 100 Ω, and Rout = 50 kΩ, calculate α, AV, and G:",
+    "choices":[
+      "α = 9, AV = 4500, G = 40500",
+      "α = 10, AV = 4500, G = 45000",
+      "α = 9, AV = 784, G = 7056",
+      "α = 73, AV = 4500, G = 328500"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000070",
+    "answer_index":0
+  },
+  {
+    "n":71,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"(Q10) In a common-emitter circuit with IB = 50 μA and IC = 3.65 mA, what are α and IE?",
+    "choices":[
+      "α = 73 and IE = 370 × 10⁻⁵ A (3.70 mA)",
+      "α = 9 and IE = 3.60 mA",
+      "α = 73 and IE = 3.60 mA",
+      "α = 0.98 and IE = 3.70 mA"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000071",
+    "answer_index":0
+  },
+  {
+    "n":72,
+    "section":"Transistors, Amplifiers & Numerical Problems",
+    "question":"(Homework) In a common-emitter circuit with IE = 480 μA, IC = 450 μA, Rin = 20 Ω, and Rout = 80 kΩ, calculate α, AV, and G:",
+    "choices":[
+      "IB = 30 μA; α = 15; AV = 60000; G = 900000",
+      "IB = 30 μA; α = 15; AV = 6000; G = 90000",
+      "IB = 930 μA; α = 15; AV = 60000; G = 900000",
+      "IB = 30 μA; α = 0.9375; AV = 60000; G = 56250"
+    ],
+    "id":"c7e5d7e0-1b4a-4d99-a077-000000000072",
+    "answer_index":0
+  }
+]
