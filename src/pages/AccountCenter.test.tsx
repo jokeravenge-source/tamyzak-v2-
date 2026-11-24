@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import AccountCenter from "./AccountCenter";
 
@@ -34,6 +34,22 @@ it("restores the profile editor in Account Center for a free student", async () 
   render(<AccountCenter language="en" onBack={() => {}} />);
   expect(await screen.findByRole("region", { name: "Profile editor" })).toBeInTheDocument();
   expect(api.details).toHaveBeenCalledWith({ userId: "student", language: "en" });
+});
+
+it("shows the student's actual points, streak, and progress to the next rank", async () => {
+  api.rpc.mockResolvedValueOnce({ data: { lifetime_points: 3319, current_streak: 6 }, error: null });
+  const onNav = vi.fn();
+  render(<AccountCenter language="en" onBack={() => {}} onNav={onNav} />);
+
+  const overview = within(await screen.findByRole("region", { name: "Student" }));
+  expect(overview.getByText("3,319")).toBeVisible();
+  expect(overview.getByText("6")).toBeVisible();
+  expect(overview.getByText("Diamond")).toBeVisible();
+  expect(overview.getByRole("progressbar", { name: "Progress to the next rank" })).toHaveAttribute("aria-valuenow", "43");
+  expect(overview.getByText("1,681 points to Royal")).toBeVisible();
+
+  fireEvent.click(overview.getByRole("button", { name: "Leaderboard" }));
+  expect(onNav).toHaveBeenCalledWith("leaderboard");
 });
 
 it("keeps bio editing available while a username change awaits approval", async () => {

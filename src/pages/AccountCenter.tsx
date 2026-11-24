@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getSignupSource } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { LANGUAGE_STORAGE_KEY } from "@/components/LanguageGate";
@@ -12,6 +12,7 @@ import { ReferralCard } from "@/components/ReferralCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
+import AccountOverview, { type AccountProgress } from "@/components/AccountOverview";
 import KokiCharacterCard, { KOKI_VARIANT } from "@/components/KokiCharacterCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
@@ -40,10 +41,11 @@ import {
   FEMALE_VARIANTS,
   type CharacterVariant,
 } from "@/components/CharacterAvatar";
+import "./accountCenter.css";
 
 const t = {
-  en: { title: "Account Center", subtitle: "Manage your profile and username.", username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", pets: "Pets", cat: "Cat", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
-  ar: { title: "مركز الحساب", subtitle: "أدر ملفك الشخصي واسم المستخدم.", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", pets: "الحيوانات", cat: "قطة", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
+  en: { title: "My profile", username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", pets: "Pets", cat: "Cat", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
+  ar: { title: "ملفي الشخصي", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", pets: "الحيوانات", cat: "قطة", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
 } as const;
 
 const uxText = {
@@ -80,6 +82,22 @@ const HAIR_LABELS: Record<string, { en: string; ar: string }> = {
   braids: { en: "Braids", ar: "ضفائر" },
 };
 
+function AccountPanel({ icon: Icon, title, description, children }: { icon: LucideIcon; title: string; description?: string; children: ReactNode }) {
+  return (
+    <details className="group overflow-hidden rounded-[1.5rem] border border-border/80 bg-card text-card-foreground shadow-sm">
+      <summary className="flex min-h-[4.5rem] cursor-pointer list-none items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring group-open:bg-muted/35 [&::-webkit-details-marker]:hidden">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon aria-hidden="true" className="size-5" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-black leading-snug">{title}</span>
+          {description && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{description}</span>}
+        </span>
+        <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-3 border-t border-border px-3 py-4 sm:px-4">{children}</div>
+    </details>
+  );
+}
+
 const AccountCenter = ({
   language,
   onBack,
@@ -101,7 +119,7 @@ const AccountCenter = ({
   const [userId, setUserId] = useState<string>("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [traits, setTraits] = useState<CharacterTraits | null>(null);
-  const [lifetimePoints, setLifetimePoints] = useState(0);
+  const [progress, setProgress] = useState<AccountProgress | null>(null);
   const [characterTab, setCharacterTab] = useState<"appearance" | "hats" | "accessories" | "pets">("appearance");
   const { isPremium } = useSubscription();
   const [savedName, setSavedName] = useState("");
@@ -129,7 +147,11 @@ const AccountCenter = ({
       setGender((p?.gender as Gender) ?? null);
       setTraits(((p as any)?.character as CharacterTraits) ?? null);
       const { data: publicProfile } = await supabase.rpc("public_student_profile", { _user_id: u.user.id });
-      setLifetimePoints(Number((publicProfile as any)?.lifetime_points ?? 0));
+      const stats = publicProfile as { lifetime_points?: number; current_streak?: number } | null;
+      if (typeof stats?.lifetime_points === "number" && Number.isFinite(stats.lifetime_points)) {
+        const streak = stats.current_streak;
+        setProgress({ lifetimePoints: stats.lifetime_points, currentStreak: typeof streak === "number" && Number.isFinite(streak) ? streak : null });
+      }
       const { data: pend } = await supabase
         .from("username_requests")
         .select("id, requested_name")
@@ -252,7 +274,7 @@ const AccountCenter = ({
     ? { ...getAvatarStyle(userId || "anon", gender), ...(traits ?? {}) }
     : null;
   const hairOptions = gender === "female" ? FEMALE_HAIRSTYLES : MALE_HAIRSTYLES;
-  const currentRank = rankFor(lifetimePoints);
+  const currentRank = rankFor(progress?.lifetimePoints ?? 0);
   const selectedPets = getSelectedPets(effective);
 
   const togglePet = (pet: PetDefinition) => {
@@ -274,88 +296,89 @@ const AccountCenter = ({
 
 
   return (
-    <main className="min-h-screen bg-background px-4 pb-32 pt-8 sm:px-6 sm:pt-12" dir={language === "ar" ? "rtl" : "ltr"}>
-      <section className="mx-auto max-w-2xl space-y-5 animate-fade-up">
-        <header className="flex items-start gap-3 pb-2">
+    <main className="account-profile min-h-screen px-3.5 pb-32 text-foreground sm:px-6" dir={language === "ar" ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-[67rem] space-y-4 pt-5 sm:space-y-5 sm:pt-8">
+        <header className="flex items-center gap-3.5">
           <button
             type="button"
             onClick={onBack}
             aria-label={text.back}
-            className="mt-1 shrink-0 w-10 h-10 rounded-xl border border-white/10 bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition inline-flex items-center justify-center"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent"
           >
             <ArrowLeft className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} />
           </button>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">{text.title}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{text.subtitle}</p>
-          </div>
+          <h1 className="text-[1.65rem] font-black leading-tight tracking-tight sm:text-4xl">{text.title}</h1>
         </header>
 
-        <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-sm sm:p-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold">{ux.personalInfo}</h2>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{ux.personalInfoDesc}</p>
-            </div>
+        {!loading && userId && <AccountOverview
+          language={language}
+          name={savedName}
+          userId={userId}
+          gender={gender}
+          traits={effective}
+          rank={currentRank}
+          progress={progress}
+          premium={isPremium}
+          onLeaderboard={onNav ? () => onNav("leaderboard") : undefined}
+        />}
+
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-5">
+          <div className="min-w-0 space-y-4">
+            <section aria-labelledby="account-personal-info" className="min-w-0 rounded-[1.5rem] border border-border/80 bg-card p-4 text-card-foreground shadow-sm sm:p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <User aria-hidden="true" className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <h2 id="account-personal-info" className="text-lg font-black leading-snug">{ux.personalInfo}</h2>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{ux.personalInfoDesc}</p>
+                </div>
+              </div>
+
+              {loading ? (
+                <div role="status" aria-label={language === "ar" ? "جارٍ تحميل الملف" : "Loading account"} className="flex justify-center py-6">
+                  <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
+                </div>
+              ) : (
+                <form onSubmit={save} className="grid gap-3.5 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <label htmlFor="account-email" className="text-sm font-bold">{text.email}</label>
+                    <input id="account-email" value={email} dir="ltr" disabled className="mt-1.5 h-11 w-full rounded-xl border border-border bg-muted/45 px-3 text-sm text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <label htmlFor="account-username" className="text-sm font-bold">{text.username}</label>
+                    <input
+                      id="account-username"
+                      dir="auto"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      maxLength={40}
+                      required
+                      disabled={!!pendingRequest}
+                      className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background/70 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:bg-muted/45 disabled:text-muted-foreground"
+                    />
+                  </div>
+                  {pendingRequest && <div className="flex min-w-0 items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200 sm:col-span-2">
+                    <Lock aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+                    <p className="min-w-0">{text.pendingReview} <bdi className="font-bold [overflow-wrap:anywhere]">{pendingRequest.requested_name}</bdi></p>
+                  </div>}
+                  <button type="submit" disabled={saving || !name.trim() || !!pendingRequest} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 sm:col-span-2 sm:w-auto sm:justify-self-end">
+                    {saving ? <><Loader2 aria-hidden="true" className="size-4 animate-spin" />{text.saving}</> : <><Save aria-hidden="true" className="size-4" />{name.trim() && name.trim() !== savedName ? text.requestName : text.save}</>}
+                  </button>
+                </form>
+              )}
+            </section>
+            {!loading && userId && <ProfileDetailsCard key={userId} userId={userId} language={language} />}
           </div>
 
-        {loading ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <form onSubmit={save} className="space-y-4">
-            <div>
-              <label className="text-xs text-muted-foreground">{text.email}</label>
-              <input value={email} disabled className="mt-1 w-full h-11 px-3 rounded-xl bg-background/40 border border-white/10 text-sm opacity-70" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">{text.username}</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={40}
-                required
-                disabled={!!pendingRequest}
-                className="mt-1 w-full h-11 px-3 rounded-xl bg-background/60 border border-white/10 focus:border-primary/60 outline-none text-sm disabled:opacity-60"
-              />
-              {pendingRequest && (
-                <p className="mt-2 text-xs text-amber-300 inline-flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" />
-                  {text.pendingReview}: <span className="font-semibold">{pendingRequest.requested_name}</span>
-                </p>
-              )}
-            </div>
-            <button type="submit" disabled={saving || !name.trim() || !!pendingRequest} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold disabled:opacity-60 inline-flex items-center justify-center gap-2">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" />{text.saving}</> : <><Save className="w-4 h-4" />{name.trim() && name.trim() !== savedName ? text.requestName : text.save}</>}
-            </button>
-          </form>
-        )}
-        </div>
-
-        {!loading && userId && <ProfileDetailsCard key={userId} userId={userId} language={language} />}
-
-        <TelegramLinkCard language={language} source="profile" />
-
+          <div className="min-w-0 space-y-4">
         {!loading && (
-          <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
-            <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
-              <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-semibold">{ux.customize}</h2>
-                <p className="text-xs text-muted-foreground mt-1">{ux.customizeDesc}</p>
-              </div>
-              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="border-t border-white/10 p-6">
+          <AccountPanel icon={Sparkles} title={ux.customize} description={ux.customizeDesc}>
             {gender ? (
               <div className="space-y-5">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="rounded-3xl bg-background/40 border border-white/10 p-6">
-                    <CharacterAvatar seed={userId} gender={gender} traits={effective} size={280} />
+                  <div className="flex max-w-full justify-center overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-primary/10 to-muted/25 p-3">
+                    <CharacterAvatar seed={userId} gender={gender} traits={effective} size={218} />
                   </div>
                   <div className="w-full space-y-2">
                     <div className="flex gap-2">
@@ -371,7 +394,7 @@ const AccountCenter = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-background/30 p-1.5">
+                <div className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-muted/30 p-1.5 min-[375px]:grid-cols-4">
                   <button
                     type="button"
                     onClick={() => setCharacterTab("appearance")}
@@ -635,30 +658,21 @@ const AccountCenter = ({
                 </div>
               </div>
             )}
-            </div>
-          </details>
+          </AccountPanel>
         )}
 
-        <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
-          <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
-            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-              <Palette className="w-5 h-5 text-primary" />
-            </div>
-            <h2 className="flex-1 text-lg font-semibold">{ux.preferences}</h2>
-            <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t border-white/10 p-4 space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-4">
+        <AccountPanel icon={Palette} title={ux.preferences}>
+            <div className="space-y-3 rounded-2xl border border-border bg-muted/25 p-3.5 sm:p-4">
               <h3 className="text-sm font-semibold">{text.theme}</h3>
               <ThemePicker language={language} variant="inline" />
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-4">
-              <div className="flex items-start gap-3">
+            <div className="space-y-3 rounded-2xl border border-border bg-muted/25 p-3.5 sm:p-4">
+              <div className="flex flex-wrap items-start gap-2.5">
                 <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
                   <SlidersHorizontal className="w-5 h-5 text-primary" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[8rem] flex-1">
                   <h3 className="text-sm font-semibold text-foreground">
                     {language === "ar" ? "تخصيص أدوات الدراسة" : "Customize study tools"}
                   </h3>
@@ -683,11 +697,11 @@ const AccountCenter = ({
                 )}
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
                 {CUSTOMIZABLE_STUDY_TOOLS.map((tool) => {
                   const hidden = hiddenStudyTools.has(tool.key);
                   return (
-                    <div key={tool.key} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-background/40 p-3">
+                    <div key={tool.key} className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-background/60 p-2.5">
                       <span className={`min-w-0 truncate text-sm font-medium ${hidden ? "text-muted-foreground" : "text-foreground"}`}>
                         {language === "ar" ? tool.ar : tool.en}
                       </span>
@@ -702,7 +716,7 @@ const AccountCenter = ({
                         }}
                         className={`inline-flex h-9 min-w-[88px] shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition ${
                           hidden
-                            ? "border-white/10 bg-background/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                            ? "border-border bg-background/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                             : "border-emerald-500/35 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
                         }`}
                       >
@@ -717,45 +731,33 @@ const AccountCenter = ({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-background/30 p-5 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-              <Settings className="w-5 h-5 text-primary" />
+            <div className="space-y-2.5 rounded-2xl border border-border bg-muted/25 p-3.5 sm:p-4">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Settings aria-hidden="true" className="size-4" /></span>
+                <h3 className="text-sm font-bold">{text.account}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+                  onChangeLanguage?.();
+                }}
+                className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 text-start text-sm text-foreground transition-colors hover:border-primary/40"
+              >
+                <span className="inline-flex items-center gap-2"><Globe aria-hidden="true" className="size-4 text-primary" />{text.changeLanguage}</span>
+                <span className="text-xs uppercase text-muted-foreground">{language}</span>
+              </button>
+              <button
+                type="button"
+                onClick={async () => { await supabase.auth.signOut(); }}
+                className="inline-flex min-h-11 w-full items-center gap-2 rounded-xl border border-destructive/30 px-3 text-start text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut aria-hidden="true" className="size-4" />{text.signOut}
+              </button>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">{text.account}</h2>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem(LANGUAGE_STORAGE_KEY);
-              onChangeLanguage?.();
-            }}
-            className="w-full inline-flex items-center justify-between gap-3 h-11 px-4 rounded-xl border border-white/10 bg-background/40 text-sm text-foreground hover:border-primary/40 transition"
-          >
-            <span className="inline-flex items-center gap-2"><Globe className="w-4 h-4 text-primary" />{text.changeLanguage}</span>
-            <span className="text-xs text-muted-foreground uppercase">{language}</span>
-          </button>
-          <button
-            onClick={async () => { await supabase.auth.signOut(); }}
-            className="w-full inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-destructive/40 text-destructive text-sm font-semibold hover:bg-destructive/10 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            {text.signOut}
-          </button>
-            </div>
-          </div>
-        </details>
+        </AccountPanel>
 
-        <details className="group overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
-          <summary className="list-none cursor-pointer p-6 flex items-center gap-3 select-none [&::-webkit-details-marker]:hidden">
-            <div className="w-11 h-11 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-primary" />
-            </div>
-            <h2 className="flex-1 text-lg font-semibold">{ux.services}</h2>
-            <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t border-white/10 p-4 space-y-4">
+        <AccountPanel icon={MessageCircle} title={ux.services}>
             <ReferralCard language={language} />
             <PushNotificationsCard language={language} />
 
@@ -763,22 +765,24 @@ const AccountCenter = ({
               href="https://t.me/ias404"
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-2xl border border-white/10 bg-background/30 p-5 hover:border-primary/40 transition-colors"
+              className="block rounded-2xl border border-border bg-muted/25 p-3.5 transition-colors hover:border-primary/40 sm:p-4"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
                   <MessageCircle className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold">{text.support}</h2>
+                  <h3 className="text-base font-bold">{text.support}</h3>
                   <p className="text-xs text-muted-foreground mt-1">{text.supportDesc}</p>
                 </div>
               </div>
             </a>
+        </AccountPanel>
+
+        <TelegramLinkCard language={language} source="profile" />
           </div>
-        </details>
-      </section>
-      
+        </div>
+      </div>
     </main>
   );
 };

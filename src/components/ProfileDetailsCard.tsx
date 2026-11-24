@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Eye, EyeOff, Instagram, Send, Loader2, Music2, Facebook } from "lucide-react";
+import { Eye, EyeOff, Instagram, Send, Loader2, Music2, Facebook, PencilLine } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 type Socials = { telegram?: string; instagram?: string; tiktok?: string; facebook?: string };
@@ -118,88 +118,92 @@ export default function ProfileDetailsCard({ language, userId }: { language: App
 
   if (loading) {
     return (
-      <div role="status" aria-label={t("Loading profile", "جاري تحميل الملف")} className="rounded-3xl border border-border bg-card p-6 flex justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      <div role="status" aria-label={t("Loading profile", "جاري تحميل الملف")} className="flex justify-center rounded-[1.5rem] border border-border/80 bg-card p-6 shadow-sm">
+        <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <section aria-labelledby={`${id}-heading`} dir={isAr ? "rtl" : "ltr"} className="min-w-0 rounded-[1.5rem] border border-border bg-card p-5 shadow-sm sm:p-6">
-      <h2 id={`${id}-heading`} className="text-lg font-semibold">{t("Edit profile", "تعديل الملف الشخصي")}</h2>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("Your bio and social links appear on your student profile.", "نبذتك وحساباتك الاجتماعية تظهر بملفك للطلاب.")}</p>
+    <section aria-labelledby={`${id}-heading`} dir={isAr ? "rtl" : "ltr"} className="min-w-0 rounded-[1.5rem] border border-border/80 bg-card p-4 text-card-foreground shadow-sm sm:p-5">
+      <header className="flex items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><PencilLine aria-hidden="true" className="size-5" /></span>
+        <div className="min-w-0">
+          <h2 id={`${id}-heading`} className="text-lg font-black leading-snug">{t("Edit profile", "تعديل الملف الشخصي")}</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{t("Your bio and social links appear on your student profile.", "نبذتك وحساباتك الاجتماعية تظهر بملفك للطلاب.")}</p>
+        </div>
+      </header>
       {error && <p role="alert" className="mt-3 text-sm text-destructive">{errorText}</p>}
-      {!ready ? <Button type="button" onClick={() => setRetry(value => value + 1)} className="mt-4">{t("Try again", "حاول مرة ثانية")}</Button> : <form onSubmit={save} className="mt-5 space-y-5">
-
-      {/* Study hours visibility */}
-      <button
-        type="button"
-        role="switch"
-        aria-checked={showHours}
-        disabled={busy}
-        onClick={toggleHours}
-        className={`w-full flex items-center gap-3 rounded-2xl border p-4 text-start transition ${
-          showHours
-            ? "border-primary/50 bg-primary/10 shadow-[0_10px_30px_hsl(var(--primary)/0.25)]"
-            : "border-white/10 bg-background/40"
-        }`}
-      >
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${showHours ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-          {showHours ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-bold text-foreground">
-            {t("Study hours on my profile", "ساعات الدراسة في ملفي")}
-          </span>
-          <span className="block text-xs text-muted-foreground">
-            {showHours ? t("Visible to everyone", "ظاهرة للجميع") : t("Hidden from others", "مخفية عن الآخرين")}
-          </span>
-        </span>
-        <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${showHours ? "bg-primary" : "bg-muted"}`}>
-          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-background transition-all ${showHours ? "left-[1.375rem]" : "left-0.5"}`} />
-        </span>
-      </button>
-
-      {/* Bio */}
-      <div className="space-y-2">
-        <label htmlFor={`${id}-bio`} className="text-sm font-semibold text-foreground">{t("Bio", "نبذة عنك")}</label>
-        <Textarea
-          id={`${id}-bio`}
-          aria-describedby={`${id}-count`}
-          disabled={busy}
-          value={bio}
-          onChange={(e) => setBio(e.target.value.slice(0, 280))}
-          maxLength={280}
-          rows={3}
-          placeholder={t("Tell others about you…", "اكتب نبذة قصيرة عنك…")}
-        />
-        <p id={`${id}-count`} className="text-[11px] text-muted-foreground">{bio.length}/280</p>
-      </div>
-
-      {/* Socials */}
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">{t("Social accounts", "حساباتك الاجتماعية")}</label>
-        {FIELDS.map(({ key, icon: Icon, label, ph }) => (
-          <div key={key} className="flex items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-background/40 text-primary">
-              <Icon className="h-4 w-4" />
+      {!ready ? <Button type="button" onClick={() => setRetry(value => value + 1)} className="mt-4">{t("Try again", "حاول مرة ثانية")}</Button> : (
+        <form onSubmit={save} className="mt-4 space-y-4">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showHours}
+            disabled={busy}
+            onClick={toggleHours}
+            className={`flex w-full items-center gap-2.5 rounded-2xl border p-3 text-start transition-colors hover:border-primary/40 sm:gap-3 ${
+              showHours ? "border-primary/25 bg-primary/5" : "border-border bg-muted/25"
+            }`}
+          >
+            <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${showHours ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"}`}>
+              {showHours ? <Eye aria-hidden="true" className="size-4" /> : <EyeOff aria-hidden="true" className="size-4" />}
             </span>
-            <Input
-              aria-label={label}
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold leading-snug text-foreground">{t("Study hours on my profile", "ساعات الدراسة في ملفي")}</span>
+              <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{showHours ? t("Visible to everyone", "ظاهرة للجميع") : t("Hidden from others", "مخفية عن الآخرين")}</span>
+            </span>
+            <span aria-hidden="true" className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${showHours ? "bg-primary" : "bg-muted-foreground/45"}`}>
+              <span className={`absolute top-0.5 size-5 rounded-full bg-background transition-all ${showHours ? "start-[1.375rem]" : "start-0.5"}`} />
+            </span>
+          </button>
+
+          <div className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor={`${id}-bio`} className="text-sm font-bold text-foreground">{t("Bio", "نبذة عنك")}</label>
+              <span id={`${id}-count`} className="text-xs tabular-nums text-muted-foreground" dir="ltr">{bio.length}/280</span>
+            </div>
+            <Textarea
+              id={`${id}-bio`}
+              aria-describedby={`${id}-count`}
               disabled={busy}
-              value={socials[key] || ""}
-              onChange={(e) => setSocials((s) => ({ ...s, [key]: e.target.value }))}
-              placeholder={`${label} — ${ph}`}
-              maxLength={120}
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 280))}
+              maxLength={280}
+              rows={3}
+              placeholder={t("Tell others about you…", "اكتب نبذة قصيرة عنك…")}
+              className="resize-y rounded-xl border-border bg-background/70"
             />
           </div>
-        ))}
-      </div>
 
-      <Button type="submit" disabled={busy} className="w-full">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Save profile", "حفظ الملف")}
-      </Button>
-      </form>}
+          <fieldset className="min-w-0">
+            <legend className="mb-2 text-sm font-bold text-foreground">{t("Social accounts", "حساباتك الاجتماعية")}</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {FIELDS.map(({ key, icon: Icon, label, ph }) => (
+                <div key={key} className="min-w-0 space-y-1.5">
+                  <label htmlFor={`${id}-${key}`} className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                    <Icon aria-hidden="true" className="size-3.5 text-primary" />{label}
+                  </label>
+                  <Input
+                    id={`${id}-${key}`}
+                    dir="auto"
+                    disabled={busy}
+                    value={socials[key] || ""}
+                    onChange={(e) => setSocials((s) => ({ ...s, [key]: e.target.value }))}
+                    placeholder={key === "facebook" && isAr ? "رابط الحساب أو اسمه" : ph}
+                    maxLength={120}
+                    className="rounded-xl border-border bg-background/70"
+                  />
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <Button type="submit" disabled={busy} className="min-h-11 w-full rounded-xl font-bold sm:ms-auto sm:flex sm:w-fit">
+            {saving && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}{t("Save profile", "حفظ الملف")}
+          </Button>
+        </form>
+      )}
     </section>
   );
 }
