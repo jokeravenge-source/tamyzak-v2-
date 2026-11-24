@@ -80,8 +80,8 @@ export default function ChapterProgressCircles({ language, userId, onPracticeTop
         ? (isAr ? "فصول الطالب الأكثر دراسة" : "Student's most studied chapters")
         : (isAr ? "فصولك الأكثر دراسة" : "Your most studied chapters")}</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        {isAr ? "الدائرة تعرض دقة أسئلة الاختيار المصححة تلقائياً فقط (بعد ٣ أسئلة). تقييم البطاقات والوزاريات يظهر منفصلاً."
-          : "The circle shows automatically graded MCQ accuracy after 3 questions. Self-rated practice is separate."}
+        {isAr ? "بعد ٣ أسئلة مصحّحة، تعرض الدائرة دقة الاختيار من متعدد. قبلها تعرض التقييم الذاتي أو دقة أولية."
+          : "After 3 graded questions, the circle shows MCQ accuracy. Before that, it shows self-rated review or an early MCQ score."}
       </p>
       {chapters.length ? (
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -90,29 +90,45 @@ export default function ChapterProgressCircles({ language, userId, onPracticeTop
             const chapter = subject?.chapters.find((entry) => Number(entry.key.match(/\d+$/)?.[0]) === Number(item.chapter));
             const subjectName = subject?.[language] ?? item.subject;
             const chapterName = chapter?.[language] ?? (isAr ? `الفصل ${item.chapter}` : `Chapter ${item.chapter}`);
+            const usesSelfRating = item.percent === null && item.selfPercent !== null;
+            const ringPercent = item.percent ?? item.selfPercent ?? item.gradedPercent;
+            const ringLabel = usesSelfRating
+              ? (isAr ? "تقييم المراجعة الذاتي" : "Self-rated review")
+              : item.percent === null
+                ? (isAr ? "دقة الاختيار الأولية" : "Early MCQ accuracy")
+                : (isAr ? "دقة أسئلة الاختيار" : "MCQ accuracy");
+            const resultLabel = ringPercent === null ? "" : `${ringLabel} ${ringPercent}%`;
             const radius = 38;
             const circumference = 2 * Math.PI * radius;
             return (
               <button type="button" key={`${item.subject}:${item.chapter}`}
                 onClick={() => setSelected({ subject: item.subject, chapter: item.chapter })}
                 className="flex items-center gap-4 rounded-2xl border border-border bg-background/80 p-3 text-start transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-col sm:text-center"
-                aria-label={isAr ? `عرض إجابات ${subjectName} ${chapterName}` : `Review answers for ${subjectName} ${chapterName}`}
+                aria-label={isAr
+                  ? `عرض إجابات ${subjectName} ${chapterName}${resultLabel ? `، ${resultLabel}` : ""}`
+                  : `Review answers for ${subjectName} ${chapterName}${resultLabel ? `, ${resultLabel}` : ""}`}
                 dir={isAr ? "rtl" : "ltr"}>
-                <div className="relative size-24 shrink-0" role="img" aria-label={`${subjectName} · ${chapterName}: ${item.percent === null ? (isAr ? "لا توجد بيانات كافية" : "Not enough graded answers") : `${item.percent}%`}`}>
-                  <svg className="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
+                <div className="relative size-24 shrink-0" aria-hidden="true">
+                  <svg className="size-full -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="9" />
-                    {item.percent !== null && <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth="9" strokeLinecap="round"
-                      strokeDasharray={circumference} strokeDashoffset={circumference * (1 - item.percent / 100)} />}
+                    {ringPercent !== null && ringPercent > 0 && <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth="9" strokeLinecap="round"
+                      strokeDasharray={circumference} strokeDashoffset={circumference * (1 - ringPercent / 100)} />}
                   </svg>
-                  <span className="absolute inset-0 grid place-items-center text-xl font-bold tabular-nums text-foreground" dir="ltr">{item.percent === null ? "—" : `${item.percent}%`}</span>
+                  <span className="absolute inset-0 grid place-items-center text-xl font-bold tabular-nums text-foreground" dir="ltr">{ringPercent === null ? "—" : `${ringPercent}%`}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-foreground">{subjectName} · {chapterName}</p>
+                  {ringPercent !== null && <p className="mt-1 text-xs font-semibold text-primary">{ringLabel}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {isAr ? `${item.questions} أسئلة مختلفة · ${item.attempts} محاولات` : `${item.questions} distinct questions · ${item.attempts} attempts`}
                   </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{isAr ? `${item.gradedCount} أسئلة مصححة تلقائياً` : `${item.gradedCount} graded MCQs`}</p>
-                  {item.selfPercent !== null && <p className="mt-1 text-[11px] text-muted-foreground">{isAr ? `تقييمك الذاتي: ${item.selfPercent}% من ${item.selfRatedCount}` : `Self ratings: ${item.selfPercent}% of ${item.selfRatedCount}`}</p>}
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {isAr ? `${item.gradedCount} أسئلة مصححة تلقائياً` : `${item.gradedCount} graded ${item.gradedCount === 1 ? "MCQ" : "MCQs"}`}
+                    {usesSelfRating && item.gradedPercent !== null && (isAr ? ` · ${item.gradedPercent}% إجابات صحيحة` : ` · ${item.gradedPercent}% correct`)}
+                  </p>
+                  {item.selfPercent !== null && <p className="mt-1 text-[11px] text-muted-foreground">{usesSelfRating
+                    ? (isAr ? `عدد التقييمات الذاتية ${item.selfRatedCount}` : `From ${item.selfRatedCount} ${item.selfRatedCount === 1 ? "self rating" : "self ratings"}`)
+                    : (isAr ? `تقييم المراجعة الذاتي ${item.selfPercent}% من ${item.selfRatedCount}` : `Self ratings ${item.selfPercent}% of ${item.selfRatedCount}`)}</p>}
                 </div>
               </button>
             );
@@ -177,8 +193,8 @@ export default function ChapterProgressCircles({ language, userId, onPracticeTop
               );
             })}
             <p className="text-xs text-muted-foreground">
-              {isAr ? "تُعرض آخر إجابة لكل سؤال مختلف ضمن أحدث ٢٠ سؤالاً. نسبة الدائرة تعتمد فقط على الاختيارات المصححة تلقائياً بعد ٣ أسئلة."
-                : "Shows the latest answer per question among the 20 most recent. The circle uses graded MCQs only, after 3 questions."}
+              {isAr ? "تُعرض آخر إجابة لكل سؤال مختلف ضمن أحدث ٢٠ سؤالاً."
+                : "Shows the latest answer per question among the 20 most recent."}
             </p>
           </div>
         )}

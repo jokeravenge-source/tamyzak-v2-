@@ -41,7 +41,7 @@ describe("shared practice categories", () => {
     ]);
     expect(chapters).toHaveLength(3);
     expect(chapters[0]).toMatchObject({ subject: "physics", chapter: "1", attempts: 4, questions: 3, percent: 67 });
-    expect(chapters[1]).toMatchObject({ subject: "biology", chapter: "2", attempts: 2, percent: null });
+    expect(chapters[1]).toMatchObject({ subject: "biology", chapter: "2", attempts: 2, percent: null, gradedPercent: 50 });
   });
 
   it("shows the same latest question results that contribute to the chapter percentage", () => {
@@ -59,6 +59,6 @@ describe("shared practice categories", () => {
   it("does not show self ratings as a graded chapter score", () => {
     const cards: PracticeAttempt[] = ["a", "b", "c"].map((key) => ({ subject: "physics", chapter: "1",
       category_key: "physics:1:general", source: "flashcards", question_key: key, correct: key !== "c", created_at: "2026-09-24T00:00:00Z" }));
-    expect(topChaptersByPractice(cards)[0]).toMatchObject({ percent: null, selfPercent: 67, gradedCount: 0 });
+    expect(topChaptersByPractice(cards)[0]).toMatchObject({ percent: null, gradedPercent: null, selfPercent: 67, gradedCount: 0 });
   });
 });

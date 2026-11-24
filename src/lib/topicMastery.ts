@@ -153,10 +153,12 @@ export function topChaptersByPractice(attempts: PracticeAttempt[]) {
       const evidence = chapterQuestionResults(chapterAttempts);
       const graded = evidence.filter((attempt) => attempt.source === "mcq_bank");
       const selfRated = evidence.filter((attempt) => attempt.source !== "mcq_bank");
+      const gradedPercent = graded.length ? Math.round(100 * graded.filter((attempt) => attempt.correct).length / graded.length) : null;
       return {
         subject, chapter, attempts: chapterAttempts.length, questions: evidence.length,
         gradedCount: graded.length, selfRatedCount: selfRated.length,
-        percent: graded.length >= 3 ? Math.round(100 * graded.filter((attempt) => attempt.correct).length / graded.length) : null,
+        percent: graded.length >= 3 ? gradedPercent : null,
+        gradedPercent,
         selfPercent: selfRated.length ? Math.round(100 * selfRated.filter((attempt) => attempt.correct).length / selfRated.length) : null,
       };
     });
