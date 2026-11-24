@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { CalendarDays, Check, Clock3, Loader2, Swords, UsersRound, X } from "lucide-react";
+import { CalendarDays, Check, Clock3, Flame, Loader2, Swords, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const COPY = {
   en: {
     eyebrow: "New friend challenge", title: "invited you to study",
     description: "Your saved Sessions study time will count toward this challenge.",
+    allOrNothing: "All or Nothing",
     duration: "Time remaining", participants: "Invited students",
     accept: "Accept challenge", decline: "Decline", accepted: "Challenge accepted",
     declined: "Invitation declined", failed: "Could not respond to this invitation",
@@ -19,6 +20,7 @@ const COPY = {
   ar: {
     eyebrow: "تحدي أصدقاء جديد", title: "دعاك لتحدي دراسة",
     description: "وقت دراستك المحفوظ داخل الجلسات راح ينحسب بهذا التحدي.",
+    allOrNothing: "الكل أو لا شيء",
     duration: "الوقت المتبقي", participants: "الطلاب المدعوون",
     accept: "قبول التحدي", decline: "رفض", accepted: "تم قبول التحدي",
     declined: "تم رفض الدعوة", failed: "تعذّر الرد على الدعوة",
@@ -50,10 +52,22 @@ export default function StudyChallengeInviteWatcher({ language }: { language: Ap
     const onVisible = () => { if (document.visibilityState === "visible") void check(); };
     window.addEventListener("focus", onVisible);
     document.addEventListener("visibilitychange", onVisible);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let stopped = false;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (stopped || !data.user) return;
+      channel = supabase.channel(`study-challenge-invites:${data.user.id}`)
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "study_challenge_members", filter: `user_id=eq.${data.user.id}`,
+        }, () => void check())
+        .subscribe();
+    });
     return () => {
+      stopped = true;
       window.clearInterval(interval);
       window.removeEventListener("focus", onVisible);
       document.removeEventListener("visibilitychange", onVisible);
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [check]);
 
@@ -85,6 +99,7 @@ export default function StudyChallengeInviteWatcher({ language }: { language: Ap
           </div>
           <h2 id="study-challenge-invite-title" className="mt-6 text-2xl font-black leading-tight sm:text-3xl">{invite.creatorName} {t.title}</h2>
           <p className="mt-2 text-lg font-black text-cyan-100">{invite.title}</p>
+          {invite.challengeType === "all_or_nothing" && <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-500/25 px-3 py-1 text-xs font-black text-white ring-1 ring-white/20"><Flame className="h-3.5 w-3.5" />{t.allOrNothing}</span>}
         </div>
 
         <div className="p-6 sm:p-7">

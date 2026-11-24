@@ -36,6 +36,7 @@ import { getBuiltInPhysicsCh3 } from "@/lib/physicsChapter3Mcqs";
 import { getBuiltInPhysicsCh4 } from "@/lib/physicsChapter4Mcqs";
 import { getBuiltInPhysicsCh5 } from "@/lib/physicsChapter5Mcqs";
 import { getBuiltInPhysicsCh6 } from "@/lib/physicsChapter6Mcqs";
+import { getBuiltInPhysicsCh7 } from "@/lib/physicsChapter7Mcqs";
 import { getBuiltInBiologyChapter2 } from "@/lib/biologyChapter2Mcqs";
 import { getBuiltInEnglishLiteratureSection1 } from "@/lib/englishLiteratureSection1Mcqs";
 import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSection2Mcqs";
@@ -169,7 +170,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const rowKey = (row: Pick<Row, "subject" | "chapter" | "question">) =>
         `${row.subject}\u0000${row.chapter}\u0000${row.question.trim()}`;
       const existingQuestions = new Set(databaseRows.map(rowKey));
-      const physicsFallback = [...getBuiltInPhysicsCh2(lang), ...getBuiltInPhysicsCh3(lang), ...getBuiltInPhysicsCh4(lang), ...getBuiltInPhysicsCh5(lang), ...getBuiltInPhysicsCh6(lang)].filter(
+      const physicsFallback = [...getBuiltInPhysicsCh2(lang), ...getBuiltInPhysicsCh3(lang), ...getBuiltInPhysicsCh4(lang), ...getBuiltInPhysicsCh5(lang), ...getBuiltInPhysicsCh6(lang), ...getBuiltInPhysicsCh7(lang)].filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
       const biologyChapterTwoFallback = getBuiltInBiologyChapter2(lang).filter(

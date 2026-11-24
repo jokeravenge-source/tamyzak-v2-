@@ -15,6 +15,8 @@ export type StudyChallenge = {
   status: "active" | "cancelled";
   myStatus: "pending" | "accepted" | "declined" | "open";
   isPublic?: boolean;
+  challengeType?: "standard" | "all_or_nothing";
+  publicSeries?: "weekly" | "monthly" | null;
   participants: StudyChallengeParticipant[];
 };
 

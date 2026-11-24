@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, ChevronDown, Clock3, Crown, Loader2, Plus, Search, Swords, Trophy, UserPlus, UsersRound, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChevronDown, Clock3, Crown, Flame, Loader2, Plus, Search, Swords, Trophy, UserPlus, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -31,6 +31,9 @@ const COPY = {
     eyebrow: "Study with friends", title: "Friend challenges",
     description: "Choose a duration, invite friends, and see who records the most study time in Sessions.",
     create: "Create challenge", incoming: "Invitations", active: "Active challenges", finished: "Results",
+    mode: "Challenge mode", classic: "Classic", classicDesc: "A friendly study-time leaderboard.",
+    allOrNothing: "All or Nothing", allOrNothingDesc: "Invite your friends and compete until the timer ends. The highest saved Sessions time wins.",
+    launchAllOrNothing: "Start All or Nothing", launchAllOrNothingDesc: "Search for friends by name, invite them, and settle the challenge on one live leaderboard.",
     empty: "No challenges yet. Create one and invite your study friends.",
     titleLabel: "Challenge name", titlePlaceholder: "e.g. Finals focus sprint",
     duration: "Duration", friends: "Invite friends", search: "Search by student name",
@@ -45,12 +48,15 @@ const COPY = {
     created: "Challenge created and invitations sent", accepted: "Challenge accepted",
     declined: "Invitation declined", cancelledToast: "Challenge cancelled",
     pendingFriends: "invited friends have not answered yet", recorded: "Saved Sessions time",
-    publicTitle: "Public challenge", publicDesc: "Open to every student — the leaderboard ranks who studies the most this week.", join: "Join the challenge", joined: "You joined the challenge",
+    publicTitle: "Public challenges", publicWeeklyDesc: "Open to every student for seven days.", publicMonthlyDesc: "Open to every student for thirty days.", join: "Join the challenge", joined: "You joined the challenge",
   },
   ar: {
     eyebrow: "ادرس ويا أصدقائك", title: "تحديات الأصدقاء",
     description: "حدد المدة، ادعُ أصدقاءك، وشوف منو يجمع وقت دراسة أكثر داخل الجلسات.",
     create: "إنشاء تحدي", incoming: "الدعوات", active: "التحديات الفعالة", finished: "النتائج",
+    mode: "نوع التحدي", classic: "تحدي عادي", classicDesc: "منافسة ودّية على وقت الدراسة.",
+    allOrNothing: "الكل أو لا شيء", allOrNothingDesc: "ادعُ أصدقاءك وتنافسوا لحد انتهاء الوقت. يفوز صاحب أعلى وقت محفوظ داخل الجلسات.",
+    launchAllOrNothing: "ابدأ تحدي الكل أو لا شيء", launchAllOrNothingDesc: "ابحث عن أصدقائك بالاسم، ادعهم، واحسموا التحدي بلوحة ترتيب مباشرة.",
     empty: "ما عندك تحديات بعد. أنشئ تحدي وادعُ أصدقاء الدراسة.",
     titleLabel: "اسم التحدي", titlePlaceholder: "مثلاً: سباق دراسة الفاينل",
     duration: "مدة التحدي", friends: "ادعُ أصدقاء", search: "ابحث باسم الطالب",
@@ -65,7 +71,7 @@ const COPY = {
     created: "تم إنشاء التحدي وإرسال الدعوات", accepted: "تم قبول التحدي",
     declined: "تم رفض الدعوة", cancelledToast: "تم إلغاء التحدي",
     pendingFriends: "أصدقاء مدعوين بعدهم ما جاوبوا", recorded: "وقت الجلسات المحفوظ",
-    publicTitle: "تحدي عام", publicDesc: "مفتوح لكل الطلاب — لوحة الترتيب تعرض أكثر الطلاب دراسة هذا الأسبوع.", join: "انضم للتحدي", joined: "انضممت للتحدي",
+    publicTitle: "التحديات العامة", publicWeeklyDesc: "مفتوح لكل الطلاب لمدة سبعة أيام.", publicMonthlyDesc: "مفتوح لكل الطلاب لمدة ثلاثين يومًا.", join: "انضم للتحدي", joined: "انضممت للتحدي",
   },
 } as const;
 
@@ -105,6 +111,7 @@ function ChallengeCard({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block whitespace-normal font-black leading-relaxed text-foreground [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></span>
+          {challenge.challengeType === "all_or_nothing" && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-black text-rose-700 dark:text-rose-300"><Flame className="h-3 w-3" />{t.allOrNothing}</span>}
           <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><UsersRound className="h-3.5 w-3.5" />{standings.length} {t.participants}</span>
             {!isFinished && <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{remainingLabel(challenge.endsAt, language, now)}</span>}
@@ -164,6 +171,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
   const [createOpen, setCreateOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState(7);
+  const [challengeType, setChallengeType] = useState<"standard" | "all_or_nothing">("standard");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FriendResult[]>([]);
   const [selected, setSelected] = useState<FriendResult[]>([]);
@@ -171,6 +179,11 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
   const [creating, setCreating] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<StudyChallenge | null>(null);
   const [now, setNow] = useState(Date.now());
+
+  const openCreate = (type: "standard" | "all_or_nothing" = "standard") => {
+    setChallengeType(type);
+    setCreateOpen(true);
+  };
 
   const load = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
@@ -222,8 +235,8 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
   const createChallenge = async () => {
     if (!title.trim() || selected.length === 0 || creating) return;
     setCreating(true);
-    const { data: challengeId, error } = await supabase.rpc("create_study_challenge", {
-      _title: title.trim(), _duration_days: duration, _invitee_ids: selected.map((friend) => friend.user_id),
+    const { data: challengeId, error } = await supabase.rpc("create_study_challenge_v2", {
+      _title: title.trim(), _duration_days: duration, _invitee_ids: selected.map((friend) => friend.user_id), _challenge_type: challengeType,
     });
     if (error) { setCreating(false); toast.error(error.message); return; }
     if (challengeId) {
@@ -232,7 +245,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
     }
     setCreating(false);
     toast.success(t.created);
-    setCreateOpen(false); setTitle(""); setSelected([]); setQuery(""); setDuration(7);
+    setCreateOpen(false); setTitle(""); setSelected([]); setQuery(""); setDuration(7); setChallengeType("standard");
     await load();
   };
 
@@ -261,15 +274,24 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
               <h1 className="mt-4 text-3xl font-black tracking-tight [overflow-wrap:anywhere] md:text-5xl">{t.title}</h1>
               <p className="mt-3 max-w-xl text-sm leading-7 text-white/80 md:text-base">{t.description}</p>
             </div>
-            <Button onClick={() => setCreateOpen(true)} className="h-12 shrink-0 gap-2 rounded-xl bg-white px-5 font-black text-violet-700 hover:bg-white/90"><Plus className="h-4 w-4" />{t.create}</Button>
+            <Button onClick={() => openCreate("standard")} className="h-12 shrink-0 gap-2 rounded-xl bg-white px-5 font-black text-violet-700 hover:bg-white/90"><Plus className="h-4 w-4" />{t.create}</Button>
           </div>
         </header>
+
+        <button type="button" onClick={() => openCreate("all_or_nothing")} className="group mb-7 flex w-full items-center gap-4 rounded-[1.5rem] border border-rose-500/25 bg-gradient-to-r from-rose-500/10 via-card to-amber-500/10 p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-rose-500/45 hover:shadow-md sm:p-5">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-rose-600 to-amber-500 text-white shadow-lg shadow-rose-500/20"><Flame className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-black text-foreground">{t.launchAllOrNothing}</span>
+            <span className="mt-1 block text-sm leading-6 text-muted-foreground">{t.launchAllOrNothingDesc}</span>
+          </span>
+          <ArrowLeft className={`hidden h-5 w-5 shrink-0 text-rose-600 transition-transform group-hover:-translate-x-1 sm:block ${dir === "rtl" ? "rotate-180 group-hover:translate-x-1" : ""}`} />
+        </button>
 
         {loading ? (
           <div className="grid place-items-center py-24"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
         ) : (
           <div className="min-w-0 space-y-8">
-            {openPublic.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{openPublic.map((challenge) => <div key={challenge.id} className="min-w-0 space-y-3"><div className="min-w-0 rounded-[1.5rem] border border-amber-400/40 bg-card p-5 shadow-sm"><h3 className="min-w-0 font-black leading-relaxed [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></h3><p className="mt-1 text-sm text-muted-foreground">{t.publicDesc}</p><p className="mt-1 text-xs text-muted-foreground">{t.timeLeft}: {remainingLabel(challenge.endsAt, language, now)}</p><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="mt-4 h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal rounded-xl py-3">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}{t.join}</Button></div><ChallengeCard challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} /></div>)}</div></section>}
+            {openPublic.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.publicTitle}</h2><div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">{openPublic.map((challenge) => <div key={challenge.id} className="min-w-0 rounded-[1.5rem] border border-amber-400/40 bg-card p-5 shadow-sm"><h3 className="min-w-0 font-black leading-relaxed [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></h3><p className="mt-1 text-sm text-muted-foreground">{challenge.publicSeries === "monthly" ? t.publicMonthlyDesc : t.publicWeeklyDesc}</p><p className="mt-1 text-xs text-muted-foreground">{t.timeLeft}: {remainingLabel(challenge.endsAt, language, now)}</p><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="mt-4 h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal rounded-xl py-3">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}{t.join}</Button></div>)}</div></section>}
 
             {incoming.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><UserPlus className="h-5 w-5 text-violet-600" />{t.incoming}<span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs text-violet-700 dark:text-violet-300">{incoming.length}</span></h2><div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">{incoming.map((challenge) => <article key={challenge.id} className="min-w-0 rounded-[1.5rem] border border-violet-500/25 bg-card p-5 shadow-sm"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-600 text-white"><Swords className="h-5 w-5" /></span><div className="min-w-0 flex-1"><h3 className="min-w-0 font-black leading-relaxed [overflow-wrap:anywhere]"><bdi>{challenge.title}</bdi></h3><p className="mt-1 text-xs text-muted-foreground [overflow-wrap:anywhere]">{challenge.creatorName} {t.invitedBy} · {remainingLabel(challenge.endsAt, language, now)}</p></div></div><div className="mt-4 flex gap-2"><Button onClick={() => respond(challenge.id, true)} disabled={busyId === challenge.id} className="h-auto min-h-11 min-w-0 flex-1 gap-1.5 whitespace-normal rounded-xl py-2">{busyId === challenge.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{t.accept}</Button><Button onClick={() => respond(challenge.id, false)} disabled={busyId === challenge.id} variant="outline" className="h-auto min-h-11 min-w-0 flex-1 gap-1.5 whitespace-normal rounded-xl py-2"><X className="h-4 w-4" />{t.decline}</Button></div></article>)}</div></section>}
 
@@ -277,7 +299,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
 
             {finished.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.finished}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{finished.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} />)}</div></section>}
 
-            {challenges.length === 0 && <section className="rounded-[2rem] border border-dashed border-border bg-card/65 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><UsersRound className="h-7 w-7" /></span><p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">{t.empty}</p><Button onClick={() => setCreateOpen(true)} className="mt-5 gap-2 rounded-xl"><Plus className="h-4 w-4" />{t.create}</Button></section>}
+            {challenges.length === 0 && <section className="rounded-[2rem] border border-dashed border-border bg-card/65 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><UsersRound className="h-7 w-7" /></span><p className="mx-auto mt-4 max-w-md text-sm leading-7 text-muted-foreground">{t.empty}</p><Button onClick={() => openCreate("standard")} className="mt-5 gap-2 rounded-xl"><Plus className="h-4 w-4" />{t.create}</Button></section>}
           </div>
         )}
       </div>
@@ -286,6 +308,7 @@ export default function StudyChallengeHub({ language, onBack, onStudy }: { langu
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg" dir={dir}>
           <DialogHeader><DialogTitle className="text-xl font-black">{t.create}</DialogTitle><DialogDescription>{t.startNow}</DialogDescription></DialogHeader>
           <div className="space-y-5 pt-2">
+            <fieldset><legend className="mb-2 text-sm font-bold">{t.mode}</legend><div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><button type="button" onClick={() => setChallengeType("standard")} aria-pressed={challengeType === "standard"} className={`rounded-2xl border p-3 text-start transition ${challengeType === "standard" ? "border-violet-600 bg-violet-500/10 ring-1 ring-violet-600" : "border-border bg-card hover:border-violet-400"}`}><span className="block font-black">{t.classic}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t.classicDesc}</span></button><button type="button" onClick={() => setChallengeType("all_or_nothing")} aria-pressed={challengeType === "all_or_nothing"} className={`rounded-2xl border p-3 text-start transition ${challengeType === "all_or_nothing" ? "border-rose-500 bg-rose-500/10 ring-1 ring-rose-500" : "border-border bg-card hover:border-rose-400"}`}><span className="flex items-center gap-1.5 font-black"><Flame className="h-4 w-4 text-rose-600" />{t.allOrNothing}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{t.allOrNothingDesc}</span></button></div></fieldset>
             <label className="block"><span className="mb-2 block text-sm font-bold">{t.titleLabel}</span><Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.titlePlaceholder} maxLength={80} /></label>
             <fieldset><legend className="mb-2 text-sm font-bold">{t.duration}</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{DURATIONS.map((days) => <button key={days} type="button" onClick={() => setDuration(days)} aria-pressed={duration === days} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${duration === days ? "border-violet-600 bg-violet-600 text-white" : "border-border bg-card hover:border-violet-400"}`}>{days}<span className="ms-1 text-xs font-semibold">{days === 1 ? t.oneDay : t.days}</span></button>)}</div></fieldset>
             <div><p className="mb-2 text-sm font-bold">{t.friends}</p><div className="relative"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.search} className="ps-9" />{searching && <Loader2 className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}</div>

@@ -5,6 +5,13 @@ const backend = vi.hoisted(() => ({ rpc: vi.fn(), success: vi.fn(), error: vi.fn
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   auth: { getUser: async () => ({ data: { user: { id: "invitee" } } }) },
   rpc: backend.rpc,
+  channel: () => {
+    const realtime = { on: vi.fn(), subscribe: vi.fn() };
+    realtime.on.mockReturnValue(realtime);
+    realtime.subscribe.mockReturnValue(realtime);
+    return realtime;
+  },
+  removeChannel: vi.fn(),
 } }));
 vi.mock("sonner", () => ({ toast: { success: backend.success, error: backend.error } }));
 

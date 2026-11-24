@@ -3544,33 +3544,42 @@ export type Database = {
       }
       study_challenges: {
         Row: {
+          challenge_type: string
           created_at: string
           creator_id: string
           ends_at: string
           id: string
           is_public: boolean
+          public_period_key: string | null
+          public_series: string | null
           starts_at: string
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          challenge_type?: string
           created_at?: string
           creator_id: string
           ends_at: string
           id?: string
           is_public?: boolean
+          public_period_key?: string | null
+          public_series?: string | null
           starts_at?: string
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          challenge_type?: string
           created_at?: string
           creator_id?: string
           ends_at?: string
           id?: string
           is_public?: boolean
+          public_period_key?: string | null
+          public_series?: string | null
           starts_at?: string
           status?: string
           title?: string
@@ -4818,6 +4827,15 @@ export type Database = {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
         Returns: string
       }
+      create_study_challenge_v2: {
+        Args: {
+          _challenge_type?: string
+          _duration_days: number
+          _invitee_ids: string[]
+          _title: string
+        }
+        Returns: string
+      }
       create_study_royale: {
         Args: {
           _chapter: number
@@ -4846,6 +4864,7 @@ export type Database = {
       get_literature_mcq_set: { Args: { set_id: string }; Returns: Json }
       get_my_referral_code: { Args: never; Returns: string }
       get_my_study_challenges: { Args: never; Returns: Json }
+      ensure_tamayzak_public_challenges: { Args: never; Returns: undefined }
       get_nadawi_admin_test_state: { Args: never; Returns: Json }
       get_nadawi_contest_leaderboard: {
         Args: never
