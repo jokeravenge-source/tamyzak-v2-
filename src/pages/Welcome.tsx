@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import tamayzakLogo from "@/assets/tamayzak-logo.png.asset.json";
 
 const CREAM = "#F7F4EC";
 const NAVY = "#183A72";
@@ -105,9 +104,11 @@ const Welcome = () => {
         className="mt-2 mb-2 flex flex-col items-center"
       >
         <img
-          src={tamayzakLogo.url}
+          src="/app-icon-512.png"
           alt="Tamayzak"
-          className="w-32 h-32 object-contain select-none"
+          width={128}
+          height={128}
+          className="w-32 h-32 rounded-[1.75rem] object-contain select-none"
           draggable={false}
         />
       </motion.div>

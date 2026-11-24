@@ -171,7 +171,7 @@ export async function onPushMessage(handler?: (title: string, body: string) => v
           await reg.showNotification(title, {
             body,
             icon: "/app-icon-192.png",
-            badge: "/app-icon-192.png",
+            badge: "/notification-badge.png",
             tag: payload.data?.messageId ? `tamayzak-push-${payload.data.messageId}` : "tamayzak-push",
             data: { url: payload.data?.url ?? "/" },
           });

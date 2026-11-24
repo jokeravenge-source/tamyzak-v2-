@@ -22,7 +22,7 @@ function show(title, body, url, messageId) {
   return self.registration.showNotification(title || "تميزك", {
     body: body || "",
     icon: "/app-icon-192.png",
-    badge: "/app-icon-192.png",
+    badge: "/notification-badge.png",
     tag: messageId ? `tamayzak-push-${messageId}` : "tamayzak-push",
     renotify: true,
     data: { url: url || "/" },
