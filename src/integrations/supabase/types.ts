@@ -5033,7 +5033,7 @@ export type Database = {
       redeem_literature_code: { Args: { access_code: string }; Returns: Json }
       redeem_premium_promo: { Args: { _code: string }; Returns: Json }
       redeem_premium_with_points: {
-        Args: { _environment?: string; _request_id?: string }
+        Args: { _environment?: string }
         Returns: Json
       }
       redeem_referral: { Args: { _code: string }; Returns: Json }
