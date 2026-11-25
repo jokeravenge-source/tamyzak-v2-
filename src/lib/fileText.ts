@@ -59,6 +59,69 @@ const fileToDataUrl = (file: File) =>
 
 const normalizePageText = (text: string) => text.replace(/\s+/g, " ").trim();
 
+async function openPdfDocument(file: File) {
+  configurePdfWorker();
+  const objectUrl = typeof URL !== "undefined" && URL.createObjectURL ? URL.createObjectURL(file) : null;
+  const task = pdfjs.getDocument({
+    ...(objectUrl ? { url: objectUrl } : { data: new Uint8Array(await file.arrayBuffer()) }),
+    cMapUrl: PDF_CMAP_URL,
+    cMapPacked: true,
+    standardFontDataUrl: PDF_STANDARD_FONTS_URL,
+    useSystemFonts: true,
+    useWorkerFetch: false,
+    disableFontFace: false,
+  });
+  let closed = false;
+  const close = async () => {
+    if (closed) return;
+    closed = true;
+    try { await task.destroy(); }
+    finally { if (objectUrl) URL.revokeObjectURL(objectUrl); }
+  };
+  try { return { pdf: await task.promise, close }; }
+  catch (error) {
+    await close();
+    throw error;
+  }
+}
+
+type PdfDocument = Awaited<ReturnType<typeof pdfjs.getDocument>["promise"]>;
+
+async function readPdfPageText(pdf: PdfDocument, pageNumber: number) {
+  const page = await pdf.getPage(pageNumber);
+  try {
+    const content = await page.getTextContent({ includeMarkedContent: false });
+    return normalizePageText(content.items.map(item => "str" in item ? item.str : "").filter(Boolean).join(" "));
+  } finally {
+    page.cleanup();
+  }
+}
+
+export type PdfTextPages = {
+  name: string;
+  totalPages: number;
+  readPage: (number: number) => Promise<ExtractedPdfPage>;
+  close: () => Promise<void>;
+};
+
+/** Open a chapter locally and extract only the requested file page. */
+export async function openPdfTextPages(input: File, maxBytes: number, maxChars: number): Promise<PdfTextPages> {
+  if (!isPdfFile(input)) throw new Error("unsupported_file");
+  if (input.size > maxBytes) throw new Error("file_too_large");
+  const file = await materializeFile(input);
+  if (file.size > maxBytes) throw new Error("file_too_large");
+  const { pdf, close } = await openPdfDocument(file);
+  return {
+    name: file.name,
+    totalPages: pdf.numPages,
+    close,
+    async readPage(page) {
+      if (!Number.isInteger(page) || page < 1 || page > pdf.numPages) throw new Error("invalid_pdf_page");
+      return { page, text: (await readPdfPageText(pdf, page)).slice(0, maxChars) };
+    },
+  };
+}
+
 const buildPagePlan = (totalPages: number, maxPages: number) => {
   if (totalPages <= maxPages) return Array.from({ length: totalPages }, (_, i) => i + 1);
 
@@ -109,24 +172,10 @@ async function renderPdfPageImage(pdf: Awaited<ReturnType<typeof pdfjs.getDocume
 }
 
 async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Promise<StudyMaterial> {
-  configurePdfWorker();
-
   const maxPagesLimit = options.maxPages ?? DEFAULT_MAX_PDF_PAGES;
   const maxChars = options.maxChars ?? DEFAULT_MAX_CHARS;
-  const objectUrl = typeof URL !== "undefined" && URL.createObjectURL ? URL.createObjectURL(file) : null;
-  const pdfSource = {
-    ...(objectUrl ? { url: objectUrl } : { data: new Uint8Array(await file.arrayBuffer()) }),
-    cMapUrl: PDF_CMAP_URL,
-    cMapPacked: true,
-    standardFontDataUrl: PDF_STANDARD_FONTS_URL,
-    useSystemFonts: true,
-    useWorkerFetch: false,
-    disableFontFace: false,
-  };
-  const loadingTask = pdfjs.getDocument(pdfSource);
-
+  const { pdf, close } = await openPdfDocument(file);
   try {
-    const pdf = await loadingTask.promise;
     if (options.complete && pdf.numPages > maxPagesLimit) {
       throw new Error(`قسّم الملف إلى أجزاء لا تتجاوز ${maxPagesLimit} صفحة للجلسة الواحدة.`);
     }
@@ -142,36 +191,25 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
     for (let index = 0; index < pagePlan.length; index++) {
       const pageNumber = pagePlan[index];
       try {
-        const page = await pdf.getPage(pageNumber);
-        try {
-          const content = await page.getTextContent({ includeMarkedContent: false });
-          inspectedPages++;
-          const pageText = normalizePageText(
-            content.items
-              .map((item) => ("str" in item ? item.str : ""))
-              .filter(Boolean)
-              .join(" "),
-          );
+        const pageText = await readPdfPageText(pdf, pageNumber);
+        inspectedPages++;
 
-          if (!pageText) emptyPages++;
-          else {
-            const pageLabel = `[Page ${pageNumber}]\n`;
-            const labelledText = pageLabel + pageText;
-            if (options.complete && totalLength + labelledText.length > maxChars) {
-              throw new Error("محتوى الملف طويل. قسّمه إلى أجزاء أصغر حتى نشرحه بالكامل.");
-            }
-            const remaining = maxChars - totalLength;
-            const included = labelledText.slice(0, remaining);
-            chunks.push(included);
-            if (options.textOnly) {
-              const text = included.slice(pageLabel.length).trim();
-              if (text) pages.push({ page: pageNumber, text });
-              truncated ||= included.length < labelledText.length;
-            }
-            totalLength += Math.min(labelledText.length, remaining);
+        if (!pageText) emptyPages++;
+        else {
+          const pageLabel = `[Page ${pageNumber}]\n`;
+          const labelledText = pageLabel + pageText;
+          if (options.complete && totalLength + labelledText.length > maxChars) {
+            throw new Error("محتوى الملف طويل. قسّمه إلى أجزاء أصغر حتى نشرحه بالكامل.");
           }
-        } finally {
-          page.cleanup();
+          const remaining = maxChars - totalLength;
+          const included = labelledText.slice(0, remaining);
+          chunks.push(included);
+          if (options.textOnly) {
+            const text = included.slice(pageLabel.length).trim();
+            if (text) pages.push({ page: pageNumber, text });
+            truncated ||= included.length < labelledText.length;
+          }
+          totalLength += Math.min(labelledText.length, remaining);
         }
       } catch (error) {
         if (options.complete) throw error;
@@ -217,8 +255,7 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
       fileName: file.name,
     };
   } finally {
-    await loadingTask.destroy();
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    await close();
   }
 }
 

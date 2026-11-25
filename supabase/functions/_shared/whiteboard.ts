@@ -35,7 +35,7 @@ export type BoardInput = {
   attachment?: { name: string; pages?: { page: number; text: string }[]; text?: string; selectedPage?: boolean };
 };
 
-export type BoardError = "missing_source" | "invalid_lesson" | "board_unavailable";
+export type BoardError = "missing_source" | "invalid_lesson" | "board_unavailable" | "auth_required" | "board_rate_limit";
 
 export const BOARD_STEP_MAX = 6;
 export const BOARD_QUESTION_MAX = 600;

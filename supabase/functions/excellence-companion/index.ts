@@ -18,23 +18,62 @@ const AI_MODEL = "google/gemini-3.8-flash";
 const MAX_CHAT_MESSAGES = 20;
 const MAX_CONTINUATIONS = 4;
 
-async function completeWhiteboard(system: string, data: unknown) {
+const boardReferenceFields = {
+  type: "object",
+  properties: { sourceId: { type: "string" }, quote: { type: "string" } },
+  required: ["sourceId", "quote"],
+};
+const boardStepFields = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    narration: { type: "string" },
+    reference: boardReferenceFields,
+    actions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { kind: { type: "string" }, target: { type: "string" }, text: { type: "string" }, at: { type: "number" } },
+        required: ["kind", "at"],
+      },
+    },
+  },
+  required: ["title", "narration", "reference", "actions"],
+};
+
+async function completeWhiteboard(system: string, data: unknown, part: "lesson" | "question") {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 40_000);
   try {
     const { choices } = await generateChatCompletion({
       model: AI_MODEL,
       messages: [
-        { role: "system", content: system },
+        { role: "system", content: system + "\nSubmit the requested JSON using the submit_whiteboard tool. Use the error field only when the source cannot support a lesson or answer." },
         { role: "user", content: JSON.stringify(data) },
       ],
-      response_format: { type: "json_object" },
+      tools: [{
+        type: "function",
+        function: {
+          name: "submit_whiteboard",
+          description: "Return the source-grounded whiteboard result.",
+          parameters: {
+            type: "object",
+            properties: part === "lesson"
+              ? { error: { type: "string" }, title: { type: "string" }, steps: { type: "array", items: boardStepFields } }
+              : { error: { type: "string" }, reply: { type: "string" }, reference: boardReferenceFields, highlight: { type: "string" } },
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "submit_whiteboard" } },
     }, { signal: controller.signal, maxRetries: 0 });
     const choice = choices?.[0];
     const truncated = ["length", "max_tokens", "MAX_TOKENS"].includes(choice?.finish_reason ?? "");
-    return truncated ? null : parseBoardJSON(choice?.message?.content);
+    if (truncated) return null;
+    const submitted = choice?.message?.tool_calls?.find(call => call.type === "function" && call.function.name === "submit_whiteboard");
+    return parseBoardJSON(submitted?.type === "function" ? submitted.function.arguments : choice?.message?.content);
   } catch (cause) {
     console.error("Whiteboard generation failed", cause instanceof GatewayError ? cause.code : "completion_error");
+    if (cause instanceof GatewayError && cause.code === "rate_limited") return { error: "board_rate_limit" };
     throw cause;
   } finally {
     clearTimeout(timeout);
@@ -130,6 +169,7 @@ Deno.serve(async (req) => {
     // The unified assistant requires a valid student session.
     const auth = await requireUser(req);
     if (!auth.ok) {
+      if (isBoard) return json200({ error: "auth_required" });
       return json200({ error: "Sign in to use this feature.", reply: ar ? "يرجى تسجيل الدخول." : "Please sign in." });
     }
     if (isBoard) return json200(await handleWhiteboard(mode, body, req.headers.get("Authorization") ?? "", completeWhiteboard));

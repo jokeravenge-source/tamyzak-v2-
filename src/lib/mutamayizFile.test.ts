@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readAssistantFile } from "./mutamayizFile";
+import { openWhiteboardPdf, readAssistantFile } from "./mutamayizFile";
 const pdf = vi.hoisted(() => ({ pages: [] as string[], getPage: vi.fn(), destroy: vi.fn(), cleanup: vi.fn(), open: vi.fn() }));
 vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({ GlobalWorkerOptions: {}, getDocument: pdf.open }));
 vi.mock("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url", () => ({ default: "worker.js" }));
@@ -28,5 +28,16 @@ describe("assistant attachment extraction", () => {
   });
   it("rejects files over 100 MiB before attempting to parse them", async () => {
     await expect(readAssistantFile(file("lesson.pdf", 100 * 1024 * 1024 + 1))).rejects.toThrow("file_too_large"); expect(pdf.open).not.toHaveBeenCalled();
+  });
+  it("opens the whole PDF for page selection but only extracts the chosen late page", async () => {
+    pdf.pages = ["Cover", "x".repeat(90_000), "Capacitors on the selected file page."];
+    const reader = await openWhiteboardPdf(file());
+    expect(reader.totalPages).toBe(3);
+    expect(pdf.getPage).not.toHaveBeenCalled();
+    await expect(reader.readPage(3)).resolves.toEqual({ page: 3, text: pdf.pages[2] });
+    await expect(reader.readPage(4)).rejects.toThrow("invalid_pdf_page");
+    expect(pdf.getPage.mock.calls).toEqual([[3]]);
+    await reader.close();
+    expect(pdf.destroy).toHaveBeenCalledOnce();
   });
 });

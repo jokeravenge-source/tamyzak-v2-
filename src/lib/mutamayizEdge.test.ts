@@ -87,8 +87,8 @@ describe('unified assistant edge request',()=>{
  });
 });
 
-const boardCompletion = (value: unknown, finishReason = "stop") => new Response(JSON.stringify({
-  choices: [{ message: { content: JSON.stringify(value) }, finish_reason: finishReason }],
+const boardCompletion = (value: unknown, finishReason = "tool_calls") => new Response(JSON.stringify({
+  choices: [{ message: { tool_calls: [{ type: "function", function: { name: "submit_whiteboard", arguments: JSON.stringify(value) } }] }, finish_reason: finishReason }],
 }));
 
 describe("authenticated whiteboard tutor", () => {
@@ -168,7 +168,9 @@ describe("authenticated whiteboard tutor", () => {
     const { lesson } = await (await request({ mode: "whiteboard_lesson", board: pageRequest })).json();
     const promptData = JSON.parse(conversation()[1].content);
     expect(promptData.sources).toEqual([{ sourceId: "pdf:2", title: "فيزياء.pdf", excerpt: quote }]);
-    expect(JSON.parse(backend.fetch.mock.calls[0][1].body)).toMatchObject({ response_format: { type: "json_object" } });
+    expect(JSON.parse(backend.fetch.mock.calls[0][1].body)).toMatchObject({
+      tool_choice: { type: "function", function: { name: "submit_whiteboard" } },
+    });
     expect(lesson.sources).toEqual([{ id: "pdf:2", kind: "pdf", title: "فيزياء.pdf", excerpt: quote, pdfPage: 2 }]);
     expect(lesson.steps[0].reference).toEqual({ sourceId: "pdf:2", quote });
   });
@@ -197,16 +199,17 @@ describe("authenticated whiteboard tutor", () => {
     expect(backend.fetch).not.toHaveBeenCalled();
   });
 
-  it("uses an explicitly reuploaded single-page excerpt under its actual page number", async () => {
+  it("uses the exact selected file page and keeps a quote beyond the automatic excerpt limit", async () => {
+    const text = "Long text from the selected file page. ".repeat(160) + quote;
     backend.fetch.mockResolvedValueOnce(boardCompletion({
       ...example,
-      steps: example.steps.map(step => ({ ...step, reference: { sourceId: "pdf:1", quote } })),
+      steps: example.steps.map(step => ({ ...step, reference: { sourceId: "pdf:57", quote } })),
     }));
     const { lesson } = await (await request({
       mode: "whiteboard_lesson",
-      board: { ...pageRequest, attachment: { name: "excerpt.pdf", selectedPage: true, pages: [{ page: 1, text: quote }] } },
+      board: { ...pageRequest, attachment: { name: "chapter.pdf", selectedPage: true, pages: [{ page: 57, text }] } },
     })).json();
-    expect(lesson.sources).toEqual([{ id: "pdf:1", kind: "pdf", title: "excerpt.pdf", excerpt: quote, pdfPage: 1 }]);
+    expect(lesson.sources).toEqual([{ id: "pdf:57", kind: "pdf", title: "chapter.pdf", excerpt: text, pdfPage: 57 }]);
   });
 
   it("grounds other curriculum lessons in the existing verified-source lookup and respects the selected lesson", async () => {

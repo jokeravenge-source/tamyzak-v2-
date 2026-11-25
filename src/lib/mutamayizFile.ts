@@ -1,14 +1,22 @@
-import type { ExtractedPdfPage } from "./fileText";
+import type { ExtractedPdfPage, PdfTextPages } from "./fileText";
 import type { BoardInput } from "../../supabase/functions/_shared/whiteboard";
 
 export type AssistantFile = { name: string; text: string; pages?: ExtractedPdfPage[] };
+
+const MAX_ASSISTANT_FILE_BYTES = 100 * 1024 * 1024;
+const MAX_WHITEBOARD_PAGE_CHARS = 12_000;
+
+export async function openWhiteboardPdf(input: File): Promise<PdfTextPages> {
+  const { openPdfTextPages } = await import("./fileText");
+  return openPdfTextPages(input, MAX_ASSISTANT_FILE_BYTES, MAX_WHITEBOARD_PAGE_CHARS);
+}
 
 export function attachmentForBoard(file: AssistantFile): NonNullable<BoardInput["attachment"]> {
   return file.pages ? { name: file.name, pages: file.pages } : { name: file.name, text: file.text };
 }
 
 export async function readAssistantFile(input: File): Promise<AssistantFile> {
-  const maxBytes = 100 * 1024 * 1024;
+  const maxBytes = MAX_ASSISTANT_FILE_BYTES;
   const maxChars = 80_000;
   if (input.size > maxBytes) throw new Error("file_too_large");
   if (/\.pdf$/i.test(input.name) || input.type === "application/pdf") {
