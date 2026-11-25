@@ -5,6 +5,7 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
+    alias: { "npm:@lovable.dev/ai-gateway@0.1.11": "@lovable.dev/ai-gateway" },
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],

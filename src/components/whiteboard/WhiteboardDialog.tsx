@@ -15,22 +15,22 @@ const copy = {
   ar: {
     title: "سبورة متميّز", back: "رجوع للمحادثة", description: "شرح صوتي باللهجة العراقية ورسم خطوة بخطوة من مصدر الدرس.",
     loading: "متميّز دا يحضّر السبورة…", missing: "نحتاج مصدر للشرح",
-    missingDesc: "اختار درس من المنهج أو ارفع صفحة الـPDF اللي بيها الفكرة حتى أشرحها عالسبورة.",
+    missingDesc: "ما لگينا نص يغطّي هالدرس بالمصدر الحالي. اكتب اسم الدرس أو ارفع صفحة الـPDF اللي بيها الفكرة.",
     removed: "ملف هالرد انشال من المحادثة. ارفعه من جديد حتى نستخدم نفس المصدر.",
     failed: "تعذّر تجهيز الشرح", failedDesc: "تكدر تعيد المحاولة أو تختار مصدر ثاني.",
     topic: "اسم الدرس من المنهج", example: "مثلاً: الحث الكهرومغناطيسي", search: "اختار الدرس",
-    pilot: PARALLEL_PLATES_TITLE, pilotChapter: "فيزياء السادس العلمي · الفصل الأول",
+    pilot: PARALLEL_PLATES_TITLE, pilotChapter: "مثال للسبورة · فيزياء الفصل الأول",
     upload: "ارفع صفحة PDF", reading: "جاري قراءة الصفحة…", fileError: "الصفحة ما بيها نص مقروء. جرّب PDF نصي أو حوّل الصفحة إلى نص بـ OCR.",
     retry: "حاول مرة ثانية",
   },
   en: {
     title: "Mutamayiz Whiteboard", back: "Back to conversation", description: "Step-by-step drawing and spoken Iraqi Arabic from your lesson source.",
     loading: "Mutamayiz is preparing the board…", missing: "Choose a lesson source",
-    missingDesc: "Choose a curriculum lesson or upload a readable PDF page that covers the idea.",
+    missingDesc: "We couldn’t find text for this lesson in the current source. Enter a curriculum lesson name or upload a readable PDF page.",
     removed: "The file for this reply was removed from chat. Upload it again to use the same source.",
     failed: "Could not prepare the lesson", failedDesc: "Try again or choose another source.",
     topic: "Curriculum lesson name", example: "For example: electromagnetic induction", search: "Choose lesson",
-    pilot: "Parallel-plate capacitance", pilotChapter: "Sixth scientific physics · Chapter 1",
+    pilot: "Parallel-plate capacitance", pilotChapter: "Whiteboard demo · Physics Chapter 1",
     upload: "Upload PDF page", reading: "Reading the page…", fileError: "This page has no readable text. Use a text PDF or run OCR on the page.",
     retry: "Try again",
   },
@@ -155,13 +155,6 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
                     </p>
                   </div>
                   {result.status === "failed" && requested && <Button type="button" onClick={() => setRequested({ ...requested })} disabled={reading} className="rounded-xl">{text.retry}</Button>}
-                  <Button type="button" variant="outline" disabled={reading}
-                    onClick={() => setRequested({ question: input.question, language, pilot: "parallel-plates" })}
-                    className="h-auto min-h-14 w-full justify-start rounded-2xl border-primary/25 bg-primary/5 text-start">
-                    <BookOpen className="text-primary" />
-                    <span className="min-w-0 flex-1"><span className="block font-black">{text.pilot}</span><span className="mt-1 block text-xs text-muted-foreground">{text.pilotChapter}</span></span>
-                    <ArrowUpRight className="text-primary" />
-                  </Button>
                   <form onSubmit={pickTopic} className="space-y-1.5">
                     <label htmlFor="whiteboard-lesson-search" className="text-sm font-bold">{text.topic}</label>
                     <div className="flex min-w-0 flex-wrap gap-2">
@@ -176,6 +169,13 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
                     {reading ? <Loader2 className="animate-spin" /> : <FileUp />}{reading ? text.reading : text.upload}
                   </Button>
                   {fileError && <p role="alert" className="text-sm leading-7 text-destructive">{text.fileError}</p>}
+                  <Button type="button" variant="outline" disabled={reading}
+                    onClick={() => setRequested({ question: input.question, language, pilot: "parallel-plates" })}
+                    className="h-auto min-h-14 w-full justify-start rounded-2xl text-start">
+                    <BookOpen className="text-muted-foreground" />
+                    <span className="min-w-0 flex-1"><span className="block font-bold">{text.pilot}</span><span className="mt-1 block text-xs text-muted-foreground">{text.pilotChapter}</span></span>
+                    <ArrowUpRight className="text-muted-foreground" />
+                  </Button>
                 </section>
               )}
             </div>

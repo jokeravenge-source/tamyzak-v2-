@@ -1,6 +1,7 @@
 import { PODCAST_TEACHER_STYLE } from "./podcastStyle.ts";
-import { lookupScienceSources } from "./scienceSourceLookup.ts";
-import { CAPACITOR_SOURCE, capacitorLesson, isParallelPlateQuestion } from "./whiteboardCapacitors.ts";
+import { lookupScienceSources, lookupScienceSourcesById } from "./scienceSourceLookup.ts";
+import { capacitorLesson, isCapacitorApplicationsQuestion, isParallelPlateQuestion } from "./whiteboardCapacitors.ts";
+import { capacitorApplicationsLesson } from "./whiteboardCapacitorApplications.ts";
 import {
   BOARD_QUESTION_MAX,
   boardFocusTargets,
@@ -98,35 +99,43 @@ export async function handleWhiteboard(
   const selectedLesson = boardText(raw.selectedLesson, 180);
   const topic = selectedLesson ?? boardText(raw.topic, 180) ?? "";
   const language: BoardInput["language"] = raw.language === "en" ? "en" : "ar";
-  const pilot = raw.attachment === undefined && (
-    raw.pilot === "parallel-plates" || (selectedLesson
-      ? isParallelPlateQuestion(selectedLesson)
-      : isParallelPlateQuestion(question) || isParallelPlateQuestion(topic))
-  );
+  const sourceIds = !selectedLesson && Array.isArray(raw.sourceIds) ? raw.sourceIds : [];
+  const target = selectedLesson ?? question;
+  let reviewed: BoardLesson | undefined;
+  if (raw.attachment === undefined) {
+    if (raw.pilot === "parallel-plates" && !selectedLesson) reviewed = capacitorLesson();
+    else if (!sourceIds.length) {
+      if (isCapacitorApplicationsQuestion(target)) reviewed = capacitorApplicationsLesson(language);
+      else if (isParallelPlateQuestion(target)) reviewed = capacitorLesson();
+    }
+  }
+  const template: BoardTemplate = reviewed?.template ?? "notes";
+  if (mode === "whiteboard_lesson" && reviewed) return { lesson: reviewed };
 
-  const template: BoardTemplate = pilot ? "parallel-plates" : "notes";
-  if (mode === "whiteboard_lesson" && pilot) return { lesson: capacitorLesson() };
-
-  const sources = pilot
-    ? [CAPACITOR_SOURCE]
-    : raw.attachment !== undefined
-      ? sourceFromAttachment(raw.attachment, question, topic)
-      : (await lookupScienceSources(selectedLesson ?? [question, topic].filter(Boolean).join("\n"), language, authorization)).map((record): BoardSource => ({
-        id: "curriculum:" + record.id,
-        kind: "curriculum",
-        title: record.book_title || record.question.slice(0, 200),
-        excerpt: record.excerpt.slice(0, MAX_EXCERPT_CHARS),
-        chapter: record.chapter ?? undefined,
-        pdfPage: record.pdf_page ?? undefined,
-        printedPage: record.printed_page ?? undefined,
-        url: record.book_url ?? undefined,
-      }));
+  let sources: BoardSource[];
+  if (reviewed) sources = reviewed.sources;
+  else if (raw.attachment !== undefined) sources = sourceFromAttachment(raw.attachment, question, topic);
+  else {
+    const records = sourceIds.length
+      ? await lookupScienceSourcesById(sourceIds, language, authorization)
+      : await lookupScienceSources(selectedLesson ?? [question, topic].filter(Boolean).join("\n"), language, authorization);
+    sources = records.map((record): BoardSource => ({
+      id: "curriculum:" + record.id,
+      kind: "curriculum",
+      title: record.book_title || record.question.slice(0, 200),
+      excerpt: record.excerpt.slice(0, MAX_EXCERPT_CHARS),
+      chapter: record.chapter ?? undefined,
+      pdfPage: record.pdf_page ?? undefined,
+      printedPage: record.printed_page ?? undefined,
+      url: record.book_url ?? undefined,
+    }));
+  }
   if (!sources.length) return { error: "missing_source" };
 
   try {
     if (mode === "whiteboard_lesson") {
       const result = await complete(basePrompt + "\nUse the selected lesson or explicitly uploaded page when provided. Treat the original chat question as context and use only the supplied page identifiers.\n" + format, {
-        question,
+        question: selectedLesson && raw.attachment === undefined ? selectedLesson : question,
         topic,
         selectedLesson,
         selectedPage: boardRecord(raw.attachment)?.selectedPage === true && sources.length === 1,
@@ -142,12 +151,13 @@ export async function handleWhiteboard(
     if (!followUp || !step) return { error: "missing_source" };
     const source = sources.find(({ id }) => id === step.reference.sourceId);
     if (!source) return { error: "missing_source" };
-    if (pilot && typeof body.stepIndex === "number" && Number.isInteger(body.stepIndex)) {
+    if (reviewed && typeof body.stepIndex === "number" && Number.isInteger(body.stepIndex)) {
       // For the reviewed lesson, give the tutor the canonical step instead of client-edited narration.
-      const expected = capacitorLesson().steps[body.stepIndex];
+      const expected = reviewed.steps[body.stepIndex];
       if (!expected) return { error: "missing_source" };
       step.title = expected.title;
       step.narration = expected.narration;
+      step.reference = expected.reference;
     }
     const visible = Array.isArray(body.visible) ? boardFocusTargets(template).filter(target => (body.visible as unknown[]).includes(target)) : [];
     const result = await complete(

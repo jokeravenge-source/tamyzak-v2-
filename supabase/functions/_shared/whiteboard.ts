@@ -29,6 +29,7 @@ export type BoardInput = {
   question: string;
   topic?: string;
   selectedLesson?: string;
+  sourceIds?: string[];
   language: "ar" | "en";
   pilot?: "parallel-plates";
   attachment?: { name: string; pages?: { page: number; text: string }[]; text?: string; selectedPage?: boolean };

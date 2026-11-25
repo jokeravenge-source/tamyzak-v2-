@@ -5,6 +5,7 @@ import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
 import { handleWhiteboard } from "../_shared/whiteboardTutor.ts";
 import { parseBoardJSON } from "../_shared/whiteboard.ts";
+import { generateChatCompletion, GatewayError } from "npm:@lovable.dev/ai-gateway@0.1.11";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,28 +19,23 @@ const MAX_CHAT_MESSAGES = 20;
 const MAX_CONTINUATIONS = 4;
 
 async function completeWhiteboard(system: string, data: unknown) {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) throw new Error("Whiteboard model unavailable");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 40_000);
   try {
-    const response = await fetch(AI_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: JSON.stringify(data) },
-        ],
-        max_tokens: 4600,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error("Whiteboard model unavailable");
-    const { choices } = await response.json();
+    const { choices } = await generateChatCompletion({
+      model: AI_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: JSON.stringify(data) },
+      ],
+      response_format: { type: "json_object" },
+    }, { signal: controller.signal, maxRetries: 0 });
     const choice = choices?.[0];
-    return choice?.finish_reason === "length" ? null : parseBoardJSON(choice?.message?.content);
+    const truncated = ["length", "max_tokens", "MAX_TOKENS"].includes(choice?.finish_reason ?? "");
+    return truncated ? null : parseBoardJSON(choice?.message?.content);
+  } catch (cause) {
+    console.error("Whiteboard generation failed", cause instanceof GatewayError ? cause.code : "completion_error");
+    throw cause;
   } finally {
     clearTimeout(timeout);
   }

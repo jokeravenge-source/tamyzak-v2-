@@ -1,7 +1,17 @@
 import {afterAll,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
+import { ministerialPhysicsCh1 } from "../data/ministerialPhysicsCh1";
+import { ministerialPhysicsCh1Ar } from "../data/ministerialPhysicsCh1Ar";
 const backend=vi.hoisted(()=>({auth:vi.fn(),guard:vi.fn(),fetch:vi.fn(),env:{} as Record<string,string>,handler:null as null|((req:Request)=>Promise<Response>)}));
 vi.mock('../../supabase/functions/_shared/auth.ts',()=>({requireUser:backend.auth}));
 vi.mock('../../supabase/functions/_shared/guard.ts',()=>({protect:backend.guard}));
+vi.mock("@lovable.dev/ai-gateway", () => ({
+  GatewayError: class extends Error {},
+  generateChatCompletion: async (payload: unknown) => {
+    const response = await backend.fetch("https://ai.gateway.lovable.dev/v1/chat/completions", { body: JSON.stringify(payload) });
+    if (!response.ok) throw new Error("Provider unavailable");
+    return response.json();
+  },
+}));
 beforeAll(async()=>{
  vi.stubGlobal('Deno',{serve:(handler:(req:Request)=>Promise<Response>)=>{backend.handler=handler;},env:{get:(key:string)=>key==='LOVABLE_API_KEY'?'test-provider-key':backend.env[key]}});
  // A runtime path keeps Deno-only transport modules out of the browser tsconfig.
@@ -124,6 +134,33 @@ describe("authenticated whiteboard tutor", () => {
     expect(backend.fetch).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["en", "Application of capictor", "Applications of capacitors", ministerialPhysicsCh1],
+    ["ar", "استخدامات المتسعة", "تطبيقات المتسعات", ministerialPhysicsCh1Ar],
+  ] as const)("uses the real %s capacitor applications bank instead of the parallel-plates demo", async (language, selectedLesson, title, bank) => {
+    const { lesson } = await (await request({
+      mode: "whiteboard_lesson",
+      board: { ...pilotRequest, language, selectedLesson },
+    })).json();
+    expect(lesson).toMatchObject({ title, template: "notes" });
+    expect(lesson.steps).toHaveLength(4);
+    expect(lesson.sources[0]).toMatchObject({ kind: "lesson" });
+    expect(lesson.sources[0]).not.toHaveProperty("printedPage");
+    for (const step of lesson.steps) {
+      expect(bank.some(row => row.a.includes(step.reference.quote))).toBe(true);
+      expect(step.reference.sourceId).toBe(lesson.sources[0].id);
+    }
+    expect(backend.fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses the current question ahead of a conflicting suggested chat topic", async () => {
+    const { lesson } = await (await request({
+      mode: "whiteboard_lesson",
+      board: { question: "Applications of capacitors", topic: "Parallel-plate capacitance", language: "en" },
+    })).json();
+    expect(lesson?.title).toBe("Applications of capacitors");
+  });
+
   it("sends the requested readable PDF page and returns only its validated citation", async () => {
     const model = structuredClone(example);
     Object.assign(model.steps[0].reference, { pdfPage: 99, url: "https://example.test/fake" });
@@ -131,6 +168,7 @@ describe("authenticated whiteboard tutor", () => {
     const { lesson } = await (await request({ mode: "whiteboard_lesson", board: pageRequest })).json();
     const promptData = JSON.parse(conversation()[1].content);
     expect(promptData.sources).toEqual([{ sourceId: "pdf:2", title: "فيزياء.pdf", excerpt: quote }]);
+    expect(JSON.parse(backend.fetch.mock.calls[0][1].body)).toMatchObject({ response_format: { type: "json_object" } });
     expect(lesson.sources).toEqual([{ id: "pdf:2", kind: "pdf", title: "فيزياء.pdf", excerpt: quote, pdfPage: 2 }]);
     expect(lesson.steps[0].reference).toEqual({ sourceId: "pdf:2", quote });
   });
@@ -189,7 +227,28 @@ describe("authenticated whiteboard tutor", () => {
     })).json();
     expect(JSON.parse(backend.fetch.mock.calls[0][1].body)).toMatchObject({ question_text: "Momentum", curriculum_key: "en", school_year: "2026-2027" });
     expect(backend.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer fixture-token");
+    expect(JSON.parse(JSON.parse(backend.fetch.mock.calls[1][1].body).messages[1].content).question).toBe("Momentum");
     expect(result.lesson.sources[0]).toMatchObject({ kind: "curriculum", printedPage: 42, pdfPage: 45 });
+  });
+
+  it("reloads the cited verified source for the board without substituting a different lesson", async () => {
+    const id = "10000000-0000-4000-8000-000000000001";
+    backend.env = { SUPABASE_URL: "https://fixture.supabase.test", SUPABASE_ANON_KEY: "public-test-key" };
+    backend.fetch.mockResolvedValueOnce(Response.json([{
+      id, verified: true, academic_year: "2026-2027", curriculum: "ar", subject: "physics",
+      question: "الزخم", excerpt: quote,
+    }])).mockResolvedValueOnce(boardCompletion({
+      ...example,
+      steps: example.steps.map(step => ({ ...step, reference: { sourceId: "curriculum:" + id, quote } })),
+    }));
+    const { lesson } = await (await request({
+      mode: "whiteboard_lesson", board: { ...pilotRequest, sourceIds: [id] },
+    })).json();
+    const [url, init] = backend.fetch.mock.calls[0];
+    expect(new URL(url).searchParams.get("id")).toBe("in.(" + id + ")");
+    expect(new URL(url).searchParams.get("verified")).toBe("eq.true");
+    expect(init.headers.Authorization).toBe("Bearer fixture-token");
+    expect(lesson?.sources).toMatchObject([{ id: "curriculum:" + id, excerpt: quote, kind: "curriculum" }]);
   });
 
   it("gives a follow-up only the active step's source and whitelists visible highlights", async () => {

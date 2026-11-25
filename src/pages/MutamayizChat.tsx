@@ -14,7 +14,7 @@ import { assistantSnapshot, subscribeAssistant, setAssistantOwner, updateAssista
 import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
 import { MUTAMAYIZ_NAME, extractAssistantPlan, stripAssistantPlan, renderAssistantParts } from "../../supabase/functions/_shared/mutamayiz";
 import type { BoardInput } from "../../supabase/functions/_shared/whiteboard";
-import { isParallelPlateQuestion } from "../../supabase/functions/_shared/whiteboardCapacitors";
+import { isCapacitorApplicationsQuestion, isParallelPlateQuestion } from "../../supabase/functions/_shared/whiteboardCapacitors";
 
 const copy = {
   ar: {
@@ -115,8 +115,10 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
         : Array.isArray(verifiedSources) && typeof verifiedSources[0]?.question === "string"
           ? verifiedSources[0].question.slice(0, 180)
           : undefined;
-      const whiteboard = hasReply && !data?.error && !data?.temporary && (topic || data?.scienceEvidence || isParallelPlateQuestion(text))
-        ? { question: text, topic, attachmentId: state.file?.id }
+      const sourceIds = Array.isArray(verifiedSources) ? verifiedSources.slice(0, 8).flatMap(source =>
+        typeof source?.id === "string" ? [source.id] : []) : [];
+      const whiteboard = hasReply && !data?.error && !data?.temporary && (topic || state.file || data?.scienceEvidence || isParallelPlateQuestion(text) || isCapacitorApplicationsQuestion(text))
+        ? { question: text, topic, attachmentId: state.file?.id, sourceIds }
         : undefined;
       updateAssistant(owner, current => current.epoch !== epoch ? current : ({
         ...current,
@@ -187,7 +189,10 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const state = assistantSnapshot();
     if (!owner || state.owner !== owner || state.epoch !== conversation.epoch) return;
     const file = state.file && state.file.id === context.attachmentId ? state.file : null;
-    const input: BoardInput = { question: context.question, topic: context.topic, language };
+    const input: BoardInput = {
+      question: context.question, topic: context.topic, language,
+      ...(context.sourceIds?.length ? { sourceIds: context.sourceIds } : {}),
+    };
     if (file) input.attachment = attachmentForBoard(file);
     boardTrigger.current = trigger;
     setBoard({ owner, epoch: state.epoch, input, missingAttachment: Boolean(context.attachmentId && !file) });

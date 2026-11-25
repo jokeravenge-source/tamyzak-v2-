@@ -60,5 +60,14 @@ export function isParallelPlateQuestion(value: string) {
   const distance = /\bdistance\b|المسافة|البعد بين/iu.test(question);
   // Do not switch a question about stored charge, insertion, or combinations to the geometry lesson.
   return capacitor && (parallelPlates || distance)
+    && !isCapacitorApplicationsQuestion(value)
     && !/(?:series|in parallel|disconnect|insert|voltage|شحنة|تفريغ|توالي|ربط|ادخال|فرق الجهد)/iu.test(question);
+}
+
+export function isCapacitorApplicationsQuestion(value: string) {
+  const question = value.toLowerCase().normalize("NFC").replace(/\p{M}/gu, "").replace(/[أإآ]/gu, "ا")
+    .replace(/\b(?:capictor|capcitor|capicator)(s?)\b/g, "capacitor$1");
+  return /\bcapacitors?\b|متسع|مكثف/u.test(question)
+    && /\bapplications?\b|\buses?\b|what (?:is|are).{0,40}used for|تطبيق|استعمال|استخدام|استخدمات/u.test(question)
+    && !/\bseries\b|\bin parallel\b|parallel combinations?|توالي|ربط|على التوازي/u.test(question);
 }

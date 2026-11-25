@@ -158,7 +158,7 @@ describe('single Mutamayiz conversation',()=>{
   const pages = [{page:7,text:'الزخم حاصل ضرب الكتلة بالسرعة.'}];
   backend.readFile.mockResolvedValue({name:'فيزياء.pdf',text:pages[0].text,pages});
   backend.invoke
-   .mockResolvedValueOnce({data:{reply:'هذا شرح الزخم.',studyTopic:'الزخم'},error:null})
+   .mockResolvedValueOnce({data:{reply:'هذا شرح الزخم.'},error:null})
    .mockResolvedValueOnce({data:{error:'missing_source'},error:null});
   const view = render(<MutamayizChat language="ar" />);
   await waitFor(() => expect(screen.getByRole('textbox')).toBeEnabled());
