@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.study_timer_focus IS 'Recorded timer focus periods used by All or Nothing rounds.';

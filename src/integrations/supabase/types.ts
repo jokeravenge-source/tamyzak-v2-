@@ -3595,6 +3595,7 @@ export type Database = {
           lobby_expires_at: string | null
           public_period_key: string | null
           public_series: string | null
+          require_recorded_focus: boolean | null
           room_state: string
           settled_at: string | null
           starts_at: string
@@ -3615,6 +3616,7 @@ export type Database = {
           lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          require_recorded_focus?: boolean | null
           room_state?: string
           settled_at?: string | null
           starts_at?: string
@@ -3635,6 +3637,7 @@ export type Database = {
           lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          require_recorded_focus?: boolean | null
           room_state?: string
           settled_at?: string | null
           starts_at?: string
@@ -4022,6 +4025,29 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "study_flight_study_credits"
             referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      study_timer_focus: {
+        Row: {
+          periods: unknown
+          session_id: string
+        }
+        Insert: {
+          periods: unknown
+          session_id: string
+        }
+        Update: {
+          periods?: unknown
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_timer_focus_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5058,6 +5084,17 @@ export type Database = {
         Returns: undefined
       }
       revoke_literature_code: { Args: { code_id: string }; Returns: undefined }
+      save_study_timer_session: {
+        Args: {
+          _duration_seconds: number
+          _mission: string
+          _mission_completed: boolean
+          _periods: unknown
+          _session_id: string
+          _subject: string
+        }
+        Returns: string
+      }
       search_science_sources: {
         Args: {
           curriculum_key: string
