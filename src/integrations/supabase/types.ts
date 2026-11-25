@@ -3595,6 +3595,7 @@ export type Database = {
           lobby_expires_at: string | null
           public_period_key: string | null
           public_series: string | null
+          require_recorded_focus: boolean | null
           room_state: string
           settled_at: string | null
           starts_at: string
@@ -3615,6 +3616,7 @@ export type Database = {
           lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          require_recorded_focus?: boolean | null
           room_state?: string
           settled_at?: string | null
           starts_at?: string
@@ -3635,6 +3637,7 @@ export type Database = {
           lobby_expires_at?: string | null
           public_period_key?: string | null
           public_series?: string | null
+          require_recorded_focus?: boolean | null
           room_state?: string
           settled_at?: string | null
           starts_at?: string
@@ -5094,6 +5097,17 @@ export type Database = {
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      save_study_timer_session: {
+        Args: {
+          _session_id: string
+          _subject: string
+          _mission: string
+          _duration_seconds: number
+          _mission_completed: boolean
+          _periods: string
+        }
+        Returns: string
+      }
       settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
       start_all_or_nothing_challenge: {
         Args: { _challenge_id: string }

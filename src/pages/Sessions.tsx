@@ -37,6 +37,7 @@ import StudyChallengeHub from "@/components/StudyChallengeHub";
 import { createCloudRepository } from "@/features/trip/cloudRepository";
 import { FlightInvitations } from "@/features/trip/FlightFriends";
 import { formatStudyTimer as fmt, studyTimerDisplay, STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
+import { appendFocusRun, elapsedStudySeconds, focusPeriodsMultirange, restoreFocusPeriods, trimFocusRuns, type StudyFocusPeriod } from "@/lib/studyFocusPeriods";
 import {
   matchingPomodoroPreset,
   POMODORO_PRESETS,
@@ -586,6 +587,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // Wall-clock timer refs: drift-proof across device sleep / background tabs.
   const resumeAtRef = useRef<number>(0);
   const accumulatedRef = useRef<number>(0);
+  const focusPeriodsRef = useRef<StudyFocusPeriod[]>([]);
   const [trackIdx, setTrackIdx] = useState(0);
   const [playlist, setPlaylist] = useState<"music" | "quran">("music");
   const [musicPlaying, setMusicPlaying] = useState(false);
@@ -599,7 +601,30 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const secondsRef = useRef(0);
   useEffect(() => { secondsRef.current = seconds; }, [seconds]);
   const runningRef = useRef(false);
-  useEffect(() => { runningRef.current = running; }, [running]);
+  const beginStudyClock = useCallback(() => {
+    if (runningRef.current || savingRef.current) return;
+    accumulatedRef.current = secondsRef.current;
+    resumeAtRef.current = Date.now();
+    runningRef.current = true;
+    setRunning(true);
+  }, []);
+  const pauseStudyClock = useCallback(() => {
+    if (!runningRef.current) return secondsRef.current;
+    const elapsed = elapsedStudySeconds(accumulatedRef.current, resumeAtRef.current);
+    appendFocusRun(focusPeriodsRef.current, resumeAtRef.current, elapsed - accumulatedRef.current);
+    resumeAtRef.current = 0;
+    accumulatedRef.current = secondsRef.current = elapsed;
+    runningRef.current = false;
+    setRunning(false);
+    setSeconds(elapsed);
+    return elapsed;
+  }, []);
+  const sampleStudyClock = useCallback(() => {
+    if (!runningRef.current) return;
+    const elapsed = elapsedStudySeconds(accumulatedRef.current, resumeAtRef.current);
+    if (elapsed >= MAX_SECONDS) pauseStudyClock();
+    else setSeconds(elapsed);
+  }, [pauseStudyClock]);
   // Mirror identity/progress fields so the pagehide flush can write the
   // latest values even after React has begun tearing the component down.
   const subjectRef = useRef<string | null>(null);
@@ -630,11 +655,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setRestRemaining(restSecondsRemaining(restEndsAt));
     phaseRef.current = "rest";
     setPhase("rest");
-    runningRef.current = false;
-    setRunning(false);
+    pauseStudyClock();
     toast.success(L.workDone);
     playAlarm("work");
-  }, [seconds, pomodoro, started, phase, pomodoroWorkMin, pomodoroRestMin, L.workDone]);
+  }, [seconds, pomodoro, started, phase, pomodoroWorkMin, pomodoroRestMin, L.workDone, pauseStudyClock]);
 
   // Force a check-in pause after every full hour of studying.
   useEffect(() => {
@@ -642,11 +666,11 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     const hourMark = Math.floor(seconds / 3600);
     if (hourMark > 0 && hourMark > lastHourPromptRef.current) {
       lastHourPromptRef.current = hourMark;
-      setRunning(false);
+      pauseStudyClock();
       setHourPauseOpen(true);
       try { playAlarm("hour"); } catch { /* noop */ }
     }
-  }, [seconds, started, running, pomodoro]);
+  }, [seconds, started, running, pomodoro, pauseStudyClock]);
 
   // Rest countdown is deadline-based, so throttled/background tabs do not add delay.
   useEffect(() => {
@@ -662,10 +686,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         setPhase("work");
         phaseStartRef.current = secondsRef.current;
         lastPhaseSwitchRef.current = -1;
-        accumulatedRef.current = secondsRef.current;
-        resumeAtRef.current = Date.now();
-        runningRef.current = true;
-        setRunning(true);
+        beginStudyClock();
         toast.success(L.restDone);
         playAlarm("rest");
       } else {
@@ -675,7 +696,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     tick();
     const id = window.setInterval(tick, 500);
     return () => window.clearInterval(id);
-  }, [phase, pomodoro, started, pomodoroRestMin, L.restDone]);
+  }, [phase, pomodoro, started, pomodoroRestMin, L.restDone, beginStudyClock]);
 
   // --- Live presence helpers ---
   const upsertPresence = async (subj: string, miss: string) => {
@@ -773,16 +794,18 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (!raw) return;
       const s = JSON.parse(raw);
       if (!s?.subject) return;
-      const base = s.accumulated ?? 0;
-      const extra = s.running && s.startedAt ? Math.floor((Date.now() - s.startedAt) / 1000) : 0;
-      let total = base + extra;
-      if (total >= MAX_SECONDS) total = MAX_SECONDS;
+      const now = Date.now();
+      const base = Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(s.accumulated)) || 0));
       const savedPreset = matchingPomodoroPreset(
         Number(s.pomodoroWorkMin ?? DEFAULT_WORK_MIN),
         Number(s.pomodoroRestMin ?? DEFAULT_REST_MIN),
       );
       const savedPomodoro = s.pomodoro === true;
       const savedPhase: PomodoroPhase = savedPomodoro && s.phase === "rest" ? "rest" : "work";
+      const savedAnchor = s.running && savedPhase === "work" && Number.isSafeInteger(s.startedAt) &&
+        s.startedAt > 0 && s.startedAt <= now ? Number(s.startedAt) : 0;
+      const total = elapsedStudySeconds(base, savedAnchor, now);
+      focusPeriodsRef.current = restoreFocusPeriods(s.focusPeriods, base, savedAnchor || now);
       let shouldRun = !!s.running && total < MAX_SECONDS;
       setSubject(s.subject);
       setMission(s.mission ?? "");
@@ -816,8 +839,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       }
       runningRef.current = shouldRun;
       setRunning(shouldRun);
-      accumulatedRef.current = total;
-      resumeAtRef.current = Date.now();
+      secondsRef.current = total;
+      if (!shouldRun) appendFocusRun(focusPeriodsRef.current, savedAnchor, total - base);
+      accumulatedRef.current = shouldRun && savedAnchor ? base : total;
+      resumeAtRef.current = shouldRun ? savedAnchor || now : 0;
     } catch {}
   }, []);
 
@@ -851,6 +876,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       running,
       startedAt: running ? resumeAtRef.current || Date.now() : null,
       accumulated: running ? accumulatedRef.current : seconds,
+      focusPeriods: focusPeriodsRef.current,
       pomodoro,
       pomodoroWorkMin,
       pomodoroRestMin,
@@ -869,12 +895,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     const flush = () => {
       if (!startedRef.current || !subjectRef.current) return;
       const isRunning = runningRef.current;
-      const liveSeconds = isRunning && resumeAtRef.current
-        ? Math.min(
-            MAX_SECONDS,
-            accumulatedRef.current + Math.floor((Date.now() - resumeAtRef.current) / 1000),
-          )
-        : secondsRef.current;
       const payload = {
         subject: subjectRef.current,
         mission: missionRef.current,
@@ -882,7 +902,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         started: true,
         running: isRunning,
         startedAt: isRunning ? (resumeAtRef.current || Date.now()) : null,
-        accumulated: isRunning ? accumulatedRef.current : liveSeconds,
+        accumulated: isRunning ? accumulatedRef.current : secondsRef.current,
+        focusPeriods: focusPeriodsRef.current,
         pomodoro: pomodoroRef.current,
         pomodoroWorkMin: pomodoroWorkMinRef.current,
         pomodoroRestMin: pomodoroRestMinRef.current,
@@ -951,21 +972,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   useEffect(() => {
     if (running) {
-      resumeAtRef.current = Date.now();
-      accumulatedRef.current = secondsRef.current;
-      const tick = () => {
-        const elapsed = accumulatedRef.current + Math.floor((Date.now() - resumeAtRef.current) / 1000);
-        if (elapsed >= MAX_SECONDS) { setSeconds(MAX_SECONDS); setRunning(false); }
-        else setSeconds(elapsed);
-      };
-      tick();
-      intervalRef.current = window.setInterval(tick, 1000);
+      sampleStudyClock();
+      intervalRef.current = window.setInterval(sampleStudyClock, 1000);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running]);
+  }, [running, sampleStudyClock]);
 
   useEffect(() => {
     const CHECK_EVERY = 2 * 60 * 60;
@@ -982,19 +996,15 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // No answer within 5 minutes means the student left: pause the timer.
   useEffect(() => {
     if (!checkInOpen) return;
-    const id = window.setTimeout(() => { setRunning(false); setCheckInOpen(false); }, 5 * 60 * 1000);
+    const id = window.setTimeout(() => { pauseStudyClock(); setCheckInOpen(false); }, 5 * 60 * 1000);
     return () => clearTimeout(id);
-  }, [checkInOpen]);
+  }, [checkInOpen, pauseStudyClock]);
 
   // Recompute elapsed when tab regains focus
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
-      if (runningRef.current) {
-        const elapsed = accumulatedRef.current + Math.floor((Date.now() - resumeAtRef.current) / 1000);
-        if (elapsed >= MAX_SECONDS) { setSeconds(MAX_SECONDS); setRunning(false); }
-        else setSeconds(elapsed);
-      }
+      sampleStudyClock();
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
@@ -1004,7 +1014,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       window.removeEventListener("focus", onVis);
       window.removeEventListener("pageshow", onVis);
     };
-  }, []);
+  }, [sampleStudyClock]);
 
   // Auto stop+save at max
   useEffect(() => {
@@ -1041,8 +1051,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
     }
+    focusPeriodsRef.current = [];
+    startedRef.current = true;
     setStarted(true);
-    setRunning(true);
+    beginStudyClock();
     setPhase("work");
     phaseRef.current = "work";
     phaseStartRef.current = 0;
@@ -1056,13 +1068,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const resumeSession = () => {
     if (!startedRef.current || secondsRef.current >= MAX_SECONDS || phaseRef.current === "rest") return;
     void unlockTimerAudio();
-    // Re-anchor immediately instead of waiting for React effects. This avoids
-    // a stale paused snapshot when resuming after backgrounding or an hourly
-    // check-in, and makes the room presence update in the same interaction.
-    accumulatedRef.current = secondsRef.current;
-    resumeAtRef.current = Date.now();
-    runningRef.current = true;
-    setRunning(true);
+    beginStudyClock();
     void pushPresence();
   };
 
@@ -1075,10 +1081,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     lastPhaseSwitchRef.current = -1;
     phaseRef.current = "work";
     setPhase("work");
-    accumulatedRef.current = secondsRef.current;
-    resumeAtRef.current = Date.now();
-    runningRef.current = true;
-    setRunning(true);
+    beginStudyClock();
     toast.success(L.restDone);
     void pushPresence();
   };
@@ -1108,31 +1111,46 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     resumeSession();
   };
 
-  const stopAndSave = async (durationSeconds = seconds) => {
+  const stopAndSave = async (adjustedDuration?: number) => {
     if (!userId || !subject) return;
     if (savingRef.current) return;
+    const pausedSeconds = pauseStudyClock();
+    const durationSeconds = adjustedDuration ?? pausedSeconds;
     if (durationSeconds <= 0) {
-      setStarted(false); setRunning(false); setMission(""); setCompleted(false);
+      focusPeriodsRef.current = [];
+      startedRef.current = false;
+      setStarted(false); setMission(""); setCompleted(false);
       await clearPresence();
       localStorage.removeItem(PERSIST_KEY);
       notifyStudyTimerChanged();
       return;
     }
     savingRef.current = true;
-    setRunning(false);
     // Refresh an expiring token first, otherwise the saved session is rejected.
-    await ensureFreshSession();
+    await ensureFreshSession().catch(() => false);
     // 5 points per full studied hour.
     const points = Math.floor(durationSeconds / 3600) * 5;
+    const session = {
+      id: crypto.randomUUID(),
+      user_id: userId, subject, mission: mission.trim(), duration_seconds: durationSeconds,
+      mission_completed: completed, points,
+    };
+    const periods = focusPeriodsMultirange(focusPeriodsRef.current);
     let insertedId: string | null = null;
     let lastErr: string | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const { data: inserted, error } = await supabase.from("study_sessions").insert({
-          user_id: userId, subject, mission: mission.trim(), duration_seconds: durationSeconds,
-          mission_completed: completed, points,
-        }).select("id").single();
-        if (!error) { insertedId = inserted?.id ?? null; lastErr = null; break; }
+        let { data: id, error } = await supabase.rpc("save_study_timer_session", {
+          _session_id: session.id, _subject: session.subject, _mission: session.mission,
+          _duration_seconds: durationSeconds, _mission_completed: session.mission_completed, _periods: periods,
+        });
+        // During a staggered deployment, keep personal saves working with the old schema.
+        if (error?.code === "PGRST202" && error.message.includes("save_study_timer_session")) {
+          const legacy = await supabase.from("study_sessions").insert(session).select("id").single();
+          error = legacy.error;
+          id = legacy.data?.id ?? null;
+        }
+        if (!error) { insertedId = id; lastErr = null; break; }
         lastErr = error.message;
         if (!/fetch|network|timeout/i.test(error.message)) break;
       } catch (e: any) {
@@ -1157,6 +1175,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       description: `${L.finalTime}: ${fmt(durationSeconds)}`,
     });
     try { localStorage.setItem("session_completed_today_v1", new Date().toISOString().slice(0,10)); } catch {}
+    focusPeriodsRef.current = [];
+    startedRef.current = false;
+    secondsRef.current = accumulatedRef.current = 0;
     setStarted(false); setSeconds(0); setMission(""); setCompleted(false);
     localStorage.removeItem(PERSIST_KEY);
     notifyStudyTimerChanged();
@@ -1171,8 +1192,9 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   };
 
   const requestSave = () => {
-    wasRunningBeforeSaveRef.current = running;
-    setRunning(false);
+    if (savingRef.current) return;
+    wasRunningBeforeSaveRef.current = runningRef.current;
+    pauseStudyClock();
     setEditingSaveTime(false);
     setMinutesToRemove("");
     setSaveOpen(true);
@@ -1182,7 +1204,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setSaveOpen(false);
     setEditingSaveTime(false);
     setMinutesToRemove("");
-    if (wasRunningBeforeSaveRef.current) setRunning(true);
+    if (wasRunningBeforeSaveRef.current) beginStudyClock();
   };
 
   const confirmSave = async (removeMinutes = 0) => {
@@ -1191,6 +1213,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     // saving the original duration while the edited session is in flight.
     const baseSeconds = secondsRef.current;
     const adjustedSeconds = Math.max(0, baseSeconds - Math.floor(removeMinutes * 60));
+    trimFocusRuns(focusPeriodsRef.current, baseSeconds - adjustedSeconds);
     setSeconds(adjustedSeconds);
     secondsRef.current = adjustedSeconds;
     accumulatedRef.current = adjustedSeconds;
@@ -1204,6 +1227,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         running: false,
         startedAt: null,
         accumulated: adjustedSeconds,
+        focusPeriods: focusPeriodsRef.current,
         pomodoro: pomodoroRef.current,
         pomodoroWorkMin: pomodoroWorkMinRef.current,
         pomodoroRestMin: pomodoroRestMinRef.current,
@@ -1221,7 +1245,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   const discardSession = async () => {
     if (!started) return;
-    setRunning(false);
+    pauseStudyClock();
     await clearPresence();
     setStarted(false);
     setSeconds(0);
@@ -1229,6 +1253,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     setCompleted(false);
     accumulatedRef.current = 0;
     resumeAtRef.current = 0;
+    focusPeriodsRef.current = [];
+    startedRef.current = false;
     setPhase("work");
     phaseRef.current = "work";
     phaseStartRef.current = 0;
@@ -1484,7 +1510,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                 {phase === "rest" && pomodoro ? (
                   <Button size="lg" variant="secondary" onClick={skipPomodoroRest} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><SkipForward className="w-4 h-4" /> {L.skipBreak}</Button>
                 ) : running ? (
-                  <Button size="lg" variant="secondary" onClick={() => setRunning(false)} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Pause className="w-4 h-4" /> {L.pause}</Button>
+                  <Button size="lg" variant="secondary" onClick={() => pauseStudyClock()} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Pause className="w-4 h-4" /> {L.pause}</Button>
                 ) : (
                   <Button size="lg" onClick={resumeSession} className="h-auto min-h-12 w-full min-w-0 gap-2 whitespace-normal py-3 sm:w-auto"><Play className="w-4 h-4" /> {L.resume}</Button>
                 )}
@@ -1605,7 +1631,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
                   // clear presence in the current room, and return to room picker.
                   // The session (time, mission, completion) is preserved and will
                   // continue under whichever room the user enters next.
-                  setRunning(false);
+                  pauseStudyClock();
                   await clearPresence();
                   setSubject(null);
                 }}
@@ -1657,7 +1683,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:justify-center">
-            <AlertDialogCancel onClick={() => { setRunning(false); setCheckInOpen(false); }}>{language === "ar" ? "لا، أوقف المؤقت" : "No, pause timer"}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { pauseStudyClock(); setCheckInOpen(false); }}>{language === "ar" ? "لا، أوقف المؤقت" : "No, pause timer"}</AlertDialogCancel>
             <AlertDialogAction onClick={() => setCheckInOpen(false)}>{language === "ar" ? "نعم، ما زلت أدرس" : "Yes, still studying"}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
