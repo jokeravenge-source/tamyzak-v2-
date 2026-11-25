@@ -23,10 +23,11 @@ function audioProgress(audio: HTMLAudioElement) {
     : 0;
 }
 
-export function useWhiteboardPlayback(steps: readonly BoardStep[]) {
+export function useWhiteboardPlayback(steps: readonly BoardStep[], liveDrawing = false) {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<PlaybackStatus>("ready");
+  const [instant, setInstant] = useState(false);
   const selected = useRef(0);
   const active = useRef<Clip | null>(null);
   const cached = useRef(new Map<number, string>());
@@ -48,7 +49,7 @@ export function useWhiteboardPlayback(steps: readonly BoardStep[]) {
     if (active.current !== clip) return;
     cached.current.delete(clip.step);
     release();
-    setProgress(1);
+    if (!liveDrawing) setProgress(1);
     setStatus("failed");
   };
 
@@ -84,6 +85,7 @@ export function useWhiteboardPlayback(steps: readonly BoardStep[]) {
     const clip: Clip = { audio, step: stepIndex, request: new AbortController(), ready: false, wanted: true, frame: null };
     active.current = clip;
     setProgress(0);
+    setInstant(false);
     setStatus("loading");
 
     const synchronize = () => {
@@ -156,9 +158,19 @@ export function useWhiteboardPlayback(steps: readonly BoardStep[]) {
     release();
     selected.current = target;
     setIndex(target);
-    setProgress(1);
+    setProgress(liveDrawing ? 0 : 1);
+    setInstant(false);
     setStatus("ready");
   };
 
-  return { index, progress, status, play, pause, goTo };
+  const nextMark = steps[index]?.actions.find(action => action.at > progress || (progress === 0 && !instant && action.at === 0));
+  const advanceDrawing = () => {
+    if (!nextMark || status === "playing" || status === "loading") return;
+    release();
+    setInstant(true);
+    setProgress(nextMark.at);
+    if (status !== "failed") setStatus("ready");
+  };
+
+  return { index, progress, status, instant, play, pause, goTo, advanceDrawing, hasNextMark: Boolean(nextMark) };
 }

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { capacitorLesson } from "../../../supabase/functions/_shared/whiteboardCapacitors";
+import { dielectricPageLesson, selectedBoardPdfSource } from "../../../supabase/functions/_shared/whiteboardDielectric";
 import MutamayizChat from "@/pages/MutamayizChat";
 import { setAssistantOwner } from "@/lib/mutamayizConversation";
 import { drawingFrame } from "./BoardDrawing";
@@ -177,5 +178,23 @@ describe("whiteboard playback", () => {
     expect(after.gap).toBe(1);
     expect(after.visible).toEqual(before.visible);
     expect(after.equation).toBe(before.equation);
+  });
+
+  it("draws polarization progressively without losing earlier strokes and retains both equations", () => {
+    const source = selectedBoardPdfSource({ name: "Capacitors.pdf", selectedPage: true, pages: [{
+      page: 10, text: "The capacitor is disconnected. With a dielectric the field becomes E k = E/k. A positive charge appears on the dielectric facing the negative plate. Since E=ΔV/d, voltage falls.",
+    }] });
+    const dielectric = dielectricPageLesson(source, "en")!;
+    const before = drawingFrame(dielectric, 1, .4);
+    const drawing = drawingFrame(dielectric, 1, .5);
+    expect(before.visible.has("polarization")).toBe(false);
+    expect(drawing.reveal.plates).toBe(1);
+    expect(drawing.reveal.dielectric).toBe(1);
+    expect(drawing.reveal.polarization).toBeGreaterThan(0);
+    expect(drawing.reveal.polarization).toBeLessThan(1);
+    expect(drawingFrame(dielectric, 3, .09, true).equations).toEqual([
+      { text: "Eₖ = E / k", reveal: 1 },
+      { text: "ΔV = Ed", reveal: 1 },
+    ]);
   });
 });

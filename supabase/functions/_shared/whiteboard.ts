@@ -1,9 +1,11 @@
-export type BoardTemplate = "notes" | "parallel-plates";
+export type BoardTemplate = "notes" | "parallel-plates" | "dielectric-plates";
 export type BoardNote = "idea" | "reason" | "result";
-export type BoardFocus = BoardNote | "plates" | "distance" | "area" | "dielectric" | "equation";
+const dielectricParts = ["plates", "field", "dielectric", "polarization", "net-field"] as const;
+type DielectricPart = typeof dielectricParts[number];
+export type BoardFocus = BoardNote | DielectricPart | "distance" | "area" | "equation";
 export type BoardAction =
   | { kind: "label"; target: BoardNote; text: string; at: number }
-  | { kind: "reveal"; target: "plates" | "area" | "dielectric"; at: number }
+  | { kind: "reveal"; target: DielectricPart | "area"; at: number }
   | { kind: "arrow"; target: "idea-reason" | "reason-result" | "distance"; at: number }
   | { kind: "highlight"; target: BoardFocus; at: number }
   | { kind: "equation"; text: string; at: number }
@@ -54,7 +56,13 @@ export const boardText = (value: unknown, limit: number) => {
 };
 
 export function boardFocusTargets(template: BoardTemplate): readonly BoardFocus[] {
-  return template === "parallel-plates" ? [...diagramParts, "equation"] : [...BOARD_NOTES, "equation"];
+  if (template === "parallel-plates") return [...diagramParts, "equation"];
+  if (template === "dielectric-plates") return [...dielectricParts, "equation"];
+  return [...BOARD_NOTES, "equation"];
+}
+
+export function isBoardTemplate(value: unknown): value is BoardTemplate {
+  return value === "notes" || value === "parallel-plates" || value === "dielectric-plates";
 }
 
 export function parseBoardReference(value: unknown, sources: readonly BoardSource[]): BoardReference | null {
@@ -83,6 +91,8 @@ function parseAction(value: unknown, template: BoardTemplate): BoardAction | nul
     if (kind === "reveal" && (target === "plates" || target === "dielectric" || target === "area")) return { kind, target, at };
     if (kind === "arrow" && target === "distance") return { kind, target, at };
     if (kind === "double-gap" && at <= 0.75) return { kind, at };
+  } else if (template === "dielectric-plates") {
+    if (kind === "reveal" && dielectricParts.includes(target as DielectricPart)) return { kind, target: target as DielectricPart, at };
   } else {
     if (kind === "label" && BOARD_NOTES.includes(target as BoardNote)) {
       const text = boardText(row.text, 110);

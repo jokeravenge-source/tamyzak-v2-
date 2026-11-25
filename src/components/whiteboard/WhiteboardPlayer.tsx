@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Loader2, Pause, Play, RotateCcw, Send, Volume2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Loader2, Pause, PenLine, Play, RotateCcw, Send, Volume2 } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useWhiteboardPlayback } from "@/hooks/useWhiteboardPlayback";
-import { BOARD_QUESTION_MAX, type BoardAnswer, type BoardError, type BoardInput, type BoardLesson, type BoardReference, type BoardSource } from "../../../supabase/functions/_shared/whiteboard";
+import { BOARD_QUESTION_MAX, parseBoardAnswer, type BoardAnswer, type BoardError, type BoardInput, type BoardLesson, type BoardReference, type BoardSource } from "../../../supabase/functions/_shared/whiteboard";
+import { reviewedDielectricAnswer } from "../../../supabase/functions/_shared/whiteboardDielectric";
 import BoardDrawing, { drawingFrame } from "./BoardDrawing";
+import BoardViewport from "./BoardViewport";
 
 const copy = {
   ar: {
     step: "الخطوة", of: "من", scopes: "خطوات الدرس", board: "رسم السبورة", source: "مصدر الخطوة",
     transcript: "متميّز يشرح", play: "شغّل الشرح", pause: "إيقاف مؤقت", resume: "كمّل الشرح", replay: "أعِد الخطوة",
     prev: "الخطوة السابقة", next: "الخطوة التالية", audioProgress: "تقدّم الصوت", preparing: "جاري تجهيز الصوت…",
+    nextMark: "أظهر الجزء التالي من الرسم",
     soundError: "الصوت تعذّر هسه. تكدر تقرأ الشرح وتتنقّل بين الخطوات.", retryPlay: "اضغط تشغيل حتى يبدأ الصوت.",
-    ask: "اسأل عن هاي الخطوة", placeholder: "مثلاً: ليش السعة تقل هنا؟", send: "دزّ السؤال",
+    ask: "اسأل عن هاي الخطوة", placeholder: "مثلاً: ليش يتغيّر هالشكل؟", send: "دزّ السؤال",
     asking: "متميّز دا يراجع الخطوة…", followUp: "توضيح متميّز", returnToStep: "ارجع للخطوة", askError: "تعذّر التوضيح هسه. سؤالك باقي وتكدر تحاول مرة ثانية.",
     askMissing: "ما لكيت جواب لهذا السؤال بالمقتطف المربوط بالخطوة.", filePage: "صفحة الملف", bookPage: "صفحة الكتاب", openSource: "افتح المصدر",
     quiz: "إذا ضاعفنا المسافة وبقيت المساحة والعازل نفسهم، شكد تصير السعة؟",
@@ -25,8 +28,9 @@ const copy = {
     step: "Step", of: "of", scopes: "Lesson steps", board: "Whiteboard drawing", source: "Step source",
     transcript: "Mutamayiz explains", play: "Play explanation", pause: "Pause", resume: "Resume", replay: "Replay step",
     prev: "Previous step", next: "Next step", audioProgress: "Audio progress", preparing: "Preparing audio…",
+    nextMark: "Show next drawing mark",
     soundError: "Audio is unavailable. Read the transcript and move between steps.", retryPlay: "Press play to start the audio.",
-    ask: "Ask about this step", placeholder: "Why does capacitance decrease here?", send: "Send question",
+    ask: "Ask about this step", placeholder: "What causes this change?", send: "Send question",
     asking: "Mutamayiz is reviewing this step…", followUp: "Mutamayiz clarifies", returnToStep: "Back to the step", askError: "Could not answer now. Your question is still here to retry.",
     askMissing: "The excerpt for this step does not cover that question.", filePage: "File page", bookPage: "Printed page", openSource: "Open source",
     quiz: "What happens to capacitance when the distance doubles and the area and dielectric stay fixed?",
@@ -44,9 +48,8 @@ function SourceReference({ source, reference, ar }: { source: BoardSource; refer
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 font-semibold [&::-webkit-details-marker]:hidden">
         <BookOpen aria-hidden="true" className="size-4 shrink-0 text-primary" />
         <span className="min-w-0 flex-1 leading-snug [overflow-wrap:anywhere]">
-          {source.pdfPage ? text.filePage + " " + number(source.pdfPage)
-            : source.printedPage ? text.bookPage + " " + number(source.printedPage)
-            : text.source}
+          {text.source}{source.pdfPage ? " · " + text.filePage + " " + number(source.pdfPage)
+            : source.printedPage ? " · " + text.bookPage + " " + number(source.printedPage) : ""}
           <bdi className="ms-2 font-normal text-muted-foreground">{source.title}</bdi>
         </span>
         <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground group-open:rotate-180" />
@@ -68,11 +71,11 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
 }) {
   const ar = language === "ar";
   const text = copy[language];
-  const player = useWhiteboardPlayback(lesson.steps);
+  const player = useWhiteboardPlayback(lesson.steps, lesson.template !== "parallel-plates");
   const { index, progress, status } = player;
   const step = lesson.steps[index];
   const source = lesson.sources.find(({ id }) => id === step.reference.sourceId);
-  const frame = drawingFrame(lesson, index, progress);
+  const frame = drawingFrame(lesson, index, progress, player.instant);
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<BoardAnswer | null>(null);
@@ -119,6 +122,12 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
     player.pause();
     setAnswer(null);
     setAskError("");
+    const reviewed = reviewedDielectricAnswer(lesson, questionText, [...frame.visible]);
+    if (reviewed) {
+      setAnswer(reviewed);
+      setQuestion("");
+      return;
+    }
     setAsking(true);
     const current = new AbortController();
     request.current = current;
@@ -132,10 +141,11 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
         timeout: 45_000,
       });
       if (request.current !== current) return;
-      if (error || !data?.answer) {
+      const valid = source && !error && parseBoardAnswer(data?.answer, source, [...frame.visible]);
+      if (!valid) {
         setAskError(data?.error === "missing_source" ? text.askMissing : text.askError);
       } else {
-        setAnswer(data.answer);
+        setAnswer(valid);
         setQuestion("");
       }
     } catch {
@@ -174,17 +184,24 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
             ))}
           </nav>
 
-          <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.32fr)_minmax(0,1fr)] lg:gap-4">
+          <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)] lg:gap-4">
             <section aria-label={text.board} className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:rounded-3xl">
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-1.5 border-b border-border px-3 py-2.5 sm:px-4">
                 <h3 className="min-w-0 font-bold leading-snug [overflow-wrap:anywhere]" dir="auto">{step.title}</h3>
                 <p className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">{text.step} {number(index + 1)} {text.of} {number(lesson.steps.length)}</p>
               </div>
-              <BoardDrawing template={lesson.template} frame={frame} interruption={answer?.highlight ?? null} language={language} solved={showQuiz && choice === "half"} />
+              <BoardViewport ar={ar}>
+                <BoardDrawing template={lesson.template} frame={frame} interruption={answer?.highlight ?? null} language={language} solved={showQuiz && choice === "half"} />
+              </BoardViewport>
               <div className="space-y-2.5 border-t border-border p-2.5 sm:px-4 sm:py-3">
                 <div role="progressbar" aria-label={text.audioProgress} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-primary" style={{ width: (progress * 100) + "%" }} />
                 </div>
+                {!sounding && player.hasNextMark && <Button variant="ghost" type="button" disabled={asking}
+                  onClick={() => { dismissAnswer(); player.advanceDrawing(); }}
+                  className="min-h-9 gap-2 rounded-lg px-2 text-xs text-muted-foreground">
+                  <PenLine aria-hidden="true" className="size-3.5" />{text.nextMark}
+                </Button>}
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2">
                   <Button type="button" variant="outline" size="icon" disabled={index === 0} aria-label={text.prev} onClick={() => goTo(index - 1)} className="size-11 rounded-xl">
                     <ChevronLeft className={ar ? "rotate-180" : undefined} />
@@ -215,7 +232,7 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
                   <div role="status" className="min-w-0 text-sm leading-7 [overflow-wrap:anywhere]">
                     {asking ? text.asking : <p dir={answer ? "rtl" : undefined}>{answer?.reply ?? askError}</p>}
                   </div>
-                  {answer && source && <SourceReference source={source} reference={answer.reference} ar={ar} />}
+                  {answer && source && answer.reference.sourceId === source.id && <SourceReference source={source} reference={answer.reference} ar={ar} />}
                   {!asking && <Button type="button" variant="outline" onClick={() => canContinue ? play() : dismissAnswer()} className="rounded-xl">
                     {canContinue ? text.resume : text.returnToStep}
                   </Button>}

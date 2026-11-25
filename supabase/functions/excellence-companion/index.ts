@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
     // The unified assistant requires a valid student session.
     const auth = await requireUser(req);
     if (!auth.ok) {
-      if (isBoard) return json200({ error: "auth_required" });
+      if (isBoard) return json200({ error: "auth_required", whiteboard_version: "live-drawing-v1" });
       return json200({ error: "Sign in to use this feature.", reply: ar ? "يرجى تسجيل الدخول." : "Please sign in." });
     }
     if (isBoard) return json200(await handleWhiteboard(mode, body, req.headers.get("Authorization") ?? "", completeWhiteboard));

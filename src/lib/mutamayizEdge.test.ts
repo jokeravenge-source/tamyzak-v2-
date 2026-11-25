@@ -212,6 +212,25 @@ describe("authenticated whiteboard tutor", () => {
     expect(lesson.sources).toEqual([{ id: "pdf:57", kind: "pdf", title: "chapter.pdf", excerpt: text, pdfPage: 57 }]);
   });
 
+  it("builds the reviewed dielectric diagram and a cited reply from the selected page", async () => {
+    const excerpt = "The capacitor is disconnected from the battery. After a dielectric fills the gap, the electric field becomes E k = E/k. "
+      + "A positive charge appears on the surface of the dielectric facing the negative plate. Since E=ΔV/d, the voltage decreases.";
+    const board = { question: "Explain this PDF page", language: "en",
+      attachment: { name: "Chapter 1.pdf", selectedPage: true, pages: [{ page: 10, text: excerpt }] },
+    };
+    const { lesson } = await (await request({ mode: "whiteboard_lesson", board })).json();
+    expect(lesson).toMatchObject({ template: "dielectric-plates", sources: [{ id: "pdf:10", pdfPage: 10, excerpt }] });
+    expect(lesson.steps).toHaveLength(4);
+    for (const { reference } of lesson.steps) expect(excerpt).toContain(reference.quote);
+    expect(lesson.steps[2].actions).toContainEqual({ kind: "equation", text: "Eₖ = E / k", at: .66 });
+    const { answer } = await (await request({
+      mode: "whiteboard_question", board, question: "Why does the electric field decrease?", step: lesson.steps[1],
+      stepIndex: 1, visible: ["plates", "polarization", "fake"],
+    })).json();
+    expect(answer).toMatchObject({ highlight: "polarization", reference: lesson.steps[1].reference });
+    expect(backend.fetch).not.toHaveBeenCalled();
+  });
+
   it("grounds other curriculum lessons in the existing verified-source lookup and respects the selected lesson", async () => {
     backend.env = { SUPABASE_URL: "https://fixture.supabase.test", SUPABASE_ANON_KEY: "public-test-key" };
     backend.fetch.mockImplementation(async (url: string) => url.includes("/rest/v1/rpc/")

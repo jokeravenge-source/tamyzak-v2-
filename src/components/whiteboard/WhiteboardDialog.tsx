@@ -7,7 +7,8 @@ import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } f
 import { supabase } from "@/integrations/supabase/client";
 import { openWhiteboardPdf } from "@/lib/mutamayizFile";
 import type { PdfTextPages } from "@/lib/fileText";
-import { parseBoardLesson, type BoardError, type BoardInput, type BoardLesson } from "../../../supabase/functions/_shared/whiteboard";
+import { isBoardTemplate, parseBoardLesson, type BoardError, type BoardInput, type BoardLesson } from "../../../supabase/functions/_shared/whiteboard";
+import { dielectricPageLesson, selectedBoardPdfSource } from "../../../supabase/functions/_shared/whiteboardDielectric";
 import { PARALLEL_PLATES_TITLE } from "../../../supabase/functions/_shared/whiteboardCapacitors";
 import WhiteboardPlayer from "./WhiteboardPlayer";
 import "./whiteboard.css";
@@ -88,6 +89,11 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
   useEffect(() => () => { void pdf?.close().catch(() => {}); }, [pdf]);
   useEffect(() => {
     if (!requested) return;
+    const reviewed = dielectricPageLesson(selectedBoardPdfSource(requested.attachment), requested.language);
+    if (reviewed) {
+      setResult({ status: "ready", lesson: reviewed, source: requested });
+      return;
+    }
     const controller = new AbortController();
     setResult({ status: "loading" });
     void supabase.functions.invoke<{ lesson?: BoardLesson; error?: BoardError }>("excellence-companion", {
@@ -101,8 +107,7 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
         return;
       }
       const lesson = data?.lesson;
-      const valid = !error && lesson && Array.isArray(lesson.sources)
-        && (lesson.template === "notes" || lesson.template === "parallel-plates")
+      const valid = !error && lesson && Array.isArray(lesson.sources) && isBoardTemplate(lesson.template)
         ? parseBoardLesson(lesson, lesson.sources, lesson.template) : null;
       const httpStatus = (error?.context as Response | undefined)?.status;
       setResult(valid ? { status: "ready", lesson: valid, source: requested } : { status: "failed", reason: failure(data?.error, httpStatus) });
