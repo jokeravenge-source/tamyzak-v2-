@@ -421,6 +421,13 @@
       "when": 1795518378959,
       "tag": "0059_physics_ch7_english_mcq_bank_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795565900787,
+      "tag": "0060_premium_points_pass",
+      "breakpoints": true
     }
   ]
 }
