@@ -5,8 +5,8 @@ import englishQuestions from "@/data/physicsChapter5EnglishMcqs.json";
 export function getBuiltInPhysicsCh5(language: "ar" | "en") {
   const questions = language === "ar" ? arabicQuestions : englishQuestions;
   const chapterTitle = language === "ar" ? "البصريات الفيزيائية" : "Physical Optics";
-  return questions.map(({ id, question, choices, answer_index }) => ({
-    id, question, choices, answer_index,
+  return questions.map(({ id, section, question, choices, answer_index }) => ({
+    id, section, question, choices, answer_index,
     subject: "physics",
     chapter: 5,
     chapter_title: chapterTitle,

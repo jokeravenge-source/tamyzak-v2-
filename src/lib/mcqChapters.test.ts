@@ -9,7 +9,7 @@ describe("shared flashcard chapter divisions", () => {
   it("retains all eight physics chapters and existing flashcard availability", () => {
     expect(getFlashcardChapters("physics").map(c => c.n)).toEqual([1,2,3,4,5,6,7,8]);
     expect(getFlashcardChapters("biology").find(c => c.n === 4)?.locked).toBe(true);
-    expect(getFlashcardChapters("english").filter(c => !c.locked)).toHaveLength(3);
+    expect(getFlashcardChapters("english").filter(c => !c.locked).map(c => c.n)).toEqual([1,2,3,4,5,6,7,8]);
   });
   it("temporarily locks chemistry chapter 7", () => {
     expect(getFlashcardChapters("chemistry").find(c => c.n === 7)?.locked).toBe(true);
@@ -28,6 +28,10 @@ describe("shared flashcard chapter divisions", () => {
   it("keeps chemistry's known numbers when its flashcard titles are generic", () => {
     expect(resolveMcqChapter(row("chemistry", 1, "Thermodynamics"))?.n).toBe(1);
   });
+  it("recognizes the legacy Electric Capacitance bank title as Physics Chapter 1", () => {
+    expect(resolveMcqChapter(row("physics", 1, "Electric Capacitance"))?.n).toBe(1);
+    expect(resolveMcqChapter(row("physics", 2, "Electric Capacitance"))).toBeNull();
+  });
   it("does not guess from conflicting titles or unknown numbers", () => {
     expect(resolveMcqChapter(row("physics", 1, "Unknown topic"))).toBeNull();
     expect(resolveMcqChapter(row("physics", 99, null))).toBeNull();
@@ -45,10 +49,11 @@ describe("shared flashcard chapter divisions", () => {
     expect(getMcqChapterGroups("physics", [], "ar")[0].title).toBe("المتسعات");
     expect(getMcqChapterGroups("english_literature", [row("english_literature", 1, "Section 1"), row("english_literature", 2, "Section 2")], "en").map(g => g.title)).toEqual(["Section 1", "Section 2"]);
   });
-  it("keeps English sections separate and allows MCQ classification even when flashcards are unavailable", () => {
-    expect(getFlashcardChapters("english", "paragraphs")[0].title).toBe("Paragraphs");
+  it("validates English chapter numbers against the chosen section", () => {
+    expect(getFlashcardChapters("english", "paragraphs")[0].title).toBe("Textbook Passages");
     expect(validatedGeneratedChapter(8, "english", "grammar", null)).toBe(8);
-    expect(validatedGeneratedChapter(1, "english", "literature", null)).toBeNull();
+    expect(validatedGeneratedChapter(1, "english", "literature", null)).toBe(1);
+    expect(validatedGeneratedChapter(8, "english", "literature", null)).toBeNull();
   });
   it("validates generated labels and supports explicitly chosen context on older deployments", () => {
     expect(validatedGeneratedChapter(99, "physics", "grammar", null)).toBeNull();

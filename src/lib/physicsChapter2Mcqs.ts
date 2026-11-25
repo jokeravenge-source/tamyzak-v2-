@@ -5,6 +5,7 @@ export type BuiltInMcqRow = {
   subject: string;
   chapter: number;
   chapter_title: string;
+  section?: string;
   question: string;
   choices: string[];
   answer_index: number;
@@ -18,6 +19,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic force on charged particles",
       "question": "A positively charged particle enters a uniform magnetic field with its velocity perpendicular to the magnetic flux density. According to the chapter, which combination correctly describes its motion?",
       "choices": [
         "Force parallel to velocity → straight-line acceleration",
@@ -33,6 +35,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic force on charged particles",
       "question": "The magnetic force acting on a charged particle moving in a uniform magnetic field reaches its maximum value when the angle between v and B is:",
       "choices": [
         "0^\\circ",
@@ -48,6 +51,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic force on charged particles",
       "question": "If the velocity vector of a charged particle becomes parallel to the magnetic flux density vector, the magnetic force becomes:",
       "choices": [
         "qvB",
@@ -63,6 +67,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic force on charged particles",
       "question": "Which set contains all the factors stated in the chapter as affecting the magnetic force on a charged particle?",
       "choices": [
         "q,\\;v,\\;B,\\;\\theta",
@@ -78,6 +83,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "A magnetic rod remains stationary relative to a coil connected to an ammeter. The ammeter reads zero primarily because:",
       "choices": [
         "The magnetic flux through the coil is zero",
@@ -93,6 +99,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "A magnetic rod and a coil move in the same direction with exactly the same velocity. According to the chapter, no induced current is produced because:",
       "choices": [
         "The magnetic flux is necessarily zero",
@@ -108,6 +115,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "Which observation in Faraday’s primary–secondary coil experiment most directly demonstrates that a constant primary current does NOT continuously induce current in the secondary coil?",
       "choices": [
         "The secondary pointer deflects while the switch is being closed",
@@ -123,6 +131,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "Faraday observed secondary current during which stages of the primary current?",
       "choices": [
         "Only while the primary current remained constant",
@@ -138,6 +147,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "According to the chapter, the fundamental condition for generating induced current in a closed circuit is:",
       "choices": [
         "Presence of a permanent magnet",
@@ -153,6 +163,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "Why did attempts preceding Faraday’s discovery fail to generate electric current using magnetic fields?",
       "choices": [
         "They used alternating magnetic fields",
@@ -168,6 +179,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "Which modification can increase the induced current in a coil facing a moving magnetic rod according to the chapter?",
       "choices": [
         "Decreasing the number of turns",
@@ -183,6 +195,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Faraday experiments and induction",
       "question": "A magnet is pushed toward a coil and then pulled away with the same speed. The induced currents in the two cases are:",
       "choices": [
         "Equal in direction because the speed is equal",
@@ -198,6 +211,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "In motional EMF, the charges in a conducting rod moving through a magnetic field accumulate at its ends because they are acted upon by:",
       "choices": [
         "Gravitational force",
@@ -213,6 +227,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "For a rod moving perpendicular to a uniform magnetic field, which expression is given for motional EMF?",
       "choices": [
         "vB/\\ell",
@@ -228,6 +243,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "According to the chapter, the motional EMF generated in a moving rod depends on:",
       "choices": [
         "B,\\;v,\\;\\ell only",
@@ -243,6 +259,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "Maximum motional EMF occurs when the moving rod is:",
       "choices": [
         "Parallel to the magnetic flux",
@@ -258,6 +275,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "If either the direction of motion of a rod OR the direction of the magnetic field is reversed, the chapter states that:",
       "choices": [
         "The magnitude and polarity of motional EMF remain unchanged",
@@ -273,6 +291,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "A conducting rod moves parallel to the magnetic field. Which statement is consistent with the chapter?",
       "choices": [
         "Motional EMF is maximum",
@@ -288,6 +307,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "In the conductor-bar arrangement, the obstructive magnetic force acting on the rod is represented by:",
       "choices": [
         "F=B/I\\ell",
@@ -303,6 +323,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "The obstructive force produced after induced current flows through a moving conductor acts:",
       "choices": [
         "In the same direction as the velocity",
@@ -318,6 +339,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "In the conductor-bar system described in the chapter, constant velocity is maintained when:",
       "choices": [
         "Pulling force exceeds obstructive force",
@@ -333,6 +355,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motional EMF",
       "question": "The work done in moving a conductor rod through a magnetic field is converted mainly into:",
       "choices": [
         "Magnetic potential energy only",
@@ -348,6 +371,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "Which of the following is NOT listed as one of the three fundamental quantities whose change can alter magnetic flux?",
       "choices": [
         "Magnetic flux density B",
@@ -363,6 +387,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "According to the chapter, magnetic flux through a surface is expressed as:",
       "choices": [
         "\\Phi_B=BA\\sin\\theta",
@@ -378,6 +403,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "If the area vector of a ring is parallel to the magnetic flux density vector, the magnetic flux is:",
       "choices": [
         "Zero",
@@ -393,6 +419,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "When the plane of a conducting ring is parallel to the magnetic flux density vector, the chapter indicates that the magnetic flux through the ring is:",
       "choices": [
         "BA",
@@ -408,6 +435,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "Faraday’s law states that the magnitude of induced EMF is directly proportional to:",
       "choices": [
         "Magnetic flux itself",
@@ -423,6 +451,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "In Faraday’s law, the negative sign is included according to:",
       "choices": [
         "Ohm’s law",
@@ -438,6 +467,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "The polarity of the induced EMF depends on whether magnetic flux is:",
       "choices": [
         "Large or small",
@@ -453,6 +483,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "A north magnetic pole approaches the face of a conducting ring. According to the chapter, the face of the ring behaves as:",
       "choices": [
         "A south pole to attract the magnet",
@@ -468,6 +499,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "The same north pole is now moved away from the ring. The face of the ring becomes:",
       "choices": [
         "North, to repel the magnet",
@@ -483,6 +515,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "The practical importance of Lenz’s law, as explicitly stated in the chapter, includes:",
       "choices": [
         "Calculating electrical resistance only",
@@ -498,6 +531,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Magnetic flux, Faraday and Lenz laws",
       "question": "Which best distinguishes external magnetic flux density B from induced magnetic flux density B_{ind}?",
       "choices": [
         "Both always act in the same direction",
@@ -513,6 +547,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "Eddy currents are described in the chapter as currents that are:",
       "choices": [
         "Straight and parallel to the magnetic field",
@@ -528,6 +563,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "Eddy currents arise primarily as a consequence of:",
       "choices": [
         "Constant magnetic flux with no relative motion",
@@ -543,6 +579,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "The major disadvantage of eddy currents discussed in the chapter is:",
       "choices": [
         "Destruction of magnetic flux",
@@ -558,6 +595,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "Why is an iron core divided into mutually insulated thin plates in transformers according to the chapter?",
       "choices": [
         "To decrease electrical resistance and increase eddy currents",
@@ -573,6 +611,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "In the pendulum experiment comparing a sliced and an unsliced conducting plate moving through a magnetic field, which plate stops sooner?",
       "choices": [
         "Sliced plate because it has smaller eddy currents",
@@ -588,6 +627,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Eddy currents",
       "question": "The vibration energy lost when the unsliced conducting plate eventually stops is transformed mainly into:",
       "choices": [
         "Electrical charge stored permanently on the plate",
@@ -603,6 +643,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "Electric generators are described in the chapter as devices that convert:",
       "choices": [
         "Electric energy into mechanical energy",
@@ -618,6 +659,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "A single-phase AC generator contains which combination?",
       "choices": [
         "Coil, two magnetic poles, two sliding rings and two carbon brushes",
@@ -633,6 +675,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "During one complete rotation of a single-phase generator coil in a uniform magnetic field, the polarity of the induced EMF reverses:",
       "choices": [
         "Once",
@@ -648,6 +691,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "According to the chapter, the induced EMF of a generator depends on all of the following EXCEPT:",
       "choices": [
         "Number of turns N",
@@ -663,6 +707,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "A three-phase AC generator consists of three coils separated by equal angles. The angular separation stated in the chapter is:",
       "choices": [
         "60^\\circ",
@@ -678,6 +723,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "The component that replaces the two sliding rings when constructing the DC generator described in the chapter is:",
       "choices": [
         "An iron core",
@@ -693,6 +739,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Electric generators",
       "question": "The average output current of the DC generator described in the chapter is related to its maximum current by:",
       "choices": [
         "I_{average}=I_{max}",
@@ -708,6 +755,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motors and back EMF",
       "question": "Why is the induced EMF generated in a rotating motor coil called “back EMF”?",
       "choices": [
         "It is always larger than the applied voltage",
@@ -723,6 +771,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Motors and back EMF",
       "question": "According to the motor relation given in the chapter, the current flowing through the motor is determined by:",
       "choices": [
         "I=\\dfrac{V_{applied}+E_{back}}{R}",
@@ -738,6 +787,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Self-induction",
       "question": "The coefficient of self-inductance of a coil depends on all of the following EXCEPT:",
       "choices": [
         "Size of the coil",
@@ -753,6 +803,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "Electromagnetic Induction",
+      "section": "Mutual induction",
       "question": "Two adjacent closed coils are arranged so that current in the primary coil changes with time. According to mutual induction, an EMF appears in the secondary because:",
       "choices": [
         "The secondary resistance changes automatically",
@@ -770,6 +821,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة المغناطيسية في الجسيمات المشحونة",
       "question": "إذا تحركت شحنة موجبة داخل مجال مغناطيسي منتظم بحيث كانت سرعتها عمودية على اتجاه كثافة الفيض المغناطيسي، فإنها:",
       "choices": [
         "تتحرك بخط مستقيم",
@@ -785,6 +837,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة المغناطيسية في الجسيمات المشحونة",
       "question": "تكون القوة المغناطيسية المؤثرة في شحنة متحركة أعظم ما يمكن عندما تكون الزاوية بين متجه السرعة ومتجه كثافة الفيض:",
       "choices": [
         "0°",
@@ -800,6 +853,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة المغناطيسية في الجسيمات المشحونة",
       "question": "إذا كان متجه سرعة الجسيمة المشحونة موازيًا لمتجه كثافة الفيض المغناطيسي، فإن القوة المغناطيسية:",
       "choices": [
         "عظمى",
@@ -815,6 +869,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة المغناطيسية في الجسيمات المشحونة",
       "question": "تعتمد القوة المغناطيسية المؤثرة في جسيمة مشحونة متحركة داخل مجال مغناطيسي منتظم على:",
       "choices": [
         "مقدار الشحنة والسرعة وكثافة الفيض والزاوية بينهما",
@@ -830,6 +885,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "عند وضع مغناطيس ساكن بالنسبة لملف موصول بأميتر، تكون قراءة الأميتر صفرًا لأن:",
       "choices": [
         "الفيض المغناطيسي يساوي صفرًا",
@@ -845,6 +901,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "إذا تحرك المغناطيس والملف بالسرعة نفسها وفي الاتجاه نفسه، فلا يتولد تيار حثي لأن:",
       "choices": [
         "المجال المغناطيسي يختفي",
@@ -860,6 +917,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "أي ملاحظة من تجربة فاراداي تؤكد أن التيار الابتدائي الثابت لا يولد تيارًا حثيًا مستمرًا في الملف الثانوي؟",
       "choices": [
         "انحراف المؤشر عند غلق المفتاح",
@@ -875,6 +933,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "ظهر التيار الحثي في الملف الثانوي بتجربة فاراداي أثناء:",
       "choices": [
         "ثبات التيار الابتدائي فقط",
@@ -890,6 +949,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "العامل الأساسي لتوليد تيار حثي في دائرة مغلقة هو:",
       "choices": [
         "وجود مغناطيس دائم",
@@ -905,6 +965,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "فشلت المحاولات السابقة لاكتشاف فاراداي في توليد تيار كهربائي باستعمال المجال المغناطيسي لأنها اعتمدت على:",
       "choices": [
         "مجال مغناطيسي متغير",
@@ -920,6 +981,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "أي مما يأتي يزيد التيار الحثي المتولد في ملف أمام مغناطيس متحرك؟",
       "choices": [
         "تقليل السرعة النسبية",
@@ -935,6 +997,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "تجارب فاراداي والحث الكهرومغناطيسي",
       "question": "عند تقريب قطب مغناطيسي من ملف ثم إبعاده عنه بالسرعة نفسها، يكون التيار الحثي في الحالتين:",
       "choices": [
         "بنفس الاتجاه",
@@ -950,6 +1013,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "عند تحريك ساق موصلة داخل مجال مغناطيسي، تتجمع الشحنات عند طرفي الساق نتيجة:",
       "choices": [
         "قوة كهربائية ساكنة",
@@ -965,6 +1029,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "القوة الدافعة الكهربائية الحركية لساق تتحرك عموديًا على مجال مغناطيسي منتظم تُعطى بالعلاقة:",
       "choices": [
         "vB/\\ell",
@@ -980,6 +1045,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "تعتمد القوة الدافعة الكهربائية الحركية على:",
       "choices": [
         "كثافة الفيض والسرعة وطول الساق فقط عند الحركة العمودية",
@@ -995,6 +1061,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "تكون القوة الدافعة الكهربائية الحركية أعظم ما يمكن عندما تتحرك الساق:",
       "choices": [
         "موازية لخطوط الفيض",
@@ -1010,6 +1077,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "عند عكس اتجاه حركة الساق داخل المجال أو عكس اتجاه المجال المغناطيسي فإن:",
       "choices": [
         "مقدار واتجاه القوة الدافعة لا يتغيران",
@@ -1025,6 +1093,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "إذا تحركت الساق الموصلة باتجاه موازٍ للمجال المغناطيسي فإن القوة الدافعة الكهربائية الحركية:",
       "choices": [
         "عظمى",
@@ -1040,6 +1109,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "القوة المغناطيسية المعيقة المؤثرة في ساق يمر فيها تيار داخل مجال مغناطيسي تُعطى بالعلاقة:",
       "choices": [
         "F=IB/\\ell",
@@ -1055,6 +1125,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "اتجاه القوة المغناطيسية المعيقة المؤثرة في الساق المتحركة يكون:",
       "choices": [
         "مع اتجاه الحركة",
@@ -1070,6 +1141,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "تتحرك الساق بسرعة ثابتة عندما:",
       "choices": [
         "تكون قوة السحب أكبر من القوة المعيقة",
@@ -1085,6 +1157,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "القوة الدافعة الكهربائية الحركية",
       "question": "الشغل المبذول لتحريك ساق موصلة داخل مجال مغناطيسي يتحول إلى:",
       "choices": [
         "طاقة وضع فقط",
@@ -1100,6 +1173,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "أي مما يأتي لا يُعد من العوامل الأساسية التي يؤدي تغيرها إلى تغير الفيض المغناطيسي؟",
       "choices": [
         "كثافة الفيض B",
@@ -1115,6 +1189,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "يعطى الفيض المغناطيسي بالعلاقة:",
       "choices": [
         "\\Phi_B=BA\\sin\\theta",
@@ -1130,6 +1205,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "يكون الفيض المغناطيسي أعظم ما يمكن عندما يكون متجه المساحة:",
       "choices": [
         "عموديًا على متجه كثافة الفيض",
@@ -1145,6 +1221,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "عندما يكون مستوى الحلقة موازيًا لخطوط المجال المغناطيسي، فإن الفيض خلال الحلقة:",
       "choices": [
         "أعظم ما يمكن",
@@ -1160,6 +1237,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "ينص قانون فاراداي على أن مقدار القوة الدافعة الكهربائية الحثية يتناسب طرديًا مع:",
       "choices": [
         "مقدار الفيض المغناطيسي فقط",
@@ -1175,6 +1253,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "الإشارة السالبة في قانون فاراداي تعود إلى:",
       "choices": [
         "قانون أوم",
@@ -1190,6 +1269,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "تعتمد قطبية القوة الدافعة الكهربائية الحثية على كون الفيض المغناطيسي:",
       "choices": [
         "كبيرًا أو صغيرًا",
@@ -1205,6 +1285,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "عند تقريب القطب الشمالي لمغناطيس من وجه حلقة موصلة، فإن وجه الحلقة المقابل للمغناطيس يتصرف كأنه:",
       "choices": [
         "قطب جنوبي",
@@ -1220,6 +1301,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "عند إبعاد القطب الشمالي للمغناطيس عن وجه الحلقة فإن وجه الحلقة يصبح:",
       "choices": [
         "شماليًا ليطرده",
@@ -1235,6 +1317,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "من الفوائد العملية لقانون لنز:",
       "choices": [
         "حساب المقاومة فقط",
@@ -1250,6 +1333,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الفيض المغناطيسي وقانونا فاراداي ولنز",
       "question": "كثافة الفيض المغناطيسي الحثي المتولد بفعل التيار الحثي:",
       "choices": [
         "تساعد دائمًا على زيادة سبب حدوثه",
@@ -1265,6 +1349,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "التيارات الدوامة هي تيارات:",
       "choices": [
         "مستقيمة داخل الموصل",
@@ -1280,6 +1365,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "تتولد التيارات الدوامة بسبب:",
       "choices": [
         "ثبات الفيض",
@@ -1295,6 +1381,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "الأثر غير المرغوب للتيارات الدوامة في الأجهزة هو:",
       "choices": [
         "زيادة الطاقة الميكانيكية",
@@ -1310,6 +1397,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "يُصنع قلب المحولة على شكل صفائح حديدية معزولة كهربائيًا عن بعضها بهدف:",
       "choices": [
         "تقليل المقاومة الكهربائية",
@@ -1325,6 +1413,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "في تجربة اللوحين المتأرجحين بين قطبي مغناطيس، أيهما يتوقف أسرع؟",
       "choices": [
         "اللوح المشقوق",
@@ -1340,6 +1429,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "التيارات الدوامة",
       "question": "تتحول طاقة اهتزاز اللوح غير المشقوق عند توقفه إلى:",
       "choices": [
         "طاقة حرارية",
@@ -1355,6 +1445,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "المولد الكهربائي يحول:",
       "choices": [
         "الطاقة الكهربائية إلى ميكانيكية",
@@ -1370,6 +1461,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "يتكون مولد التيار المتناوب أحادي الطور من:",
       "choices": [
         "ملف وقطبين مغناطيسيين وحلقتين انزلاقيتين وفرشتين كاربونيتين",
@@ -1385,6 +1477,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "خلال دورة كاملة واحدة لملف المولد المتناوب أحادي الطور، تنعكس قطبية القوة الدافعة الكهربائية:",
       "choices": [
         "مرة واحدة",
@@ -1400,6 +1493,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "تعتمد القوة الدافعة الكهربائية المتولدة في المولد على جميع الآتي ما عدا:",
       "choices": [
         "عدد اللفات",
@@ -1415,6 +1509,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "تفصل بين ملفات المولد المتناوب ثلاثي الطور زوايا مقدار كل منها:",
       "choices": [
         "60°",
@@ -1430,6 +1525,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "للحصول على تيار باتجاه واحد في مولد التيار المستمر تُستبدل الحلقتان الانزلاقيتان بـ:",
       "choices": [
         "قلب حديدي",
@@ -1445,6 +1541,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المولدات الكهربائية",
       "question": "متوسط التيار الخارج من مولد التيار المستمر حسب العلاقة الواردة في الفصل هو:",
       "choices": [
         "I_{avg}=I_{max}",
@@ -1460,6 +1557,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المحركات والقوة الدافعة العكسية",
       "question": "تسمى القوة الدافعة المتولدة في ملف المحرك أثناء دورانه بالقوة الدافعة العكسية لأنها:",
       "choices": [
         "أكبر دائمًا من الجهد المسلط",
@@ -1475,6 +1573,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "المحركات والقوة الدافعة العكسية",
       "question": "التيار المار في دائرة المحرك يُعطى بالعلاقة:",
       "choices": [
         "I=\\frac{V_{applied}+E_{back}}{R}",
@@ -1490,6 +1589,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الحث الذاتي",
       "question": "يعتمد معامل الحث الذاتي للملف على جميع الآتي ما عدا:",
       "choices": [
         "حجم الملف",
@@ -1505,6 +1605,7 @@ const PHYSICS_CH2: Record<"ar" | "en", BuiltInMcqRow[]> = {
       "subject": "physics",
       "chapter": 2,
       "chapter_title": "الحث الكهرومغناطيسي",
+      "section": "الحث المتبادل",
       "question": "في الحث المتبادل، تتولد قوة دافعة حثية في الملف الثانوي عندما:",
       "choices": [
         "يبقى تيار الملف الابتدائي ثابتًا",

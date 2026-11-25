@@ -39,6 +39,7 @@ export const getBuiltInEnglishLiteratureSection3 = (language: "ar" | "en"): Buil
     subject: "english_literature",
     chapter: 3,
     chapter_title: "Section 3",
+    section: "eng-lit-1",
     question,
     choices: [...choices],
     answer_index: answerIndex,

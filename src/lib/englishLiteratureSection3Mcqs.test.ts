@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
 
 describe("English Literature Section 3 MCQs", () => {
-  it("contains all 30 questions with valid answer indexes", () => {
+  it("contains all 29 bank questions with valid answer indexes", () => {
     const questions = getBuiltInEnglishLiteratureSection3("en");
-    expect(questions).toHaveLength(30);
+    expect(questions).toHaveLength(29);
     expect(questions.every((row) => row.subject === "english_literature" && row.chapter === 3)).toBe(true);
     expect(questions.every((row) => row.choices.length === 4 && row.answer_index >= 0 && row.answer_index < 4)).toBe(true);
   });

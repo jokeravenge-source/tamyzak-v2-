@@ -43,6 +43,7 @@ import { getBuiltInEnglishLiteratureSection2 } from "@/lib/englishLiteratureSect
 import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSection3Mcqs";
 import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
+import { getFahrastTopicGroups, type FahrastTopicGroup } from "@/lib/mcqFahrastTopics";
 import { DAILY_MCQ_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 type Row = {
@@ -55,7 +56,12 @@ type Row = {
   answer_index: number;
   explanation: string | null;
   tags?: string[];
+  section?: string | null;
+  source?: string | null;
 };
+
+const ALL_CHAPTER_QUESTIONS = "all";
+const BANK_COLUMNS = "id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags, section, source";
 
 const SUBJECT_LABELS: Record<string, { ar: string; en: string }> = {
   physics: { ar: "الفيزياء", en: "Physics" },
@@ -135,6 +141,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   useEffect(() => { sessionStorage.removeItem("mcq_subject_focus_v1"); }, []);
   const [subject, setSubject] = useState<string | null>(topicTarget?.subject ?? personalizedTarget?.subject ?? focusedSubject);
   const [chapter, setChapter] = useState<string | null>(null);
+  const [topic, setTopic] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [answerIndex, setAnswerIndex] = useState<number | null>(null);
@@ -152,7 +159,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const [{ data }, dueResult, priorAttempts, focusedRows] = await Promise.all([
         supabase
           .from("mcq_banks")
-          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
+          .select(BANK_COLUMNS)
           .eq("language", lang)
           .order("subject", { ascending: true })
           .order("chapter", { ascending: true })
@@ -161,7 +168,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         supabase.rpc("get_due_mcq_bank_reviews"),
         loadTopicPractice(),
         topicTarget ? supabase.from("mcq_banks")
-          .select("id, subject, chapter, chapter_title, question, choices, answer_index, explanation, tags")
+          .select(BANK_COLUMNS)
           .eq("language", lang).eq("subject", topicTarget.subject)
           .order("sort_order", { ascending: true }).limit(2000) : Promise.resolve({ data: [] as Row[] }),
       ]);
@@ -201,6 +208,17 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const chapters = useMemo(() => {
     return subject ? getMcqChapterGroups(subject, rows, lang) : [];
   }, [rows, subject, lang]);
+  const selectedChapter = chapters.find(item => item.key === chapter);
+  const chapterRows = useMemo(() => {
+    const ids = new Set(selectedChapter?.questionIds ?? []);
+    return rows.filter(row => ids.has(row.id));
+  }, [selectedChapter, rows]);
+  const isDailyPractice = personalizedTarget?.subject === subject && personalizedTarget?.chapterNumber === selectedChapter?.chapter;
+  const topicGroups = useMemo(() => (
+    subject && selectedChapter && !topicTarget && !isDailyPractice && !reviewing
+      ? getFahrastTopicGroups(subject, selectedChapter, chapterRows, lang) : []
+  ), [subject, selectedChapter, chapterRows, lang, topicTarget, isDailyPractice, reviewing]);
+  const selectedTopic = topicGroups.find(item => item.key === topic);
 
   const dueRows = useMemo(
     () => rows.filter((r) => dueQuestionIds.includes(r.id)),
@@ -209,10 +227,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const quiz = useMemo(
     () => {
       if (reviewing) return dueRows;
-      const ids = new Set(chapters.find(c => c.key === chapter)?.questionIds ?? []);
-      const chapterRows = rows.filter(r => ids.has(r.id));
       if (topicTarget) return buildTopicQuiz(chapterRows, topicAttempts, topicTarget);
-      if (personalizedTarget && personalizedTarget.subject === subject && personalizedTarget.chapterNumber === chapters.find(c => c.key === chapter)?.chapter) {
+      if (personalizedTarget && isDailyPractice) {
         const terms = `${personalizedTarget.topicEn} ${personalizedTarget.topicAr}`.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter((term) => term.length > 3);
         const related = chapterRows.filter((row) => {
           const haystack = `${row.question} ${(row.tags ?? []).join(" ")}`.toLocaleLowerCase();
@@ -220,9 +236,13 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         });
         return dailyRotate(related.length >= 3 ? related : chapterRows, 10, `${todayKey()}:${personalizedTarget.topicKey}`);
       }
+      if (selectedTopic) {
+        const ids = new Set(selectedTopic.questionIds);
+        return chapterRows.filter(row => ids.has(row.id));
+      }
       return chapterRows;
     },
-    [rows, chapters, chapter, reviewing, dueRows, personalizedTarget, subject, topicTarget, topicAttempts],
+    [chapterRows, reviewing, dueRows, personalizedTarget, isDailyPractice, topicTarget, topicAttempts, selectedTopic],
   );
 
   useEffect(() => {
@@ -319,6 +339,14 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
 
   const next = () => { resetQ(); setIndex((i) => Math.min(i + 1, quiz.length - 1)); };
   const restart = () => { resetQ(); setIndex(0); setScore({ right: 0, wrong: 0 }); setMissedQuestions([]); };
+  const leaveQuiz = () => {
+    if (topicTarget) { onBack(); return; }
+    if (reviewing) setReviewing(false);
+    else if (topicGroups.length) setTopic(null);
+    else setChapter(null);
+    restart();
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
 
   const header = (title: string, back: () => void) => (
     <div className="mb-6 flex items-center gap-3">
@@ -494,7 +522,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           <p className="mt-1 text-sm text-muted-foreground">
             {usesSections
               ? (isAr ? "اختر القسم الذي تريد التدرب على أسئلته." : "Choose the section you want to practise.")
-              : (isAr ? "نفس تقسيم فصول البطاقات التعليمية. الفصول بدون أسئلة تظهر غير متاحة." : "The same chapters as your flashcards. Chapters without questions are unavailable.")}
+              : (isAr ? "اختار الفصل حتى تتدرّب على مواضيعه حسب الفهرست." : "Choose a chapter to practise its Fahrast topics.")}
           </p>
         </div>
         <div className="grid gap-3">
@@ -504,7 +532,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
               disabled={c.count === 0}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.99 }}
-              onClick={() => { setChapter(c.key); setIndex(0); resetQ(); setScore({ right: 0, wrong: 0 }); }}
+              onClick={() => { setChapter(c.key); setTopic(null); restart(); window.scrollTo({ top: 0, behavior: "instant" }); }}
               className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card/75 p-4 text-start shadow-sm transition-all hover:border-primary/60 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 font-mono text-lg font-black text-primary">{c.chapter ?? <Layers3 className="h-5 w-5" />}</span>
@@ -524,6 +552,51 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     );
   }
 
+  if (topicGroups.length && topic === null && selectedChapter && subject) {
+    const sections = new Map<string | null, FahrastTopicGroup[]>();
+    for (const entry of topicGroups) {
+      const group = sections.get(entry.section) ?? [];
+      group.push(entry);
+      sections.set(entry.section, group);
+    }
+    const pickTopic = (key: string) => {
+      setTopic(key);
+      restart();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    };
+    const questionCount = (count: number) => isAr ? `${count} سؤال` : `${count} ${count === 1 ? "question" : "questions"}`;
+    return (
+      <main className="min-h-screen px-4 py-6 pb-28 md:py-10" dir={isAr ? "rtl" : "ltr"}>
+        <div className="mx-auto max-w-3xl">
+          {header(`${subjectLabel(subject, isAr)} · ${selectedChapter.title}`, () => { setChapter(null); window.scrollTo({ top: 0, behavior: "instant" }); })}
+          <button type="button" onClick={() => pickTopic(ALL_CHAPTER_QUESTIONS)}
+            className="mb-6 flex min-h-16 w-full items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3.5 text-start transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <BookOpenText aria-hidden="true" className="size-5 shrink-0 text-primary" />
+            <span className="min-w-0 flex-1 font-bold">{isAr ? "كل أسئلة الفصل" : "All chapter questions"}</span>
+            <span className="shrink-0 text-xs font-semibold text-primary">{questionCount(chapterRows.length)}</span>
+          </button>
+          <h2 className="mb-3 text-lg font-black">{isAr ? "مواضيع الفهرست" : "Fahrast topics"}</h2>
+          {[...sections].map(([section, entries]) => (
+            <div key={section ?? "topics"} className="mb-4">
+              {section && <h3 dir="auto" className="mb-2 text-sm font-semibold text-muted-foreground">{section}</h3>}
+              <ul className="grid gap-2">
+                {entries.map(entry => (
+                  <li key={entry.key}>
+                    <button type="button" disabled={!entry.questionIds.length} onClick={() => pickTopic(entry.key)}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 text-start transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-55 disabled:hover:border-border">
+                      <span className="min-w-0 flex-1 text-sm font-semibold [overflow-wrap:anywhere]"><bdi>{entry.title}</bdi></span>
+                      <span className="shrink-0 text-xs font-semibold text-muted-foreground">{entry.questionIds.length ? questionCount(entry.questionIds.length) : isAr ? "ماكو أسئلة بعد" : "No questions yet"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </main>
+    );
+  }
+
   // ---- Quiz ----
   const finished = index >= quiz.length - 1 && picked !== null;
 
@@ -535,13 +608,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         reviewing
           ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
           : topicTarget ? `${subjectLabel(subject!, isAr)} · ${categoryLabel(topicTarget.categoryKey, lang)}`
-          : `${subjectLabel(subject!, isAr)} · ${chapters.find((item) => item.key === chapter)?.title ?? ""}`,
-        () => {
-          if (topicTarget) { onBack(); return; }
-          if (reviewing) setReviewing(false);
-          else setChapter(null);
-          resetQ();
-        },
+          : `${subjectLabel(subject!, isAr)} · ${selectedTopic?.title ?? selectedChapter?.title ?? ""}`,
+        leaveQuiz,
       )}
 
       {topicTarget && <p className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
@@ -655,8 +723,11 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                         <Button onClick={restart} variant="secondary">
                           <RotateCcw className="w-4 h-4 me-1" />{isAr ? "إعادة" : "Restart"}
                         </Button>
-                        <Button onClick={() => { if (topicTarget) { onBack(); return; } setReviewing(false); setChapter(null); resetQ(); }}>
-                          {topicTarget ? (isAr ? "العودة للتقدم" : "Back to progress") : reviewing ? (isAr ? "العودة للبنك" : "Back to bank") : (isAr ? "فصل آخر" : "Another chapter")}
+                        <Button onClick={leaveQuiz}>
+                          {topicTarget ? (isAr ? "العودة للتقدم" : "Back to progress")
+                            : reviewing ? (isAr ? "العودة للبنك" : "Back to bank")
+                            : topicGroups.length ? (isAr ? "مواضيع الفصل" : "Chapter topics")
+                            : (isAr ? "فصل آخر" : "Another chapter")}
                         </Button>
                       </>
                     )}

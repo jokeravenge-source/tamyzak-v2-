@@ -25,6 +25,7 @@ export const getBuiltInEnglishLiteratureSection1 = (language: "ar" | "en"): Buil
     subject: "english_literature",
     chapter: 1,
     chapter_title: "Section 1",
+    section: "eng-lit-1",
     question,
     choices: [...choices],
     answer_index: answerIndex,

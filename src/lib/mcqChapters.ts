@@ -14,6 +14,8 @@ export function resolveMcqChapter(row: ChapteredMcq): ChapterMeta | null {
     const match = chapters.find(c => [c.title, c.arTitle].some(t => normalize(t) === title));
     if (match) return match;
     const numbered = chapters.find(c => c.n === row.chapter);
+    // Some existing Chapter 1 bank rows use the older English chapter title.
+    if (row.subject === "physics" && row.chapter === 1 && title === "electriccapacitance") return numbered ?? null;
     // These flashcard lists use generic numbered titles; retain the bank's known number.
     if (numbered && (row.subject === "chemistry" || row.subject === "english")) return numbered;
     // Older Arabic bank numbering differed from flashcards.
