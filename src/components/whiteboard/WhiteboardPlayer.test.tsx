@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { capacitorLesson } from "../../../supabase/functions/_shared/whiteboardCapacitors";
+import type { BoardInput, BoardLesson } from "../../../supabase/functions/_shared/whiteboard";
 import { dielectricPageLesson, selectedBoardPdfSource } from "../../../supabase/functions/_shared/whiteboardDielectric";
 import MutamayizChat from "@/pages/MutamayizChat";
 import { setAssistantOwner } from "@/lib/mutamayizConversation";
@@ -193,8 +194,51 @@ describe("whiteboard playback", () => {
     expect(drawing.reveal.polarization).toBeGreaterThan(0);
     expect(drawing.reveal.polarization).toBeLessThan(1);
     expect(drawingFrame(dielectric, 3, .09, true).equations).toEqual([
-      { text: "Eₖ = E / k", reveal: 1 },
-      { text: "ΔV = Ed", reveal: 1 },
+      { text: "Eₖ = E / k", reveal: 1, stepIndex: 2 },
+      { text: "ΔV = Ed", reveal: 1, stepIndex: 3 },
     ]);
+  });
+
+  it("grounds a question about an earlier drawing in the source for that drawing and resumes the current step", async () => {
+    const first = { id: "pdf:2", kind: "pdf", pdfPage: 2, title: "Physics.pdf", excerpt: "An electric field acts between the capacitor plates." } as const;
+    const second = { ...first, id: "pdf:3", pdfPage: 3, excerpt: "Polarization produces an electric field in the opposite direction." };
+    const lessonWithTwoSources: BoardLesson = {
+      template: "notes",
+      title: "Electric fields",
+      sources: [first, second],
+      steps: [
+        { title: "Original field", narration: "المجال الأصلي", reference: { sourceId: first.id, quote: first.excerpt }, actions: [{ kind: "label", target: "idea", text: "Original electric field", at: .1 }] },
+        { title: "Polarization", narration: "الاستقطاب", reference: { sourceId: second.id, quote: second.excerpt }, actions: [{ kind: "label", target: "idea", text: "Polarization field", at: .1 }] },
+      ],
+    };
+    const board: BoardInput = { language: "en", question: "Explain the fields", attachment: { name: first.title, pages: [
+      { page: first.pdfPage, text: first.excerpt }, { page: second.pdfPage, text: second.excerpt },
+    ] } };
+    const questionReply = "المجال يتكوّن بين لوحي المتسعة.";
+    backend.invoke.mockImplementation(async (name: string) => name === "tts-speak"
+      ? { data: { audio: "YQ==" }, error: null }
+      : { data: { answer: { reply: questionReply, reference: lessonWithTwoSources.steps[0].reference, highlight: "idea" } }, error: null });
+    render(<WhiteboardPlayer language="en" lesson={lessonWithTwoSources} input={board} />);
+    fireEvent.click(screen.getByRole("button", { name: "Next step" }));
+    fireEvent.click(screen.getByRole("button", { name: "Play explanation" }));
+    await waitFor(() => expect(AudioClip.clips[0].play).toHaveBeenCalledOnce());
+    tick(AudioClip.clips[0], 5);
+    const tapped = screen.getByRole("button", { name: "Ask about Original electric field" });
+    fireEvent.click(tapped);
+    expect(AudioClip.clips[0].paused).toBe(true);
+    expect(tapped).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Ask about Polarization field" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("textbox", { name: "Original electric field" })).toHaveValue("What does “Original electric field” mean in this step?");
+    fireEvent.click(screen.getByRole("button", { name: "Send question" }));
+    const reply = await screen.findByText(questionReply);
+    expect(backend.invoke.mock.calls[1][1].body).toMatchObject({
+      stepIndex: 0, step: { reference: lessonWithTwoSources.steps[0].reference },
+      board: { attachment: { pages: [{ page: first.pdfPage, text: first.excerpt }] } },
+    });
+    const answer = within(reply.closest("section")!);
+    expect(answer.getByText(/Step source · File page 2/)).toBeVisible();
+    fireEvent.click(answer.getByRole("button", { name: "Resume" }));
+    expect(AudioClip.clips[0].paused).toBe(false);
+    expect(AudioClip.clips[0].currentTime).toBe(5);
   });
 });

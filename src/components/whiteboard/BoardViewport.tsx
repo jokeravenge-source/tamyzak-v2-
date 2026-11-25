@@ -11,6 +11,8 @@ const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit,
 export default function BoardViewport({ children, ar }: { children: ReactNode; ar: boolean }) {
   const surface = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Point>());
+  const firstPoint = useRef<Point | null>(null);
+  const gesture = useRef(false);
   const camera = useRef<View>(fitted);
   const [view, setView] = useState<View>(fitted);
   const change = (next: View) => {
@@ -38,19 +40,30 @@ export default function BoardViewport({ children, ar }: { children: ReactNode; a
 
   const start = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    pointers.current.set(event.pointerId, point(event));
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const position = point(event);
+    if (pointers.current.size === 0) {
+      firstPoint.current = position;
+      gesture.current = false;
+    } else {
+      gesture.current = true;
+    }
+    pointers.current.set(event.pointerId, position);
+    // Capture on the button itself so a stationary touch still dispatches its click.
+    const target = event.target instanceof Element ? event.target.closest("button") : null;
+    (target ?? event.currentTarget).setPointerCapture?.(event.pointerId);
   };
 
   const move = (event: PointerEvent<HTMLDivElement>) => {
     if (!pointers.current.has(event.pointerId)) return;
     const before = [...pointers.current.values()];
-    pointers.current.set(event.pointerId, point(event));
+    const position = point(event);
+    if (firstPoint.current && spacing(firstPoint.current, position) > 7) gesture.current = true;
+    pointers.current.set(event.pointerId, position);
     const after = [...pointers.current.values()];
     if (before.length >= 2) {
       const span = spacing(before[0], before[1]);
       if (span >= 4) zoom(spacing(after[0], after[1]) / span, center(before[0], before[1]), center(after[0], after[1]));
-    } else if (camera.current.scale > 1) {
+    } else if (gesture.current && camera.current.scale > 1) {
       change({
         ...camera.current,
         x: camera.current.x + after[0].x - before[0].x,
@@ -69,6 +82,7 @@ export default function BoardViewport({ children, ar }: { children: ReactNode; a
   return (
     <div className="relative">
       <div ref={surface} onPointerDown={start} onPointerMove={move} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop}
+        onClickCapture={event => { if (gesture.current && event.detail > 0) { event.preventDefault(); event.stopPropagation(); } }}
         data-testid="board-viewport" className="touch-none overflow-hidden"
         style={{ cursor: view.scale > 1 ? "grab" : undefined }}>
         <div data-board-scale={view.scale} className="origin-center select-none"

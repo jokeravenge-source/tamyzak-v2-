@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Loader2, Pause, PenLine, Play, RotateCcw, Send, Volume2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Loader2, Maximize2, Pause, PenLine, Play, RotateCcw, Send, Volume2, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { BOARD_QUESTION_MAX, parseBoardAnswer, type BoardAnswer, type BoardError
 import { reviewedDielectricAnswer } from "../../../supabase/functions/_shared/whiteboardDielectric";
 import BoardDrawing, { drawingFrame } from "./BoardDrawing";
 import BoardViewport from "./BoardViewport";
+import DrawingNotes from "./DrawingNotes";
+import type { DrawingSelection } from "./drawingQuestions";
 
 const copy = {
   ar: {
@@ -17,6 +19,7 @@ const copy = {
     nextMark: "أظهر الجزء التالي من الرسم",
     soundError: "الصوت تعذّر هسه. تكدر تقرأ الشرح وتتنقّل بين الخطوات.", retryPlay: "اضغط تشغيل حتى يبدأ الصوت.",
     ask: "اسأل عن هاي الخطوة", placeholder: "مثلاً: ليش يتغيّر هالشكل؟", send: "دزّ السؤال",
+    tap: "اضغط على جزء من الرسم حتى تسأل عنه", notes: "كبّر الرسم للملاحظات", clearPart: "ألغِ تحديد الجزء",
     asking: "متميّز دا يراجع الخطوة…", followUp: "توضيح متميّز", returnToStep: "ارجع للخطوة", askError: "تعذّر التوضيح هسه. سؤالك باقي وتكدر تحاول مرة ثانية.",
     askMissing: "ما لكيت جواب لهذا السؤال بالمقتطف المربوط بالخطوة.", filePage: "صفحة الملف", bookPage: "صفحة الكتاب", openSource: "افتح المصدر",
     quiz: "إذا ضاعفنا المسافة وبقيت المساحة والعازل نفسهم، شكد تصير السعة؟",
@@ -31,6 +34,7 @@ const copy = {
     nextMark: "Show next drawing mark",
     soundError: "Audio is unavailable. Read the transcript and move between steps.", retryPlay: "Press play to start the audio.",
     ask: "Ask about this step", placeholder: "What causes this change?", send: "Send question",
+    tap: "Tap part of the drawing to ask about it", notes: "Expand for notes", clearPart: "Clear drawing selection",
     asking: "Mutamayiz is reviewing this step…", followUp: "Mutamayiz clarifies", returnToStep: "Back to the step", askError: "Could not answer now. Your question is still here to retry.",
     askMissing: "The excerpt for this step does not cover that question.", filePage: "File page", bookPage: "Printed page", openSource: "Open source",
     quiz: "What happens to capacitance when the distance doubles and the area and dielectric stay fixed?",
@@ -64,10 +68,11 @@ function SourceReference({ source, reference, ar }: { source: BoardSource; refer
   );
 }
 
-export default function WhiteboardPlayer({ lesson, input, language }: {
+export default function WhiteboardPlayer({ lesson, input, language, ownerId }: {
   lesson: BoardLesson;
   input: BoardInput;
   language: AppLanguage;
+  ownerId?: string;
 }) {
   const ar = language === "ar";
   const text = copy[language];
@@ -80,10 +85,18 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<BoardAnswer | null>(null);
   const [askError, setAskError] = useState("");
+  const [part, setPart] = useState<DrawingSelection | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [choice, setChoice] = useState<"same" | "double" | "half" | null>(null);
   const request = useRef<AbortController | null>(null);
   const answerPanel = useRef<HTMLElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const sendButton = useRef<HTMLButtonElement>(null);
+  const notesButton = useRef<HTMLButtonElement>(null);
+  const pendingFocus = useRef(false);
+  const questionStepIndex = part?.stepIndex ?? index;
+  const questionStep = lesson.steps[questionStepIndex];
+  const questionSource = lesson.sources.find(({ id }) => id === questionStep.reference.sourceId);
   const sounding = status === "playing" || status === "loading";
   const canContinue = status === "paused" || status === "blocked";
   const showQuiz = lesson.template === "parallel-plates" && index === lesson.steps.length - 1 && progress >= 1;
@@ -93,6 +106,11 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
   useEffect(() => {
     if (answer || askError) answerPanel.current?.scrollIntoView?.({ block: "nearest" });
   }, [answer, askError]);
+  useEffect(() => {
+    if (!pendingFocus.current) return;
+    pendingFocus.current = false;
+    sendButton.current?.focus({ preventScroll: true });
+  }, [part]);
 
   const dismissAnswer = () => {
     request.current?.abort();
@@ -105,6 +123,7 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
   const goTo = (target: number) => {
     if (target === index || target < 0 || target >= lesson.steps.length) return;
     dismissAnswer();
+    setPart(null);
     setQuestion("");
     player.goTo(target);
     scroller.current?.scrollTo?.({ top: 0 });
@@ -112,7 +131,17 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
 
   const play = (replay = false) => {
     dismissAnswer();
+    if (part) setQuestion("");
+    setPart(null);
     player.play(replay);
+  };
+
+  const selectPart = (selected: DrawingSelection) => {
+    player.pause();
+    dismissAnswer();
+    pendingFocus.current = true;
+    setPart(selected);
+    setQuestion(selected.question);
   };
 
   const ask = async (event: FormEvent) => {
@@ -123,7 +152,7 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
     setAnswer(null);
     setAskError("");
     const reviewed = reviewedDielectricAnswer(lesson, questionText, [...frame.visible]);
-    if (reviewed) {
+    if (reviewed && questionSource?.id === reviewed.reference.sourceId) {
       setAnswer(reviewed);
       setQuestion("");
       return;
@@ -132,16 +161,16 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
     const current = new AbortController();
     request.current = current;
     try {
-      const board = source?.kind === "pdf" && input.attachment?.pages
-        ? { ...input, attachment: { ...input.attachment, pages: input.attachment.pages.filter(page => page.page === source.pdfPage) } }
+      const board = questionSource?.kind === "pdf" && input.attachment?.pages
+        ? { ...input, attachment: { ...input.attachment, pages: input.attachment.pages.filter(page => page.page === questionSource.pdfPage) } }
         : input;
       const { data, error } = await supabase.functions.invoke<{ answer?: BoardAnswer; error?: BoardError }>("excellence-companion", {
-        body: { mode: "whiteboard_question", board, question: questionText, step, stepIndex: index, visible: [...frame.visible] },
+        body: { mode: "whiteboard_question", board, question: questionText, step: questionStep, stepIndex: questionStepIndex, visible: [...frame.visible] },
         signal: current.signal,
         timeout: 45_000,
       });
       if (request.current !== current) return;
-      const valid = source && !error && parseBoardAnswer(data?.answer, source, [...frame.visible]);
+      const valid = questionSource && !error && parseBoardAnswer(data?.answer, questionSource, [...frame.visible]);
       if (!valid) {
         setAskError(data?.error === "missing_source" ? text.askMissing : text.askError);
       } else {
@@ -191,14 +220,24 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
                 <p className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">{text.step} {number(index + 1)} {text.of} {number(lesson.steps.length)}</p>
               </div>
               <BoardViewport ar={ar}>
-                <BoardDrawing template={lesson.template} frame={frame} interruption={answer?.highlight ?? null} language={language} solved={showQuiz && choice === "half"} />
+                <BoardDrawing template={lesson.template} frame={frame} interruption={answer?.highlight ?? null} language={language} solved={showQuiz && choice === "half"}
+                  onAsk={selectPart} selected={part} />
               </BoardViewport>
               <div className="space-y-2.5 border-t border-border p-2.5 sm:px-4 sm:py-3">
+                {frame.visible.size > 0 && (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs leading-snug text-muted-foreground">{text.tap}</p>
+                    <Button ref={notesButton} type="button" variant="outline" className="min-h-11 shrink-0 gap-1.5 rounded-xl px-2.5 text-xs"
+                      onClick={() => { player.pause(); setNotesOpen(true); }}>
+                      <Maximize2 aria-hidden="true" className="size-4" />{text.notes}
+                    </Button>
+                  </div>
+                )}
                 <div role="progressbar" aria-label={text.audioProgress} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-primary" style={{ width: (progress * 100) + "%" }} />
                 </div>
                 {!sounding && player.hasNextMark && <Button variant="ghost" type="button" disabled={asking}
-                  onClick={() => { dismissAnswer(); player.advanceDrawing(); }}
+                  onClick={() => { dismissAnswer(); if (part) setQuestion(""); setPart(null); player.advanceDrawing(); }}
                   className="min-h-9 gap-2 rounded-lg px-2 text-xs text-muted-foreground">
                   <PenLine aria-hidden="true" className="size-3.5" />{text.nextMark}
                 </Button>}
@@ -232,8 +271,11 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
                   <div role="status" className="min-w-0 text-sm leading-7 [overflow-wrap:anywhere]">
                     {asking ? text.asking : <p dir={answer ? "rtl" : undefined}>{answer?.reply ?? askError}</p>}
                   </div>
-                  {answer && source && answer.reference.sourceId === source.id && <SourceReference source={source} reference={answer.reference} ar={ar} />}
-                  {!asking && <Button type="button" variant="outline" onClick={() => canContinue ? play() : dismissAnswer()} className="rounded-xl">
+                  {answer && questionSource && answer.reference.sourceId === questionSource.id && <SourceReference source={questionSource} reference={answer.reference} ar={ar} />}
+                  {!asking && <Button type="button" variant="outline" onClick={() => {
+                    if (canContinue) play();
+                    else { dismissAnswer(); setPart(null); }
+                  }} className="rounded-xl">
                     {canContinue ? text.resume : text.returnToStep}
                   </Button>}
                 </section>
@@ -266,16 +308,22 @@ export default function WhiteboardPlayer({ lesson, input, language }: {
 
       <footer className="shrink-0 border-t border-border bg-card">
         <form onSubmit={ask} className="mx-auto max-w-6xl space-y-1.5 px-3 py-2.5 sm:px-6 sm:py-3">
-          <label htmlFor="whiteboard-follow-up" className="text-sm font-black">{text.ask}</label>
+          <div className="flex min-h-6 items-center justify-between gap-2">
+            <label htmlFor="whiteboard-follow-up" className="min-w-0 truncate text-sm font-black">{part ? <bdi>{part.label}</bdi> : text.ask}</label>
+            {part && <button type="button" aria-label={text.clearPart} title={text.clearPart} onClick={() => { dismissAnswer(); setPart(null); setQuestion(""); }}
+              className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"><X aria-hidden="true" className="size-4" /></button>}
+          </div>
           <div className="flex items-center gap-2">
             <input id="whiteboard-follow-up" value={question} placeholder={text.placeholder} maxLength={BOARD_QUESTION_MAX} onChange={event => setQuestion(event.target.value)}
               dir="auto" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-primary" />
-            <Button type="submit" variant="default" size="icon" aria-label={text.send} disabled={asking || !question.trim()} className="size-11 shrink-0 rounded-xl">
+            <Button ref={sendButton} type="submit" variant="default" size="icon" aria-label={text.send} disabled={asking || !question.trim()} className="size-11 shrink-0 rounded-xl">
               {asking ? <Loader2 className="animate-spin" /> : <Send className={ar ? "-scale-x-100" : undefined} />}
             </Button>
           </div>
         </form>
       </footer>
+      {notesOpen && <DrawingNotes lesson={lesson} index={index} language={language} ownerId={ownerId}
+        onClose={() => setNotesOpen(false)} onReturnFocus={() => notesButton.current?.focus({ preventScroll: true })} />}
     </div>
   );
 }

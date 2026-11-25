@@ -1,8 +1,9 @@
-import { Fragment, useId } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { Presentation } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { readableMath } from "@/lib/readableMath";
 import DielectricDrawing from "./DielectricDrawing";
+import { askPartLabel, drawingPart, drawingText, type DrawingSelection } from "./drawingQuestions";
 import {
   BOARD_NOTES,
   type BoardFocus,
@@ -11,6 +12,7 @@ import {
 } from "../../../supabase/functions/_shared/whiteboard";
 
 type NoteRow = {
+  stepIndex: number;
   labels: Partial<Record<BoardNote, { text: string; reveal: number }>>;
   arrows: Partial<Record<"idea-reason" | "reason-result", number>>;
 };
@@ -18,8 +20,9 @@ type NoteRow = {
 type DrawingFrame = {
   visible: Set<BoardFocus>;
   equation: string | null;
-  equations: { text: string; reveal: number }[];
+  equations: { text: string; reveal: number; stepIndex: number }[];
   reveal: Partial<Record<BoardFocus, number>>;
+  origins: Partial<Record<BoardFocus, number>>;
   noteRows: NoteRow[];
   highlight: BoardFocus | null;
   gap: number;
@@ -31,6 +34,7 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
     equation: null,
     equations: [],
     reveal: {},
+    origins: {},
     noteRows: [],
     highlight: null,
     gap: 0,
@@ -38,7 +42,7 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
   lesson.steps.slice(0, index + 1).forEach((step, stepIndex) => {
     const time = index === stepIndex ? progress : 1;
     if (stepIndex === index && time === 0 && !instant) return;
-    const row: NoteRow = { labels: {}, arrows: {} };
+    const row: NoteRow = { stepIndex, labels: {}, arrows: {} };
     for (const action of step.actions) {
       if (action.at > time) break;
       const ink = instant || time === 1 ? 1 : Math.min(1, (time - action.at) / .15);
@@ -46,6 +50,7 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
         case "reveal":
           frame.visible.add(action.target);
           frame.reveal[action.target] = ink;
+          frame.origins[action.target] = stepIndex;
           break;
         case "label":
           row.labels[action.target] = { text: action.text, reveal: ink };
@@ -53,13 +58,14 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
           break;
         case "equation":
           frame.equation = action.text;
-          frame.equations.push({ text: action.text, reveal: ink });
+          frame.equations.push({ text: action.text, reveal: ink, stepIndex });
           frame.visible.add("equation");
           break;
         case "arrow":
           if (action.target === "distance") {
             frame.visible.add("distance");
             frame.reveal.distance = ink;
+            frame.origins.distance = stepIndex;
           } else row.arrows[action.target] = ink;
           break;
         case "highlight":
@@ -68,6 +74,7 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
         case "double-gap": {
           const t = instant ? 1 : Math.min(1, (time - action.at) / 0.23);
           frame.gap = t * t * (3 - 2 * t);
+          if (frame.visible.has("distance")) frame.origins.distance = stepIndex;
           break;
         }
       }
@@ -75,6 +82,51 @@ export function drawingFrame(lesson: BoardLesson, index: number, progress: numbe
     if (Object.keys(row.labels).length) frame.noteRows.push(row);
   });
   return frame;
+}
+
+type Interaction = { selected?: DrawingSelection | null; onAsk?: (part: DrawingSelection) => void };
+type PartRegion = [target: Parameters<typeof drawingPart>[0], x: number, y: number, width: number, height: number];
+
+function DrawingDiagram({ children, template, frame, ar, selected, onAsk }: Interaction & {
+  children: ReactNode;
+  template: "parallel-plates" | "dielectric-plates";
+  frame: DrawingFrame;
+  ar: boolean;
+}) {
+  const dielectric = template === "dielectric-plates";
+  const halfGap = 60 * (1 + frame.gap);
+  const left = 310 - halfGap;
+  const right = 310 + halfGap;
+  const regions: PartRegion[] = dielectric
+    ? [
+      ["dielectric", 147, 78, 326, 219],
+      ["plates", 98, 84, 49, 163], ["plates", 474, 84, 49, 163],
+      ["field", 158, 96, 305, 44], ["polarization", 155, 140, 304, 46],
+      ["net-field", 225, 187, 172, 42],
+    ]
+    : [
+      ["dielectric", left + 24, 54, right - left - 24, 140],
+      ["plates", left - 16, 29, 66, 184], ["plates", right - 16, 29, 66, 184],
+      ["area", left - 89, 79, 76, 99], ["distance", left, 216, right - left, 51],
+    ];
+  const view = dielectric ? { x: 0, y: 0, width: 620, height: 340 } : { x: 85, y: 10, width: 450, height: 270 };
+  return (
+    <div className={`relative mx-auto w-full ${dielectric ? "max-w-[39rem]" : "max-w-[27rem]"}`}>
+      {children}
+      {onAsk && regions.map(([target, x, y, width, height], index) => {
+        const origin = frame.origins[target];
+        if (origin === undefined || (frame.reveal[target] ?? 0) <= 0) return null;
+        const part = drawingPart(target, origin, ar);
+        const label = askPartLabel(part.label, ar);
+        return (
+          <button key={target + index} type="button" aria-label={label} title={label} aria-pressed={selected?.target === target}
+            tabIndex={target === "plates" && regions[index - 1]?.[0] === target ? -1 : undefined}
+            onClick={() => onAsk(part)} className="absolute cursor-pointer rounded-lg hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            style={{ left: (x - view.x) / view.width * 100 + "%", top: (y - view.y) / view.height * 100 + "%", width: width / view.width * 100 + "%", height: height / view.height * 100 + "%" }} />
+        );
+      })}
+    </div>
+  );
 }
 
 function ParallelPlates({ frame, focus, ar }: { frame: DrawingFrame; focus: BoardFocus | null; ar: boolean }) {
@@ -136,25 +188,37 @@ function ParallelPlates({ frame, focus, ar }: { frame: DrawingFrame; focus: Boar
   );
 }
 
-function ConceptNotes({ frame, focus, ar }: { frame: DrawingFrame; focus: BoardFocus | null; ar: boolean }) {
+function ConceptNotes({ frame, focus, ar, selected, onAsk, paper }: { frame: DrawingFrame; focus: BoardFocus | null; ar: boolean; paper: boolean } & Interaction) {
+  const grid = paper
+    ? "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center"
+    : "sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center";
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
       {frame.noteRows.map((row, rowIndex) => (
-        <div key={rowIndex} className="grid gap-1 border-b border-primary/15 pb-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+        <div key={rowIndex} className={`grid gap-1 border-b border-primary/15 pb-3 last:border-b-0 ${grid}`}>
           {BOARD_NOTES.map((key, index) => {
             const value = row.labels[key];
             const next = BOARD_NOTES[index + 1];
             const arrow = key === "idea" ? row.arrows["idea-reason"] : row.arrows["reason-result"];
+            const allowed = value && value.reveal > 0 && onAsk;
+            const part = value && drawingText(key, row.stepIndex, value.text, ar);
+            const isSelected = selected?.target === key && selected.stepIndex === row.stepIndex && selected.label === value?.text;
+            const highlight = selected ? isSelected : focus === key && rowIndex === frame.noteRows.length - 1;
+            const className = value
+              ? `min-w-0 px-2 py-1 text-center text-base font-bold leading-relaxed [overflow-wrap:anywhere] ${highlight ? "rounded-lg bg-primary/10 text-primary" : "text-foreground"}`
+              : paper ? "block" : "hidden sm:block";
             return (
               <Fragment key={key}>
-                <div className={value ? `min-w-0 px-2 py-1 text-center text-base font-bold leading-relaxed [overflow-wrap:anywhere] ${focus === key && rowIndex === frame.noteRows.length - 1 ? "rounded-lg bg-primary/10 text-primary" : "text-foreground"}` : "hidden sm:block"}
-                  style={{ opacity: value?.reveal ?? 1 }} dir="auto">{value?.text}</div>
+                {allowed && part ? (
+                  <button type="button" aria-label={askPartLabel(part.label, ar)} aria-pressed={isSelected} onClick={() => onAsk(part)}
+                    className={className + " rounded-lg hover:bg-primary/10"} style={{ opacity: value.reveal }} dir="auto">{value.text}</button>
+                ) : <div className={className} style={{ opacity: value?.reveal ?? 1 }} dir="auto">{value?.text}</div>}
                 {value && next && row.labels[next] && arrow !== undefined ? (
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className={`mx-auto size-5 rotate-90 text-primary ${ar ? "sm:rotate-180" : "sm:rotate-0"}`}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className={`mx-auto size-5 text-primary ${paper ? (ar ? "rotate-180" : "") : ar ? "rotate-90 sm:rotate-180" : "rotate-90 sm:rotate-0"}`}>
                     <path d="M3 12 Q11 11.6 20 12 M15 7 L20 12 L15 17" fill="none" stroke="currentColor" strokeWidth="2"
                       strokeLinecap="round" strokeLinejoin="round" pathLength="1" strokeDasharray="1" strokeDashoffset={1 - arrow} />
                   </svg>
-                ) : next && <span className="hidden w-2 sm:block" />}
+                ) : next && <span className={paper ? "w-2" : "hidden w-2 sm:block"} />}
               </Fragment>
             );
           })}
@@ -165,38 +229,51 @@ function ConceptNotes({ frame, focus, ar }: { frame: DrawingFrame; focus: BoardF
 }
 
 export default function BoardDrawing({
-  template, frame, interruption, language, solved,
+  template, frame, interruption, language, solved, onAsk, selected, paper = false,
 }: {
   template: BoardLesson["template"];
   frame: DrawingFrame;
   interruption: BoardFocus | null;
   language: AppLanguage;
   solved: boolean;
-}) {
+  paper?: boolean;
+} & Interaction) {
   const ar = language === "ar";
-  const focus = interruption ?? frame.highlight;
+  const focus = selected?.target ?? interruption ?? (paper ? null : frame.highlight);
   const visual = frame.visible.size > 0;
   return (
-    <div className="whiteboard-surface flex min-h-[clamp(300px,51dvh,700px)] min-w-0 flex-col justify-center gap-3 px-3 pb-5 pt-12 sm:px-6">
+    <div className={`flex min-w-0 flex-col justify-center gap-3 ${paper ? "px-8 py-6" : "whiteboard-surface min-h-[clamp(300px,51dvh,700px)] px-3 pb-5 pt-12 sm:px-6"}`}>
       {!visual && <div className="grid min-h-[8.5rem] place-content-center justify-items-center gap-3 text-center text-sm text-muted-foreground">
         <Presentation aria-hidden="true" className="size-8 text-primary/70" strokeWidth={1.5} />
         <span>{ar ? "شغّل الشرح حتى نبدي الرسم" : "Play the explanation to start drawing"}</span>
       </div>}
-      {template === "parallel-plates" && frame.visible.has("plates") && <ParallelPlates frame={frame} focus={focus} ar={ar} />}
-      {template === "dielectric-plates" && frame.visible.has("plates") && <DielectricDrawing ar={ar} visible={frame.visible} focus={focus} reveal={frame.reveal} />}
-      {template === "notes" && frame.noteRows.length > 0 && <ConceptNotes frame={frame} focus={focus} ar={ar} />}
+      {template !== "notes" && frame.visible.has("plates") && (
+        <DrawingDiagram template={template} frame={frame} ar={ar} onAsk={onAsk} selected={selected}>
+          {template === "parallel-plates" ? <ParallelPlates frame={frame} focus={focus} ar={ar} />
+            : <DielectricDrawing ar={ar} visible={frame.visible} focus={focus} reveal={frame.reveal} />}
+        </DrawingDiagram>
+      )}
+      {template === "notes" && frame.noteRows.length > 0 && <ConceptNotes frame={frame} focus={focus} ar={ar} onAsk={onAsk} selected={selected} paper={paper} />}
       {frame.equation && (
         <div className="flex flex-wrap items-center justify-center gap-2" dir="ltr">
-          {(template === "parallel-plates" ? frame.equations.slice(-1) : frame.equations).map((entry, index, entries) => (
-          <div key={index} role="math" aria-label={entry.text} style={{ opacity: entry.reveal }}
-            className={`max-w-full rounded-lg border border-transparent px-2 py-1 font-mono text-base font-bold [overflow-wrap:anywhere] sm:px-4 sm:text-xl ${focus === "equation" && index === entries.length - 1 ? "border-primary ring-2 ring-primary/20" : ""}`}>
-            {frame.equation === "C = εA/d" ? (
-              <span aria-hidden="true" className="inline-flex items-center gap-2">
-                C = <span className="grid text-center leading-tight"><span className="border-b border-current px-1.5 pb-0.5">εA</span><span className="pt-0.5">d</span></span>
+          {(template === "parallel-plates" ? frame.equations.slice(-1) : frame.equations).map((entry, index, entries) => {
+            const part = drawingText("equation", entry.stepIndex, entry.text, ar);
+            const isSelected = selected?.target === "equation" && selected.stepIndex === entry.stepIndex && selected.label === entry.text;
+            const highlight = selected ? isSelected : focus === "equation" && index === entries.length - 1;
+            const equation = (
+              <span role="math" aria-label={entry.text} className={`block max-w-full rounded-lg border border-transparent py-1 font-mono font-bold [overflow-wrap:anywhere] ${paper ? "px-4 text-xl" : "px-2 text-base sm:px-4 sm:text-xl"} ${highlight ? "border-primary ring-2 ring-primary/20" : ""}`}>
+                {entry.text === "C = εA/d" ? (
+                  <span aria-hidden="true" className="inline-flex items-center gap-2">
+                    C = <span className="grid text-center leading-tight"><span className="border-b border-current px-1.5 pb-0.5">εA</span><span className="pt-0.5">d</span></span>
+                  </span>
+                ) : readableMath(entry.text)}
               </span>
-            ) : readableMath(entry.text)}
-          </div>
-          ))}
+            );
+            return onAsk && entry.reveal > 0 ? (
+              <button key={index} type="button" aria-label={askPartLabel(part.label, ar)} aria-pressed={isSelected}
+                onClick={() => onAsk(part)} className="max-w-full rounded-lg hover:bg-primary/10" style={{ opacity: entry.reveal }}>{equation}</button>
+            ) : <div key={index} className="max-w-full" style={{ opacity: entry.reveal }}>{equation}</div>;
+          })}
           {solved && <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 font-mono text-base font-bold text-foreground">C₂ = εA/(2d) = C/2</div>}
         </div>
       )}

@@ -236,7 +236,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       <p className="text-center text-[11px] leading-5 text-muted-foreground">{t.disclaimer}</p>
     </footer>
     {active && board && board.owner === owner && board.epoch === conversation.epoch && (
-      <WhiteboardDialog input={board.input} missingAttachment={board.missingAttachment} language={language} onClose={() => setBoard(null)}
+      <WhiteboardDialog input={board.input} missingAttachment={board.missingAttachment} language={language} ownerId={board.owner} onClose={() => setBoard(null)}
         onReturnFocus={() => { if (boardTrigger.current?.isConnected) boardTrigger.current.focus(); }} />
     )}
   </main>;

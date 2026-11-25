@@ -64,10 +64,11 @@ const failure = (code: string | undefined, status?: number): Failure => {
   return code === "invalid_lesson" ? "incomplete" : "unavailable";
 };
 
-export default function WhiteboardDialog({ input, missingAttachment, language, onClose, onReturnFocus }: {
+export default function WhiteboardDialog({ input, missingAttachment, language, ownerId, onClose, onReturnFocus }: {
   input: BoardInput;
   missingAttachment: boolean;
   language: AppLanguage;
+  ownerId?: string;
   onClose: () => void;
   onReturnFocus: () => void;
 }) {
@@ -122,7 +123,7 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
     if (topic.trim()) setRequested({ question: input.question, selectedLesson: topic.trim(), language });
   };
 
-  const usePdfPage = async (reader: PdfTextPages, number: number, signal: AbortSignal) => {
+  const requestPdfPage = async (reader: PdfTextPages, number: number, signal: AbortSignal) => {
     const selected = await reader.readPage(number);
     if (signal.aborted) return;
     if (selected.text.length < 8) {
@@ -155,7 +156,7 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
       setPdf(reader);
       if (reader.totalPages === 1) {
         setPage("1");
-        await usePdfPage(reader, 1, controller.signal);
+        await requestPdfPage(reader, 1, controller.signal);
       }
     } catch {
       if (!controller.signal.aborted) setFileError("open");
@@ -175,7 +176,7 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
     readingSession.current = controller;
     setReading(true);
     setFileError(null);
-    try { await usePdfPage(pdf, pageNumber, controller.signal); }
+    try { await requestPdfPage(pdf, pageNumber, controller.signal); }
     catch { if (!controller.signal.aborted) setFileError("page"); }
     finally {
       if (!controller.signal.aborted) {
@@ -211,7 +212,7 @@ export default function WhiteboardDialog({ input, missingAttachment, language, o
           </header>
 
           {result.status === "ready" ? (
-            <WhiteboardPlayer lesson={result.lesson} input={result.source} language={language} />
+            <WhiteboardPlayer lesson={result.lesson} input={result.source} language={language} ownerId={ownerId} />
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-6">
               {result.status === "loading" ? (
