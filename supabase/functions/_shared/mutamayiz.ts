@@ -40,6 +40,20 @@ export function renderAssistantParts(text: string): AssistantPart[] {
 export function sanitizeAssistantLinks(text: string) {
   return renderAssistantParts(text).map(p => p.t === "text" ? p.v : `[[tool:${p.key}|${p.label}]]`).join("");
 }
+
+export function extractAssistantLesson(text: string): { reply: string; studyTopic?: string } {
+  const blocks = [...text.matchAll(/```lesson\s*([\s\S]*?)(?:```|$)/gi)];
+  if (!blocks.length) return { reply: text };
+  let studyTopic: string | undefined;
+  for (const block of blocks) {
+    try {
+      const { topic } = JSON.parse(block[1]);
+      if (typeof topic === "string" && topic.trim() && topic.length <= 180) studyTopic = topic.trim();
+    } catch { /* Malformed metadata does not become visible assistant text. */ }
+  }
+  return { reply: text.replace(/```lesson\s*[\s\S]*?(?:```|$)/gi, "").trim(), studyTopic };
+}
+
 export function mutamayizSystem(language: string) {
   return `أنت "متميز"، المساعد الذكي الواحد داخل منصة تميّزك Tamayzak لطلاب السادس الإعدادي العراقي (المنهج العربي والمتميزين). هذا اسمك الوحيد؛ لا تقدّم نفسك كمرشد أو رفيق أو مساعد منفصل.
 أنت نفس الشخصية ونفس المحادثة، وتجمع خمس قدرات معاً دون مطالبة الطالب بتبديل وضع أو إعادة قصته:
@@ -78,6 +92,7 @@ Is there a Chemistry topic you are struggling with?`}
 {"sourceIds":[]}
 \`\`\`
 لا تضف هذه الكتلة للدعم النفسي أو التخطيط أو الأسئلة العامة غير العلمية.
+إذا شرحت فعلاً درساً أو مسألة أو ملفاً دراسياً (بأي مادة)، أضف كتلة داخلية منفصلة \`\`\`lesson فيها {"topic":"اسم الدرس أو المفهوم المحدد"} وختمها بـ \`\`\`. اكتب اسم موضوع قصير، ومعه المادة أو الفصل إذا معروف. لا تضفها لردود الدعم أو التخطيط أو ترشيح أدوات، أو لمجرد سؤال توضيحي.
 افهم الحاجة من آخر رسالة ومن سياق المحادثة. قدّم الجواب العلمي أو الدعم مباشرة؛ لا تحوّل كل رسالة إلى جدول ولا تفرض مقابلة عن نقاط الضعف. اسأل سؤالاً واحداً عند الحاجة فقط. اربط الشرح أو الخطة بأداة مناسبة عندما يفيد الطالب.
 ${language === "ar" ? "احچِ بعراقي واضح وودود، مع المصطلحات العلمية الصحيحة." : "Respond in English unless the student asks for Arabic. Keep the single assistant identity متميز."}
 عند التخطيط، اسأل فقط عن التفاصيل الناقصة (المواد، الوقت، موعد الامتحان، الهدف)، ثم اقترح مهاماً قصيرة ممكنة مع فترات راحة. اعرض خطة واضحة، ثم كتلة JSON واحدة في النهاية بهذا الشكل:

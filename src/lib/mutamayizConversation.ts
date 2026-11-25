@@ -1,7 +1,9 @@
 import type { ScienceEvidence } from "../../supabase/functions/_shared/scienceEvidence";
 import type { WeeklyLearningProfile } from "./weeklyLearning";
-export type AssistantMessage = { id: string; role: "user" | "assistant"; content: string; scienceEvidence?: ScienceEvidence };
-export type AssistantConversation = { owner: string | null; messages: AssistantMessage[]; busy: boolean; epoch: number; file: { name: string; text: string } | null; profile: WeeklyLearningProfile | null; approved: string[]; approvingPlan: string | null };
+import type { AssistantFile } from "./mutamayizFile";
+export type AssistantBoardContext = { question: string; topic?: string; attachmentId?: string };
+export type AssistantMessage = { id: string; role: "user" | "assistant"; content: string; scienceEvidence?: ScienceEvidence; whiteboard?: AssistantBoardContext };
+export type AssistantConversation = { owner: string | null; messages: AssistantMessage[]; busy: boolean; epoch: number; file: (AssistantFile & { id: string }) | null; profile: WeeklyLearningProfile | null; approved: string[]; approvingPlan: string | null };
 let state: AssistantConversation = { owner: null, messages: [], busy: false, epoch: 0, file: null, profile: null, approved: [], approvingPlan: null };
 const listeners = new Set<() => void>();
 const publish = () => { listeners.forEach(fn => fn()); };

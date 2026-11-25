@@ -1,8 +1,10 @@
 import { extractScienceEvidence, scienceSourceContext } from "../_shared/scienceEvidence.ts";
 import { lookupScienceSources } from "../_shared/scienceSourceLookup.ts";
-import { mutamayizSystem, sanitizeAssistantLinks } from "../_shared/mutamayiz.ts";
+import { extractAssistantLesson, mutamayizSystem, sanitizeAssistantLinks } from "../_shared/mutamayiz.ts";
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import { handleWhiteboard } from "../_shared/whiteboardTutor.ts";
+import { parseBoardJSON } from "../_shared/whiteboard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +16,34 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const AI_MODEL = "google/gemini-3.8-flash";
 const MAX_CHAT_MESSAGES = 20;
 const MAX_CONTINUATIONS = 4;
+
+async function completeWhiteboard(system: string, data: unknown) {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) throw new Error("Whiteboard model unavailable");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 40_000);
+  try {
+    const response = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: AI_MODEL,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: JSON.stringify(data) },
+        ],
+        max_tokens: 4600,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("Whiteboard model unavailable");
+    const { choices } = await response.json();
+    const choice = choices?.[0];
+    return choice?.finish_reason === "length" ? null : parseBoardJSON(choice?.message?.content);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 const SYSTEM_WEAKNESS_AR = `أنت "متميز" وتعمل جلسة قصيرة حتى تحدد المواد والفصول والمواضيع اللي يحتاج الطالب يقويها.
 
@@ -97,7 +127,8 @@ Deno.serve(async (req) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) return json200({ error: "invalid_request" });
     const { mode = "unified", messages, language = "ar", learningProfile, clientContext, attachmentName } = body;
     const ar = language === "ar";
-    if (!Array.isArray(messages) || !messages.length || messages.length > 80) {
+    const isBoard = mode === "whiteboard_lesson" || mode === "whiteboard_question";
+    if (!isBoard && (!Array.isArray(messages) || !messages.length || messages.length > 80)) {
       return json200({ reply: ar ? "حدث خطأ في الطلب. حاول مرة أخرى." : "Bad request. Please try again." });
     }
     // The unified assistant requires a valid student session.
@@ -105,6 +136,7 @@ Deno.serve(async (req) => {
     if (!auth.ok) {
       return json200({ error: "Sign in to use this feature.", reply: ar ? "يرجى تسجيل الدخول." : "Please sign in." });
     }
+    if (isBoard) return json200(await handleWhiteboard(mode, body, req.headers.get("Authorization") ?? "", completeWhiteboard));
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
@@ -145,8 +177,9 @@ Deno.serve(async (req) => {
       ...currentMessages,
     ];
     const finalize = (reply: string) => {
-      const result = extractScienceEvidence(reply, scienceSources, question);
-      return { ...result, reply: sanitizeAssistantLinks(result.reply) };
+      const { reply: content, studyTopic } = extractAssistantLesson(reply);
+      const result = extractScienceEvidence(content, scienceSources, question);
+      return { ...result, reply: sanitizeAssistantLinks(result.reply), ...(studyTopic ? { studyTopic } : {}) };
     };
     let fullReply = "";
     let finishReason = "stop";

@@ -18,7 +18,7 @@ describe('Mutamayiz contracts',()=>{
   expect(stripAssistantPlan('Here is the plan.\n```plan\n{"tasks":[{"day":"Friday","text":"Review"}]}\n```')).toBe('Here is the plan.');
  });
  it('keeps a conversation across entry points but clears it on account changes',()=>{
-  setAssistantOwner('A');updateAssistant('A',s=>({...s,messages:[{id:'1',role:'user',content:'personal text'}],file:{name:'file',text:'lesson'}}));
+  setAssistantOwner('A');updateAssistant('A',s=>({...s,messages:[{id:'1',role:'user',content:'personal text'}],file:{id:'test-file',name:'file',text:'lesson'}}));
   setAssistantOwner('A');expect(assistantSnapshot().messages).toHaveLength(1);
   setAssistantOwner('B');expect(assistantSnapshot().messages).toEqual([]);expect(assistantSnapshot().file).toBeNull();
   updateAssistant('A',s=>({...s,messages:[{id:'stale',role:'assistant',content:'late response'}]}));expect(assistantSnapshot().messages).toEqual([]);

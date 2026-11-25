@@ -1,0 +1,20 @@
+.whiteboard-surface {
+  background-color: hsl(var(--background));
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.075) 1px, transparent 1px);
+  background-position: center;
+  background-size: 22px 22px;
+}
+
+.whiteboard-dialog {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 640px) {
+  .whiteboard-dialog {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}

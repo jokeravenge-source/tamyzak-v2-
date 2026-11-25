@@ -3,11 +3,12 @@ import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import MutamayizChat from './MutamayizChat';
 import {assistantSnapshot,newAssistantConversation,setAssistantOwner,updateAssistant} from '@/lib/mutamayizConversation';
 import {getISOWeek,WEEKLY_LEARNING_KEY} from '@/lib/weeklyLearning';
+import {capacitorLesson} from '../../supabase/functions/_shared/whiteboardCapacitors';
 const backend=vi.hoisted(()=>({invoke:vi.fn(),getUser:vi.fn(),onAuthStateChange:vi.fn(),unsubscribe:vi.fn(),pullTodos:vi.fn(),pushTodos:vi.fn(),readFile:vi.fn(),authListener:null as null|((e:string,s:unknown)=>void)}));
 vi.mock('@/integrations/supabase/client',()=>({supabase:{functions:{invoke:backend.invoke},auth:{getUser:backend.getUser,onAuthStateChange:backend.onAuthStateChange}}}));
 vi.mock('@/lib/todosSync',()=>({getISOWeek:()=> '2026-W46',pullTodos:backend.pullTodos,pushTodos:backend.pushTodos}));
 vi.mock('@/components/WeeklyWeaknessIntake',()=>({default:()=> <div>Weakness intake</div>}));
-vi.mock('@/lib/mutamayizFile',()=>({readAssistantFile:backend.readFile}));
+vi.mock('@/lib/mutamayizFile',async importOriginal=>({ ...await importOriginal<typeof import('@/lib/mutamayizFile')>(), readAssistantFile:backend.readFile }));
 beforeEach(()=>{
  localStorage.clear();sessionStorage.clear();setAssistantOwner(null);backend.invoke.mockReset();backend.readFile.mockReset();backend.getUser.mockResolvedValue({data:{user:{id:'student'}}});backend.pushTodos.mockClear().mockResolvedValue(true);backend.pullTodos.mockReset().mockResolvedValue(null);
  backend.onAuthStateChange.mockImplementation((cb)=>{backend.authListener=cb;return{data:{subscription:{unsubscribe:backend.unsubscribe}}};});
@@ -24,7 +25,7 @@ describe('single Mutamayiz conversation',()=>{
   expect(await screen.findByRole('region',{name:'مصادر الجواب'})).toBeInTheDocument();second.unmount();
  });
  it('sends the current file name and text on every question and stops sending it after removal',async()=>{
-  backend.readFile.mockResolvedValue('A plane intersects a sphere in a circle.');
+  backend.readFile.mockResolvedValue({name:'الهندسة الفضائية.pdf',text:'A plane intersects a sphere in a circle.',pages:[{page:3,text:'A plane intersects a sphere in a circle.'}]});
   backend.invoke.mockResolvedValue({data:{reply:'I can read the attached lesson.'},error:null});
   const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
   await act(async()=>fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['lesson'],'الهندسة الفضائية.pdf')]}}));
@@ -35,8 +36,8 @@ describe('single Mutamayiz conversation',()=>{
   expect(backend.invoke.mock.calls[2][1].body).not.toHaveProperty('clientContext');expect(backend.invoke.mock.calls[2][1].body).not.toHaveProperty('attachmentName');view.unmount();
  });
  it('clears a previous attachment when the replacement has no readable text and shows an OCR hint',async()=>{
-  backend.readFile.mockResolvedValue('');const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
-  act(()=>updateAssistant('student',state=>({...state,file:{name:'old.pdf',text:'old text'}})));
+  backend.readFile.mockResolvedValue({name:'scan.pdf',text:'',pages:[]});const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
+  act(()=>updateAssistant('student',state=>({...state,file:{id:'old-file',name:'old.pdf',text:'old text'}})));
   await act(async()=>fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['scan'],'scan.pdf')]}}));
   expect(assistantSnapshot().file).toBeNull();expect(screen.getByRole('alert')).toHaveTextContent('OCR');expect(screen.queryByText('scan.pdf')).not.toBeInTheDocument();view.unmount();
  });
@@ -59,11 +60,11 @@ describe('single Mutamayiz conversation',()=>{
   expect(JSON.parse(localStorage.getItem('app_todos_v1')!)).toHaveLength(1);view.unmount();
  });
  it('discards a file that finishes reading after another entry point starts a new conversation',async()=>{
-  let finish!:(value:string)=>void;backend.readFile.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  let finish!:(value:{name:string;text:string})=>void;backend.readFile.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
   const view=render(<MutamayizChat language="ar"/>);await waitFor(()=>expect(screen.getByRole('textbox')).toBeEnabled());
   fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['lesson'],'lesson.txt')]}});
   act(()=>newAssistantConversation('student'));
-  await act(async()=>finish('old conversation file'));
+  await act(async()=>finish({name:'lesson.txt',text:'old conversation file'}));
   expect(assistantSnapshot().file).toBeNull();view.unmount();
  });
  it('does not write a previous account profile after its plan sync completes late',async()=>{
@@ -136,5 +137,40 @@ describe('single Mutamayiz conversation',()=>{
  it('does not duplicate a request when send is pressed twice',async()=>{
   let finish!:(result:unknown)=>void;backend.invoke.mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));const view=render(<MutamayizChat language="ar"/>);
   await send('ساعدني');fireEvent.click(screen.getByRole('button',{name:'إرسال'}));expect(backend.invoke).toHaveBeenCalledOnce();await act(async()=>finish({data:{reply:'هلا بيك'},error:null}));view.unmount();
+ });
+ it('opens the reviewed board from a signed-in study reply and returns to the same conversation', async () => {
+  const question = 'اشرحلي سعة المتسعة ذات اللوحين';
+  backend.invoke
+   .mockResolvedValueOnce({data:{reply:'المسافة بين اللوحين تأثر على السعة.',studyTopic:'المتسعات · الفصل الأول'},error:null})
+   .mockResolvedValueOnce({data:{lesson:capacitorLesson()},error:null});
+  render(<MutamayizChat language="ar" />);
+  await send(question);
+  fireEvent.change(screen.getByRole('textbox'), {target:{value:'نص باقي بالمحادثة'}});
+  fireEvent.click(screen.getByRole('button',{name:'اشرحلي عالسبورة'}));
+  expect(await screen.findByRole('dialog', {name:'سبورة متميّز'})).toBeInTheDocument();
+  expect(await screen.findByRole('heading', {name:'سعة المتسعة ذات اللوحين'})).toBeInTheDocument();
+  expect(backend.invoke.mock.calls[1][1].body).toMatchObject({mode:'whiteboard_lesson',board:{question,topic:'المتسعات · الفصل الأول',language:'ar'}});
+  fireEvent.click(screen.getByRole('button',{name:'رجوع للمحادثة'}));
+  expect(await screen.findByText('المسافة بين اللوحين تأثر على السعة.')).toBeVisible();
+  expect(screen.getByRole('textbox')).toHaveValue('نص باقي بالمحادثة');
+ });
+ it('uses the attached PDF pages from the reply and asks for the source after the file is removed', async () => {
+  const pages = [{page:7,text:'الزخم حاصل ضرب الكتلة بالسرعة.'}];
+  backend.readFile.mockResolvedValue({name:'فيزياء.pdf',text:pages[0].text,pages});
+  backend.invoke
+   .mockResolvedValueOnce({data:{reply:'هذا شرح الزخم.',studyTopic:'الزخم'},error:null})
+   .mockResolvedValueOnce({data:{error:'missing_source'},error:null});
+  const view = render(<MutamayizChat language="ar" />);
+  await waitFor(() => expect(screen.getByRole('textbox')).toBeEnabled());
+  await act(async()=>fireEvent.change(view.container.querySelector('input[type=file]')!,{target:{files:[new File(['test'],'فيزياء.pdf')]}}));
+  await send('اشرحلي الصفحة');
+  fireEvent.click(screen.getByRole('button',{name:'اشرحلي عالسبورة'}));
+  expect(await screen.findByText('نحتاج مصدر للشرح')).toBeInTheDocument();
+  expect(backend.invoke.mock.calls[1][1].body).toMatchObject({mode:'whiteboard_lesson',board:{attachment:{name:'فيزياء.pdf',pages}}});
+  fireEvent.click(screen.getByRole('button',{name:'رجوع للمحادثة'}));
+  fireEvent.click(screen.getByRole('button',{name:'حذف الملف'}));
+  fireEvent.click(screen.getByRole('button',{name:'اشرحلي عالسبورة'}));
+  expect(await screen.findByText(/ملف هالرد انشال/)).toBeInTheDocument();
+  expect(backend.invoke).toHaveBeenCalledTimes(2);
  });
 });

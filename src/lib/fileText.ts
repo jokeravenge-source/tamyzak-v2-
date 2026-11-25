@@ -6,13 +6,17 @@ type ExtractOptions = {
   complete?: boolean;
   maxPages?: number;
   maxChars?: number;
+  textOnly?: boolean;
 };
+
+export type ExtractedPdfPage = { page: number; text: string };
 
 type StudyMaterial = {
   text: string;
   pageImages?: string[];
   fileData?: string;
   fileName?: string;
+  pdfText?: { pages: ExtractedPdfPage[]; inspectedPages: number; emptyPages: number; totalPages: number; truncated: boolean };
 };
 
 const DEFAULT_MAX_CHARS = 180000;
@@ -127,9 +131,12 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
       throw new Error(`قسّم الملف إلى أجزاء لا تتجاوز ${maxPagesLimit} صفحة للجلسة الواحدة.`);
     }
     const pagePlan = buildPagePlan(pdf.numPages, Math.min(pdf.numPages, maxPagesLimit));
-    const imagePages = buildImagePagePlan(pdf.numPages);
     const chunks: string[] = [];
     const pageImages: string[] = [];
+    const pages: ExtractedPdfPage[] = [];
+    let inspectedPages = 0;
+    let emptyPages = 0;
+    let truncated = pagePlan.length < pdf.numPages;
     let totalLength = 0;
 
     for (let index = 0; index < pagePlan.length; index++) {
@@ -138,6 +145,7 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
         const page = await pdf.getPage(pageNumber);
         try {
           const content = await page.getTextContent({ includeMarkedContent: false });
+          inspectedPages++;
           const pageText = normalizePageText(
             content.items
               .map((item) => ("str" in item ? item.str : ""))
@@ -145,13 +153,21 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
               .join(" "),
           );
 
-          if (pageText) {
-            const labelledText = `[Page ${pageNumber}]\n${pageText}`;
+          if (!pageText) emptyPages++;
+          else {
+            const pageLabel = `[Page ${pageNumber}]\n`;
+            const labelledText = pageLabel + pageText;
             if (options.complete && totalLength + labelledText.length > maxChars) {
               throw new Error("محتوى الملف طويل. قسّمه إلى أجزاء أصغر حتى نشرحه بالكامل.");
             }
             const remaining = maxChars - totalLength;
-            chunks.push(labelledText.slice(0, remaining));
+            const included = labelledText.slice(0, remaining);
+            chunks.push(included);
+            if (options.textOnly) {
+              const text = included.slice(pageLabel.length).trim();
+              if (text) pages.push({ page: pageNumber, text });
+              truncated ||= included.length < labelledText.length;
+            }
             totalLength += Math.min(labelledText.length, remaining);
           }
         } finally {
@@ -162,13 +178,25 @@ async function extractPdfMaterial(file: File, options: ExtractOptions = {}): Pro
         console.warn(`Skipped unreadable PDF page ${pageNumber}`, error);
       }
 
-      if (totalLength >= maxChars && !options.complete) break;
+      if (totalLength >= maxChars && !options.complete) {
+        truncated ||= index < pagePlan.length - 1;
+        break;
+      }
       if (index % 5 === 4) {
         pdf.cleanup();
         await waitForBrowser();
       }
     }
 
+    if (options.textOnly) {
+      return {
+        text: chunks.join("\n\n").slice(0, maxChars),
+        fileName: file.name,
+        pdfText: { pages, inspectedPages, emptyPages, totalPages: pdf.numPages, truncated },
+      };
+    }
+
+    const imagePages = buildImagePagePlan(pdf.numPages);
     for (let index = 0; index < imagePages.length; index++) {
       try {
         const image = await renderPdfPageImage(pdf, imagePages[index]);
@@ -211,6 +239,8 @@ export async function extractStudyMaterial(input: File, options: ExtractOptions 
 
   const maxChars = options.maxChars ?? DEFAULT_MAX_CHARS;
 
+  if (isPdfFile(file)) return await extractPdfMaterial(file, options);
+
   if (isTextFile(file)) return { text: (await file.slice(0, maxChars * 4).text()).slice(0, maxChars) };
 
   if (isDocxFile(file)) {
@@ -218,8 +248,6 @@ export async function extractStudyMaterial(input: File, options: ExtractOptions 
     const { value } = await mammoth.extractRawText({ arrayBuffer });
     return { text: value.slice(0, maxChars) };
   }
-
-  if (isPdfFile(file)) return await extractPdfMaterial(file, options);
 
   throw new Error("unsupported");
 }

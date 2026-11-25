@@ -76,3 +76,139 @@ describe('unified assistant edge request',()=>{
   expect(backend.guard.mock.calls[0][1]).toBe('mutamayiz');
  });
 });
+
+const boardCompletion = (value: unknown, finishReason = "stop") => new Response(JSON.stringify({
+  choices: [{ message: { content: JSON.stringify(value) }, finish_reason: finishReason }],
+}));
+
+describe("authenticated whiteboard tutor", () => {
+  const pilotRequest = { question: "اشرح سعة المتسعة ذات اللوحين", language: "ar" };
+  const quote = "الزخم حاصل ضرب الكتلة بسرعة الجسم.";
+  const pageRequest = {
+    question: "اشرحلي صفحة ٢ من الملف",
+    language: "ar",
+    attachment: {
+      name: "فيزياء.pdf",
+      pages: [{ page: 1, text: "نص مختلف عن الحركة." }, { page: 2, text: quote }, { page: 4, text: "نص غير متاح بالصفحة المطلوبة." }],
+    },
+  };
+  const example = {
+    title: "الزخم",
+    steps: [
+      { title: "تعريف", narration: "هسه نكتب معنى الزخم.", reference: { sourceId: "pdf:2", quote }, actions: [{ kind: "label", target: "idea", text: "الزخم", at: 0 }] },
+      { title: "العلاقة", narration: "اضرب كتلة الجسم بسرعته.", reference: { sourceId: "pdf:2", quote }, actions: [{ kind: "equation", text: "p = mv", at: 0.3 }] },
+    ],
+  };
+
+  it("keeps curriculum lesson metadata out of the chat response text", async () => {
+    const content = [
+      "القانون يعتمد على مساحة اللوحين.",
+      "```lesson",
+      JSON.stringify({ topic: "سعة المتسعة ذات اللوحين" }),
+      "```",
+    ].join("\n");
+    backend.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content }, finish_reason: "stop" }] })));
+    const result = await (await request({ messages: [{ role: "user", content: pilotRequest.question }] })).json();
+    expect(result).toMatchObject({ reply: "القانون يعتمد على مساحة اللوحين.", studyTopic: "سعة المتسعة ذات اللوحين" });
+  });
+
+  it("serves a validated capacitor pilot only for authenticated students", async () => {
+    backend.auth.mockResolvedValueOnce({ ok: false, status: 401, error: "expired" });
+    expect((await (await request({ mode: "whiteboard_lesson", board: pilotRequest })).json()).lesson).toBeUndefined();
+    const { lesson } = await (await request({ mode: "whiteboard_lesson", board: pilotRequest })).json();
+    expect(lesson.template).toBe("parallel-plates");
+    expect(lesson.steps[1].actions).toContainEqual(expect.objectContaining({ kind: "equation", text: "C = εA/d" }));
+    expect(lesson.steps[2].actions).toContainEqual(expect.objectContaining({ kind: "double-gap" }));
+    expect(lesson.sources[0]).toMatchObject({ kind: "lesson", chapter: "الفصل الأول · المتسعات" });
+    expect(lesson.sources[0]).not.toHaveProperty("printedPage");
+    expect(backend.fetch).not.toHaveBeenCalled();
+  });
+
+  it("sends the requested readable PDF page and returns only its validated citation", async () => {
+    const model = structuredClone(example);
+    Object.assign(model.steps[0].reference, { pdfPage: 99, url: "https://example.test/fake" });
+    backend.fetch.mockResolvedValueOnce(boardCompletion(model));
+    const { lesson } = await (await request({ mode: "whiteboard_lesson", board: pageRequest })).json();
+    const promptData = JSON.parse(conversation()[1].content);
+    expect(promptData.sources).toEqual([{ sourceId: "pdf:2", title: "فيزياء.pdf", excerpt: quote }]);
+    expect(lesson.sources).toEqual([{ id: "pdf:2", kind: "pdf", title: "فيزياء.pdf", excerpt: quote, pdfPage: 2 }]);
+    expect(lesson.steps[0].reference).toEqual({ sourceId: "pdf:2", quote });
+  });
+
+  it("rejects citations to unsupplied pages, invented quotes, and unreviewed drawing operations", async () => {
+    for (const invalid of [
+      { ...example.steps[0], reference: { sourceId: "pdf:4", quote } },
+      { ...example.steps[0], reference: { sourceId: "pdf:2", quote: "اقتباس غير موجود بالصفحة." } },
+      { ...example.steps[0], actions: [{ kind: "svg", text: "<svg></svg>", at: 0 }] },
+      { ...example.steps[0], actions: [{ kind: "double-gap", at: 0.3 }] },
+    ]) {
+      backend.fetch.mockResolvedValueOnce(boardCompletion({ ...example, steps: [invalid, example.steps[1]] }));
+      expect(await (await request({ mode: "whiteboard_lesson", board: pageRequest })).json()).toEqual({ error: "invalid_lesson" });
+    }
+    backend.fetch.mockResolvedValueOnce(boardCompletion(example, "length"));
+    expect(await (await request({ mode: "whiteboard_lesson", board: pageRequest })).json()).toEqual({ error: "invalid_lesson" });
+  });
+
+  it("requests a source when the named PDF page was unreadable or no curriculum source is available", async () => {
+    const cases = [
+      { ...pageRequest, question: "اشرح صفحة ٣" },
+      { ...pilotRequest, attachment: { name: "scan.pdf", pages: [] } },
+      { question: "اشرح درس غير معروف", language: "ar" },
+    ];
+    for (const board of cases) expect(await (await request({ mode: "whiteboard_lesson", board })).json()).toEqual({ error: "missing_source" });
+    expect(backend.fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses an explicitly reuploaded single-page excerpt under its actual page number", async () => {
+    backend.fetch.mockResolvedValueOnce(boardCompletion({
+      ...example,
+      steps: example.steps.map(step => ({ ...step, reference: { sourceId: "pdf:1", quote } })),
+    }));
+    const { lesson } = await (await request({
+      mode: "whiteboard_lesson",
+      board: { ...pageRequest, attachment: { name: "excerpt.pdf", selectedPage: true, pages: [{ page: 1, text: quote }] } },
+    })).json();
+    expect(lesson.sources).toEqual([{ id: "pdf:1", kind: "pdf", title: "excerpt.pdf", excerpt: quote, pdfPage: 1 }]);
+  });
+
+  it("grounds other curriculum lessons in the existing verified-source lookup and respects the selected lesson", async () => {
+    backend.env = { SUPABASE_URL: "https://fixture.supabase.test", SUPABASE_ANON_KEY: "public-test-key" };
+    backend.fetch.mockImplementation(async (url: string) => url.includes("/rest/v1/rpc/")
+      ? new Response(JSON.stringify([{
+          id: "kinematics", verified: true, academic_year: "2026-2027", curriculum: "en", subject: "physics",
+          question: "Momentum", excerpt: quote, book_title: "Fixture", book_edition: "2026-2027", book_url: "https://example.test/book",
+          chapter: "Momentum", printed_page: 42, pdf_page: 45,
+        }]))
+      : boardCompletion({
+          ...example,
+          steps: example.steps.map(step => ({ ...step, reference: { sourceId: "curriculum:kinematics", quote } })),
+        }));
+    const result = await (await request({
+      mode: "whiteboard_lesson",
+      board: { ...pilotRequest, language: "en", selectedLesson: "Momentum" },
+    })).json();
+    expect(JSON.parse(backend.fetch.mock.calls[0][1].body)).toMatchObject({ question_text: "Momentum", curriculum_key: "en", school_year: "2026-2027" });
+    expect(backend.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer fixture-token");
+    expect(result.lesson.sources[0]).toMatchObject({ kind: "curriculum", printedPage: 42, pdfPage: 45 });
+  });
+
+  it("gives a follow-up only the active step's source and whitelists visible highlights", async () => {
+    const { lesson } = await (await request({ mode: "whiteboard_lesson", board: pilotRequest })).json();
+    const step = lesson.steps[1];
+    const reply = "الدي بالمقام. إذا زاد، ناتج القسمة يصغر.";
+    backend.fetch.mockResolvedValueOnce(boardCompletion({ reply, reference: step.reference, highlight: "distance" }));
+    const body = { mode: "whiteboard_question", board: pilotRequest, question: "ما فهمت هاي", step, stepIndex: 1, visible: ["plates", "distance", "arbitrary"] };
+    const result = await (await request(body)).json();
+    expect(result.answer).toEqual({ reply, reference: step.reference, highlight: "distance" });
+    expect(JSON.parse(conversation()[1].content)).toMatchObject({
+      question: "ما فهمت هاي", step: { title: step.title, narration: step.narration },
+      source: { sourceId: lesson.sources[0].id, excerpt: lesson.sources[0].excerpt }, visible: ["plates", "distance"],
+    });
+    backend.fetch.mockResolvedValueOnce(boardCompletion({ reply, reference: step.reference, highlight: "equation" }));
+    const hidden = await (await request(body)).json();
+    expect(hidden.answer.highlight).toBeNull();
+    const forged = await (await request({ ...body, step: { ...step, reference: { sourceId: "fake", quote } } })).json();
+    expect(forged).toEqual({ error: "missing_source" });
+    expect(backend.fetch).toHaveBeenCalledTimes(2);
+  });
+});

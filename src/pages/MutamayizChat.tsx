@@ -1,17 +1,20 @@
 import ScienceEvidenceCard from "@/components/ScienceEvidenceCard";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowLeft, ArrowUpRight, Bot, Check, Loader2, Paperclip, Plus, Send, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bot, Check, Loader2, Paperclip, Plus, Presentation, Send, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
-import { readAssistantFile } from "@/lib/mutamayizFile";
+import { attachmentForBoard, readAssistantFile } from "@/lib/mutamayizFile";
 import { readableMath } from "@/lib/readableMath";
 import { getISOWeek, pullTodos, pushTodos, type SyncedTodo } from "@/lib/todosSync";
 import { readWeeklyLearningProfile, saveWeeklyLearningProfile, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 import WeeklyWeaknessIntake from "@/components/WeeklyWeaknessIntake";
 import { edgeErrorMessage } from "@/lib/edgeError";
 import { aiErrorNotice } from "@/lib/aiErrorNotice";
-import { assistantSnapshot, subscribeAssistant, setAssistantOwner, updateAssistant, newAssistantConversation } from "@/lib/mutamayizConversation";
+import { assistantSnapshot, subscribeAssistant, setAssistantOwner, updateAssistant, newAssistantConversation, type AssistantBoardContext } from "@/lib/mutamayizConversation";
+import WhiteboardDialog from "@/components/whiteboard/WhiteboardDialog";
 import { MUTAMAYIZ_NAME, extractAssistantPlan, stripAssistantPlan, renderAssistantParts } from "../../supabase/functions/_shared/mutamayiz";
+import type { BoardInput } from "../../supabase/functions/_shared/whiteboard";
+import { isParallelPlateQuestion } from "../../supabase/functions/_shared/whiteboardCapacitors";
 
 const copy = {
   ar: {
@@ -19,6 +22,7 @@ const copy = {
     intro: "هلا بيك، آني متميز ✨ اسألني عن درسك، احچيلي عن مشكلة أو ضغط تمر بيه، خلّيني أرتب جدولك، أو كلي شنو تحتاج بالموقع. نكمل كلشي بنفس المحادثة.",
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
+    whiteboard: "اشرحلي عالسبورة",
     approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت. إذا الملف صور فقط، يحتاج تحويل إلى نص (OCR).",
     error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.", syncError: "انحفظت الخطة على جهازك، لكن تعذّرت مزامنة الحساب. اضغط اعتماد الخطة للمحاولة مرة ثانية.",
   },
@@ -27,12 +31,14 @@ const copy = {
     intro: "Hi, I'm متميز ✨ Ask about your lessons, work through a problem, talk about study pressure, plan your week, or find a tool. We can do all of that in this one conversation.",
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
+    whiteboard: "Explain on the whiteboard",
     approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB. Image-only PDFs need OCR before they can be read.",
     error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.", syncError: "Plan saved on this device. Account sync failed; approve the plan again to retry.",
   },
 };
 
 type Props = { language: AppLanguage; onBack?: () => void; onOpenTool?: (key: string) => void; embedded?: boolean };
+type OpenBoard = { owner: string; epoch: number; input: BoardInput; missingAttachment: boolean };
 export default function MutamayizChat({ language, onBack, onOpenTool, embedded = false }: Props) {
   const ar = language === "ar", t = copy[language];
   const conversation = useSyncExternalStore(subscribeAssistant, assistantSnapshot, assistantSnapshot);
@@ -42,6 +48,8 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
   const [fileBusy, setFileBusy] = useState(false);
   const [intake, setIntake] = useState(false);
   const [notice, setNotice] = useState("");
+  const [board, setBoard] = useState<OpenBoard | null>(null);
+  const boardTrigger = useRef<HTMLButtonElement | null>(null);
   const upload = useRef<HTMLInputElement>(null), scroll = useRef<HTMLDivElement>(null);
   const ownerRef = useRef<string | null>(null);
   const scheduleRequested = useRef(false);
@@ -56,6 +64,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       if (!live) return;
       if (ownerRef.current !== null && ownerRef.current !== id) {
         setInput(""); setIntake(false); setNotice(""); setFileBusy(false);
+        setBoard(null);
         scheduleRequested.current = false; uploadOperation.current++;
       }
       ownerRef.current = id; setAssistantOwner(id); setOwner(id); setAuthReady(true);
@@ -69,6 +78,9 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { revision++; apply(session?.user.id ?? null); });
     return () => { live = false; uploadOperation.current++; data.subscription.unsubscribe(); };
   }, []);
+  useEffect(() => {
+    if (board && (board.owner !== conversation.owner || board.epoch !== conversation.epoch)) setBoard(null);
+  }, [board, conversation.owner, conversation.epoch]);
   useEffect(() => { scroll.current?.scrollTo?.({ top: scroll.current.scrollHeight, behavior: "smooth" }); }, [messages, busy]);
   useEffect(() => {
     const autoSchedule = () => {
@@ -95,8 +107,25 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
         ...(state.profile ? { learningProfile: state.profile } : {}), ...(state.file ? { clientContext: state.file.text, attachmentName: state.file.name } : {}),
       } });
       if (error) { const message = await edgeErrorMessage(error, t.error); throw new Error(aiErrorNotice({ message, status: error.context?.status }, language).message); }
-      const reply = typeof data?.reply === "string" && data.reply.trim() ? data.reply : t.error;
-      updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: reply, ...(data?.scienceEvidence ? { scienceEvidence: data.scienceEvidence } : {}) }].slice(-60) }));
+      const hasReply = typeof data?.reply === "string" && Boolean(data.reply.trim());
+      const reply = hasReply ? data.reply : t.error;
+      const verifiedSources = data?.scienceEvidence?.sources;
+      const topic = typeof data?.studyTopic === "string" && data.studyTopic.trim()
+        ? data.studyTopic.trim().slice(0, 180)
+        : Array.isArray(verifiedSources) && typeof verifiedSources[0]?.question === "string"
+          ? verifiedSources[0].question.slice(0, 180)
+          : undefined;
+      const whiteboard = hasReply && !data?.error && !data?.temporary && (topic || data?.scienceEvidence || isParallelPlateQuestion(text))
+        ? { question: text, topic, attachmentId: state.file?.id }
+        : undefined;
+      updateAssistant(owner, current => current.epoch !== epoch ? current : ({
+        ...current,
+        messages: [...current.messages, {
+          id: crypto.randomUUID(), role: "assistant" as const, content: reply,
+          ...(data?.scienceEvidence ? { scienceEvidence: data.scienceEvidence } : {}),
+          ...(whiteboard ? { whiteboard } : {}),
+        }].slice(-60),
+      }));
     } catch (error) {
       updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, messages: [...current.messages, { id: crypto.randomUUID(), role: "assistant" as const, content: error instanceof Error ? error.message : t.error }].slice(-60) }));
     } finally { updateAssistant(owner, current => current.epoch !== epoch ? current : ({ ...current, busy: false })); }
@@ -145,11 +174,24 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const currentConversation = () => operation === uploadOperation.current && ownerRef.current === scope && assistantSnapshot().owner === scope && assistantSnapshot().epoch === epoch;
     setFileBusy(true); setNotice("");
     updateAssistant(scope, state => ({ ...state, file: null }));
-    try { const text = await readAssistantFile(file); if (!text.trim()) throw new Error("empty_file"); if (currentConversation()) updateAssistant(scope, state => ({ ...state, file: { name: file.name, text } })); }
+    try {
+      const source = await readAssistantFile(file);
+      if (!source.text.trim()) throw new Error("empty_file");
+      if (currentConversation()) updateAssistant(scope, state => ({ ...state, file: { ...source, id: crypto.randomUUID() } }));
+    }
     catch { if (currentConversation()) setNotice(t.fileError); }
     finally { if (operation === uploadOperation.current) { setFileBusy(false); if (upload.current) upload.current.value = ""; } }
   };
   const openTool = (key: string) => onOpenTool ? onOpenTool(key) : window.dispatchEvent(new CustomEvent("app:mutamayiz-open-tool", { detail: { key } }));
+  const openBoard = (context: AssistantBoardContext, trigger: HTMLButtonElement) => {
+    const state = assistantSnapshot();
+    if (!owner || state.owner !== owner || state.epoch !== conversation.epoch) return;
+    const file = state.file && state.file.id === context.attachmentId ? state.file : null;
+    const input: BoardInput = { question: context.question, topic: context.topic, language };
+    if (file) input.attachment = attachmentForBoard(file);
+    boardTrigger.current = trigger;
+    setBoard({ owner, epoch: state.epoch, input, missingAttachment: Boolean(context.attachmentId && !file) });
+  };
   return <main dir={ar ? "rtl" : "ltr"} className={`mx-auto flex w-full min-w-0 max-w-3xl flex-col bg-background text-foreground ${embedded ? "h-full min-h-0" : "h-[100dvh] min-h-0"}`}>
     <header className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-4 sm:px-6">
       {onBack && <button onClick={onBack} aria-label={t.back} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border hover:bg-secondary"><ArrowLeft className={`size-5 ${ar ? "rotate-180" : ""}`} /></button>}
@@ -163,6 +205,13 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
         {messages.map(message => <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`min-w-0 max-w-[95%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-8 [overflow-wrap:anywhere] sm:max-w-[90%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
           {message.role === "user" ? message.content : renderAssistantParts(stripAssistantPlan(message.content)).map((part, index) => part.t === "text" ? <span key={index}>{readableMath(part.v)}</span> : <button key={index} onClick={() => openTool(part.key)} className="my-2 inline-flex min-h-11 max-w-full items-center gap-2 whitespace-normal rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm font-bold text-blue-700 dark:text-blue-200">{part.label}<ArrowUpRight className="size-4 shrink-0" /></button>)}
           {message.role === "assistant" && message.scienceEvidence && <ScienceEvidenceCard evidence={message.scienceEvidence} ar={ar} />}
+          {message.whiteboard && (
+            <button type="button" onClick={event => openBoard(message.whiteboard!, event.currentTarget)}
+              className="mt-3 flex min-h-11 max-w-full items-center gap-2 whitespace-normal rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-start text-sm font-bold text-primary transition-colors hover:bg-primary/15">
+              <Presentation aria-hidden="true" className="size-4 shrink-0" />{t.whiteboard}
+              <ArrowUpRight aria-hidden="true" className={`size-4 shrink-0 ${ar ? "-scale-x-100" : ""}`} />
+            </button>
+          )}
         </div></div>)}
         {busy && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t.loading}</p>}
         {plan && <section aria-label={ar ? "مراجعة الخطة" : "Review plan"} className="space-y-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
@@ -181,5 +230,9 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       {active && !intake && <button disabled={busy} onClick={() => setIntake(true)} className="min-h-9 text-xs font-semibold text-blue-700 dark:text-blue-200">{t.weakness}</button>}
       <p className="text-center text-[11px] leading-5 text-muted-foreground">{t.disclaimer}</p>
     </footer>
+    {active && board && board.owner === owner && board.epoch === conversation.epoch && (
+      <WhiteboardDialog input={board.input} missingAttachment={board.missingAttachment} language={language} onClose={() => setBoard(null)}
+        onReturnFocus={() => { if (boardTrigger.current?.isConnected) boardTrigger.current.focus(); }} />
+    )}
   </main>;
 }
