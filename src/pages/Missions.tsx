@@ -1,366 +1,344 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, ListChecks, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowUpRight, Atom, BookOpen, BookOpenText, Calculator, Check, ChevronLeft, ChevronRight,
+  ClipboardList, FlaskConical, Languages, Layers, Leaf, Moon, ScrollText,
+} from "lucide-react";
+import type { AppLanguage } from "@/components/LanguageGate";
+import { missionsData, missionsOrder } from "@/data/missions";
 import { supabase } from "@/integrations/supabase/client";
-import { missionsData, missionsOrder, type MissionChapter } from "@/data/missions";
-
-// Always render these subjects in Arabic regardless of the app language.
-const ALWAYS_AR = new Set(["islamic", "arabic"]);
-const useAr = (subj: string | null | undefined, language: string) =>
-  language === "ar" || (subj ? ALWAYS_AR.has(subj) : false);
-import { type AppLanguage } from "@/components/LanguageGate";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
 import { categoryLabel, loadTopicPractice, topicSummary, type PracticeAttempt } from "@/lib/topicMastery";
+import { toast } from "sonner";
+
+const ALWAYS_AR = new Set(["islamic", "arabic"]);
+
+const subjectStyle = {
+  islamic: { Icon: Moon, tone: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300" },
+  arabic: { Icon: ScrollText, tone: "bg-rose-100 text-rose-800 dark:bg-rose-400/15 dark:text-rose-300" },
+  english: { Icon: BookOpen, tone: "bg-violet-100 text-violet-800 dark:bg-violet-400/15 dark:text-violet-300" },
+  math: { Icon: Calculator, tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-400/15 dark:text-indigo-300" },
+  physics: { Icon: Atom, tone: "bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-300" },
+  chemistry: { Icon: FlaskConical, tone: "bg-teal-100 text-teal-800 dark:bg-teal-400/15 dark:text-teal-300" },
+  biology: { Icon: Leaf, tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300" },
+  french: { Icon: Languages, tone: "bg-orange-100 text-orange-800 dark:bg-orange-400/15 dark:text-orange-300" },
+};
 
 const copy = {
-  en: {
-    title: "My Missions",
-    desc: "Track your progress chapter by chapter. Each topic is a mission.",
-    back: "Back",
-    overall: "Overall progress",
-    bySubject: "By subject",
-    chapters: "chapters",
-    missions: "missions",
-    done: "done",
-    pickSubject: "Pick a subject",
-    backSubjects: "All subjects",
-    backChapters: "All chapters",
-    signIn: "Sign in to track your missions.",
-    loading: "Loading…",
-  },
   ar: {
-    title: "مهماتي",
-    desc: "تابع تقدمك فصلاً بفصل. كل موضوع يمثل مهمة.",
-    back: "رجوع",
-    overall: "التقدم الكلي",
-    bySubject: "حسب المادة",
-    chapters: "فصول",
-    missions: "مهام",
-    done: "منجزة",
-    pickSubject: "اختر مادة",
-    backSubjects: "كل المواد",
-    backChapters: "كل الفصول",
-    signIn: "سجّل الدخول لتتبع مهماتك.",
-    loading: "جارٍ التحميل…",
+    title: "الفهرست", browse: "تصفّح المواد", chapters: "الفصول والوحدات", topics: "مواضيع هذا الفصل",
+    description: "شوف مواضيع كل مادة وعلّم على اللي خلّصته.",
+    back: "رجوع", progress: "تقدّمك", totalProgress: "تقدّمك بكل المواد", completed: "المواضيع المنجزة",
+    navigation: "مسار الفهرست",
+    signIn: "سجّل دخولك حتى تحفظ تقدّمك.", loading: "جاري تحميل تقدّمك…",
+    practice: "تدريبك حسب الموضوع",
+    practiceDetails: "نتائج البطاقات والوزاريات تعتمد على تقييمك لإجاباتك.",
+    practiceEmpty: "جاوب على أسئلة البنك أو الوزاريات، أو راجع البطاقات حتى يظهر تقدّمك هنا.",
+    misc: "نتائج الأسئلة",
+    states: { starting: "بدأت", strong: "قوي", improving: "يتحسّن", practice: "يحتاج تدريب" },
+  },
+  en: {
+    title: "Chapter checklist", browse: "Browse subjects", chapters: "Chapters and units", topics: "Chapter topics",
+    description: "Browse the topics in each subject and check off what you’ve finished.",
+    back: "Back", progress: "Your progress", totalProgress: "Across all subjects", completed: "Completed topics",
+    navigation: "Checklist path",
+    signIn: "Sign in to save your progress.", loading: "Loading your progress…",
+    practice: "Your practice by topic",
+    practiceDetails: "Flashcard and ministerial results reflect your self-assessment.",
+    practiceEmpty: "Answer bank or ministerial questions, or review flashcards to see your practice here.",
+    misc: "Question results",
+    states: { starting: "Getting started", strong: "Strong", improving: "Improving", practice: "Needs practice" },
   },
 } as const;
 
+type Counts = { done: number; total: number };
 type ProgressRow = { id: string; topic_key: string; subject: string; completed: boolean };
 
+function ratio({ done, total }: Counts) {
+  return total ? done / total : 0;
+}
+
+function Meter({ counts }: { counts: Counts }) {
+  return (
+    <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <span className="block h-full rounded-full bg-primary" style={{ width: ratio(counts) * 100 + "%" }} />
+    </span>
+  );
+}
+
 const Missions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+  const ar = language === "ar";
   const t = copy[language];
+  const format = useMemo(() => new Intl.NumberFormat(ar ? "ar-IQ" : "en"), [ar]);
+  const percent = useMemo(() => new Intl.NumberFormat(ar ? "ar-IQ" : "en", { style: "percent", maximumFractionDigits: 0 }), [ar]);
   const [rows, setRows] = useState<ProgressRow[]>([]);
   const [practice, setPractice] = useState<PracticeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [subject, setSubject] = useState<string | null>(null);
   const [chapter, setChapter] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const navigated = useRef(false);
+  const saving = useRef(new Set<string>());
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    let active = true;
+    async function load() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!active || !user) return;
+        setUserId(user.id);
+        void loadTopicPractice().then(result => { if (active) setPractice(result); }).catch(() => {});
+        const { data } = await supabase.from("mission_progress")
+          .select("id, topic_key, subject, completed").eq("user_id", user.id);
+        if (active) setRows(data ?? []);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void load().catch(() => {});
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-    supabase
-      .from("mission_progress")
-      .select("id, topic_key, subject, completed")
-      .then(({ data }) => {
-        setRows(data ?? []);
-        setLoading(false);
-      });
-  }, [userId]);
+    if (!navigated.current) return;
+    navigated.current = false;
+    heading.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0 });
+  }, [subject, chapter]);
 
-  useEffect(() => {
-    if (!userId) return;
-    void loadTopicPractice().then(setPractice);
-  }, [userId]);
+  const rowByKey = useMemo(() => new Map(rows.map(row => [row.topic_key, row])), [rows]);
+  const countsFor = (topics: readonly { key: string }[]): Counts => ({
+    total: topics.length,
+    done: topics.filter(topic => rowByKey.get(topic.key)?.completed).length,
+  });
+  const countsLabel = ({ done, total }: Counts) => ar
+    ? `${format.format(done)} من ${format.format(total)} موضوع`
+    : `${format.format(done)} of ${format.format(total)} topics`;
 
-  const doneSet = useMemo(
-    () => new Set(rows.filter((r) => r.completed).map((r) => r.topic_key)),
-    [rows],
-  );
-  const rowByKey = useMemo(() => {
-    const m = new Map<string, ProgressRow>();
-    rows.forEach((r) => m.set(r.topic_key, r));
-    return m;
-  }, [rows]);
-
-  const subjectStats = (subj: string) => {
-    const data = missionsData[subj];
-    if (!data) return { total: 0, done: 0, pct: 0 };
-    let total = 0,
-      done = 0;
-    data.chapters.forEach((c) => {
-      total += c.topics.length;
-      done += c.topics.filter((tp) => doneSet.has(tp.key)).length;
-    });
-    return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+  const goTo = (nextSubject: string | null, nextChapter: string | null = null) => {
+    navigated.current = true;
+    setSubject(nextSubject);
+    setChapter(nextChapter);
   };
 
-  const overall = useMemo(() => {
-    let total = 0,
-      done = 0;
-    missionsOrder.forEach((s) => {
-      const st = subjectStats(s);
-      total += st.total;
-      done += st.done;
-    });
-    return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [doneSet]);
-
-  const toggle = async (topicKey: string, subj: string, title: string) => {
+  const toggle = async (topicKey: string, subj: string) => {
     if (!userId) {
       toast.error(t.signIn);
       return;
     }
+    if (loading || saving.current.has(topicKey)) return;
+    saving.current.add(topicKey);
     const existing = rowByKey.get(topicKey);
-    const next = !(existing?.completed ?? false);
-    if (existing) {
-      setRows((rs) =>
-        rs.map((r) => (r.id === existing.id ? { ...r, completed: next } : r)),
-      );
-      const { error } = await supabase
-        .from("mission_progress")
-        .update({ completed: next, updated_at: new Date().toISOString() })
-        .eq("id", existing.id);
-      if (error) toast.error(error.message);
-    } else {
-      const { data, error } = await supabase
-        .from("mission_progress")
-        .insert({
-          user_id: userId,
-          subject: subj,
-          topic_key: topicKey,
-          completed: next,
-        })
-        .select("id, topic_key, subject, completed")
-        .single();
-      if (error) toast.error(error.message);
-      else if (data) setRows((rs) => [...rs, data as ProgressRow]);
+    const next = !existing?.completed;
+    try {
+      if (existing) {
+        setRows(current => current.map(row => row.id === existing.id ? { ...row, completed: next } : row));
+        const { error } = await supabase.from("mission_progress")
+          .update({ completed: next, updated_at: new Date().toISOString() }).eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("mission_progress")
+          .insert({ user_id: userId, subject: subj, topic_key: topicKey, completed: true })
+          .select("id, topic_key, subject, completed").single();
+        if (error) throw error;
+        if (data) setRows(current => [...current, data]);
+      }
+    } catch (error) {
+      if (existing) setRows(current => current.map(row => row.id === existing.id ? existing : row));
+      toast.error(error instanceof Error || (error && typeof error === "object" && "message" in error)
+        ? String(error.message) : ar ? "تعذّر حفظ التقدّم." : "Could not save your progress.");
+    } finally {
+      saving.current.delete(topicKey);
     }
   };
 
-  const subjData = subject ? missionsData[subject] : null;
-  const chapData: MissionChapter | undefined = subjData?.chapters.find(
-    (c) => c.key === chapter,
-  );
+  const selectedSubject = subject ? missionsData[subject] : null;
+  const selectedChapter = selectedSubject?.chapters.find(item => item.key === chapter);
+  const contentLanguage = subject && ALWAYS_AR.has(subject) ? "ar" : language;
+  const topics = selectedChapter?.topics ?? (selectedSubject
+    ? selectedSubject.chapters.flatMap(item => item.topics)
+    : missionsOrder.flatMap(key => missionsData[key].chapters.flatMap(item => item.topics)));
+  const counts = countsFor(topics);
+  const progress = ratio(counts);
+  const chapterNumber = selectedChapter?.key.match(/\d+$/)?.[0];
   const practiceByCategory = new Map<string, PracticeAttempt[]>();
   for (const attempt of practice) {
-    if (attempt.subject !== subject || attempt.chapter !== chapter?.match(/\d+$/)?.[0]) continue;
+    if (attempt.subject !== subject || attempt.chapter !== chapterNumber) continue;
     const group = practiceByCategory.get(attempt.category_key) ?? [];
     group.push(attempt);
     practiceByCategory.set(attempt.category_key, group);
   }
+  const Forward = ar ? ChevronLeft : ChevronRight;
+  const Back = ar ? ChevronRight : ChevronLeft;
+  const headingTitle = (selectedChapter ?? selectedSubject)?.[contentLanguage] ?? t.title;
+  const tile = "min-w-0 rounded-2xl border border-border bg-card p-3.5 text-start shadow-sm transition-colors hover:border-primary/50 hover:bg-primary/[.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4";
+  const iconTile = "grid size-10 shrink-0 place-items-center rounded-xl sm:size-11";
 
   return (
-    <main
-      className="min-h-screen px-4 py-12 md:py-16 relative overflow-hidden"
-      dir={language === "ar" ? "rtl" : "ltr"}
-    >
-      <div className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-3xl animate-float" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-
-      <button
-        onClick={() => {
-          if (chapter) setChapter(null);
-          else if (subject) setSubject(null);
+    <main dir={ar ? "rtl" : "ltr"} className="mx-auto w-full max-w-6xl px-3.5 pb-8 pt-4 sm:px-6 sm:pt-6">
+      <div className="mb-3 flex min-h-11 items-center gap-2">
+        <button type="button" aria-label={t.back} onClick={() => {
+          if (chapter) goTo(subject);
+          else if (subject) goTo(null);
           else onBack();
-        }}
-        className="absolute top-6 left-6 z-20 w-11 h-11 rounded-full border border-white/10 bg-secondary/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
-        aria-label={t.back}
-      >
-        <ArrowLeft className="w-5 h-5" />
-      </button>
+        }} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <Back aria-hidden="true" className="size-5" />
+        </button>
+        {selectedSubject && (
+          <nav aria-label={t.navigation} className="flex min-w-0 items-center gap-1 text-sm font-semibold">
+            <button type="button" onClick={() => goTo(null)} className="min-h-11 shrink-0 rounded-lg px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{t.title}</button>
+            {selectedChapter && (
+              <>
+                <Forward aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                <button type="button" onClick={() => goTo(subject)} className="min-h-11 min-w-0 truncate rounded-lg px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  <bdi>{selectedSubject[contentLanguage]}</bdi>
+                </button>
+              </>
+            )}
+          </nav>
+        )}
+      </div>
 
-      <header className="text-center max-w-3xl mx-auto z-10 relative animate-fade-up">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-secondary/40 backdrop-blur mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            <ListChecks className="inline w-3.5 h-3.5 mr-1" />
-            {t.title}
-          </span>
+      <header className="isolate mb-6 flex flex-col gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-[#111f3d] via-[#173563] to-[#21599c] px-4 py-5 text-white shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-7 sm:py-7">
+        <div className="min-w-0">
+          <BookOpenText aria-hidden="true" className="mb-3 size-7 text-sky-200 sm:size-8" strokeWidth={1.65} />
+          <h1 ref={heading} tabIndex={-1} dir="auto" className="text-start text-3xl font-black leading-tight tracking-tight outline-none [overflow-wrap:anywhere] sm:text-4xl">{headingTitle}</h1>
+          {!selectedSubject && <p className="mt-2 max-w-lg text-sm leading-6 text-sky-50/90 sm:text-base">{t.description}</p>}
         </div>
-        <h1 className="text-5xl md:text-6xl font-bold gradient-text leading-[1.1] mb-3">
-          {t.title}
-        </h1>
-        <p className="text-muted-foreground md:text-lg max-w-xl mx-auto">{t.desc}</p>
 
-        {userId && (
-          <div className="mt-8 max-w-xl mx-auto rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">{t.overall}</span>
-              <span className="text-sm font-semibold text-primary">{overall.pct}%</span>
+        {(userId || loading) ? (
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/20 bg-white/10 p-2.5 sm:min-w-52 sm:p-3">
+            <div className="grid size-[3.65rem] shrink-0 place-items-center rounded-full p-1 sm:size-[4.25rem]"
+              style={{ background: `conic-gradient(from ${ar ? -progress * 360 : 0}deg, #7dd3fc ${progress * 100}%, rgb(255 255 255 / .18) 0)` }}
+              aria-hidden="true">
+              <span className="grid size-full place-items-center rounded-full bg-[#1b3965] text-sm font-black tabular-nums sm:text-base"><bdi>{loading ? "–" : percent.format(progress)}</bdi></span>
             </div>
-            <Progress value={overall.pct} className="h-2" />
-            <div className="text-xs text-muted-foreground mt-2">
-              {overall.done} / {overall.total} {t.missions} {t.done}
-            </div>
-          </div>
-        )}
-        {userId && (
-          <div className="mt-4 max-w-xl mx-auto rounded-2xl border border-white/10 bg-secondary/40 backdrop-blur p-5 text-left">
-            <div className="text-sm text-muted-foreground mb-3">{t.bySubject}</div>
-            <div className="space-y-3">
-              {missionsOrder.map((s) => {
-                const data = missionsData[s];
-                const st = subjectStats(s);
-                const isAr = useAr(s, language);
-                return (
-                  <div key={s}>
-                    <div className="flex items-center justify-between mb-1 text-xs">
-                      <span dir={isAr ? "rtl" : undefined} className={`text-foreground/90 ${isAr ? "text-right" : ""}`}>
-                        {isAr ? data.ar : data.en}
-                      </span>
-                      <span className="text-primary font-semibold tabular-nums">
-                        {st.done}/{st.total} · {st.pct}%
-                      </span>
-                    </div>
-                    <Progress value={st.pct} className="h-1.5" />
-                  </div>
-                );
-              })}
+            <div className="min-w-0">
+              <p className="text-sm font-bold">{selectedSubject ? t.progress : t.totalProgress}</p>
+              <p className="mt-0.5 text-xs leading-5 text-sky-50/90">
+                {loading ? t.loading : <><span className="sr-only">{percent.format(progress)} · </span>{countsLabel(counts)}</>}
+              </p>
             </div>
           </div>
-        )}
-        {!userId && !loading && (
-          <p className="mt-6 text-sm text-muted-foreground">{t.signIn}</p>
+        ) : (
+          <p className="text-sm text-sky-50/90">{t.signIn}</p>
         )}
       </header>
 
-      <section className="max-w-5xl mx-auto mt-12 z-10 relative">
-        {!subject && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {missionsOrder.map((s, i) => {
-              const data = missionsData[s];
-              const st = subjectStats(s);
+      {!selectedSubject && (
+        <section aria-labelledby="fahrast-subjects" className="space-y-3">
+          <h2 id="fahrast-subjects" className="text-lg font-black tracking-tight sm:text-xl">{t.browse}</h2>
+          <ul className="grid gap-2.5 min-[380px]:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+            {missionsOrder.map(key => {
+              const item = missionsData[key];
+              const { Icon, tone } = subjectStyle[key as keyof typeof subjectStyle];
+              const stats = countsFor(item.chapters.flatMap(part => part.topics));
+              const count = format.format(item.chapters.length);
               return (
-                <button
-                  key={s}
-                  onClick={() => setSubject(s)}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                  className="group text-left rounded-2xl border border-primary/30 bg-secondary/40 backdrop-blur p-5 hover:-translate-y-1 hover:border-primary transition-all animate-fade-up"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className={`text-xl font-semibold text-foreground ${ALWAYS_AR.has(s) ? "text-right" : ""}`} dir={ALWAYS_AR.has(s) ? "rtl" : undefined}>
-                      {useAr(s, language) ? data.ar : data.en}
-                    </h3>
-                    <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  <div className="flex items-center justify-between mb-2 text-xs text-muted-foreground">
-                    <span>
-                      {data.chapters.length} {t.chapters} · {st.total} {t.missions}
+                <li key={key} className="min-w-0">
+                  <button type="button" onClick={() => goTo(key)} className={`${tile} flex h-full w-full flex-col gap-3`}>
+                    <span className="flex w-full min-w-0 items-center gap-2.5 min-[380px]:max-sm:flex-wrap">
+                      <span className={`${iconTile} ${tone}`}><Icon aria-hidden="true" className="size-5" strokeWidth={1.8} /></span>
+                      <span className="min-w-0 flex-1 min-[380px]:max-sm:order-1 min-[380px]:max-sm:basis-full">
+                        <span className="block text-base font-bold leading-snug [overflow-wrap:anywhere]"><bdi>{item[ALWAYS_AR.has(key) ? "ar" : language]}</bdi></span>
+                        <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">{ar ? `${count} أقسام` : `${count} sections`}</span>
+                      </span>
+                      <Forward aria-hidden="true" className="ms-auto size-4 shrink-0 text-muted-foreground" />
                     </span>
-                    <span className="text-primary font-semibold text-sm">{st.pct}%</span>
-                  </div>
-                  <Progress value={st.pct} className="h-2" />
-                </button>
+                    {userId && !loading && <span className="mt-auto block w-full border-t border-border/70 pt-2.5">
+                      <span className="mb-1.5 flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                        <span><span className="sr-only">{t.completed} · </span>{countsLabel(stats)}</span>
+                        <bdi className="font-bold tabular-nums text-primary">{percent.format(ratio(stats))}</bdi>
+                      </span>
+                      <Meter counts={stats} />
+                    </span>}
+                  </button>
+                </li>
               );
             })}
-          </div>
-        )}
+          </ul>
+        </section>
+      )}
 
-        {subject && !chapter && subjData && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {subjData.chapters.map((c, i) => {
-              const done = c.topics.filter((tp) => doneSet.has(tp.key)).length;
-              const pct = c.topics.length
-                ? Math.round((done / c.topics.length) * 100)
-                : 0;
+      {selectedSubject && !selectedChapter && (
+        <section aria-labelledby="fahrast-chapters" className="space-y-3">
+          <h2 id="fahrast-chapters" className="text-lg font-black tracking-tight sm:text-xl">{t.chapters}</h2>
+          <ul className="grid gap-2.5 sm:gap-3 md:grid-cols-2">
+            {selectedSubject.chapters.map(item => {
+              const stats = countsFor(item.topics);
               return (
-                <button
-                  key={c.key}
-                  onClick={() => setChapter(c.key)}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                  className="group text-left rounded-2xl border border-primary/30 bg-secondary/40 backdrop-blur p-5 hover:-translate-y-1 hover:border-primary transition-all animate-fade-up"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className={`text-lg font-semibold text-foreground ${useAr(subject, language) ? "text-right" : ""}`} dir={useAr(subject, language) ? "rtl" : undefined}>
-                      {useAr(subject, language) ? c.ar : c.en}
-                    </h3>
-                    <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  <div className="flex items-center justify-between mb-2 text-xs text-muted-foreground">
-                    <span>
-                      {done}/{c.topics.length} {t.done}
+                <li key={item.key} className="min-w-0">
+                  <button type="button" onClick={() => goTo(selectedSubject.subject, item.key)} className={`${tile} flex h-full w-full items-center gap-3`}>
+                    <span className={`${iconTile} bg-primary/10 text-primary`}><Layers aria-hidden="true" className="size-5" strokeWidth={1.8} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-base font-bold leading-snug [overflow-wrap:anywhere]"><bdi>{item[contentLanguage]}</bdi></span>
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {userId && !loading ? countsLabel(stats) : ar ? `${format.format(stats.total)} موضوع` : `${format.format(stats.total)} topics`}
+                      </span>
+                      {userId && !loading && <span className="mt-2 block max-w-56"><Meter counts={stats} /></span>}
                     </span>
-                    <span className="text-primary font-semibold text-sm">{pct}%</span>
-                  </div>
-                  <Progress value={pct} className="h-2" />
-                </button>
+                    <Forward aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                  </button>
+                </li>
               );
             })}
-          </div>
-        )}
+          </ul>
+        </section>
+      )}
 
-        {subject && chapter && chapData && (
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-primary/30 bg-secondary/40 p-4">
-              <h2 className="font-bold">{language === "ar" ? "مستواك حسب موضوع الأسئلة" : "Your question practice by topic"}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{language === "ar" ? "إكمال المهمة منفصل عن تقييم إجاباتك. نتائج البطاقات والوزاريات تعتمد على تقييمك لنفسك." : "Mission completion is separate from answer results. Flashcard and ministerial results are self-assessed."}</p>
-              {practiceByCategory.size === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">{language === "ar" ? "جاوب على أسئلة البنك أو الوزاريات أو راجع البطاقات حتى يظهر تقدمك هنا." : "Answer bank or ministerial questions, or review flashcards to see progress here."}</p>
-              ) : (
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      {selectedSubject && selectedChapter && (
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+          <section aria-labelledby="fahrast-topics" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <header className="flex flex-wrap items-center gap-2 px-4 py-3.5 sm:px-5">
+              <ClipboardList aria-hidden="true" className="size-5 shrink-0 text-primary" />
+              <h2 id="fahrast-topics" className="min-w-0 flex-1 text-lg font-black leading-snug">{t.topics}</h2>
+            </header>
+            <ul className="divide-y divide-border border-t border-border">
+              {selectedChapter.topics.map(topic => {
+                const done = rowByKey.get(topic.key)?.completed ?? false;
+                return (
+                  <li key={topic.key}>
+                    <button type="button" aria-pressed={done} disabled={loading} onClick={() => void toggle(topic.key, selectedSubject.subject)}
+                      className={`flex min-h-[3.25rem] w-full items-center gap-3 px-4 py-2.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-5 ${done ? "bg-primary/[.05] hover:bg-primary/10" : "hover:bg-muted/60"}`}>
+                      <span aria-hidden="true" className={`grid size-5 shrink-0 place-items-center rounded-md border ${done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50 bg-background"}`}>
+                        {done && <Check className="size-3.5" strokeWidth={2.5} />}
+                      </span>
+                      <bdi className="min-w-0 text-sm font-semibold leading-relaxed [overflow-wrap:anywhere] sm:text-base">{topic[contentLanguage]}</bdi>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+          <aside aria-labelledby="fahrast-practice" className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <h2 id="fahrast-practice" className="flex items-center gap-2 text-base font-black">
+              <ArrowUpRight aria-hidden="true" className="size-5 shrink-0 text-primary" />{t.practice}
+            </h2>
+            {practiceByCategory.size === 0 ? (
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.practiceEmpty}</p>
+            ) : (
+              <>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{t.practiceDetails}</p>
+                <ul aria-label={t.misc} className="mt-3 divide-y divide-border">
                   {[...practiceByCategory].map(([key, attempts]) => {
                     const summary = topicSummary(attempts);
-                    const labels = language === "ar"
-                      ? { starting: "بدأت", strong: "قوي", improving: "يتحسن", practice: "يحتاج تدريب" }
-                      : { starting: "Getting started", strong: "Strong", improving: "Improving", practice: "Needs practice" };
                     return (
-                      <div key={key} className="rounded-xl border border-border bg-background/70 p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-semibold">{categoryLabel(key, language)}</span>
-                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{labels[summary.state]}</span>
+                      <li key={key} className="py-2.5 first:pt-0 last:pb-0">
+                        <div className="flex flex-wrap items-start justify-between gap-1.5">
+                          <bdi className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere]">{categoryLabel(key, language)}</bdi>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t.states[summary.state]}</span>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{language === "ar" ? `${summary.count} أسئلة مختلفة · ${summary.objectiveCount} مصححة تلقائياً` : `${summary.count} distinct questions · ${summary.objectiveCount} automatically graded`}</p>
-                      </div>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{ar
+                          ? `${format.format(summary.count)} أسئلة مختلفة · ${format.format(summary.objectiveCount)} مصحّحة تلقائياً`
+                          : `${format.format(summary.count)} distinct questions · ${format.format(summary.objectiveCount)} automatically graded`}</p>
+                      </li>
                     );
                   })}
-                </div>
-              )}
-            </div>
-            {chapData.topics.map((tp, i) => {
-              const done = doneSet.has(tp.key);
-              return (
-                <button
-                  key={tp.key}
-                  onClick={() =>
-                    toggle(tp.key, subject, useAr(subject, language) ? tp.ar : tp.en)
-                  }
-                  style={{ animationDelay: `${i * 30}ms` }}
-                  className={`w-full flex items-center gap-4 rounded-2xl border p-4 backdrop-blur transition-all animate-fade-up text-left ${
-                    done
-                      ? "border-primary/60 bg-primary/10"
-                      : "border-white/10 bg-secondary/40 hover:border-primary/50"
-                  }`}
-                >
-                  <span
-                    className={`w-6 h-6 rounded-md flex items-center justify-center border ${
-                      done
-                        ? "bg-primary border-primary"
-                        : "border-muted-foreground/40"
-                    }`}
-                  >
-                    {done && <Check className="w-4 h-4 text-primary-foreground" />}
-                  </span>
-                  <span
-                    dir={useAr(subject, language) ? "rtl" : undefined}
-                    className={`flex-1 text-sm md:text-base ${useAr(subject, language) ? "text-right" : ""} ${
-                      done ? "text-muted-foreground line-through" : "text-foreground"
-                    }`}
-                  >
-                    {useAr(subject, language) ? tp.ar : tp.en}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                </ul>
+              </>
+            )}
+          </aside>
+        </div>
+      )}
     </main>
   );
 };
