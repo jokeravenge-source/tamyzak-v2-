@@ -357,7 +357,8 @@ const QURAN_TRACK_LABELS = {
   ar: ["سورة يس"],
   en: ["Surah Yasin"],
 } as const;
-const MAX_SECONDS = 48 * 3600;
+const STUDY_HOUR_SECONDS = 60 * 60;
+const MAX_SECONDS = 48 * STUDY_HOUR_SECONDS;
 const PERSIST_KEY = STUDY_SESSION_STORAGE_KEY;
 const POMODORO_KEY = "pomodoro_settings_v1";
 const DEFAULT_WORK_MIN = 45;
@@ -565,14 +566,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   }, []);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  // Every 2 hours of running study time, ask whether the student is still studying.
-  const [checkInOpen, setCheckInOpen] = useState(false);
-  const nextCheckInRef = useRef(0);
   const [editingSaveTime, setEditingSaveTime] = useState(false);
   const [minutesToRemove, setMinutesToRemove] = useState("");
   const wasRunningBeforeSaveRef = useRef(false);
-  const [hourPauseOpen, setHourPauseOpen] = useState(false);
-  const lastHourPromptRef = useRef(0);
+  const [lastCheckInSeconds, setLastCheckInSeconds] = useState(0);
+  const lastCheckInSecondsRef = useRef(0);
+  useEffect(() => { lastCheckInSecondsRef.current = lastCheckInSeconds; }, [lastCheckInSeconds]);
+  const secondsSinceCheckIn = Math.max(0, seconds - lastCheckInSeconds);
+  const hourPauseDue = started && seconds < MAX_SECONDS && secondsSinceCheckIn >= STUDY_HOUR_SECONDS;
   const [pomodoroWorkMin, setPomodoroWorkMin] = useState(DEFAULT_WORK_MIN);
   const [pomodoroRestMin, setPomodoroRestMin] = useState(DEFAULT_REST_MIN);
   const [pomodoroSettingsLoaded, setPomodoroSettingsLoaded] = useState(false);
@@ -646,7 +647,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   // A completed focus block automatically pauses study time and starts rest.
   useEffect(() => {
-    if (!pomodoro || !started || phase !== "work") return;
+    if (!pomodoro || !started || phase !== "work" || hourPauseDue) return;
     const remaining = workSecondsRemaining(seconds, phaseStartRef.current, pomodoroWorkMin);
     if (remaining > 0 || lastPhaseSwitchRef.current === phaseStartRef.current) return;
     lastPhaseSwitchRef.current = phaseStartRef.current;
@@ -658,19 +659,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     pauseStudyClock();
     toast.success(L.workDone);
     playAlarm("work");
-  }, [seconds, pomodoro, started, phase, pomodoroWorkMin, pomodoroRestMin, L.workDone, pauseStudyClock]);
+  }, [seconds, pomodoro, started, phase, hourPauseDue, pomodoroWorkMin, pomodoroRestMin, L.workDone, pauseStudyClock]);
 
   // Force a check-in pause after every full hour of studying.
   useEffect(() => {
-    if (!started || !running || pomodoro) return;
-    const hourMark = Math.floor(seconds / 3600);
-    if (hourMark > 0 && hourMark > lastHourPromptRef.current) {
-      lastHourPromptRef.current = hourMark;
-      pauseStudyClock();
-      setHourPauseOpen(true);
-      try { playAlarm("hour"); } catch { /* noop */ }
-    }
-  }, [seconds, started, running, pomodoro, pauseStudyClock]);
+    if (!hourPauseDue) return;
+    pauseStudyClock();
+    playAlarm("hour");
+  }, [hourPauseDue, pauseStudyClock]);
 
   // Rest countdown is deadline-based, so throttled/background tabs do not add delay.
   useEffect(() => {
@@ -796,6 +792,11 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (!s?.subject) return;
       const now = Date.now();
       const base = Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(s.accumulated)) || 0));
+      const savedCheckIn = s.lastCheckInSeconds;
+      // Older sessions only saved the elapsed time at their last pause or resume.
+      setLastCheckInSeconds(Number.isInteger(savedCheckIn) && savedCheckIn >= 0 && savedCheckIn <= MAX_SECONDS
+        ? savedCheckIn
+        : base - base % STUDY_HOUR_SECONDS);
       const savedPreset = matchingPomodoroPreset(
         Number(s.pomodoroWorkMin ?? DEFAULT_WORK_MIN),
         Number(s.pomodoroRestMin ?? DEFAULT_REST_MIN),
@@ -876,6 +877,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       running,
       startedAt: running ? resumeAtRef.current || Date.now() : null,
       accumulated: running ? accumulatedRef.current : seconds,
+      lastCheckInSeconds,
       focusPeriods: focusPeriodsRef.current,
       pomodoro,
       pomodoroWorkMin,
@@ -886,7 +888,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     };
     localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
     notifyStudyTimerChanged();
-  }, [started, subject, mission, completed, running, seconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
+  }, [started, subject, mission, completed, running, seconds, lastCheckInSeconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
 
   // Flush the latest session snapshot whenever the page is about to be hidden
   // or unloaded (tab close, route change, mobile background). Using refs keeps
@@ -903,6 +905,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         running: isRunning,
         startedAt: isRunning ? (resumeAtRef.current || Date.now()) : null,
         accumulated: isRunning ? accumulatedRef.current : secondsRef.current,
+        lastCheckInSeconds: lastCheckInSecondsRef.current,
         focusPeriods: focusPeriodsRef.current,
         pomodoro: pomodoroRef.current,
         pomodoroWorkMin: pomodoroWorkMinRef.current,
@@ -981,25 +984,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [running, sampleStudyClock]);
 
-  useEffect(() => {
-    const CHECK_EVERY = 2 * 60 * 60;
-    if (!running) return;
-    if (nextCheckInRef.current <= seconds - CHECK_EVERY || nextCheckInRef.current === 0) {
-      nextCheckInRef.current = (Math.floor(seconds / CHECK_EVERY) + 1) * CHECK_EVERY;
-    }
-    if (seconds >= nextCheckInRef.current && !checkInOpen) {
-      nextCheckInRef.current = (Math.floor(seconds / CHECK_EVERY) + 1) * CHECK_EVERY;
-      setCheckInOpen(true);
-    }
-  }, [seconds, running, checkInOpen]);
-
-  // No answer within 5 minutes means the student left: pause the timer.
-  useEffect(() => {
-    if (!checkInOpen) return;
-    const id = window.setTimeout(() => { pauseStudyClock(); setCheckInOpen(false); }, 5 * 60 * 1000);
-    return () => clearTimeout(id);
-  }, [checkInOpen, pauseStudyClock]);
-
   // Recompute elapsed when tab regains focus
   useEffect(() => {
     const onVis = () => {
@@ -1052,6 +1036,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
     }
     focusPeriodsRef.current = [];
+    setLastCheckInSeconds(0);
     startedRef.current = true;
     setStarted(true);
     beginStudyClock();
@@ -1061,8 +1046,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     restEndsAtRef.current = 0;
     setRestRemaining(0);
     lastPhaseSwitchRef.current = -1;
-    lastHourPromptRef.current = 0;
-    setHourPauseOpen(false);
   };
 
   const resumeSession = () => {
@@ -1101,13 +1084,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   };
 
   const continueAfterHour = () => {
-    // Mark the current hour as acknowledged before resuming so the check-in
-    // effect cannot reopen the dialog on the same timer value.
-    lastHourPromptRef.current = Math.max(
-      lastHourPromptRef.current,
-      Math.floor(secondsRef.current / 3600),
-    );
-    setHourPauseOpen(false);
+    setLastCheckInSeconds(secondsRef.current);
     resumeSession();
   };
 
@@ -1129,7 +1106,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     // Refresh an expiring token first, otherwise the saved session is rejected.
     await ensureFreshSession().catch(() => false);
     // 5 points per full studied hour.
-    const points = Math.floor(durationSeconds / 3600) * 5;
+    const points = Math.floor(durationSeconds / STUDY_HOUR_SECONDS) * 5;
     const session = {
       id: crypto.randomUUID(),
       user_id: userId, subject, mission: mission.trim(), duration_seconds: durationSeconds,
@@ -1227,6 +1204,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
         running: false,
         startedAt: null,
         accumulated: adjustedSeconds,
+        lastCheckInSeconds: lastCheckInSecondsRef.current,
         focusPeriods: focusPeriodsRef.current,
         pomodoro: pomodoroRef.current,
         pomodoroWorkMin: pomodoroWorkMinRef.current,
@@ -1264,8 +1242,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     localStorage.removeItem(PERSIST_KEY);
     notifyStudyTimerChanged();
     setDiscardOpen(false);
-    lastHourPromptRef.current = 0;
-    setHourPauseOpen(false);
     toast.success(L.discarded);
   };
 
@@ -1465,7 +1441,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const subj = SUBJECTS.find((s) => s.code === subject) ?? { code: "general", ar: "الدراسة", en: "Study", Icon: BookOpen };
   const ActiveSubjectIcon = subj.Icon;
   const activeTint = SUBJECT_TINTS[subj.code] ?? { card: "border-primary/25 bg-primary/10", icon: "bg-primary/15 text-primary" };
-  const nextHourProgress = ((seconds % 3600) / 3600) * 100;
+  const nextHourProgress = Math.min(100, (secondsSinceCheckIn / STUDY_HOUR_SECONDS) * 100);
   const focusRemaining = workSecondsRemaining(seconds, phaseStartRef.current, pomodoroWorkMin);
   const pomodoroRemaining = phase === "rest" ? restRemaining : focusRemaining;
   const pomodoroPhaseSeconds = (phase === "rest" ? pomodoroRestMin : pomodoroWorkMin) * 60;
@@ -1674,20 +1650,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           )}
         </section>
       </div>
-      <AlertDialog open={checkInOpen}>
-        <AlertDialogContent dir={dir}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-center text-xl">{language === "ar" ? "هل ما زلت تدرس؟ 📚" : "Are you still studying? 📚"}</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              {language === "ar" ? "مرّت ساعتان على دراستك. إذا لم تجب خلال 5 دقائق سيتوقف المؤقت تلقائياً." : "You've studied for 2 more hours. If you don't answer within 5 minutes, the timer pauses automatically."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:justify-center">
-            <AlertDialogCancel onClick={() => { pauseStudyClock(); setCheckInOpen(false); }}>{language === "ar" ? "لا، أوقف المؤقت" : "No, pause timer"}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setCheckInOpen(false)}>{language === "ar" ? "نعم، ما زلت أدرس" : "Yes, still studying"}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <AlertDialog open={saveOpen} onOpenChange={(open) => { if (!open) cancelSave(); }}>
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
@@ -1758,7 +1720,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={hourPauseOpen} onOpenChange={(o) => { if (!o) return; setHourPauseOpen(o); }}>
+      <AlertDialog open={hourPauseDue}>
         <AlertDialogContent dir={dir}>
           <AlertDialogHeader>
             <AlertDialogTitle>{L.hourTitle}</AlertDialogTitle>

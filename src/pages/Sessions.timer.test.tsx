@@ -65,3 +65,83 @@ describe("the session's one visible timer", () => {
     expect(screen.getByTestId("subject-room-clock").textContent).toBe("2980");
   });
 });
+
+describe("the hourly study check-in", () => {
+  const title = "One hour completed!";
+  const storedSession = () => JSON.parse(localStorage.getItem(STUDY_SESSION_STORAGE_KEY)!);
+
+  async function openStudyRooms() {
+    const view = render(<Sessions language="en" onBack={vi.fn()} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByRole("button", { name: /Join study rooms/i }));
+    return view;
+  }
+
+  it("keeps a pending check-in across reloads and waits for the next full hour after continuing", async () => {
+    localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({
+      subject: "chemistry", started: true, running: true,
+      accumulated: 3598, startedAt: Date.now(), pomodoro: false,
+    }));
+    const initial = await openStudyRooms();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByRole("alertdialog", { name: title })).toBeTruthy();
+    expect(storedSession()).toMatchObject({ running: false, accumulated: 3600, lastCheckInSeconds: 0 });
+
+    initial.unmount();
+    const pending = await openStudyRooms();
+    act(() => vi.advanceTimersByTime(5 * 60_000));
+    expect(storedSession()).toMatchObject({ running: false, accumulated: 3600 });
+    fireEvent.click(screen.getByRole("button", { name: "Continue session" }));
+    expect(storedSession()).toMatchObject({ running: true, lastCheckInSeconds: 3600 });
+    pending.unmount();
+
+    await openStudyRooms();
+    act(() => vi.advanceTimersByTime(5 * 60_000));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByRole("timer").textContent).toBe("01:05:00");
+
+    act(() => {
+      vi.setSystemTime(Date.now() + 55 * 60_000 - 2000);
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByRole("timer").textContent).toBe("01:59:59");
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getAllByRole("alertdialog")).toHaveLength(1);
+    expect(screen.getByRole("alertdialog", { name: title })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Continue session" }));
+    act(() => vi.advanceTimersByTime(5 * 60_000));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByRole("timer").textContent).toBe("02:05:00");
+  });
+
+  it("gives the student a full hour after a delayed check-in", async () => {
+    localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({
+      subject: "chemistry", started: true, running: true,
+      accumulated: 0, startedAt: Date.now(), pomodoro: false, lastCheckInSeconds: 0,
+    }));
+    vi.setSystemTime(Date.now() + 115 * 60_000);
+    await openStudyRooms();
+    expect(storedSession()).toMatchObject({ running: false, accumulated: 6900 });
+    fireEvent.click(screen.getByRole("button", { name: "Continue session" }));
+    act(() => vi.advanceTimersByTime(5 * 60_000));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByRole("timer").textContent).toBe("02:00:00");
+  });
+
+  it("starts a Pomodoro break after the check-in when both fall at the same hour", async () => {
+    localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({
+      ...storedSession(), accumulated: 3599, startedAt: Date.now(),
+      pomodoroWorkMin: 60, pomodoroRestMin: 15,
+    }));
+    await openStudyRooms();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByRole("alertdialog", { name: title })).toBeTruthy();
+    expect(storedSession()).toMatchObject({ running: false, accumulated: 3600, phase: "work" });
+    fireEvent.click(screen.getByRole("button", { name: "Continue session" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByRole("timer").textContent).toBe("00:15:00");
+    expect(storedSession()).toMatchObject({ running: false, accumulated: 3600, phase: "rest", lastCheckInSeconds: 3600 });
+  });
+});
