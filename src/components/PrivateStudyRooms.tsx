@@ -5,11 +5,13 @@ import { ensureFreshSession } from "@/lib/ensureSession";
 import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
 import { displayedStudyTimerSeconds, formatStudyTimer as fmtClock } from "@/lib/studyTimerDisplay";
 import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
+import { useStudyRoomActivity } from "@/hooks/useStudyRoomActivity";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
+import StudyRoomActivity, { EncourageStudyRoomMember } from "./StudyRoomActivity";
 import { Button } from "@/components/ui/button";
 import { PINNED_STUDY_ROOMS } from "@/lib/pinnedStudyRooms";
 import { clearSessionRoomLink, hasSessionRoomLink, SESSION_ROOM_CODE } from "@/lib/sessionRoyale";
@@ -111,6 +113,7 @@ export default function PrivateStudyRooms({
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [openProfile, setOpenProfile] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const roomActivity = useStudyRoomActivity(room?.id, userId);
 
   const L = ar
     ? {
@@ -689,6 +692,8 @@ export default function PrivateStudyRooms({
         <Link2 className="w-3.5 h-3.5" /> {L.share}
       </button>
 
+      {userId && <StudyRoomActivity key={room.id} room={room.id} user={userId} members={memberIds} language={language} activity={roomActivity} />}
+
       {children && <div className="mb-5">{children}</div>}
 
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
@@ -767,6 +772,9 @@ export default function PrivateStudyRooms({
                       : remoteSeconds !== null ? fmtClock(remoteSeconds) : "--:--"}
                   </span>
                 </button>
+                {!mine && roomActivity.data && !roomActivity.failed && (
+                  <EncourageStudyRoomMember room={room.id} user={m.user_id} name={m.display_name} language={language} />
+                )}
                 {isOwner && !mine && (
                   <div className="mt-1 flex flex-col items-center gap-0.5">
                     <button onClick={() => transferOwnership(m)} className="text-[10px] text-primary/90 hover:text-primary flex items-center gap-0.5">
