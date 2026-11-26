@@ -8,7 +8,7 @@ import {
   type StudyTimerDisplay,
 } from "@/lib/studyTimerDisplay";
 
-const CHANGED_EVENT = "study-session-timer-changed";
+export const STUDY_TIMER_CHANGED = "study-session-timer-changed";
 const HEARTBEAT_MS = 10_000;
 const listeners = new Set<() => void>();
 const emptyTimers: Readonly<Record<string, StudyTimerDisplay>> = {};
@@ -20,7 +20,7 @@ let localTimer: StudyTimerDisplay | null = null;
 let lastTracked: StudyTimerDisplay | null = null;
 
 export function notifyStudyTimerChanged() {
-  window.dispatchEvent(new Event(CHANGED_EVENT));
+  window.dispatchEvent(new Event(STUDY_TIMER_CHANGED));
 }
 
 function notifyViewers() {
@@ -127,7 +127,7 @@ export function StudyTimerPresenceSync() {
     void supabase.auth.getSession().then(({ data }) => setOwner(data.session?.user.id ?? null));
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setOwner(session?.user.id ?? null));
     const heartbeat = window.setInterval(refreshLocalTimer, HEARTBEAT_MS);
-    window.addEventListener(CHANGED_EVENT, refreshLocalTimer);
+    window.addEventListener(STUDY_TIMER_CHANGED, refreshLocalTimer);
     window.addEventListener("storage", refreshLocalTimer);
     window.addEventListener("focus", refreshLocalTimer);
     document.addEventListener("visibilitychange", refreshLocalTimer);
@@ -135,7 +135,7 @@ export function StudyTimerPresenceSync() {
       mounted = false;
       authListener.subscription.unsubscribe();
       window.clearInterval(heartbeat);
-      window.removeEventListener(CHANGED_EVENT, refreshLocalTimer);
+      window.removeEventListener(STUDY_TIMER_CHANGED, refreshLocalTimer);
       window.removeEventListener("storage", refreshLocalTimer);
       window.removeEventListener("focus", refreshLocalTimer);
       document.removeEventListener("visibilitychange", refreshLocalTimer);

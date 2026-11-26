@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { getSignupSource } from "@/lib/analytics";
+import { notifyProfileCharacterChanged } from "@/lib/profileCharacter";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -220,6 +221,7 @@ const AccountCenter = ({
       }
       setGender(g);
       setTraits(next);
+      notifyProfileCharacterChanged(u.user.id);
     } catch {
       toast.error(language === "ar" ? "تعذّر حفظ الشخصية. جرّب مرة ثانية." : "Could not save your character. Please try again.");
     }
@@ -236,6 +238,7 @@ const AccountCenter = ({
       if (!userId) return;
       const { error } = await supabase.from("profiles").update({ character: next as any }).eq("user_id", userId);
       if (error) throw error;
+      notifyProfileCharacterChanged(userId);
     } catch {
       setTraits(current => current === next ? previous : current);
       toast.error(language === "ar" ? "تعذّر حفظ الشخصية. جرّب مرة ثانية." : "Could not save your character. Please try again.");
@@ -250,6 +253,7 @@ const AccountCenter = ({
     if (data?.user_id !== userId) throw new Error("Profile was not saved");
     setGender("female");
     setTraits(next);
+    notifyProfileCharacterChanged(userId);
   };
 
   // Auto-give Premium users the crown by default — but only once, so if they

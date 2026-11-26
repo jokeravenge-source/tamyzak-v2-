@@ -70,7 +70,7 @@ const PhysicsSchemes = lazy(() => import("./pages/PhysicsSchemes"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const PointsAwardOverlay = lazy(() => import("./components/PointsAwardOverlay"));
 const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCelebration"));
-const UsageIntroGate = lazy(() => import("./components/UsageIntroGate"));
+const StudentCharacter = lazy(() => import("./components/StudentCharacter"));
 
 const MutamayizChat = lazy(() => import("./pages/MutamayizChat"));
 
@@ -1040,9 +1040,6 @@ const StudentApp = () => {
           language={language ?? "en"}
           onOpenFeature={(m) => chooseMenu(m as MenuChoice)}
         />
-        {authed && language && authRole !== "admin" && (
-          <UsageIntroGate language={language} onNeedHelp={() => setMutamayizOpen(true)} />
-        )}
       {mutamayizOpen && language && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-background">
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /></div>}>
@@ -1083,6 +1080,13 @@ const StudentApp = () => {
       )}
       </>}
       </Suspense>
+      {authed && language && authRole === "student" && userId && (
+        <Suspense fallback={null}>
+          <StudentCharacter key={userId} userId={userId} language={language}
+            visible={!mutamayizOpen && !["studyRace", "mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "")}
+            onNeedHelp={() => setMutamayizOpen(true)} />
+        </Suspense>
+      )}
       {authed && <a href="#tmz-current-screen" className="sr-only fixed start-4 top-4 z-[200] rounded-lg bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only">{language === "ar" ? "انتقل للمحتوى" : "Skip to content"}</a>}
       <PageTransition
         routeKey={`${authRole ?? "norole"}|${routeStage}|${routeLanguage}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}

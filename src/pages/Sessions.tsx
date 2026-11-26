@@ -632,6 +632,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const missionRef = useRef("");
   const completedRef = useRef(false);
   const startedRef = useRef(false);
+  const restoredTimerUserId = useRef<string | null>();
   useEffect(() => { subjectRef.current = subject; }, [subject]);
   useEffect(() => { missionRef.current = mission; }, [mission]);
   useEffect(() => { completedRef.current = completed; }, [completed]);
@@ -790,6 +791,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (!raw) return;
       const s = JSON.parse(raw);
       if (!s?.subject) return;
+      restoredTimerUserId.current = typeof s.userId === "string" ? s.userId : null;
       const now = Date.now();
       const base = Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(s.accumulated)) || 0));
       const savedCheckIn = s.lastCheckInSeconds;
@@ -873,6 +875,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     // tabs (where setInterval is throttled and `seconds` goes stale) still
     // restore the correct elapsed time on reopen.
     const payload = {
+      userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
       subject, mission, completed, started: true,
       running,
       startedAt: running ? resumeAtRef.current || Date.now() : null,
@@ -888,7 +891,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     };
     localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
     notifyStudyTimerChanged();
-  }, [started, subject, mission, completed, running, seconds, lastCheckInSeconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
+  }, [userId, started, subject, mission, completed, running, seconds, lastCheckInSeconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
 
   // Flush the latest session snapshot whenever the page is about to be hidden
   // or unloaded (tab close, route change, mobile background). Using refs keeps
@@ -898,6 +901,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (!startedRef.current || !subjectRef.current) return;
       const isRunning = runningRef.current;
       const payload = {
+        userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
         subject: subjectRef.current,
         mission: missionRef.current,
         completed: completedRef.current,
@@ -929,7 +933,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", onHide);
     };
-  }, []);
+  }, [userId]);
 
   // Persist pomodoro settings
   useEffect(() => {
@@ -1031,6 +1035,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   const startSession = () => {
     void unlockTimerAudio();
+    restoredTimerUserId.current = undefined;
     if (pomodoro) {
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
@@ -1197,6 +1202,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     resumeAtRef.current = 0;
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
         subject: subjectRef.current,
         mission: missionRef.current,
         completed: completedRef.current,
