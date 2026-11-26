@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound.tsx";
 import { useState, useCallback, Suspense } from "react";
 
 import { AppLanguage, LanguageGate, LANGUAGE_STORAGE_KEY } from "./components/LanguageGate";
+import { markUsageIntroAnswered } from "./lib/usageIntro";
 import Subjects, {
   BIOLOGY_FLASHCARD_TEACHER_STORAGE_KEY,
   CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY,
@@ -717,8 +718,15 @@ const StudentApp = () => {
         return l as AppLanguage;
       }
     }
-    return localStorage.getItem(LANGUAGE_STORAGE_KEY) as AppLanguage | null;
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return saved === "ar" || saved === "en" ? saved : null;
   });
+  const [changingLanguage, setChangingLanguage] = useState(false);
+  useEffect(() => {
+    if (!language) return;
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+  }, [language]);
   const [subject, setSubject] = useState<AppSubject | null>(() => {
     if (typeof window === "undefined") return null;
     if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
@@ -878,7 +886,13 @@ const StudentApp = () => {
     setSubject(null);
     setMenuChoice(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
+    setChangingLanguage(true);
     setLanguage(null);
+  };
+  const selectLanguage = (next: AppLanguage) => {
+    markUsageIntroAnswered();
+    setLanguage(next);
+    setChangingLanguage(false);
   };
   const resetSubject = () => {
     setSubject(null);
@@ -1005,6 +1019,12 @@ const StudentApp = () => {
     exitSpecialRoute();
   };
 
+  const canShowWelcomeBeforeAuth = !language && authRole === "student" &&
+    !isNadiaMinisterialRoute && !window.location.pathname.startsWith("/flashcards");
+  const showAuthLoader = authLoading && !canShowWelcomeBeforeAuth;
+  const routeStage = canShowWelcomeBeforeAuth ? "welcome" : showAuthLoader ? "loading" : authed ? "in" : "out";
+  const routeLanguage = !authed && language ? "authlang" : language ?? "nolang";
+
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -1065,11 +1085,11 @@ const StudentApp = () => {
       </Suspense>
       {authed && <a href="#tmz-current-screen" className="sr-only fixed start-4 top-4 z-[200] rounded-lg bg-primary px-4 py-3 text-primary-foreground focus:not-sr-only">{language === "ar" ? "انتقل للمحتوى" : "Skip to content"}</a>}
       <PageTransition
-        routeKey={`${authRole ?? "norole"}|${authed ? "in" : "out"}|${language ?? "nolang"}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
+        routeKey={`${authRole ?? "norole"}|${routeStage}|${routeLanguage}|${menuChoice ?? "basics"}|${subject ?? "nosub"}|${englishCategory ?? "noec"}`}
       >
       {authRole === "admin" && (window.location.pathname.replace(/\/+$/, "") === `${ADMIN_PANEL_PATH}/french-flashcards` || new URLSearchParams(window.location.search).get("section") === "french-flashcards") ? (
         <FrenchTeacherDashboard />
-      ) : authLoading ? (
+      ) : showAuthLoader ? (
         <main className="min-h-screen flex items-center justify-center">
           <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
         </main>
@@ -1142,10 +1162,10 @@ const StudentApp = () => {
             />
           </div>
         </>
-      ) : !authed ? (
-        <Auth onAuthed={() => setAuthed(true)} />
       ) : !language ? (
-        <LanguageGate onSelect={setLanguage} />
+        <LanguageGate onSelect={selectLanguage} showWelcome={!changingLanguage} />
+      ) : !authed ? (
+        <Auth onAuthed={() => setAuthed(true)} onLanguageChange={setLanguage} />
       ) : ["mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "") ? (
         <div className="h-[calc(100dvh-var(--nav-safe,7rem))]"><MutamayizChat embedded language={language} onBack={resetMenu} onOpenTool={(key) => { if (isGuideToolKey(key)) chooseMenu(key as MenuChoice); }} /></div>
       ) : isPremiumTool(menuChoice) && (subscriptionLoading || !isPremium) ? (

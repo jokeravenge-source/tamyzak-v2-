@@ -21,6 +21,7 @@ type AuthProps = {
   onAuthed: () => void;
   onGoAdmin?: () => void;
   onGuest?: () => void;
+  onLanguageChange?: (language: AppLanguage) => void;
   /** Which tab to show first when the page opens. Defaults to "signin". */
   initialMode?: AuthMode;
 };
@@ -71,13 +72,14 @@ const getReturnUrl = () => {
   return RETURN_PATH_PATTERN.test(pathname) ? `${origin}${pathname}${search}` : origin;
 };
 
-export const Auth = ({ onAuthed, onGuest, initialMode = "signin" }: AuthProps) => {
+export const Auth = ({ onAuthed, onGuest, onLanguageChange, initialMode = "signin" }: AuthProps) => {
   const [language, setLanguage] = useState<AppLanguage>(() => localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "ar");
   const text = AUTH_COPY[language];
   const [authError, setAuthError] = useState("");
   const changeLanguage = (next: AppLanguage) => {
     setLanguage(next);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+    onLanguageChange?.(next);
   };
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
