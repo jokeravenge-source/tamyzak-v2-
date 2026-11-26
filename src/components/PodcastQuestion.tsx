@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePodcastSpeech } from "@/hooks/usePodcastSpeech";
 import PodcastSpeakingText from "./PodcastSpeakingText";
+import MutamayizMascot from "./MutamayizMascot";
 
 export default function PodcastQuestion({
   segmentId,
@@ -102,9 +103,12 @@ export default function PodcastQuestion({
       dir="rtl"
     >
       <div className="mx-auto max-w-2xl space-y-5">
-        <h2 id="podcast-question-title" className="text-2xl font-black">
-          اسأل المدرّس عن هذا الجزء
-        </h2>
+        <div className="flex items-center gap-4">
+          <MutamayizMascot alt="متميّز" speaking={speech.playing} className="size-20" />
+          <h2 id="podcast-question-title" className="text-2xl font-black">
+            اسأل المدرّس عن هذا الجزء
+          </h2>
+        </div>
         <p>الشرح متوقف. ترجع وتكمّل الصوت من نفس المكان.</p>
         <button className={button} onClick={onClose}>
           رجوع للشرح

@@ -1,8 +1,9 @@
 import ScienceEvidenceCard from "@/components/ScienceEvidenceCard";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowLeft, ArrowUpRight, Bot, Check, Loader2, Paperclip, Plus, Presentation, Send, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Loader2, Paperclip, Plus, Presentation, Send, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
+import MutamayizMascot from "@/components/MutamayizMascot";
 import { attachmentForBoard, readAssistantFile } from "@/lib/mutamayizFile";
 import { readableMath } from "@/lib/readableMath";
 import { getISOWeek, pullTodos, pushTodos, type SyncedTodo } from "@/lib/todosSync";
@@ -200,7 +201,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
   return <main dir={ar ? "rtl" : "ltr"} className={`mx-auto flex w-full min-w-0 max-w-3xl flex-col bg-background text-foreground ${embedded ? "h-full min-h-0" : "h-[100dvh] min-h-0"}`}>
     <header className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-4 sm:px-6">
       {onBack && <button onClick={onBack} aria-label={t.back} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border hover:bg-secondary"><ArrowLeft className={`size-5 ${ar ? "rotate-180" : ""}`} /></button>}
-      <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/15"><Bot className="size-6" /></div>
+      <MutamayizMascot className="size-12 drop-shadow-[0_3px_8px_rgba(34,147,250,.28)]" />
       <div className="min-w-0 flex-1"><h1 className="text-xl font-black">{MUTAMAYIZ_NAME}</h1><p className="mt-1 text-xs leading-5 text-muted-foreground">{t.subtitle}</p></div>
       <button disabled={!active || busy || fileBusy || approving} onClick={() => { if (owner) { newAssistantConversation(owner); setInput(""); setNotice(""); } }} aria-label={t.fresh} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border hover:bg-secondary disabled:opacity-40"><Plus className="size-5" /></button>
     </header>

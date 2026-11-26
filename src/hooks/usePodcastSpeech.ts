@@ -30,6 +30,7 @@ export function usePodcastSpeech() {
   const startRef = useRef<(() => Promise<void>) | null>(null);
   const [active, setActive] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [phrase, setPhrase] = useState("");
   const [offset, setOffset] = useState(0);
 
@@ -39,6 +40,9 @@ export function usePodcastSpeech() {
     if (audio) {
       audio.onended = null;
       audio.onerror = null;
+      audio.onplaying = null;
+      audio.onwaiting = null;
+      audio.onpause = null;
       audio.pause();
     }
     audioRef.current = null;
@@ -47,6 +51,7 @@ export function usePodcastSpeech() {
     startRef.current = null;
     setActive(false);
     setPaused(false);
+    setPlaying(false);
     setPhrase("");
   }, []);
 
@@ -54,6 +59,7 @@ export function usePodcastSpeech() {
     pausedRef.current = true;
     audioRef.current?.pause();
     setPaused(true);
+    setPlaying(false);
   }, []);
 
   const resume = useCallback(() => {
@@ -75,6 +81,12 @@ export function usePodcastSpeech() {
       audio.preload = "auto";
       audioRef.current = audio;
       setActive(true);
+      audio.onplaying = () => {
+        if (run === runRef.current && !pausedRef.current) setPlaying(true);
+      };
+      const silence = () => { if (run === runRef.current) setPlaying(false); };
+      audio.onwaiting = silence;
+      audio.onpause = silence;
       let index = 0;
       let started = false;
       let failed = false;
@@ -101,6 +113,7 @@ export function usePodcastSpeech() {
       };
       const next = async () => {
         if (run !== runRef.current) return;
+        setPlaying(false);
         readyRef.current = false;
         if (index >= phrases.length) {
           stop();
@@ -161,5 +174,5 @@ export function usePodcastSpeech() {
     },
     [stop],
   );
-  return { play, pause, resume, stop, active, paused, phrase, offset };
+  return { play, pause, resume, stop, active, paused, playing, phrase, offset };
 }

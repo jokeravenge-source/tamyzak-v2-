@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import PodcastTutor from "./PodcastTutor";
 const api = vi.hoisted(() => ({ invoke: vi.fn(), extract: vi.fn() }));
@@ -99,12 +99,20 @@ it("pauses narration for a spoken question answer and resumes at the original po
   fireEvent.click(
     (await screen.findByText("Interactive PDF")).closest("button")!,
   );
+  const mascot = (await screen.findByRole("img", { name: "متميّز" })).closest("picture")!;
+  expect(mascot.querySelector("source")).toBeNull();
   fireEvent.click(
     await screen.findByRole("button", { name: "تشغيل الشرح الصوتي" }),
   );
   await screen.findByRole("button", { name: "إيقاف الصوت مؤقتاً" });
   await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
   const narration = play.mock.instances[0] as unknown as HTMLMediaElement;
+  expect(mascot.querySelector("source")).toBeNull();
+  fireEvent.playing(narration);
+  expect(mascot.querySelector("source")).toHaveAttribute("srcset", expect.stringContaining("speaking.webp"));
+  fireEvent.waiting(narration);
+  expect(mascot.querySelector("source")).toBeNull();
+  fireEvent.playing(narration);
   narration.currentTime = 9;
   await waitFor(() =>
     expect(
@@ -112,6 +120,7 @@ it("pauses narration for a spoken question answer and resumes at the original po
     ).toHaveTextContent("شرح الجزء 1"),
   );
   fireEvent.click(screen.getByRole("button", { name: "عندي سؤال" }));
+  expect(mascot.querySelector("source")).toBeNull();
   fireEvent.change(screen.getByRole("textbox", { name: "سؤالك" }), {
     target: { value: "ممكن توضح الفكرة؟" },
   });
@@ -119,11 +128,16 @@ it("pauses narration for a spoken question answer and resumes at the original po
   await screen.findByText("نربط الفكرة بالمثال الموجود بالشرح");
   await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
   expect(play.mock.instances[1]).not.toBe(narration);
+  const answerMascot = within(screen.getByRole("dialog")).getByRole("img", { name: "متميّز" }).closest("picture")!;
+  fireEvent.playing(play.mock.instances[1] as unknown as HTMLMediaElement);
+  expect(answerMascot.querySelector("source")).toHaveAttribute("srcset", expect.stringContaining("speaking.webp"));
   fireEvent.click(screen.getByRole("button", { name: "رجوع للشرح" }));
   fireEvent.click(screen.getByRole("button", { name: "متابعة الصوت" }));
   await waitFor(() => expect(play).toHaveBeenCalledTimes(3));
   expect(play.mock.instances[2]).toBe(narration);
   expect(narration.currentTime).toBe(9);
+  fireEvent.playing(narration);
+  expect(mascot.querySelector("source")).toHaveAttribute("srcset", expect.stringContaining("speaking.webp"));
   expect(
     api.invoke.mock.calls.filter((call) => call[0] === "tts-speak"),
   ).toHaveLength(2);

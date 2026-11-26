@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 import {
   ArrowRight,
-  Check,
   ChevronLeft,
   CircleAlert,
   Crown,
@@ -10,18 +9,17 @@ import {
   History,
   Loader2,
   Pause,
-  PenLine,
   Play,
   Podcast,
   RotateCcw,
   Send,
   Instagram,
   Sparkles,
-  Volume2,
   FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
+import MutamayizMascot from "@/components/MutamayizMascot";
 import { supabase } from "@/integrations/supabase/client";
 import PodcastPractice from "@/components/PodcastPractice";
 import PodcastBreak from "@/components/PodcastBreak";
@@ -439,7 +437,7 @@ export default function PodcastTutor({
           <PodcastBreak plan={breakPlan} onContinue={() => setBreakPlan(null)} />
         ) : isComplete ? (
           <>
-            <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} onPlay={playStudyRecord} onStop={stopStudyRecord} />
+            <SummaryView session={session} segments={segments} recordPlaying={recordPlaying} tutorSpeaking={speech.playing} onPlay={playStudyRecord} onStop={stopStudyRecord} />
             <PodcastPractice key={session.id} sessionId={session.id} subject={session.subject} onSpeak={text => { stopStudyRecord(); speakArabic(text, "narration", () => setPhase("idle")); }} />
           </>
         ) : (
@@ -458,6 +456,7 @@ export default function PodcastTutor({
             spokenOffset={speech.offset}
             spokenArea={spokenArea}
             voicePaused={speech.active && speech.paused}
+            tutorSpeaking={speech.playing}
             onPlay={playNarration}
             onAnswerChange={setAnswerText}
             onSubmitAnswer={() => { void submitTextAnswer(); }}
@@ -495,13 +494,22 @@ function HistoryPanel({ history, onOpen }: { history: PodcastSession[]; onOpen: 
 function SessionView(props: {
   session: PodcastSession; segments: PodcastSegment[]; current: PodcastSegment | null; currentIndex: number;
   phase: TutorPhase; answerText: string; error: string | null;
-  onAsk: () => void; onSkip: () => void; skipBusy: boolean; spokenPhrase: string; spokenOffset: number; spokenArea: string; voicePaused: boolean;
+  onAsk: () => void; onSkip: () => void; skipBusy: boolean; spokenPhrase: string; spokenOffset: number; spokenArea: string; voicePaused: boolean; tutorSpeaking: boolean;
   onPlay: () => void; onAnswerChange: (value: string) => void; onSubmitAnswer: () => void; onReplayCorrection: () => void; onAdvance: () => void;
 }) {
   const { session, segments, current, currentIndex, phase } = props;
   if (!current) return <ProcessingCard title={session.title} />;
   const progress = ((currentIndex + 1) / segments.length) * 100;
   const answered = !!current.completed_at;
+  const loadingVoice = "جاري تجهيز صوت المعلّم…";
+  const phaseLabel: Record<TutorPhase, string> = {
+    idle: answered ? "اكتمل هذا المقطع" : "اضغط لتسمع شرح المقطع",
+    preparing_audio: loadingVoice,
+    narration: props.tutorSpeaking ? "المعلّم يشرح الآن" : loadingVoice,
+    listening: "جاوب أسئلة الجزء بكلماتك",
+    grading: "أفكّر في إجابتك…",
+    correction: props.tutorSpeaking ? "استمع إلى التصحيح" : loadingVoice,
+  };
   return <div className="mx-auto max-w-3xl">
     <div className="mb-5 flex items-center justify-between text-sm"><div><p className="font-black">{session.title || "جلسة صوتية"}</p><p className="mt-1 text-xs text-slate-500">المقطع {currentIndex + 1} من {segments.length}</p></div><div className="h-2 w-32 overflow-hidden rounded-full bg-white/10"><motion.div className="h-full rounded-full bg-gradient-to-l from-cyan-300 to-indigo-400" animate={{ width: `${progress}%` }} /></div></div>
     <GlassCard className="relative overflow-hidden p-6 sm:p-9">
@@ -509,13 +517,8 @@ function SessionView(props: {
       <div className="relative mb-5 flex flex-wrap justify-center gap-3"><button disabled={phase === "grading" || props.skipBusy} onClick={props.onAsk} className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-bold disabled:opacity-50">عندي سؤال</button><button disabled={phase === "grading" || props.skipBusy} onClick={props.onSkip} className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 font-bold disabled:opacity-50">{props.skipBusy ? "جاري التخطي…" : "تخطّي الجزء"}</button></div>
       <AnimatePresence mode="wait">
         <motion.div key={current.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="relative text-center">
-          {props.voicePaused ? <StateIcon icon={<Pause className="h-9 w-9" />} label="الصوت متوقف مؤقتاً" />
-          : phase === "preparing_audio" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="جاري تجهيز صوت المعلّم..." />
-          : phase === "narration" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="المعلّم يشرح الآن" />
-          : phase === "listening" ? <StateIcon icon={<PenLine className="h-9 w-9" />} label="جاوب أسئلة الجزء بكلماتك" />
-          : phase === "grading" ? <StateIcon icon={<Loader2 className="h-9 w-9 animate-spin" />} label="أفكّر في إجابتك..." />
-          : phase === "correction" ? <StateIcon icon={<Volume2 className="h-9 w-9" />} pulse label="استمع إلى التصحيح" />
-          : <StateIcon icon={answered ? <Check className="h-9 w-9" /> : <Podcast className="h-9 w-9" />} label={answered ? "اكتمل هذا المقطع" : "اضغط لتسمع شرح المقطع"} />}
+          <MutamayizMascot alt="متميّز" speaking={props.tutorSpeaking} className="mx-auto size-28 drop-shadow-[0_0_22px_rgba(34,147,250,.33)] sm:size-32" />
+          <h2 className="mt-4 text-xl font-black">{props.voicePaused ? "الصوت متوقف مؤقتاً" : phaseLabel[phase]}</h2>
 
           {phase === "idle" && !answered && <button onClick={props.onPlay} className="mx-auto mt-5 flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-7 py-3.5 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110"><Play className="h-5 w-5 fill-current" /> تشغيل الشرح الصوتي</button>}
 
@@ -547,7 +550,7 @@ function SessionView(props: {
           {props.error && <div className="mt-5"><ErrorBanner message={props.error} /></div>}
 
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            {phase === "narration" && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" /> استمع حتى نهاية المقطع</span>}
+            {phase === "narration" && props.tutorSpeaking && <span className="flex items-center gap-2 text-sm text-cyan-200"><span className="h-2 w-2 rounded-full bg-cyan-300 motion-safe:animate-pulse" /> استمع حتى نهاية المقطع</span>}
             {phase === "listening" && <><button disabled={props.answerText.trim().length < 2} onClick={props.onSubmitAnswer} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-300 to-indigo-400 px-6 py-3 font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><Send className="h-5 w-5" /> أرسل الإجابة</button><button onClick={props.onPlay} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة الشرح الصوتي</button></>}
             {answered && phase === "idle" && <><button onClick={props.onAdvance} className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-cyan-400 to-indigo-500 px-6 py-3 font-black text-slate-950">{currentIndex + 1 === segments.length ? "عرض النتيجة" : "المقطع التالي"}<ChevronLeft className="h-5 w-5" /></button>{current.correction_text && <button onClick={props.onReplayCorrection} className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold"><RotateCcw className="h-4 w-4" /> إعادة التصحيح</button>}</>}
           </div>
@@ -557,15 +560,11 @@ function SessionView(props: {
   </div>;
 }
 
-function StateIcon({ icon, label, pulse = false, danger = false }: { icon: React.ReactNode; label: string; pulse?: boolean; danger?: boolean }) {
-  return <div><div className={`relative mx-auto grid h-24 w-24 place-items-center rounded-[32px] ${danger ? "bg-rose-400/15 text-rose-200" : "bg-cyan-400/15 text-cyan-200"}`}>{pulse && <span className={`absolute inset-0 animate-ping rounded-[32px] ${danger ? "bg-rose-400/10" : "bg-cyan-400/10"}`} />}{icon}</div><h2 className="mt-4 text-xl font-black">{label}</h2></div>;
-}
-
-function SummaryView({ session, segments, recordPlaying, onPlay, onStop }: { session: PodcastSession; segments: PodcastSegment[]; recordPlaying: boolean; onPlay: () => void; onStop: () => void }) {
+function SummaryView({ session, segments, recordPlaying, tutorSpeaking, onPlay, onStop }: { session: PodcastSession; segments: PodcastSegment[]; recordPlaying: boolean; tutorSpeaking: boolean; onPlay: () => void; onStop: () => void }) {
   const correct = segments.filter((item) => item.verdict === "correct").length;
   return <div className="mx-auto max-w-4xl">
     <GlassCard className="mb-5 p-6 sm:p-8">
-      <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-right"><div className="grid h-20 w-20 shrink-0 place-items-center rounded-[28px] bg-emerald-400/15 text-emerald-200"><Check className="h-10 w-10" /></div><div className="flex-1"><p className="text-sm font-bold text-emerald-200">اكتملت الجلسة</p><h2 className="mt-1 text-2xl font-black">{session.title || "مراجعتك الصوتية"}</h2><p className="mt-2 text-sm text-slate-400">أتقنت {correct} من {segments.length} مقاطع خلال الجلسة.</p></div><button onClick={recordPlaying ? onStop : onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">{recordPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}{recordPlaying ? "إيقاف السجل" : "تشغيل سجل الجلسة"}</button></div>
+      <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-right"><MutamayizMascot alt="متميّز" speaking={tutorSpeaking} className="size-20" /><div className="flex-1"><p className="text-sm font-bold text-emerald-200">اكتملت الجلسة</p><h2 className="mt-1 text-2xl font-black">{session.title || "مراجعتك الصوتية"}</h2><p className="mt-2 text-sm text-slate-400">أتقنت {correct} من {segments.length} مقاطع خلال الجلسة.</p></div><button onClick={recordPlaying ? onStop : onPlay} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">{recordPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}{recordPlaying ? "إيقاف السجل" : "تشغيل سجل الجلسة"}</button></div>
     </GlassCard>
     <div className="space-y-3">{segments.map((item) => <GlassCard key={item.id} className="p-5"><div className="flex items-start gap-4"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-sm font-black">{item.segment_order}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black">المقطع {item.segment_order}</h3>{item.completed_at && !item.verdict && <span className="text-sm text-amber-200">تم تخطي هذا الجزء</span>}{item.verdict && <span className={`rounded-full border px-3 py-1 text-xs font-black ${verdictCopy[item.verdict].style}`}>{verdictCopy[item.verdict].label}</span>}</div>{item.student_answer_text && <p className="mt-3 text-sm leading-7 text-slate-300"><span className="font-bold text-white">تلخيصك: </span>{item.student_answer_text}</p>}{item.correction_text && <p className="mt-2 text-sm leading-7 text-indigo-200"><span className="font-bold">التصحيح: </span>{item.correction_text}</p>}</div></div></GlassCard>)}</div>
   </div>;
