@@ -105,7 +105,8 @@ it.each([
   setTimer("student", { running: true });
   expect(screen.getByRole("status")).toHaveTextContent("Studying now");
   expect(widget).toHaveAttribute("data-study-status", "studying");
-  expect(book()).toBeInTheDocument();
+  expect(sprite).toContainElement(book());
+  expect(book()?.querySelector(".student-character__page--turning")).toBeInTheDocument();
   expect(avatar.querySelector(".student-character__sprite")).toBe(sprite);
   setTimer("student", { running: false });
   expect(screen.getByRole("status")).toHaveTextContent("Study paused");
