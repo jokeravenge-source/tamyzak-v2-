@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2 } from "lucide-react";
+import { BookOpen, Check, Loader2 } from "lucide-react";
 import { CharacterAvatar, FEMALE_VARIANTS, MALE_VARIANTS, getAvatarStyle, type Gender, type CharacterVariant } from "./CharacterAvatar";
 import type { AppLanguage } from "./LanguageGate";
 import UsageIntroGate from "./UsageIntroGate";
@@ -9,6 +9,7 @@ import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
 import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
+import "./StudentCharacter.css";
 
 const copy = {
   ar: {
@@ -58,10 +59,11 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
   const status = useSyncExternalStore(subscribeToStudyStatus, () => readStudyStatus(userId), (): StudyStatus => "ready");
   const t = copy[language];
   return (
-    <aside className="pointer-events-none fixed bottom-[calc(var(--nav-safe)+.5rem)] left-[max(.625rem,env(safe-area-inset-left))] z-[34] flex max-w-[75vw] items-end gap-2" dir="ltr">
+    <aside data-study-status={status} className="student-character pointer-events-none fixed bottom-[calc(var(--nav-safe)+.5rem)] left-[max(.625rem,env(safe-area-inset-left))] z-[34] flex max-w-[75vw] items-end gap-2" dir="ltr">
       <button type="button" onClick={() => setOpen(value => !value)} aria-label={t.toggle} aria-expanded={open} aria-controls={open ? messageId : undefined}
-        className="pointer-events-auto grid size-12 shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        <span aria-hidden="true"><CharacterAvatar gender={character.gender} traits={character.traits} size={42} /></span>
+        className="pointer-events-auto relative grid size-12 shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <span aria-hidden="true" className="student-character__sprite"><CharacterAvatar gender={character.gender} traits={character.traits} size={42} /></span>
+        {status === "studying" && <span aria-hidden="true" className="student-character__book pointer-events-none"><BookOpen className="size-3.5" /></span>}
       </button>
       {open && <p id={messageId} role="status" dir={language === "ar" ? "rtl" : "ltr"}
         className="relative mb-2 rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2 text-start text-xs font-semibold leading-5 text-foreground shadow-sm">

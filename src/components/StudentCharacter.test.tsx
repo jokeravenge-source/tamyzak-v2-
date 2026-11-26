@@ -5,7 +5,7 @@ import StudentCharacter from "./StudentCharacter";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 
-type Row = { gender: string | null; character: { variant: number } | null };
+type Row = { gender: string | null; character: { variant: number; accessory?: "crown" } | null };
 const backend = vi.hoisted(() => ({ row: null as Row | null, failSave: false, failRead: false, insert: vi.fn(), update: vi.fn() }));
 
 vi.mock("./UsageIntroGate", () => ({ default: () => null }));
@@ -82,8 +82,11 @@ it("only closes permanently after a confirmed save", async () => {
   expect(await screen.findByRole("dialog")).toBeVisible();
 });
 
-it("keeps existing gender-only characters and updates the status from the signed-in user's timer", async () => {
-  backend.row = { gender: "male", character: null };
+it.each([
+  { gender: "male", character: null } as Row,
+  { gender: "female", character: { variant: 16, accessory: "crown" } } as Row,
+])("uses the same study animation and status for the $gender character", async (row) => {
+  backend.row = row;
   const setTimer = (userId: string, state: object) => {
     act(() => {
       localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({ userId, subject: "physics", started: true, ...state }));
@@ -94,13 +97,24 @@ it("keeps existing gender-only characters and updates the status from the signed
   open();
   expect(await screen.findByRole("status")).toHaveTextContent("Ready to study");
   expect(screen.queryByRole("dialog")).toBeNull();
+  const avatar = screen.getByRole("button", { name: "Your study status" });
+  const widget = avatar.closest("aside");
+  const sprite = avatar.querySelector(".student-character__sprite");
+  const book = () => avatar.querySelector(".student-character__book");
+  expect(book()).toBeNull();
   setTimer("student", { running: true });
   expect(screen.getByRole("status")).toHaveTextContent("Studying now");
+  expect(widget).toHaveAttribute("data-study-status", "studying");
+  expect(book()).toBeInTheDocument();
+  expect(avatar.querySelector(".student-character__sprite")).toBe(sprite);
   setTimer("student", { running: false });
   expect(screen.getByRole("status")).toHaveTextContent("Study paused");
+  expect(widget).toHaveAttribute("data-study-status", "paused");
+  expect(book()).toBeNull();
   setTimer("student", { pomodoro: true, phase: "rest", restEndsAt: Date.now() + 30_000 });
   expect(screen.getByRole("status")).toHaveTextContent("On a break");
-  fireEvent.click(screen.getByRole("button", { name: "Your study status" }));
+  expect(book()).toBeNull();
+  fireEvent.click(avatar);
   expect(screen.queryByRole("status")).toBeNull();
 });
 
