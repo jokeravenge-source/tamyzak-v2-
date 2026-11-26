@@ -100,7 +100,7 @@ it.each([
   const avatar = screen.getByRole("button", { name: "Your study status" });
   const widget = avatar.closest("aside");
   const sprite = avatar.querySelector(".student-character__sprite");
-  const book = () => avatar.querySelector(".student-character__book");
+  const book = () => avatar.querySelector<HTMLElement>(".student-character__book");
   expect(book()).toBeNull();
   setTimer("student", { running: true });
   expect(screen.getByRole("status")).toHaveTextContent("Studying now");
