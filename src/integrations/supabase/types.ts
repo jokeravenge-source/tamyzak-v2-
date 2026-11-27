@@ -3875,6 +3875,41 @@ export type Database = {
           },
         ]
       }
+      study_room_encouragements: {
+        Row: {
+          created_at: string
+          recipient_id: string
+          room_id: string
+          seen_at: string | null
+          sender_id: string
+          sender_name: string
+        }
+        Insert: {
+          created_at?: string
+          recipient_id: string
+          room_id: string
+          seen_at?: string | null
+          sender_id: string
+          sender_name: string
+        }
+        Update: {
+          created_at?: string
+          recipient_id?: string
+          room_id?: string
+          seen_at?: string | null
+          sender_id?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_room_encouragements_room_id_recipient_id_fkey"
+            columns: ["room_id", "recipient_id"]
+            isOneToOne: false
+            referencedRelation: "study_room_members"
+            referencedColumns: ["room_id", "user_id"]
+          },
+        ]
+      }
       study_room_members: {
         Row: {
           display_name: string
@@ -3942,6 +3977,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "study_rooms"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_room_mic_requests: {
+        Row: {
+          connection_id: string | null
+          live_until: string | null
+          room_id: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          connection_id?: string | null
+          live_until?: string | null
+          room_id: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          connection_id?: string | null
+          live_until?: string | null
+          room_id?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_room_mic_requests_room_id_user_id_fkey"
+            columns: ["room_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "study_room_members"
+            referencedColumns: ["room_id", "user_id"]
           },
         ]
       }
@@ -4941,6 +5008,14 @@ export type Database = {
         }
         Returns: string
       }
+      dismiss_study_room_encouragements: {
+        Args: { _room: string; _through: string }
+        Returns: undefined
+      }
+      encourage_study_room_member: {
+        Args: { _recipient: string; _room: string }
+        Returns: undefined
+      }
       ensure_tamayzak_public_challenges: { Args: never; Returns: undefined }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       french_flashcard_access: { Args: never; Returns: Json }
@@ -5131,7 +5206,26 @@ export type Database = {
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
       set_site_visits: { Args: { _count: number }; Returns: number }
+      set_study_room_mic: {
+        Args: {
+          _action: string
+          _connection?: string
+          _requester?: string
+          _room: string
+        }
+        Returns: undefined
+      }
       settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
+      signal_study_room_voice: {
+        Args: {
+          _attempt: string
+          _connection: string
+          _description: Json
+          _room: string
+          _target: string
+        }
+        Returns: undefined
+      }
       start_all_or_nothing_challenge: {
         Args: { _challenge_id: string }
         Returns: Json
@@ -5171,6 +5265,8 @@ export type Database = {
         }
         Returns: Json
       }
+      study_room_activity: { Args: { _room: string }; Returns: Json }
+      study_room_voice_ice: { Args: { _room: string }; Returns: Json }
       study_royale: {
         Args: {
           _action?: string

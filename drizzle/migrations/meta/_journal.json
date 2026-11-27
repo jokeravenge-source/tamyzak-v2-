@@ -449,6 +449,13 @@
       "when": 1795719600000,
       "tag": "0063_study_room_encouragement_and_voice",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795784386098,
+      "tag": "0064_study_room_activity_service_access",
+      "breakpoints": true
     }
   ]
 }

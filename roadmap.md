@@ -1,10 +1,10 @@
 # Task Roadmap
 
 ## In Progress
-- Enable and verify study-room cheering and owner-approved microphones.
 - Real-video notes verification awaits a Premium-enabled test account; the available signed-in account is blocked by the Premium screen.
 
 ## Done
+- Applied study-room cheering and owner-approved microphone migrations; verified tables, RPCs and authenticated-only microphone execution in the live database. Multi-user audio delivery has not been tested.
 - Diagnosed challenge publishing, restored channel support alongside groups, and added pre-publication permission checks; after the owner restored bot rights, signed-in readback confirmed a sent Telegram invitation and a started battle. All 23 regression tests passed; no records deleted.
 - Deployed the missing battle-channel function; signed-in channel publication returned 200 and showed the waiting screen, then cancelled the test invitation without deleting records. All 15 relevant tests passed.
 - Upgraded notes to Gemini 4 Argon via the server-only SDK, removed optional output caps, bypassed prior-model caches, and deployed; seven coverage/math tests pass.
