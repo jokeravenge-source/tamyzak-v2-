@@ -1,15 +1,16 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STUDY_SESSION_STORAGE_KEY,
+  STUDY_TIMER_HEARTBEAT_MS,
   displayedStudyTimerSeconds,
+  readStudyTimerFocus,
   timerDisplayFromPersistedSession,
   type StudyTimerDisplay,
 } from "@/lib/studyTimerDisplay";
 
 export const STUDY_TIMER_CHANGED = "study-session-timer-changed";
-const HEARTBEAT_MS = 10_000;
 const listeners = new Set<() => void>();
 const emptyTimers: Readonly<Record<string, StudyTimerDisplay>> = {};
 let timers = emptyTimers;
@@ -37,8 +38,13 @@ function publishTimer() {
   const previousSeconds = displayedStudyTimerSeconds(lastTracked ?? undefined, localTimer.sampledAt);
   // Extrapolate locally between heartbeats. Publish controls/phase changes at once,
   // rather than sending a network update for every second on the screen.
-  if (lastTracked && localTimer.sampledAt - lastTracked.sampledAt < HEARTBEAT_MS &&
+  const oldFocus = lastTracked?.focus;
+  const focus = localTimer.focus;
+  if (lastTracked && localTimer.sampledAt - lastTracked.sampledAt < STUDY_TIMER_HEARTBEAT_MS &&
     lastTracked.direction === localTimer.direction && lastTracked.isRunning === localTimer.isRunning &&
+    oldFocus?.run?.[0] === focus?.run?.[0] && oldFocus?.run?.[1] === focus?.run?.[1] &&
+    oldFocus?.periods.length === focus?.periods.length &&
+    oldFocus?.periods.at(-1)?.[1] === focus?.periods.at(-1)?.[1] &&
     previousSeconds !== null && Math.abs(previousSeconds - localTimer.seconds) <= 1) return;
   lastTracked = localTimer;
   void channel.track({ user_id: ownerId, ...localTimer });
@@ -67,7 +73,9 @@ function reconcileChannel() {
     const nextTimers: Record<string, StudyTimerDisplay> = {};
     const now = Date.now();
     for (const [userId, timer] of Object.entries(timers)) {
-      if (displayedStudyTimerSeconds(timer, now) !== null) nextTimers[userId] = timer;
+      if (displayedStudyTimerSeconds(timer, now) !== null) {
+        nextTimers[userId] = timer.focus && timer.focusEndedAt === undefined ? { ...timer, focusEndedAt: now } : timer;
+      }
     }
     const incoming: Record<string, StudyTimerDisplay> = {};
     for (const payloads of Object.values(nextChannel.presenceState<StudyTimerDisplay & { user_id: string }>())) {
@@ -79,11 +87,12 @@ function reconcileChannel() {
         const unchanged = previous?.sampledAt === payload.sampledAt &&
           previous.seconds === payload.seconds && previous.direction === payload.direction &&
           previous.isRunning === payload.isRunning;
-        const timer: StudyTimerDisplay = {
+        const timer: StudyTimerDisplay = unchanged && previous.focusEndedAt === undefined ? previous : {
           seconds: payload.seconds,
           direction: payload.direction,
           isRunning: payload.isRunning,
           sampledAt: payload.sampledAt,
+          focus: unchanged ? previous.focus : readStudyTimerFocus(payload.focus, payload.sampledAt),
           // Changed snapshots get a local anchor to avoid device clock skew.
           // A late joiner first advances from the sender's snapshot timestamp.
           observedAt: unchanged ? previous.observedAt : previous ? now : undefined,
@@ -104,9 +113,8 @@ function reconcileChannel() {
 
 function refreshLocalTimer() {
   try {
-    localTimer = ownerId
-      ? timerDisplayFromPersistedSession(JSON.parse(localStorage.getItem(STUDY_SESSION_STORAGE_KEY) ?? "null"))
-      : null;
+    const saved = ownerId ? JSON.parse(localStorage.getItem(STUDY_SESSION_STORAGE_KEY) ?? "null") : null;
+    localTimer = typeof saved?.userId === "string" && saved.userId !== ownerId ? null : timerDisplayFromPersistedSession(saved);
   } catch { localTimer = null; }
   reconcileChannel();
 }
@@ -126,7 +134,7 @@ export function StudyTimerPresenceSync() {
     };
     void supabase.auth.getSession().then(({ data }) => setOwner(data.session?.user.id ?? null));
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setOwner(session?.user.id ?? null));
-    const heartbeat = window.setInterval(refreshLocalTimer, HEARTBEAT_MS);
+    const heartbeat = window.setInterval(refreshLocalTimer, STUDY_TIMER_HEARTBEAT_MS);
     window.addEventListener(STUDY_TIMER_CHANGED, refreshLocalTimer);
     window.addEventListener("storage", refreshLocalTimer);
     window.addEventListener("focus", refreshLocalTimer);
@@ -152,6 +160,24 @@ function subscribeToTimers(listener: () => void) {
   return () => { listeners.delete(listener); reconcileChannel(); };
 }
 
-export function useStudyTimerPresence() {
-  return useSyncExternalStore(subscribeToTimers, () => timers, () => emptyTimers);
+const getEmptyTimers = () => emptyTimers;
+const subscribeToNothing = () => () => {};
+
+export function useStudyTimerPresence(enabled = true, userIds?: ReadonlySet<string>) {
+  const getSnapshot = useMemo(() => {
+    if (!enabled) return getEmptyTimers;
+    if (!userIds) return () => timers;
+    let snapshot = emptyTimers;
+    return () => {
+      const next: Record<string, StudyTimerDisplay> = {};
+      let changed = false;
+      for (const userId of userIds) {
+        if (timers[userId]) next[userId] = timers[userId];
+        if (next[userId] !== snapshot[userId]) changed = true;
+      }
+      if (changed) snapshot = next;
+      return snapshot;
+    };
+  }, [enabled, userIds]);
+  return useSyncExternalStore(enabled ? subscribeToTimers : subscribeToNothing, getSnapshot, getEmptyTimers);
 }

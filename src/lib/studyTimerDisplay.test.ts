@@ -43,6 +43,7 @@ describe("the shared study timer", () => {
     const resting = { ...session, phase: "rest", running: false, accumulated: 3000, restEndsAt: now + 600_000 };
     const timer = timerDisplayFromPersistedSession(resting, now)!;
     expect(timer.isRunning).toBe(true);
+    expect(timer.focus?.run).toBeNull();
     expect(timer.seconds).toBe(600);
     expect(displayedStudyTimerSeconds(timer, now + 20_000)).toBe(580);
     expect(timerDisplayFromPersistedSession(resting, now + 20_000)?.seconds).toBe(580);
@@ -60,6 +61,14 @@ describe("the shared study timer", () => {
     const timer = timerDisplayFromPersistedSession({ ...session, pomodoro: false }, now)!;
     expect(formatStudyTimer(timer.seconds)).toBe("00:00:20");
     expect(displayedStudyTimerSeconds(timer, now + 10_000)).toBe(30);
+  });
+
+  it("publishes closed study spans and caps a live focus run at the hourly check-in", () => {
+    const past: [number, number][] = [[now - 90_000, now - 30_000]];
+    const timer = timerDisplayFromPersistedSession({
+      ...session, pomodoro: false, accumulated: 3550, lastCheckInSeconds: 0, focusPeriods: past,
+    }, now);
+    expect(timer?.focus).toEqual({ periods: past, run: [now - 20_000, now + 30_000] });
   });
 
   it("extrapolates from a wall-clock anchor while the owner's tab is in the background", () => {

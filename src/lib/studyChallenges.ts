@@ -1,8 +1,14 @@
+import type { StudyFocusPeriod } from "./studyFocusPeriods";
+import { STUDY_TIMER_HEARTBEAT_MS, type StudyTimerDisplay } from "./studyTimerDisplay";
+import { STARTED_PRESENCE_MS } from "./sessionPresenceClock";
+
 export type StudyChallengeParticipant = {
   userId: string;
   displayName: string;
   status: "pending" | "accepted" | "declined";
   totalSeconds: number;
+  joinedAt?: string;
+  savedFocus?: StudyFocusPeriod[];
 };
 
 export const ALL_OR_NOTHING_MIN_PLAYERS = 3;
@@ -68,6 +74,62 @@ export function acceptedStandings(challenge: StudyChallenge, now = Date.now()) {
         : 0,
     }))
     .sort((a, b) => b.totalSeconds - a.totalSeconds || a.displayName.localeCompare(b.displayName));
+}
+
+export const LIVE_STUDY_GRACE_MS = STUDY_TIMER_HEARTBEAT_MS * 3;
+export const LIVE_STUDY_HANDOFF_MS = STUDY_TIMER_HEARTBEAT_MS;
+
+/** Both lists are ordered and individually coalesced. Merge them without replaying an overlap. */
+function coveredMilliseconds(saved: StudyFocusPeriod[], live: StudyFocusPeriod[], start: number, end: number) {
+  let a = 0;
+  let b = 0;
+  let through = start;
+  let total = 0;
+  while (a < saved.length || b < live.length) {
+    const [from, to] = b >= live.length || (a < saved.length && saved[a][0] <= live[b][0]) ? saved[a++] : live[b++];
+    const clippedEnd = Math.min(to, end);
+    if (clippedEnd > Math.max(from, through)) {
+      total += clippedEnd - Math.max(from, through);
+      through = clippedEnd;
+    }
+  }
+  return total;
+}
+
+export function liveChallengeStandings(
+  challenge: StudyChallenge,
+  timers: Readonly<Record<string, StudyTimerDisplay>>,
+  now: number,
+  savedRequestedAt: number,
+) {
+  const liveRoom = challenge.challengeType === "all_or_nothing" && challenge.roomState === "running" &&
+    challenge.myStatus === "accepted" && challengePhase(challenge, now) === "active";
+  return acceptedStandings(challenge, now).map(participant => {
+    const timer = liveRoom ? timers[participant.userId] : undefined;
+    const saved = participant.savedFocus;
+    const joinedAt = Date.parse(participant.joinedAt ?? "");
+    if (!saved || !timer?.focus || !Number.isFinite(joinedAt)) return { ...participant, isStudying: false };
+    const endedAt = timer.focusEndedAt;
+    if (endedAt !== undefined && (savedRequestedAt >= endedAt || now - endedAt >= LIVE_STUDY_HANDOFF_MS)) {
+      return { ...participant, isStudying: false };
+    }
+    const age = Math.min(now, endedAt ?? now) - (timer.observedAt ?? timer.sampledAt);
+    if (age > STARTED_PRESENCE_MS || age < -60_000) return { ...participant, isStudying: false };
+
+    const from = Math.max(Date.parse(challenge.startsAt), joinedAt);
+    const until = Math.min(Date.parse(challenge.endsAt), now);
+    const { periods, run } = timer.focus;
+    const projected = timer.sampledAt + Math.max(0, Math.min(age, LIVE_STUDY_GRACE_MS));
+    const runEnd = run
+      ? Math.min(run[1], run[0] + Math.floor((projected - run[0]) / 1000) * 1000)
+      : null;
+    const live = run && runEnd !== null && runEnd > run[0] ? [...periods, [run[0], runEnd] as StudyFocusPeriod] : periods;
+    return {
+      ...participant,
+      totalSeconds: Math.max(participant.totalSeconds, Math.floor(coveredMilliseconds(saved, live, from, until) / 1000)),
+      isStudying: endedAt === undefined && !!run && age < LIVE_STUDY_GRACE_MS && run[1] > projected && until > from,
+    };
+  }).sort((a, b) => b.totalSeconds - a.totalSeconds || a.displayName.localeCompare(b.displayName));
 }
 
 export function formatStudySeconds(seconds: number, language: "ar" | "en") {

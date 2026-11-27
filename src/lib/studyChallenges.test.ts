@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { acceptedStandings, challengePhase, formatStudySeconds, remainingLabel, type StudyChallenge } from "./studyChallenges";
+import { acceptedStandings, challengePhase, formatStudySeconds, liveChallengeStandings, remainingLabel, type StudyChallenge } from "./studyChallenges";
+import type { StudyTimerDisplay } from "./studyTimerDisplay";
 
 const challenge: StudyChallenge = {
   id: "challenge", title: "Finals", creatorId: "a", creatorName: "Ali",
@@ -31,6 +32,49 @@ describe("study friend challenges", () => {
     expect(formatStudySeconds(7260, "en")).toBe("2h 1m");
     expect(formatStudySeconds(7260, "ar")).toBe("2 س 1 د");
     expect(remainingLabel(challenge.endsAt, "en", Date.parse("2026-10-30T00:00:00.000Z"))).toBe("2d 0h");
+  });
+});
+
+describe("All or Nothing live focus", () => {
+  const zero = Date.parse("2026-11-27T12:00:00Z");
+  const at = (seconds: number) => zero + seconds * 1000;
+  const iso = (seconds: number) => new Date(at(seconds)).toISOString();
+  const room: StudyChallenge = {
+    ...challenge, challengeType: "all_or_nothing", roomState: "running",
+    startsAt: iso(0), endsAt: iso(120),
+    participants: [{ ...challenge.participants[0], joinedAt: iso(5), totalSeconds: 15, savedFocus: [[at(10), at(25)]] }],
+  };
+  const timer: StudyTimerDisplay = {
+    sampledAt: at(40), seconds: 1000, direction: "down", isRunning: true,
+    focus: { periods: [[at(-20), at(12)], [at(18), at(27)]], run: [at(30), at(90)] },
+  };
+  const score = (now: number, snapshot: StudyTimerDisplay = timer, target: StudyChallenge = room, savedRequestedAt = 0) =>
+    liveChallengeStandings(target, { a: snapshot }, at(now), savedRequestedAt)[0];
+
+  it("clips to the join and challenge times, merges overlapping seconds, and ticks between heartbeats", () => {
+    expect(score(40)).toMatchObject({ totalSeconds: 32, isStudying: true });
+    expect(score(42)).toMatchObject({ totalSeconds: 34, isStudying: true });
+    expect(score(42, timer, { ...room, startsAt: iso(8) }).totalSeconds).toBe(31);
+  });
+
+  it("does not tick during breaks or beyond the last heartbeat's grace period", () => {
+    const paused = { ...timer, focus: { periods: [[at(5), at(27)], [at(30), at(40)]] as [number, number][], run: null } };
+    expect(score(50, paused)).toMatchObject({ totalSeconds: 32, isStudying: false });
+    expect(score(72)).toMatchObject({ totalSeconds: 62, isStudying: false });
+  });
+
+  it("freezes a stopping timer and does not re-add it when the save arrives before or after presence clears", () => {
+    const ended = { ...timer, focusEndedAt: at(44) };
+    const saved: StudyChallenge = { ...room, participants: [{
+      ...room.participants[0], totalSeconds: 36, savedFocus: [[at(5), at(27)], [at(30), at(44)]],
+    }] };
+    const stopped = { ...timer, focus: { periods: [[at(5), at(27)], [at(30), at(44)]] as [number, number][], run: null } };
+    expect(score(46, stopped, saved, at(43))).toMatchObject({ totalSeconds: 36, isStudying: false });
+    expect(score(46, ended)).toMatchObject({ totalSeconds: 36, isStudying: false });
+    expect(score(46, ended, saved, at(45))).toMatchObject({ totalSeconds: 36, isStudying: false });
+    expect(score(46, ended, room, at(45))).toMatchObject({ totalSeconds: 15, isStudying: false }); // discarded
+    expect(score(46, ended, { ...saved, roomState: "settled" })).toMatchObject({ totalSeconds: 36, isStudying: false });
+    expect(score(121)).toMatchObject({ totalSeconds: 15, isStudying: false });
   });
 });
 

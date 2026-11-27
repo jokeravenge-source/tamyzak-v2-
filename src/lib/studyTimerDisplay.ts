@@ -1,5 +1,6 @@
 import { restSecondsRemaining, workSecondsRemaining } from "./pomodoro";
 import { MAX_SESSION_SECONDS, STARTED_PRESENCE_MS } from "./sessionPresenceClock";
+import { restoreFocusPeriods, type StudyFocusPeriod } from "./studyFocusPeriods";
 
 export const STUDY_SESSION_STORAGE_KEY = "study_session_state_v1";
 
@@ -9,7 +10,26 @@ export type StudyTimerDisplay = {
   isRunning: boolean;
   sampledAt: number;
   observedAt?: number;
+  focus?: StudyTimerFocus;
+  focusEndedAt?: number;
 };
+
+export type StudyTimerFocus = { periods: StudyFocusPeriod[]; run: StudyFocusPeriod | null };
+export const STUDY_TIMER_HEARTBEAT_MS = 10_000;
+
+export function readStudyTimerFocus(value: unknown, sampledAt: number): StudyTimerFocus | undefined {
+  if (!value || typeof value !== "object" || !Number.isSafeInteger(sampledAt)) return;
+  const { periods, run } = value as Record<string, unknown>;
+  if (!Array.isArray(periods)) return;
+  const recorded = restoreFocusPeriods(periods, MAX_SESSION_SECONDS, sampledAt);
+  if (recorded.length !== periods.length) return;
+  if (run === null) return { periods: recorded, run: null };
+  if (!Array.isArray(run) || run.length !== 2) return;
+  const [start, limit] = run;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(limit) || start <= 0 || start > sampledAt ||
+    start < (recorded.at(-1)?.[1] ?? 0) || limit <= start || limit - start > MAX_SESSION_SECONDS * 1000) return;
+  return { periods: recorded, run: [start, limit] };
+}
 
 /** The visible clock is separate from the elapsed seconds saved for rewards. */
 export function studyTimerDisplay({
@@ -57,18 +77,30 @@ export function timerDisplayFromPersistedSession(value: unknown, now = Date.now(
   const phaseStartSeconds = Number(session.phaseStartSeconds ?? 0);
   if (!Number.isFinite(workMinutes) || workMinutes <= 0 || workMinutes * 60 > MAX_SESSION_SECONDS ||
     !Number.isFinite(phaseStartSeconds) || phaseStartSeconds < 0) return null;
+  const phase = session.phase === "rest" ? "rest" : "work";
+  const checkIn = Number(session.lastCheckInSeconds);
+  const previousCheckIn = Number.isInteger(checkIn) && checkIn >= 0 && checkIn <= accumulated
+    ? checkIn : Math.floor(accumulated / 3600) * 3600;
+  const focusLimit = Math.min(MAX_SESSION_SECONDS, previousCheckIn + 3600,
+    session.pomodoro === true ? phaseStartSeconds + workMinutes * 60 : MAX_SESSION_SECONDS);
+  const isFocusing = running && phase === "work" && startedAt > 0 && startedAt <= now;
+  const closed = restoreFocusPeriods(session.focusPeriods, accumulated, isFocusing ? startedAt : now);
+  const run: StudyFocusPeriod | null = isFocusing && focusLimit > accumulated
+    ? [startedAt, startedAt + Math.floor(focusLimit - accumulated) * 1000]
+    : null;
   return {
     ...studyTimerDisplay({
       elapsedSeconds,
       started: true,
       running,
       pomodoro: session.pomodoro === true,
-      phase: session.phase === "rest" ? "rest" : "work",
+      phase,
       phaseStartSeconds,
       workMinutes,
       restRemaining: restSecondsRemaining(Number(session.restEndsAt ?? 0), now),
     }),
     sampledAt: now,
+    focus: { periods: closed, run },
   };
 }
 

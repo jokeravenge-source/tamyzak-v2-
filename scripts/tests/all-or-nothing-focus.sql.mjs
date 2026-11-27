@@ -7,8 +7,10 @@ const db = new PGlite();
 const migration = (name) => readFile(new URL("../../supabase/migrations/" + name, import.meta.url), "utf8");
 const replacement = await migration("20261125161000_all_or_nothing_recorded_focus.sql");
 const durationMigration = await migration("20261127150000_all_or_nothing_duration_hours.sql");
+const liveMigration = await migration("20261127200000_all_or_nothing_live_standings.sql");
 assert.equal(replacement, await readFile(new URL("../../drizzle/migrations/0061_all_or_nothing_recorded_focus.sql", import.meta.url), "utf8"));
 assert.equal(durationMigration, await readFile(new URL("../../drizzle/migrations/0065_all_or_nothing_duration_hours.sql", import.meta.url), "utf8"));
+assert.equal(liveMigration, await readFile(new URL("../../drizzle/migrations/0072_all_or_nothing_live_standings.sql", import.meta.url), "utf8"));
 try {
   await db.exec(`
     CREATE SCHEMA auth;
@@ -212,6 +214,34 @@ try {
   assert.deepEqual(round, { room_state: "running", seconds: 29 * 3600, held: 3 });
   await assert.rejects(() => start(1), /cannot be started/);
   console.log("All or Nothing custom durations, legacy lobbies, public stake reservation, and three-player start passed.");
+
+  await db.exec(liveMigration);
+  await db.exec(liveMigration);
+  await db.query("UPDATE public.study_challenges SET starts_at = date_trunc('second', now()) - interval '3 minutes' WHERE id = $1", [roomId]);
+  await db.query(`
+    UPDATE public.study_challenge_members AS m
+    SET joined_at = c.starts_at + interval '60 seconds'
+    FROM public.study_challenges AS c WHERE c.id = m.challenge_id AND c.id = $1
+  `, [roomId]);
+  const { rows: [{ starts_at: liveStart }] } = await db.query("SELECT starts_at FROM public.study_challenges WHERE id = $1", [roomId]);
+  await asUser(2, `
+    SELECT public.save_study_timer_session(public.test_id(301), 'physics', '', 60, false,
+      tstzmultirange(tstzrange($1::timestamptz + interval '30 seconds', $1::timestamptz + interval '90 seconds', '[)')))
+  `, [liveStart]);
+  const readRoom = async (user) => (await asUser(user, "SELECT public.get_my_study_challenges() AS data")).rows[0].data.find(room => room.id === roomId);
+  const member = (await readRoom(1)).participants.find(row => row.displayName === "Student 2");
+  assert.equal(member.totalSeconds, 30);
+  assert.equal(member.savedFocus.length, 1);
+  assert.equal(member.savedFocus[0][1] - member.savedFocus[0][0], 30_000);
+  assert.equal(Date.parse(member.joinedAt), member.savedFocus[0][0]);
+  assert.equal((await readRoom(4)).participants.some(row => "savedFocus" in row), false, "only accepted members see coverage");
+  await assert.rejects(() => asUser(4, "SELECT * FROM public.study_challenge_saved_ranges($1)", [roomId]), /permission denied/);
+  assert.equal(Number((await db.query(
+    "SELECT total_seconds FROM public.study_challenge_totals($1) WHERE user_id = public.test_id(2)", [roomId],
+  )).rows[0].total_seconds), 30);
+  await db.query("UPDATE public.study_challenges SET room_state = 'settled' WHERE id = $1", [roomId]);
+  assert.equal((await readRoom(1)).participants.some(row => "savedFocus" in row), false, "settled scores do not carry live metadata");
+  console.log("All or Nothing live leaderboard receives private, window-clipped saved coverage without altering settlement totals.");
 } finally {
   await db.close();
 }

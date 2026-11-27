@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, ChevronDown, Clock3, Coins, Crown, DoorOpen, Flame, Loader2, LogOut, Play, Plus, Search, ShieldCheck, Sparkles, Swords, Trophy, UserPlus, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
+import { formatStudyTimer, type StudyTimerDisplay } from "@/lib/studyTimerDisplay";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -24,6 +26,9 @@ import {
   formatChallengeDuration,
   formatStudySeconds,
   isValidAllOrNothingDuration,
+  liveChallengeStandings,
+  LIVE_STUDY_GRACE_MS,
+  LIVE_STUDY_HANDOFF_MS,
   remainingLabel,
   type StudyChallenge,
 } from "@/lib/studyChallenges";
@@ -35,7 +40,8 @@ const COPY = {
     eyebrow: "Study with friends", title: "Friend challenges",
     description: "Choose a duration, invite friends, and see who records the most study time in Sessions.",
     aonEyebrow: "High-stakes study rooms", aonPageTitle: "All or Nothing",
-    aonPageDescription: "Join or create a points room. Your saved study time counts from the start of the round after you’ve joined. The winner takes the full pot.",
+    aonPageDescription: "Join or create a points room. Follow live study time after the round starts. Save your session for the final result.",
+    studyingLive: "Studying",
     create: "Create challenge", incoming: "Invitations", active: "Active challenges", finished: "Results",
     mode: "Challenge mode", classic: "Classic", classicDesc: "A friendly study-time leaderboard.",
     allOrNothing: "All or Nothing", allOrNothingDesc: "Every student stakes the same points. The winner takes the full pot.",
@@ -71,7 +77,8 @@ const COPY = {
     eyebrow: "ادرس ويا أصدقائك", title: "تحديات الأصدقاء",
     description: "حدد المدة، ادعُ أصدقاءك، وشوف منو يجمع وقت دراسة أكثر داخل الجلسات.",
     aonEyebrow: "غرف دراسة برهان النقاط", aonPageTitle: "الكل أو لا شيء",
-    aonPageDescription: "ادخل غرفة نقاط أو سوِّ غرفة لأصدقائك. ينحسب وقت الدراسة المحفوظ بعد انضمامك وبدء الجولة، والفائز ياخذ مجموع الرهان.",
+    aonPageDescription: "ادخل غرفة نقاط أو سوِّ غرفة لأصدقائك. تابع وقت الدراسة مباشر من تبدي الجولة، واحفظ جلستك حتى تنحسب بالنتيجة النهائية.",
+    studyingLive: "دا يدرس",
     create: "إنشاء تحدي", incoming: "الدعوات", active: "التحديات الفعالة", finished: "النتائج",
     mode: "نوع التحدي", classic: "تحدي عادي", classicDesc: "منافسة ودّية على وقت الدراسة.",
     allOrNothing: "الكل أو لا شيء", allOrNothingDesc: "كل طالب يراهن بنفس عدد النقاط، والفائز ياخذ مجموع نقاط الغرفة.",
@@ -117,6 +124,8 @@ function ChallengeCard({
   onStart,
   onLeave,
   busyId,
+  liveTimers,
+  savedRequestedAt = 0,
 }: {
   challenge: StudyChallenge;
   language: AppLanguage;
@@ -127,10 +136,15 @@ function ChallengeCard({
   onStart: (challenge: StudyChallenge) => void;
   onLeave: (challenge: StudyChallenge) => void;
   busyId: string | null;
+  liveTimers?: Readonly<Record<string, StudyTimerDisplay>>;
+  savedRequestedAt?: number;
 }) {
   const t = COPY[language];
   const phase = challengePhase(challenge, now);
-  const calculatedStandings = acceptedStandings(challenge, now);
+  const calculatedStandings = liveTimers
+    ? liveChallengeStandings(challenge, liveTimers, now, savedRequestedAt)
+    : acceptedStandings(challenge, now).map(participant => ({ ...participant, isStudying: false }));
+  const showSeconds = phase === "active" && !!liveTimers;
   const standings = challenge.winnerId
     ? [...calculatedStandings].sort((a, b) => Number(b.userId === challenge.winnerId) - Number(a.userId === challenge.winnerId))
     : calculatedStandings;
@@ -201,8 +215,12 @@ function ChallengeCard({
                 <li key={participant.userId} className="rounded-2xl border border-border/70 bg-background/55 p-3">
                   <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                     <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-black ${index === 0 ? "bg-amber-500 text-slate-950" : "bg-secondary text-muted-foreground"}`}>{index + 1}</span>
-                    <span className="min-w-0 text-sm font-bold [overflow-wrap:anywhere]">{participant.displayName}{participant.userId === userId && <span className="ms-1 text-xs text-primary">({t.you})</span>}</span>
-                    <span className="col-start-2 min-w-0 font-mono text-sm font-black text-violet-700 dark:text-violet-300 sm:col-start-auto">{formatStudySeconds(participant.totalSeconds, language)}</span>
+                    <span className="min-w-0 text-sm font-bold [overflow-wrap:anywhere]">{participant.displayName}{participant.userId === userId && <span className="ms-1 text-xs text-primary">({t.you})</span>}
+                      {participant.isStudying && <span className="ms-2 inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-emerald-700 dark:text-emerald-300"><span className="size-1.5 rounded-full bg-current" aria-hidden="true" />{t.studyingLive}</span>}
+                    </span>
+                    <span className="col-start-2 min-w-0 font-mono text-sm font-black text-violet-700 dark:text-violet-300 sm:col-start-auto" dir={showSeconds ? "ltr" : undefined}>
+                      {showSeconds ? formatStudyTimer(participant.totalSeconds) : formatStudySeconds(participant.totalSeconds, language)}
+                    </span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-cyan-400 transition-[width]" style={{ width: `${progress}%` }} /></div>
                 </li>
@@ -223,12 +241,57 @@ function ChallengeCard({
   );
 }
 
+function ActiveChallengeCards({ challenges, isAonView, refreshStandings, savedRequestedAt, ...card }:
+  Omit<Parameters<typeof ChallengeCard>[0], "challenge" | "liveTimers"> & {
+    challenges: StudyChallenge[];
+    isAonView: boolean;
+    refreshStandings: () => Promise<void>;
+    savedRequestedAt: number;
+  }) {
+  const eligible = useMemo(() => new Set(isAonView ? challenges.flatMap(challenge =>
+    challenge.participants.filter(member => member.status === "accepted" && member.savedFocus !== undefined).map(member => member.userId),
+  ) : []), [challenges, isAonView]);
+  const timers = useStudyTimerPresence(eligible.size > 0, eligible);
+  const [clock, setClock] = useState(Date.now);
+  const now = Math.max(card.now, clock, Date.now());
+  const latestEnded = Math.max(0, ...Object.values(timers).map(timer => timer.focusEndedAt ?? 0));
+  const tick = (latestEnded > savedRequestedAt && now - latestEnded < LIVE_STUDY_HANDOFF_MS) || Object.values(timers).some(timer => {
+    const age = now - (timer.observedAt ?? timer.sampledAt);
+    return timer.focusEndedAt === undefined && timer.focus?.run && age < LIVE_STUDY_GRACE_MS &&
+      timer.sampledAt + Math.max(0, age) < timer.focus.run[1];
+  });
+
+  useEffect(() => {
+    if (!tick) return;
+    const id = window.setInterval(() => { if (!document.hidden) setClock(Date.now()); }, 1000);
+    return () => window.clearInterval(id);
+  }, [tick]);
+
+  useEffect(() => {
+    if (latestEnded <= savedRequestedAt) return;
+    // One saved-score refresh for a group of stopping timers. Heartbeats only
+    // update the local clock; they never request scores from the database.
+    const id = window.setTimeout(() => void refreshStandings(), 180);
+    return () => window.clearTimeout(id);
+  }, [latestEnded, savedRequestedAt, refreshStandings]);
+
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-4">
+      {challenges.map(challenge => <ChallengeCard key={challenge.id} {...card} challenge={challenge} now={now}
+        liveTimers={eligible.size ? timers : undefined} savedRequestedAt={savedRequestedAt} />)}
+    </div>
+  );
+}
+
 export default function StudyChallengeHub({ language, view = "standard", onBack, onStudy }: { language: AppLanguage; view?: "standard" | "all_or_nothing"; onBack: () => void; onStudy: () => void }) {
   const t = COPY[language];
   const dir = language === "ar" ? "rtl" : "ltr";
   const isAonView = view === "all_or_nothing";
   const [userId, setUserId] = useState("");
-  const [challenges, setChallenges] = useState<StudyChallenge[]>([]);
+  const [{ challenges, requestedAt }, setStandings] = useState({
+    challenges: [] as StudyChallenge[], requestedAt: 0, requestId: 0,
+  });
+  const standingsRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -260,20 +323,32 @@ export default function StudyChallengeHub({ language, view = "standard", onBack,
     setCreateOpen(true);
   };
 
+  const refreshStandings = useCallback(async () => {
+    const requestId = ++standingsRequest.current;
+    const requestedAt = Date.now();
+    const { data, error } = await supabase.rpc("get_my_study_challenges");
+    if (error) toast.error(error.message);
+    else setStandings(current => current.requestId > requestId ? current : {
+      requestedAt, requestId, challenges: (Array.isArray(data) ? data : []) as unknown as StudyChallenge[],
+    });
+  }, []);
+
   const load = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
     const id = auth.user?.id ?? "";
     setUserId(id);
-    if (!id) { setChallenges([]); setLoading(false); return; }
-    const [{ data, error }, { data: balance }] = await Promise.all([
-      supabase.rpc("get_my_study_challenges"),
+    if (!id) {
+      setStandings({ challenges: [], requestedAt: Date.now(), requestId: ++standingsRequest.current });
+      setLoading(false);
+      return;
+    }
+    const [, { data: balance }] = await Promise.all([
+      refreshStandings(),
       supabase.rpc("points_balance"),
     ]);
-    if (error) toast.error(error.message);
-    else setChallenges((Array.isArray(data) ? data : []) as unknown as StudyChallenge[]);
     setPointsBalance(Math.max(0, Number(balance) || 0));
     setLoading(false);
-  }, []);
+  }, [refreshStandings]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -491,7 +566,7 @@ export default function StudyChallengeHub({ language, view = "standard", onBack,
 
             {lobbies.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><UsersRound className="h-5 w-5 text-rose-600" />{t.waitingRooms}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{lobbies.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} onStart={startChallenge} onLeave={leaveRoom} busyId={busyId} />)}</div></section>}
 
-            {active.length > 0 && <section><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-black"><Clock3 className="h-5 w-5 text-emerald-600" />{t.active}</h2><span className="text-xs font-semibold text-muted-foreground">{t.refresh}</span></div><div className="grid min-w-0 grid-cols-1 gap-4">{active.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} onStart={startChallenge} onLeave={leaveRoom} busyId={busyId} />)}</div></section>}
+            {active.length > 0 && <section><div className="mb-3 flex flex-wrap items-end justify-between gap-3"><h2 className="flex items-center gap-2 text-lg font-black"><Clock3 className="h-5 w-5 text-emerald-600" />{t.active}</h2><span className="text-xs font-semibold text-muted-foreground">{t.refresh}</span></div><ActiveChallengeCards challenges={active} isAonView={isAonView} refreshStandings={refreshStandings} savedRequestedAt={requestedAt} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} onStart={startChallenge} onLeave={leaveRoom} busyId={busyId} /></section>}
 
             {finished.length > 0 && <section><h2 className="mb-3 flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-500" />{t.finished}</h2><div className="grid min-w-0 grid-cols-1 gap-4">{finished.map((challenge) => <ChallengeCard key={challenge.id} challenge={challenge} language={language} userId={userId} now={now} onStudy={onStudy} onCancel={setCancelTarget} onStart={startChallenge} onLeave={leaveRoom} busyId={busyId} />)}</div></section>}
 

@@ -142,6 +142,25 @@ describe("room timer synchronization", () => {
     expect(screen.getByRole("status").textContent).toBe("2994");
   });
 
+  it("only updates a scoped leaderboard for its own participants", () => {
+    const selected = new Set(["peer"]);
+    const changed = vi.fn();
+    function Standings() {
+      const snapshots = useStudyTimerPresence(true, selected);
+      useEffect(() => { changed(snapshots); }, [snapshots]);
+      return null;
+    }
+    render(<Standings />);
+    setPeerSnapshot();
+    expect(changed).toHaveBeenCalledTimes(2);
+    const ch = backend.channels[0];
+    ch.state.unrelated = [{ user_id: "unrelated", seconds: 5, direction: "up", isRunning: true, sampledAt: now }];
+    act(() => ch.sync());
+    expect(changed).toHaveBeenCalledTimes(2);
+    setPeerSnapshot({ seconds: 2990, sampledAt: now });
+    expect(changed).toHaveBeenCalledTimes(3);
+  });
+
   it("anchors changed snapshots to local time when device clocks differ", () => {
     render(<RoomClock />);
     setPeerSnapshot();

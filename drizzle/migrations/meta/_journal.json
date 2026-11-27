@@ -505,6 +505,13 @@
       "when": 1795806000001,
       "tag": "0071_apply_pending_community_and_cheer_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795809600000,
+      "tag": "0072_all_or_nothing_live_standings",
+      "breakpoints": true
     }
   ]
 }
