@@ -97,3 +97,6 @@ verify_jwt = false
 
 [functions.battle-channel]
 verify_jwt = false
+
+[functions.paper-review]
+verify_jwt = false

@@ -81,6 +81,13 @@ const GROUPS: Group[] = [
         "راجع الأسئلة الوزارية."
       ],
       [
+        "paperReview",
+        "Paper Review",
+        "ورقتك تحچي",
+        "Understand feedback on a photo of your marked work.",
+        "صوّر حلّك المصحّح حتى يشرح متميّز الملاحظات."
+      ],
+      [
         "mistakes",
         "My mistakes",
         "أخطائي",

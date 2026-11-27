@@ -17,6 +17,7 @@ type Entry = {
 };
 
 const ENTRIES: Entry[] = [
+  { key: "paperReview", en: { title: "Paper Review", desc: "Review a photo of your marked work" }, ar: { title: "ورقتك تحچي", desc: "شرح ملاحظات على صورة حلّك" }, keywords: ["photo", "paper", "marked", "تحجي", "صورة", "تصحيح", "دفتر"] },
   { key: "studyRace", en: { title: "Tamayzak Race", desc: "Choose a lane and review chapter questions" }, ar: { title: "سباق تميّزك", desc: "اختَر المسار الصحيح وراجع أسئلة الفصل" }, keywords: ["race", "runner", "game", "سباق", "لعبة", "ركض", "تميزك"] },
   { key: "pdfBuilder", en: { title: "Build Your PDF", desc: "Chapter questions, answer keys and booklet templates" }, ar: { title: "صمّم ملزمتك", desc: "ملزمة PDF من الوزاريات والبطاقات وMCQ بتصميم تختاره" }, keywords: ["pdf", "booklet", "template", "print", "export", "صمم", "ملزمة", "ملزمتي", "تصميم", "طباعة", "تحميل"] },
   { key: "mutamayiz", en: { title: "متميز", desc: "One assistant for questions, problems, support, planning and website tools" }, ar: { title: "متميز", desc: "مساعدك لأسئلتك ومشاكلك ودعمك النفسي وجدولك وأدوات الموقع" }, keywords: ["mutamayiz", "ai", "assistant", "support", "planner", "guide", "متميز", "ذكاء اصطناعي", "دعم نفسي", "جدول", "مرشد"] },

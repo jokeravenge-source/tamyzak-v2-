@@ -64,8 +64,8 @@ const AppleIcon = () => (
   </svg>
 );
 
-// Send people back to the page they were on (public pages only) after email confirmation / Google sign-in.
-const RETURN_PATH_PATTERN = /^\/(ministerial-questions|nadia-ministerial-questions|nadia-flashcards|flashcards|mcq-bank|malazam|teachers|enrichments|tools|math|room|follow)(\/|$)/;
+// Send people back to an allowlisted page after email confirmation or Google sign-in.
+const RETURN_PATH_PATTERN = /^\/(ministerial-questions|nadia-ministerial-questions|nadia-flashcards|flashcards|mcq-bank|malazam|teachers|enrichments|tools|math|room|follow|paper-review)(\/|$)/;
 const getReturnUrl = () => {
   if (typeof window === "undefined") return "";
   const { origin, pathname, search } = window.location;

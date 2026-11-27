@@ -519,6 +519,13 @@
       "when": 1795809600001,
       "tag": "0073_apply_pending_live_standings",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1795824000000,
+      "tag": "0074_paper_review",
+      "breakpoints": true
     }
   ]
 }

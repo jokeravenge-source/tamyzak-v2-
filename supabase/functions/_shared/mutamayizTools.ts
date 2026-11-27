@@ -1,4 +1,5 @@
 export const STUDENT_TOOLS = [
+  { "key": "paperReview", "description": "ورقتك تحچي: تحليل صورة لسؤال وحل الطالب وشرح الملاحظات وتمرين مشابه / Explain feedback on a photo of the student's marked work and practise a similar question" },
   { "key": "pdfBuilder", "description": "صمّم ملزمتك: PDF من الوزاريات والبطاقات وMCQ مع قوالب التصميم / Build a study PDF from existing banks with design templates" },
   {
     "key": "basics",

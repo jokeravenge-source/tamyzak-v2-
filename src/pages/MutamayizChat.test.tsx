@@ -17,6 +17,13 @@ beforeEach(()=>{
 afterEach(()=>vi.restoreAllMocks());
 const send=async(text:string)=>{const input=await screen.findByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());await act(async()=>{fireEvent.change(input,{target:{value:text}});fireEvent.click(screen.getByRole('button',{name:'إرسال'}));});};
 describe('single Mutamayiz conversation',()=>{
+ it('offers paper review directly from the signed-in chat',async()=>{
+  const open = vi.fn();
+  render(<MutamayizChat language="ar" onOpenTool={open} />);
+  fireEvent.click(await screen.findByRole('button', {name:/ورقتك تحچي/}));
+  expect(open).toHaveBeenCalledWith("paperReview");
+  expect(backend.invoke).not.toHaveBeenCalled();
+ });
  it('renders source status under the answer and preserves it across entry points',async()=>{
   backend.invoke.mockResolvedValue({data:{reply:'السعة C = Q/V.',scienceEvidence:{academicYear:'2026-2027',sources:[]}},error:null});
   const first=render(<MutamayizChat language="ar"/>);await send('عرّف السعة');

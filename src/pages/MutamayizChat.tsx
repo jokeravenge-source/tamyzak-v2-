@@ -1,6 +1,6 @@
 import ScienceEvidenceCard from "@/components/ScienceEvidenceCard";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowLeft, ArrowUpRight, Check, Loader2, Paperclip, Plus, Presentation, Send, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Loader2, Paperclip, Plus, Presentation, ScanLine, Send, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import MutamayizMascot from "@/components/MutamayizMascot";
@@ -24,6 +24,7 @@ const copy = {
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
     whiteboard: "اشرحلي عالسبورة",
+    paperReview: "ورقتك تحچي", paperReviewHint: "صوّر سؤال وحلّك المصحّح",
     approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت. إذا الملف صور فقط، يحتاج تحويل إلى نص (OCR).",
     error: "تعذّر الرد هسه. رسالتك باقية وتكدر تحاول مرة ثانية.", login: "سجّل دخولك حتى تحچي ويا متميز.", weakness: "أربط خطتي بنقطة ضعف من الفهرست", cancel: "رجوع للمحادثة", approveError: "تعذّر حفظ الخطة. حاول مرة ثانية.", syncError: "انحفظت الخطة على جهازك، لكن تعذّرت مزامنة الحساب. اضغط اعتماد الخطة للمحاولة مرة ثانية.",
   },
@@ -33,6 +34,7 @@ const copy = {
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
     whiteboard: "Explain on the whiteboard",
+    paperReview: "Paper Review", paperReviewHint: "Photograph a question and your marked solution",
     approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB. Image-only PDFs need OCR before they can be read.",
     error: "Could not respond. Your message is still here; please try again.", login: "Sign in to talk to متميز.", weakness: "Match my plan to an Al-Fahras weak point", cancel: "Back to conversation", approveError: "Could not save the plan. Please try again.", syncError: "Plan saved on this device. Account sync failed; approve the plan again to retry.",
   },
@@ -205,6 +207,13 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       <div className="min-w-0 flex-1"><h1 className="text-xl font-black">{MUTAMAYIZ_NAME}</h1><p className="mt-1 text-xs leading-5 text-muted-foreground">{t.subtitle}</p></div>
       <button disabled={!active || busy || fileBusy || approving} onClick={() => { if (owner) { newAssistantConversation(owner); setInput(""); setNotice(""); } }} aria-label={t.fresh} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border hover:bg-secondary disabled:opacity-40"><Plus className="size-5" /></button>
     </header>
+    {active && <div className="shrink-0 border-b border-border px-4 py-2 sm:px-6">
+      <button type="button" onClick={() => openTool("paperReview")} className="flex min-h-12 w-full min-w-0 items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-start transition-colors hover:bg-primary/10">
+        <ScanLine aria-hidden="true" className="size-5 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1"><span className="block text-sm font-black">{t.paperReview}</span><span className="block text-xs leading-5 text-muted-foreground">{t.paperReviewHint}</span></span>
+        <ArrowUpRight aria-hidden="true" className={`size-4 shrink-0 text-primary ${ar ? "-scale-x-100" : ""}`} />
+      </button>
+    </div>}
     <div ref={scroll} role="log" aria-label={ar ? "محادثة متميز" : "Mutamayiz conversation"} aria-live="polite" className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
       {!authReady ? <Loader2 className="mx-auto size-6 animate-spin" /> : !owner ? <p>{t.login}</p> : intake ? <div><button onClick={() => setIntake(false)} className="mb-3 min-h-11 rounded-xl border px-4">{t.cancel}</button><WeeklyWeaknessIntake language={language} onComplete={(profile: WeeklyLearningProfile) => { updateAssistant(owner, current => ({ ...current, profile })); saveWeeklyLearningProfile(profile); void persistProfile(profile, owner).catch(() => {}); setIntake(false); setInput(t.quick[2]); }} /></div> : <>
         {messages.length === 0 && <section className="space-y-5"><div className="rounded-3xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 p-5 text-base leading-8"><Sparkles className="mb-3 size-6 text-blue-600" />{t.intro}</div><div className="grid gap-2 sm:grid-cols-2">{t.quick.map(prompt => <button key={prompt} disabled={busy} onClick={() => { setInput(prompt); }} className="min-h-12 rounded-2xl border border-border bg-card px-4 py-3 text-start text-sm font-semibold hover:border-blue-500">{prompt}</button>)}</div></section>}

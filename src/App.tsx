@@ -68,6 +68,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { isPremiumTool } from "@/lib/premium";
 import PremiumToolLock from "@/components/PremiumToolLock";
 import StudyRoomActivityProvider from "@/components/StudyRoomActivityProvider";
+import { PAPER_REVIEW_PATH } from "../supabase/functions/_shared/paperReview";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const BiologySketchpad = lazy(() => import("./pages/BiologySketchpad"));
 const BiologySchemes = lazy(() => import("./pages/BiologySchemes"));
@@ -78,6 +79,7 @@ const FeatureUnlockCelebration = lazy(() => import("./components/FeatureUnlockCe
 const StudentCharacter = lazy(() => import("./components/StudentCharacter"));
 
 const MutamayizChat = lazy(() => import("./pages/MutamayizChat"));
+const PaperReview = lazy(() => import("./pages/PaperReview"));
 
 const FeatureUnlocks = lazy(() => import("./pages/FeatureUnlocks"));
 import { ensureDailyLogin, fetchUnlockedKeys, isGatedMenu, type FeatureKey } from "@/lib/unlocks";
@@ -811,6 +813,7 @@ const StudentApp = () => {
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (pendingBattleChannelId()) return "liveBattle";
     if (typeof window === "undefined") return null;
+    if (window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) return "paperReview";
     if (window.location.pathname.replace(/\/+$/, "") === "/physics-activities") {
       localStorage.setItem(MENU_STORAGE_KEY, "physicsActivities");
       return "physicsActivities";
@@ -925,6 +928,9 @@ const StudentApp = () => {
   };
   const { isPremium, loading: subscriptionLoading, userId } = useSubscription();
   const chooseMenu = useCallback((choice: MenuChoice) => {
+    if (choice !== "paperReview" && window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) {
+      window.history.replaceState(window.history.state, "", "/");
+    }
     if (choice !== "mcqBank") setPracticeReturnTarget(null);
     logFirstFeatureTouch(choice);
     recordToolUse(choice);
@@ -1103,7 +1109,7 @@ const StudentApp = () => {
       {authed && language && authRole === "student" && userId && (
         <Suspense fallback={null}>
           <StudentCharacter key={userId} userId={userId} language={language}
-            visible={!mutamayizOpen && !["studyRace", "mutamayiz", "companion", "psych", "subjectTutor"].includes(menuChoice ?? "")}
+            visible={!mutamayizOpen && !["studyRace", "mutamayiz", "companion", "psych", "subjectTutor", "paperReview"].includes(menuChoice ?? "")}
             onNeedHelp={() => setMutamayizOpen(true)} />
         </Suspense>
       )}
@@ -1259,6 +1265,17 @@ const StudentApp = () => {
         }} />
       ) : menuChoice === "mistakes" ? (
         <MyMistakes language={language} onBack={backToBasics} />
+      ) : menuChoice === "paperReview" ? (
+        <PaperReview
+          key={userId ?? "paper-review"}
+          language={language}
+          initialExercise={window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH ? new URLSearchParams(window.location.search).get("exercise") : null}
+          onBack={() => {
+            if (window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) chooseMenu("basics");
+            else resetMenu();
+          }}
+          onUpgrade={() => chooseMenu("premium")}
+        />
       ) : menuChoice === "ministerialBank" ? (
         <MinisterialBank
           language={language}
