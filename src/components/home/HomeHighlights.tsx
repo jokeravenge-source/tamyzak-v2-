@@ -5,6 +5,7 @@ import hoodieArt from "@/assets/houdini-hoodie-icon.png";
 import pointsArt from "@/assets/points-guide-lightning.webp";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
+import { HOUDINI_STORE_URL } from "@/lib/storeLinks";
 import "./homeCards.css";
 
 function getCardOffset(card: Element, start: number, rtl: boolean) {
@@ -132,7 +133,7 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         <button type="button" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
           <PromoContent art={challengeArt} title={challengeTitle} description={isRTL ? "اختبر مستواك وتنافس ويّه طلاب تميّزك" : "Test your skills against other Tamayzak students"} />
         </button>
-        <a href="https://www.instagram.com/houdini_st0re/" target="_blank" rel="noopener noreferrer" className={promoClass} aria-label={houdiniTitle}>
+        <a href={HOUDINI_STORE_URL} target="_blank" rel="noopener noreferrer" className={promoClass} aria-label={houdiniTitle}>
           <PromoContent art={hoodieArt} title={houdiniTitle} description={isRTL ? "اطلب هودي تميّزك من هوديني على إنستغرام" : "Order your Tamayzak hoodie from Houdini on Instagram"} />
         </a>
         <TelegramLinkCard language={language} source="home" variant="home" />

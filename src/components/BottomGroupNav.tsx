@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import MutamayizMascot from "@/components/MutamayizMascot";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
+import { TESLA_STORE_URL } from "@/lib/storeLinks";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
 type NavItem = {
@@ -24,8 +25,6 @@ type OverflowItem =
       href: string;
     };
 
-const TESLA_INSTAGRAM_URL = "https://www.instagram.com/tesl_astore/?utm_source=ig_web_button_share_sheet";
-
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
   { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
@@ -41,7 +40,7 @@ const OVERFLOW_ITEMS: OverflowItem[] = [
     labelAr: "تيسلا",
     labelEn: "Tesla",
     Icon: Zap,
-    href: TESLA_INSTAGRAM_URL,
+    href: TESLA_STORE_URL,
   },
 ];
 

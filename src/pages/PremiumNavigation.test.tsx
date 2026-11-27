@@ -162,16 +162,37 @@ describe("simplified home navigation", () => {
     expect(screen.queryByRole("heading", { name: "What will you finish today?" })).not.toBeInTheDocument();
   });
 
-  it("opens the Arabic points guide with a blank body and returns to its card", async () => {
+  it.each(["ar", "en"] as const)("shows all four points cards in %s and returns to the Home card", async (language) => {
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
-    await act(async () => { render(<Basics language="ar" onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={vi.fn()} />); });
-    fireEvent.click(screen.getByRole("button", { name: "شتسوي بالنقاط ؟" }));
+    const isAr = language === "ar";
+    const title = isAr ? "شتسوي بالنقاط ؟" : "What can you do with points?";
+    const onNav = vi.fn();
+    await act(async () => { render(<Basics language={language} onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={onNav} />); });
+    fireEvent.click(screen.getByRole("button", { name: title }));
     const guide = within(screen.getByRole("main"));
-    expect(guide.getByRole("heading", { name: "شتسوي بالنقاط ؟" })).toBeVisible();
-    expect(guide.queryByRole("region")).not.toBeInTheDocument();
-    expect(guide.queryByRole("link")).not.toBeInTheDocument();
-    fireEvent.click(guide.getByRole("button", { name: "العودة للرئيسية" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "شتسوي بالنقاط ؟" })).toHaveFocus());
+    expect(guide.getByRole("heading", { name: title })).toBeVisible();
+    const cards = within(guide.getByRole("list", { name: isAr ? "خيارات النقاط" : "Ways to use points" })).getAllByRole("listitem");
+    expect(cards).toHaveLength(4);
+
+    const tesla = within(cards[0]).getByRole("link", { name: isAr ? "متجر تيسلا" : "Tesla Store" });
+    expect(tesla).toHaveAttribute("href", "https://www.instagram.com/tesl_astore/?utm_source=ig_web_button_share_sheet");
+    expect(tesla).toHaveTextContent(isAr ? "خصم على التوصيل لكل ١٬٠٠٠ نقطة." : "Get a delivery discount for every 1,000 points.");
+    expect(tesla.querySelector("img")).toHaveAttribute("src", expect.stringContaining("points-guide-lightning.webp"));
+
+    const premium = within(cards[1]).getByRole("button", { name: isAr ? "بريميوم بالنقاط" : "Premium with points" });
+    expect(premium).toHaveTextContent(isAr ? "كل ١٬٠٠٠ نقطة تفتح لك ٣ أيام بريميوم." : "Every 1,000 points gives you 3 days of Premium.");
+    fireEvent.click(premium);
+    expect(onNav).toHaveBeenNthCalledWith(1, "premium");
+
+    expect(within(cards[2]).getByRole("link", { name: isAr ? "هوديني" : "Houdini" })).toHaveAttribute("href", "https://www.instagram.com/houdini_st0re/");
+
+    const leaderboard = within(cards[3]).getByRole("button", { name: isAr ? "لوحة المتصدرين" : "Leaderboard" });
+    expect(leaderboard).toHaveTextContent(isAr ? "مركزك الحالي · #١٢" : "Your current position · #12");
+    fireEvent.click(leaderboard);
+    expect(onNav).toHaveBeenNthCalledWith(2, "leaderboard");
+
+    fireEvent.click(guide.getByRole("button", { name: isAr ? "العودة للرئيسية" : "Back to home" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: title })).toHaveFocus());
   });
 
   it("keeps the schedule shortcut visible with no tasks today", async () => {

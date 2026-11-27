@@ -31,6 +31,7 @@ import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
 import studyBookArt from "@/assets/home-study-book.webp";
 import HomeHighlights from "@/components/home/HomeHighlights";
+import PointsGuideCards from "@/components/home/PointsGuideCards";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import { normalizeStudySearch } from "@/lib/studySearch";
@@ -1089,7 +1090,10 @@ const Basics = ({
               </div>
             </div>
           </section>
-          ) : null}
+          ) : (
+            <PointsGuideCards language={language} rank={boardRank}
+              onOpenPremium={() => navigate("premium")} onOpenLeaderboard={() => navigate("leaderboard")} />
+          )}
         </div>
       </main>
     );

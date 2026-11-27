@@ -2,6 +2,12 @@ export const PREMIUM_INSTAGRAM_URL = "https://www.instagram.com/s_o_v_e0/";
 // Manual activations are live subscriptions, independent of Paddle test mode.
 export const PREMIUM_ENVIRONMENT = "live";
 export const PREMIUM_ACCESS_CHANGED_EVENT = "app:premium-access-changed";
+// Keep the offer in sync with redeem_premium_with_points.
+export const PREMIUM_POINTS_COST = 1000;
+export const PREMIUM_POINTS_OFFER = {
+  ar: `كل ${PREMIUM_POINTS_COST.toLocaleString("ar-IQ")} نقطة تفتح لك ٣ أيام بريميوم.`,
+  en: `Every ${PREMIUM_POINTS_COST.toLocaleString("en")} points gives you 3 days of Premium.`,
+} as const;
 
 // One policy for home cards, subject tools, and persisted/deep-linked screens.
 // Flashcards, both question banks, Malazam, and everyday study tracking stay free.

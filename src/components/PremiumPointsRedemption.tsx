@@ -3,14 +3,11 @@ import { Coins, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
-import { PREMIUM_ACCESS_CHANGED_EVENT, PREMIUM_ENVIRONMENT } from "@/lib/premium";
-
-const COST = 1000;
+import { PREMIUM_ACCESS_CHANGED_EVENT, PREMIUM_ENVIRONMENT, PREMIUM_POINTS_COST, PREMIUM_POINTS_OFFER } from "@/lib/premium";
 
 const copy = {
   ar: {
     title: "بريميوم بالنقاط",
-    description: "كل ١٬٠٠٠ نقطة تفتح لك ٣ أيام بريميوم.",
     balance: "رصيدك المتاح",
     loading: "جارٍ تحميل رصيدك…",
     balanceError: "ما قدرنا نحمّل رصيدك.",
@@ -26,7 +23,6 @@ const copy = {
   },
   en: {
     title: "Premium with points",
-    description: "Every 1,000 points gives you 3 days of Premium.",
     balance: "Available balance",
     loading: "Loading your balance…",
     balanceError: "We couldn't load your balance.",
@@ -79,7 +75,7 @@ export default function PremiumPointsRedemption({ language, userId }: { language
   }, [balance]);
 
   // An unresolved request can be retried even when the first attempt used the last points.
-  const canRedeem = balance !== null && (requestId !== null || (typeof balance === "number" && balance >= COST));
+  const canRedeem = balance !== null && (requestId !== null || (typeof balance === "number" && balance >= PREMIUM_POINTS_COST));
   const rememberRequest = (id: string | null) => {
     setRequestId(id);
     try {
@@ -129,7 +125,7 @@ export default function PremiumPointsRedemption({ language, userId }: { language
         </div>
         <div>
           <h2 className="font-bold text-foreground">{t.title}</h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.description}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{PREMIUM_POINTS_OFFER[language]}</p>
         </div>
       </div>
       <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">
