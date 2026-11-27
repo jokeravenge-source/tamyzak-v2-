@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
 import { sendStudyRoomVoice, setStudyRoomMic, type RoomActivity, type RoomSpeaker, type VoiceSignal } from "./useStudyRoomActivity";
 
 type Peer = { peer: RTCPeerConnection; attempt: string };
@@ -8,7 +8,7 @@ type Listener = Peer & { speaker: RoomSpeaker; timeout?: number };
 type AudioError = "connection" | "microphone" | "unavailable" | "busy";
 
 async function roomIceServers(room: string): Promise<RTCIceServer[]> {
-  const { data, error } = await supabase.rpc("study_room_voice_ice", { _room: room });
+  const { data, error } = await studyRoomActivityRpc("study_room_voice_ice", { _room: room });
   if (error) throw error;
   const servers: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
   if (Array.isArray(data)) {

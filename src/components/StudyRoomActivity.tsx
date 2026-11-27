@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { setStudyRoomMic, type useStudyRoomActivity } from "@/hooks/useStudyRoomActivity";
 import { useStudyRoomVoice } from "@/hooks/useStudyRoomVoice";
-import { supabase } from "@/integrations/supabase/client";
+import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
 import { censorText } from "@/lib/censor";
 
 const copy = {
@@ -47,7 +47,7 @@ export function EncourageStudyRoomMember({ room, user, name, language }: {
   const send = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("encourage_study_room_member", { _room: room, _recipient: user });
+      const { error } = await studyRoomActivityRpc("encourage_study_room_member", { _room: room, _recipient: user });
       if (error) throw error;
       toast.success(t.sent);
     } catch (error) {
@@ -92,7 +92,7 @@ export default function StudyRoomActivity({ room, user, members, language, activ
   const dismiss = async () => {
     const through = data?.inbox[0]?.created_at;
     if (!through) return;
-    const { error } = await supabase.rpc("dismiss_study_room_encouragements", { _room: room, _through: through });
+    const { error } = await studyRoomActivityRpc("dismiss_study_room_encouragements", { _room: room, _through: through });
     if (error) toast.error(t.error);
     else await refresh();
   };

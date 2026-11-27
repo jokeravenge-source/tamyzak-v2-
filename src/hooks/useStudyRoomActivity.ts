@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
 
 export const STUDY_ROOM_CHEER_RECEIVED = "study-room-cheer-received";
 
@@ -19,14 +20,14 @@ type VoiceDescription = { type: "offer" | "answer"; sdp: string } | { type: "lea
 export type VoiceSignal = { from: string; connection: string; attempt: string | null; description: VoiceDescription };
 
 export async function setStudyRoomMic(room: string, action: MicAction, requester?: string, connection?: string) {
-  const { error } = await supabase.rpc("set_study_room_mic", {
+  const { error } = await studyRoomActivityRpc("set_study_room_mic", {
     _room: room, _action: action, _requester: requester, _connection: connection,
   });
   if (error) throw error;
 }
 
 export async function sendStudyRoomVoice(room: string, target: string, connection: string, attempt: string, description: VoiceDescription) {
-  const { error } = await supabase.rpc("signal_study_room_voice", {
+  const { error } = await studyRoomActivityRpc("signal_study_room_voice", {
     _room: room, _target: target, _connection: connection, _attempt: attempt, _description: description,
   });
   if (error) throw error;
@@ -40,7 +41,8 @@ export function useStudyRoomActivity(room: string | undefined, user: string | nu
   const query = useQuery({
     queryKey: ["study-room-activity", room, user],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("study_room_activity", { _room: room! });
+      if (!room || !user) throw new Error("ROOM_MEMBERSHIP_REQUIRED");
+      const { data, error } = await studyRoomActivityRpc("study_room_activity", { _room: room });
       if (error) throw error;
       return data as RoomActivity;
     },

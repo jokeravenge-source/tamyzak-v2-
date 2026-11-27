@@ -1,5 +1,7 @@
 # Project rules
 
+- Isolate pending study-room activity RPC signatures in `studyRoomActivityRpc` without editing generated database types; this keeps the preview compiling while preserving server-side errors and authorization until deployment.
+
 - Battle publishing accepts Telegram groups and channels, checks destination-specific bot posting rights before reserving an invitation, and never automatically retries uncertain deliveries; this prevents unusable rooms and duplicate posts.
 
 - Use the compatibility PDF.js build with its matching compatibility worker for the booklet reader so older Safari versions can open valid PDFs without native Promise.withResolvers.
