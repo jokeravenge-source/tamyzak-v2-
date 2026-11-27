@@ -4942,8 +4942,6 @@ export type Database = {
         Returns: string
       }
       ensure_tamayzak_public_challenges: { Args: never; Returns: undefined }
-      dismiss_study_room_encouragements: { Args: { _room: string; _through: string }; Returns: undefined }
-      encourage_study_room_member: { Args: { _room: string; _recipient: string }; Returns: undefined }
       feature_usage_today: { Args: { _feature: string }; Returns: number }
       french_flashcard_access: { Args: never; Returns: Json }
       get_battle_channel_config: { Args: never; Returns: Json }
@@ -5133,8 +5131,6 @@ export type Database = {
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
       set_site_visits: { Args: { _count: number }; Returns: number }
-      set_study_room_mic: { Args: { _room: string; _action: string; _requester?: string; _connection?: string }; Returns: undefined }
-      signal_study_room_voice: { Args: { _room: string; _target: string; _connection: string; _attempt: string; _description: Json }; Returns: undefined }
       settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
       start_all_or_nothing_challenge: {
         Args: { _challenge_id: string }
@@ -5175,8 +5171,6 @@ export type Database = {
         }
         Returns: Json
       }
-      study_room_activity: { Args: { _room: string }; Returns: Json }
-      study_room_voice_ice: { Args: { _room: string }; Returns: Json }
       study_royale: {
         Args: {
           _action?: string
