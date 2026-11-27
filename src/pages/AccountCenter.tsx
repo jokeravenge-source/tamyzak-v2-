@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { getSignupSource } from "@/lib/analytics";
-import { notifyProfileCharacterChanged } from "@/lib/profileCharacter";
+import { notifyProfileCharacterChanged, saveProfileAccessoryFit } from "@/lib/profileCharacter";
+import { getWornAccessories } from "@/lib/characterAccessoryFit";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Loader2, Save, Palette, MessageCircle, Settings, Lock, LogOut, Globe, ArrowLeft, ChevronDown, Sparkles, Eye, EyeOff, RotateCcw, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import AccountOverview, { type AccountProgress } from "@/components/AccountOverview";
+import AccessoryFitEditor from "@/components/AccessoryFitEditor";
 import KokiCharacterCard, { KOKI_VARIANT } from "@/components/KokiCharacterCard";
 import strawHat from "@/assets/straw-hat.png.asset.json";
 import redCap from "@/assets/red-cap-front.png.asset.json";
@@ -288,6 +290,7 @@ const AccountCenter = ({
   const effective: CharacterTraits | null = gender
     ? { ...getAvatarStyle(userId || "anon", gender), ...(traits ?? {}) }
     : null;
+  const [firstAccessory, ...otherAccessories] = getWornAccessories(effective ?? {});
   const hairOptions = gender === "female" ? FEMALE_HAIRSTYLES : MALE_HAIRSTYLES;
   const currentRank = rankFor(progress?.lifetimePoints ?? 0);
   const selectedPets = getSelectedPets(effective);
@@ -407,6 +410,11 @@ const AccountCenter = ({
                   <div className="flex max-w-full justify-center overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-primary/10 to-muted/25 p-3">
                     <CharacterAvatar seed={userId} gender={gender} traits={effective} size={218} />
                   </div>
+                  {firstAccessory && effective && (
+                    <AccessoryFitEditor language={language} gender={gender} traits={effective}
+                      accessories={[firstAccessory, ...otherAccessories]}
+                      onSave={async (character, edits) => setTraits(await saveProfileAccessoryFit(userId, character, edits))} />
+                  )}
                   <div className="w-full space-y-2">
                     <div className="flex gap-2">
                       <button

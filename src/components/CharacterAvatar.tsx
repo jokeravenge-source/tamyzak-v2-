@@ -32,6 +32,7 @@ import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
 import type { PetKind } from "@/lib/pets";
+import { getAccessoryPlacement, getCharacterVariant, getWornAccessories, type CharacterAccessoryFits } from "@/lib/characterAccessoryFit";
 
 export type Gender = "male" | "female";
 
@@ -66,6 +67,7 @@ export type CharacterTraits = {
   necklace?: NecklaceKind;
   hat?: HatKind;
   chain?: ChainKind;
+  accessoryFits?: CharacterAccessoryFits;
   /** Legacy single-pet value; kept so existing profiles migrate automatically. */
   pet?: PetKind | null;
   pets?: PetKind[];
@@ -95,6 +97,14 @@ export function getAvatarStyle(_seed: string, gender: Gender): CharacterTraits {
   };
 }
 
+const accessoryArt = {
+  straw: { src: strawHat.url, layer: 3 },
+  "red-cap": { src: redCap.url, layer: 3 },
+  "kitty-ears": { src: kittyEars.url, layer: 3 },
+  glasses: { src: pixelSunglasses.url, layer: 4 },
+  "gold-chain": { src: goldChain.url, layer: 5 },
+} as const;
+
 function CharacterAvatarComponent({
   gender,
   size = 96,
@@ -109,14 +119,11 @@ function CharacterAvatarComponent({
 }) {
   const g: Gender = gender ?? "male";
   const variants = g === "female" ? FEMALE_VARIANTS : MALE_VARIANTS;
-  const requestedVariant = Number(traits?.variant ?? 1);
-  const safeVariant = Number.isFinite(requestedVariant) ? Math.trunc(requestedVariant) : 1;
-  const idx = Math.max(0, Math.min(variants.length - 1, safeVariant - 1));
+  const appearance = traits ?? {};
+  const variant = getCharacterVariant(g, appearance.variant);
   const fallbackSrc = variants[0];
   // Koki is a separate, code-unlocked choice; never add her to the free catalog.
-  const src = g === "female" && safeVariant === 16 ? koki : variants[idx] ?? fallbackSrc;
-  const hasCrown = traits?.accessory === "crown";
-  const hat = traits?.hat ?? null;
+  const src = g === "female" && variant === 16 ? koki : variants[variant - 1] ?? fallbackSrc;
   const skin = traits?.skin ?? SKIN_COLORS[0];
   const tinted = useSkinTinted(src, skin, size);
   return (
@@ -158,123 +165,21 @@ function CharacterAvatarComponent({
         }}
         draggable={false}
       />
-      {traits?.accessory === "glasses" && (
-        <img
-          src={pixelSunglasses.url}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 4,
-            top: "34.5%",
-            left: "50%",
-            width: "35%",
-            height: "auto",
-            transform: "translateX(-50%)",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.28))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {hat === "straw" && (
-        <img
-          src={strawHat.url}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 3,
-            top: "-15%",
-            left: "50%",
-            width: "70%",
-            height: "auto",
-            transform: "translateX(-50%)",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {hat === "red-cap" && (
-        <img
-          src={redCap.url}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 3,
-            top: "-12%",
-            left: "50%",
-            width: "63%",
-            height: "auto",
-            transform: "translateX(-50%)",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {hat === "kitty-ears" && (
-        <img
-          src={kittyEars.url}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 3,
-            top: "-1%",
-            left: "50%",
-            width: "62%",
-            height: "auto",
-            transform: "translateX(-50%)",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.25))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {hasCrown && !hat && (
-        <span
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: "22%",
-            left: "50%",
-            transform: "translate(-50%, -100%)",
-            fontSize: size * 0.32,
-            lineHeight: 1,
-            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))",
-            pointerEvents: "none",
-          }}
-        >
-          👑
-        </span>
-      )}
-      {traits?.chain === "gold" && (
-        <img
-          src={goldChain.url}
-          alt=""
-          aria-hidden
-          draggable={false}
-          style={{
-            position: "absolute",
-            zIndex: 5,
-            top: "49%",
-            left: "50%",
-            width: "31%",
-            height: "auto",
-            transform: "translateX(-50%)",
-            imageRendering: "pixelated",
-            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
-            pointerEvents: "none",
-          }}
-        />
-      )}
+      {getWornAccessories(appearance).map(accessory => {
+        const { width, ...placement } = getAccessoryPlacement(g, appearance, accessory);
+        const style = { position: "absolute", pointerEvents: "none", ...placement } as const;
+        if (accessory === "crown") {
+          return <span key={accessory} data-avatar-accessory={accessory} aria-hidden
+            style={{ ...style, zIndex: 3, fontSize: size * width / 100, lineHeight: 1 }}>
+            👑
+          </span>;
+        }
+
+        const art = accessoryArt[accessory];
+        return <img key={accessory} data-avatar-accessory={accessory} src={art.src} alt="" aria-hidden draggable={false}
+          style={{ ...style, zIndex: art.layer, width: `${width}%`, height: "auto", maxWidth: "none", imageRendering: "pixelated",
+            filter: `drop-shadow(0 ${size / 100}px ${size / 100}px rgb(0 0 0 / 28%))` }} />;
+      })}
     </div>
   );
 }
