@@ -1,15 +1,18 @@
 import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown, MessageCircle, MessageSquarePlus, Send, Trash2 } from "lucide-react";
+import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { ArrowLeft, ChevronDown, ImagePlus, MessageCircle, MessageSquarePlus, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import CommunityChatMark, { chatBannerClass } from "@/components/CommunityChatMark";
+import CommunityPostPhotos, { ChatPhotoPreview } from "@/components/CommunityPostPhotos";
+import CommunityPostReactions from "@/components/CommunityPostReactions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { censorText, isMessageAllowed } from "@/lib/censor";
 import {
-  COMMUNITY_COMMENT_LIMIT, COMMUNITY_POST_LIMIT, createChatComment, createChatPost,
-  listChatComments, listChatPosts, removeChatEntry, type ChatComment, type ChatCursor, type ChatDraft, type ChatPost,
+  CHAT_PHOTO_ACCEPT, CHAT_PHOTO_LIMIT, COMMUNITY_COMMENT_LIMIT, COMMUNITY_POST_LIMIT, createChatComment, createChatPost,
+  isChatPhoto, listChatComments, listChatPosts, removeChatEntry, type ChatComment, type ChatCursor, type ChatPostDraft,
+  type ChatPost, type ChatReactionSummary,
 } from "@/lib/communityChat";
 
 const copy = {
@@ -17,6 +20,9 @@ const copy = {
     back: "Community", title: "Chat", description: "Posts and conversations from Tamayzak students.",
     writePost: "Write a post", postPlaceholder: "What would you like to share?",
     post: "Post", writeComment: "Write a comment", commentPlaceholder: "Share your reply…", sendComment: "Send comment", publishing: "Sending…",
+    addPhotos: "Add photos", removePhoto: "Remove photo", photo: "Post photo", photoUnavailable: "Photo unavailable",
+    photoLimit: "You can attach up to four photos.",
+    photoFormat: "Choose a JPEG, PNG, or WebP photo up to 5 MB.",
     feed: "Posts", comments: "Comments", hideComments: "Hide comments", student: "Student",
     empty: "There are no posts yet. Start the conversation.", noComments: "No comments yet.",
     loading: "Loading posts…", loadingComments: "Loading comments…", retry: "Try again", loadMore: "More posts", moreComments: "More comments",
@@ -30,6 +36,9 @@ const copy = {
     back: "المجتمع", title: "الدردشة", description: "منشورات ونقاشات طلاب تميّزك.",
     writePost: "اكتب منشور", postPlaceholder: "شنو تحب تشارك؟",
     post: "نشر", writeComment: "اكتب تعليق", commentPlaceholder: "شارك بردّك…", sendComment: "إرسال التعليق", publishing: "جاري الإرسال…",
+    addPhotos: "أضف صور", removePhoto: "احذف الصورة", photo: "صورة المنشور", photoUnavailable: "الصورة مو متاحة",
+    photoLimit: "تگدر ترفق لحد أربع صور.",
+    photoFormat: "اختار صورة JPEG أو PNG أو WebP بحجم لحد ٥ ميغابايت.",
     feed: "المنشورات", comments: "التعليقات", hideComments: "إخفاء التعليقات", student: "طالب",
     empty: "ماكو منشورات بعد. ابدأ النقاش.", noComments: "ماكو تعليقات بعد.",
     loading: "جاري تحميل المنشورات…", loadingComments: "جاري تحميل التعليقات…", retry: "جرّب مرة ثانية",
@@ -54,30 +63,39 @@ function Composer({ label, placeholder, button, limit, isPost, t, send, refresh 
   limit: number;
   isPost?: boolean;
   t: Copy;
-  send: (draft: ChatDraft) => Promise<void>;
+  send: (draft: ChatPostDraft) => Promise<void>;
   refresh: () => Promise<void>;
 }) {
   const inputId = useId();
+  const photoPicker = useRef<HTMLInputElement>(null);
   const draftId = useRef<string | null>(null);
   const [text, setText] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState("");
   const save = useMutation({
     mutationFn: send,
     onSuccess: async () => {
       setText("");
+      setPhotos([]);
       draftId.current = null;
       await refresh();
     },
     onError: () => setError(t.sendError),
   });
+  const hasContent = Boolean(text.trim()) || photos.length > 0;
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = text.trim();
-    if (!body || save.isPending) return;
+    if (!hasContent || save.isPending) return;
     if (!isMessageAllowed(body)) { setError(t.blocked); return; }
     setError("");
     draftId.current ??= crypto.randomUUID();
-    save.mutate({ id: draftId.current, body });
+    save.mutate({ id: draftId.current, body, ...(photos.length > 0 ? { photos } : {}) });
+  };
+  const changePhotos = (next: File[]) => {
+    draftId.current = null;
+    setError("");
+    setPhotos(next);
   };
 
   return (
@@ -96,10 +114,34 @@ function Composer({ label, placeholder, button, limit, isPost, t, send, refresh 
       }} maxLength={limit} disabled={save.isPending} rows={2} dir="auto"
         aria-invalid={Boolean(error)} aria-describedby={error ? `${inputId}-error` : undefined}
         placeholder={placeholder} className="min-h-[4.5rem] resize-y rounded-xl bg-background text-base" />
+      {photos.length > 0 && (
+        <div className="mt-2 grid max-w-xs grid-cols-4 gap-2">
+          {photos.map((file, index) => (
+            <ChatPhotoPreview key={`${index}:${file.lastModified}:${file.name}`} file={file} disabled={save.isPending}
+              removeLabel={`${t.removePhoto} ${index + 1}`} onRemove={() => changePhotos(photos.filter((_, item) => item !== index))} />
+          ))}
+        </div>
+      )}
       {error && <p id={`${inputId}-error`} role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
-      <div className="mt-2 flex items-center justify-between gap-3">
-        {text.length > 0 && <span className="text-xs tabular-nums text-muted-foreground" dir="ltr">{text.length} / {limit}</span>}
-        <Button type="submit" disabled={!text.trim() || save.isPending}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {isPost && (
+          <>
+            <input ref={photoPicker} type="file" accept={CHAT_PHOTO_ACCEPT} multiple hidden onChange={event => {
+              const added = Array.from(event.currentTarget.files ?? []);
+              event.currentTarget.value = "";
+              if (!added.length) return;
+              if (added.some(file => !isChatPhoto(file))) { setError(t.photoFormat); return; }
+              if (photos.length + added.length > CHAT_PHOTO_LIMIT) { setError(t.photoLimit); return; }
+              changePhotos([...photos, ...added]);
+            }} />
+            <Button type="button" variant="secondary" disabled={save.isPending || photos.length >= CHAT_PHOTO_LIMIT}
+              className="min-h-11" onClick={() => photoPicker.current?.click()}>
+              <ImagePlus aria-hidden="true" />{t.addPhotos}
+            </Button>
+          </>
+        )}
+        {text.length > 0 && <span className="ms-auto text-xs tabular-nums text-muted-foreground" dir="ltr">{text.length} / {limit}</span>}
+        <Button type="submit" disabled={!hasContent || save.isPending}
           className="ms-auto min-h-11 bg-teal-800 text-white hover:bg-teal-900 dark:bg-teal-300 dark:text-teal-950 dark:hover:bg-teal-200">
           <Send aria-hidden="true" />{save.isPending ? t.publishing : button}
         </Button>
@@ -129,7 +171,7 @@ function Message({ entry, language, student, small, actions }: {
         </div>
         {actions}
       </div>
-      <p className={`mt-2 whitespace-pre-wrap leading-relaxed [overflow-wrap:anywhere] ${small ? "text-sm" : "text-base"}`} dir="auto">{body}</p>
+      {body && <p className={`mt-2 whitespace-pre-wrap leading-relaxed [overflow-wrap:anywhere] ${small ? "text-sm" : "text-base"}`} dir="auto">{body}</p>}
     </div>
   );
 }
@@ -204,12 +246,13 @@ function ChatThread({ id, postId, userId, language, canModerate, refreshFeed }: 
   );
 }
 
-function PostCard({ post, userId, language, canModerate, refreshFeed }: {
+function PostCard({ post, userId, language, canModerate, refreshFeed, onReactionSaved }: {
   post: ChatPost;
   userId: string;
   language: AppLanguage;
   canModerate: boolean;
   refreshFeed: () => Promise<void>;
+  onReactionSaved: (postId: string, summary: ChatReactionSummary) => void;
 }) {
   const t = copy[language];
   const threadId = useId();
@@ -219,7 +262,13 @@ function PostCard({ post, userId, language, canModerate, refreshFeed }: {
     <article className="rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <Message entry={post} language={language} student={t.student}
         actions={(canModerate || post.author_id === userId) && <DeleteEntry type="post" id={post.id} t={t} refresh={refreshFeed} />} />
-      <div className="mt-3 border-t border-border/80 pt-3">
+      {post.photo_paths.length > 0 && (
+        <CommunityPostPhotos paths={post.photo_paths} userId={userId} unavailable={t.photoUnavailable}
+          label={position => `${t.photo} ${position.toLocaleString(language === "ar" ? "ar-IQ" : "en")}`} />
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/80 pt-3">
+        <CommunityPostReactions postId={post.id} summary={post} language={language}
+          onSaved={summary => onReactionSaved(post.id, summary)} />
         <Button type="button" variant="secondary" aria-expanded={open} aria-controls={open ? threadId : undefined}
           onClick={() => setOpen(value => !value)}
           className="min-h-11 rounded-full bg-teal-700/10 text-teal-900 hover:bg-teal-700/20 dark:bg-teal-300/15 dark:text-teal-100 dark:hover:bg-teal-300/25">
@@ -254,6 +303,16 @@ export default function CommunityChat({ language, userId, canModerate, onBack }:
     retry: false,
   });
   const refreshFeed = () => store.invalidateQueries({ queryKey });
+  const saveReactionToFeed = (postId: string, summary: ChatReactionSummary) => {
+    store.setQueryData<InfiniteData<Awaited<ReturnType<typeof listChatPosts>>>>(queryKey, current => current && ({
+      ...current,
+      pages: current.pages.map(page => ({
+        ...page,
+        items: page.items.map(post => post.id === postId ? { ...post, ...summary } : post),
+      })),
+    }));
+    void refreshFeed();
+  };
   const items = posts.data?.pages.flatMap(page => page.items) ?? [];
   return (
     <main dir={ar ? "rtl" : "ltr"} className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6 sm:px-6 sm:pt-9">
@@ -282,7 +341,8 @@ export default function CommunityChat({ language, userId, canModerate, onBack }:
             {posts.isSuccess && items.length === 0 && (
               <p className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">{t.empty}</p>
             )}
-            {items.map(post => <PostCard key={post.id} post={post} userId={userId} language={language} canModerate={canModerate} refreshFeed={refreshFeed} />)}
+            {items.map(post => <PostCard key={post.id} post={post} userId={userId} language={language}
+              canModerate={canModerate} refreshFeed={refreshFeed} onReactionSaved={saveReactionToFeed} />)}
             {posts.hasNextPage && <Button type="button" variant="outline" disabled={posts.isFetching} onClick={() => void posts.fetchNextPage()}>{t.loadMore}</Button>}
           </section>
         </>

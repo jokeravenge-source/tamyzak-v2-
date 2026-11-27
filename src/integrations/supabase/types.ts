@@ -713,18 +713,21 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          photo_paths: string[]
         }
         Insert: {
           author_id: string
           body: string
           created_at?: string
           id?: string
+          photo_paths?: string[]
         }
         Update: {
           author_id?: string
           body?: string
           created_at?: string
           id?: string
+          photo_paths?: string[]
         }
         Relationships: []
       }
@@ -4848,6 +4851,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      list_community_chat_posts_v2: {
+        Args: { _before_at?: string; _before_id?: string }
+        Returns: {
+          id: string
+          author_id: string
+          author_name: string | null
+          body: string
+          created_at: string
+          comment_count: number
+          photo_paths: string[]
+          like_count: number
+          dislike_count: number
+          viewer_reaction: "like" | "dislike" | null
+        }[]
+      }
+      set_community_chat_reaction: {
+        Args: { _post_id: string; _reaction: "like" | "dislike" | null }
+        Returns: {
+          like_count: number
+          dislike_count: number
+          viewer_reaction: "like" | "dislike" | null
+        }[]
+      }
       list_community_chat_comments: {
         Args: { _post_id: string; _before_at?: string; _before_id?: string }
         Returns: {
