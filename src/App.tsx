@@ -67,6 +67,7 @@ import { recordToolUse } from "@/lib/recentTools";
 import { useSubscription } from "@/hooks/useSubscription";
 import { isPremiumTool } from "@/lib/premium";
 import PremiumToolLock from "@/components/PremiumToolLock";
+import StudyRoomActivityProvider from "@/components/StudyRoomActivityProvider";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const BiologySketchpad = lazy(() => import("./pages/BiologySketchpad"));
 const BiologySchemes = lazy(() => import("./pages/BiologySchemes"));
@@ -233,10 +234,10 @@ const McqBankDeepLink = () => {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => updateUser(session?.user.id ?? null));
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
-  return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}>
+  return <QueryClientProvider client={queryClient}><StudyRoomActivityProvider user={!checking && authed ? userId : null} language={language}><TooltipProvider><Suspense fallback={null}>
     {checking ? null : authed ? <McqBank language={language} onBack={() => { window.location.href = "/"; }} /> : <Auth onAuthed={() => setAuthed(true)} />}
     {!checking && authed && userId && <StudentCharacter key={userId} userId={userId} language={language} visible />}
-  </Suspense></TooltipProvider></QueryClientProvider>;
+  </Suspense></TooltipProvider></StudyRoomActivityProvider></QueryClientProvider>;
 };
 
 const App = () => {
@@ -1045,6 +1046,7 @@ const StudentApp = () => {
 
   return (
   <QueryClientProvider client={queryClient}>
+    <StudyRoomActivityProvider user={authed && language ? userId : null} language={language ?? "ar"} inSessions={menuChoice === "sessions"}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -1411,6 +1413,7 @@ const StudentApp = () => {
       )}
       </PageTransition>
     </TooltipProvider>
+    </StudyRoomActivityProvider>
   </QueryClientProvider>
   );
 };

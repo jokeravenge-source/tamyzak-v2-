@@ -1,20 +1,24 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { useState } from "react";
 import StudentCharacter from "./StudentCharacter";
 import StudyRoomCheerCelebration from "./StudyRoomCheerCelebration";
+import StudyRoomActivityProvider from "./StudyRoomActivityProvider";
 import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
-import { STUDY_ROOM_CHEER_RECEIVED, useStudyRoomActivity, type RoomActivity } from "@/hooks/useStudyRoomActivity";
+import { STUDY_ROOM_CHEER_RECEIVED, useJoinedStudyRoomActivity, type RoomActivity } from "@/hooks/useStudyRoomActivity";
+import { setActiveStudyRoomId } from "@/lib/activeStudyRoom";
 import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
 
 type Row = { gender: string | null; character: { variant: number; accessory?: "crown" } | null };
-const backend = vi.hoisted(() => ({ row: null as Row | null, failSave: false, failRead: false, insert: vi.fn(), update: vi.fn(), roomActivity: null as RoomActivity | null }));
+const backend = vi.hoisted(() => ({ row: null as Row | null, failSave: false, failRead: false, insert: vi.fn(), update: vi.fn(), channel: vi.fn(), roomActivity: null as RoomActivity | null }));
 
 vi.mock("./UsageIntroGate", () => ({ default: () => null }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   rpc: async () => ({ data: backend.roomActivity, error: null }),
-  channel: () => {
+  channel: (topic: string) => {
+    backend.channel(topic);
     const channel = { on: () => channel, subscribe: () => channel };
     return channel;
   },
@@ -44,9 +48,17 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   },
 } }));
 
+function RoomView() {
+  const activity = useJoinedStudyRoomActivity("room", "student");
+  return activity.data ? <p>Study room is ready</p> : null;
+}
+
 function JoinedRoom() {
-  useStudyRoomActivity("room", "student");
-  return <StudyRoomCheerCelebration room="room" user="student" language="en" />;
+  const [inRoom, setInRoom] = useState(true);
+  return <StudyRoomActivityProvider user="student" language="en" inSessions={inRoom}>
+    <button onClick={() => setInRoom(value => !value)}>Switch screen</button>
+    {inRoom ? <RoomView /> : <h1>Flashcards</h1>}
+  </StudyRoomActivityProvider>;
 }
 
 function Practice({ active }: { active: boolean }) {
@@ -56,6 +68,7 @@ function Practice({ active }: { active: boolean }) {
 
 function open(inRoom = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  if (inRoom) setActiveStudyRoomId("room");
   return { client, ...render(<QueryClientProvider client={client}>
     <StudentCharacter userId="student" language="en" visible onNeedHelp={vi.fn()} />
     {inRoom && <JoinedRoom />}
@@ -220,6 +233,10 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   const book = avatar.querySelector(".character-avatar__book");
   expect(book).toBeInTheDocument();
   await waitFor(() => expect(client.getQueryData(activityKey)).toEqual(activity));
+  expect(await screen.findByText("Study room is ready")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Switch screen" }));
+  expect(screen.getByRole("heading", { name: "Flashcards" })).toBeVisible();
+  expect(backend.channel.mock.calls).toEqual([["study-room-activity:room"], ["study-room-inbox:room:student"]]);
   act(() => window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, {
     detail: { room: "room", recipient: "someone-else", cheers: [newCheer] },
   })));
@@ -244,4 +261,23 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   await act(async () => {});
   expect(badge()).toBeNull();
   expect(screen.getByText("+10")).toBeVisible();
+});
+
+it("holds an incoming cheer until the recipient returns to the tab", () => {
+  const visibility = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+  try {
+    render(<StudyRoomCheerCelebration user="student" language="en" />);
+    act(() => window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, {
+      detail: { room: "room", recipient: "student", cheers: [
+        { sender_id: "friend", sender_name: "Friend", created_at: "2026-11-27T00:01:00.000Z", reward_points: 5 },
+      ] },
+    })));
+    expect(screen.queryByText("+5")).toBeNull();
+    visibility.mockReturnValue(false);
+    fireEvent(document, new Event("visibilitychange"));
+    expect(screen.getByRole("status")).toHaveTextContent("Friend cheered you on!");
+    expect(screen.getByText("+5")).toBeVisible();
+  } finally {
+    visibility.mockRestore();
+  }
 });

@@ -6,7 +6,6 @@ import { setStudyRoomMic, type useStudyRoomActivity } from "@/hooks/useStudyRoom
 import { useStudyRoomVoice } from "@/hooks/useStudyRoomVoice";
 import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
 import { censorText } from "@/lib/censor";
-import StudyRoomCheerCelebration from "./StudyRoomCheerCelebration";
 
 const copy = {
   ar: {
@@ -103,7 +102,6 @@ export default function StudyRoomActivity({ room, user, members, language, activ
   const otherSpeaker = speaker && speaker.user_id !== user;
   return (
     <div className="mb-4 space-y-2">
-      <StudyRoomCheerCelebration room={room} user={user} language={language} />
       {data.inbox.length > 0 && (
         <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/10 p-3 text-sm">
           <HandHeart aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />

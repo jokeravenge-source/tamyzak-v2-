@@ -5,7 +5,8 @@ import { ensureFreshSession } from "@/lib/ensureSession";
 import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
 import { displayedStudyTimerSeconds, formatStudyTimer as fmtClock, isStudyTimerFocusing } from "@/lib/studyTimerDisplay";
 import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
-import { useStudyRoomActivity } from "@/hooks/useStudyRoomActivity";
+import { getActiveStudyRoomId, setActiveStudyRoomId } from "@/lib/activeStudyRoom";
+import { useJoinedStudyRoomActivity } from "@/hooks/useStudyRoomActivity";
 import { toast } from "sonner";
 import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock, LogOut, MessageCircle, Plus, Send, Timer, Trash2, Users } from "lucide-react";
 import { censorText, findBannedWords } from "@/lib/censor";
@@ -28,7 +29,6 @@ type Presence = {
   observed_at_ms?: number;
 };
 
-const LS_KEY = "study_room_active_v1";
 const MEMBER_PREVIEW_LIMIT = 30;
 
 // Public rooms can hold hundreds of students. A single `.in(...)` with that many
@@ -113,7 +113,7 @@ export default function PrivateStudyRooms({
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [openProfile, setOpenProfile] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const roomActivity = useStudyRoomActivity(room?.id, userId);
+  const roomActivity = useJoinedStudyRoomActivity(room?.id, userId);
 
   const L = ar
     ? {
@@ -271,13 +271,14 @@ export default function PrivateStudyRooms({
   useEffect(() => {
     if (!userId) return;
     if (hasSessionRoomLink() || new URLSearchParams(window.location.search).has("code")) return;
-    const saved = localStorage.getItem(LS_KEY);
+    const saved = getActiveStudyRoomId();
     if (!saved) return;
     (async () => {
-      const { data } = await supabase.from("study_rooms")
+      const { data, error } = await supabase.from("study_rooms")
         .select(roomColumns).eq("id", saved).maybeSingle();
+      if (saved !== getActiveStudyRoomId()) return;
       if (data) { setRoom(data as Room); loadRoom(data.id); }
-      else localStorage.removeItem(LS_KEY);
+      else if (!error) setActiveStudyRoomId(undefined);
     })();
   }, [userId, loadRoom]);
 
@@ -385,7 +386,7 @@ export default function PrivateStudyRooms({
       if (!created) throw new Error("could not create room");
       await supabase.from("study_room_members")
         .insert({ room_id: created.id, user_id: userId, display_name: displayName });
-      localStorage.setItem(LS_KEY, created.id);
+      setActiveStudyRoomId(created.id);
       setRoom(created);
       setRoomName("");
       setRoomVisibility("private");
@@ -416,7 +417,7 @@ export default function PrivateStudyRooms({
           { onConflict: "room_id,user_id" },
         );
       if (error) { toast.error(L.youBanned); return; }
-      localStorage.setItem(LS_KEY, data.id);
+      setActiveStudyRoomId(data.id);
       setRoom(data as Room);
       if (code === SESSION_ROOM_CODE && hasSessionRoomLink()) clearSessionRoomLink();
       setJoinCode("");
@@ -524,7 +525,7 @@ export default function PrivateStudyRooms({
   const leaveRoom = async () => {
     if (!room || !userId) return;
     await supabase.from("study_room_members").delete().eq("room_id", room.id).eq("user_id", userId);
-    localStorage.removeItem(LS_KEY);
+    setActiveStudyRoomId(undefined);
     setRoom(null); setMembers([]); setMessages([]);
     loadPublicRooms();
   };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
@@ -35,7 +35,7 @@ export async function sendStudyRoomVoice(room: string, target: string, connectio
   if (error) throw error;
 }
 
-export function useStudyRoomActivity(room: string | undefined, user: string | null) {
+export function useStudyRoomActivity(room: string | undefined, user: string | null, poll = true) {
   const queryClient = useQueryClient();
   const voiceListener = useRef<((signal: VoiceSignal) => void) | null>(null);
   const seenCheers = useRef<{ room: string; user: string; bySender: Map<string, number> } | null>(null);
@@ -50,7 +50,7 @@ export function useStudyRoomActivity(room: string | undefined, user: string | nu
     },
     enabled: !!room && !!user,
     retry: false,
-    refetchInterval: room && user ? 15000 : false,
+    refetchInterval: room && user && poll ? 15000 : false,
   });
 
   const { data, isSuccess } = query;
@@ -125,4 +125,16 @@ export function useStudyRoomActivity(room: string | undefined, user: string | nu
     return result.isSuccess ? result.data : null;
   }, [refetch]);
   return { data: query.data, failed: query.isError, refresh, voiceListener, voiceReady: !!room && readyRoom === room };
+}
+
+export const StudyRoomActivityContext = createContext<{
+  room: string | undefined;
+  user: string | null;
+  activity: ReturnType<typeof useStudyRoomActivity>;
+} | null>(null);
+
+export function useJoinedStudyRoomActivity(room: string | undefined, user: string | null) {
+  const shared = useContext(StudyRoomActivityContext);
+  const standalone = useStudyRoomActivity(shared ? undefined : room, shared ? null : user);
+  return shared && shared.room === room && shared.user === user ? shared.activity : standalone;
 }
