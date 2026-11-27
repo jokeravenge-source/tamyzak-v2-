@@ -1,3 +1,8 @@
+.student-character__reaction {
+  display: grid;
+  transform-origin: 50% 87%;
+}
+
 .student-character__sprite {
   position: relative;
   display: grid;
@@ -71,19 +76,87 @@
   transform-origin: left center;
 }
 
+.student-character__cheer {
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  right: -4px;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff1f2, #ffd7e1);
+  color: #be345f;
+  box-shadow: 0 3px 9px rgb(85 21 53 / 24%);
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .student-character[data-study-status="studying"] .student-character__sprite {
-    animation: student-character-read 5.8s ease-in-out infinite;
+    animation: student-character-read 5.8s ease-in-out 420ms infinite;
+  }
+
+  .student-character[data-study-status="rest"] .student-character__sprite {
+    animation: student-character-stretch 920ms ease-in-out;
+  }
+
+  .student-character__book {
+    animation: student-character-open-book 420ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .student-character__page--right {
+    transform-origin: left center;
+    animation: student-character-open-pages 420ms cubic-bezier(.22, 1, .36, 1) both;
   }
 
   .student-character__page--turning {
-    animation: student-character-turn-page 5.8s ease-in-out infinite;
+    animation: student-character-turn-page 5.8s ease-in-out 420ms infinite;
   }
+
+  .student-character__reaction[data-cheering] {
+    animation: student-character-cheer-lift 480ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .student-character__cheer {
+    animation: student-character-cheer-badge 880ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+}
+
+@keyframes student-character-open-book {
+  0% { opacity: 0; transform: translate(-50%, 4px) scale(.55, .75) rotate(-8deg); }
+  38% { opacity: 1; transform: translate(-50%, -1px) scale(.74, 1.05) rotate(-4deg); }
+  100% { opacity: 1; transform: translateX(-50%); }
+}
+
+@keyframes student-character-open-pages {
+  0%, 18% { transform: perspective(22px) rotateY(-90deg) skewY(-10deg); }
+  100% { transform: perspective(22px) rotateY(0) skewY(-10deg); }
 }
 
 @keyframes student-character-read {
   0%, 16%, 54%, 100% { transform: translateY(0) rotate(0); }
   29%, 37% { transform: translateY(2px) rotate(5deg); }
+}
+
+@keyframes student-character-stretch {
+  0%, 100% { transform: none; }
+  24% { transform: translateY(1px) scale(1.025, .98); }
+  49%, 64% { transform: translateY(-2px) rotate(-4deg) scale(.98, 1.045); }
+}
+
+@keyframes student-character-cheer-lift {
+  0%, 100% { transform: none; }
+  16% { transform: translateY(1px) scale(1.04, .97); }
+  53% { transform: translateY(-4px) rotate(4deg) scale(1.015); }
+}
+
+@keyframes student-character-cheer-badge {
+  0% { opacity: 0; transform: translate(-3px, 5px) scale(.65); }
+  28% { opacity: 1; transform: translate(1px, -2px) scale(1.07); }
+  72% { opacity: 1; transform: translate(2px, -4px); }
+  100% { opacity: 0; transform: translate(4px, -8px) scale(.94); }
 }
 
 @keyframes student-character-turn-page {

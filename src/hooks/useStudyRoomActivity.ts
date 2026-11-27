@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export const STUDY_ROOM_CHEER_RECEIVED = "study-room-cheer-received";
+
 type MicState = "pending" | "approved" | "declined" | "live";
 type MicAction = "request" | "approve" | "decline" | "revoke" | "start" | "stop" | "heartbeat";
 export type RoomSpeaker = { user_id: string; name: string; connection_id: string };
@@ -33,6 +35,7 @@ export async function sendStudyRoomVoice(room: string, target: string, connectio
 export function useStudyRoomActivity(room: string | undefined, user: string | null) {
   const queryClient = useQueryClient();
   const voiceListener = useRef<((signal: VoiceSignal) => void) | null>(null);
+  const lastCheer = useRef<{ room: string; user: string; receivedAt: number } | null>(null);
   const [readyRoom, setReadyRoom] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["study-room-activity", room, user],
@@ -45,6 +48,26 @@ export function useStudyRoomActivity(room: string | undefined, user: string | nu
     retry: false,
     refetchInterval: room && user ? 15000 : false,
   });
+
+  const { data, isSuccess } = query;
+  useEffect(() => {
+    if (!room || !user) {
+      lastCheer.current = null;
+      return;
+    }
+    if (!isSuccess || !data) return;
+
+    const receivedAt = Date.parse(data.inbox[0]?.created_at ?? "") || 0;
+    const previous = lastCheer.current;
+    if (previous?.room !== room || previous.user !== user) {
+      lastCheer.current = { room, user, receivedAt };
+      return;
+    }
+    if (receivedAt <= previous.receivedAt) return;
+
+    previous.receivedAt = receivedAt;
+    window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, { detail: user }));
+  }, [room, user, data, isSuccess]);
 
   useEffect(() => {
     if (!room || !user) return;

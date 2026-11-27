@@ -1,11 +1,12 @@
 import { useEffect, useId, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Heart, Loader2 } from "lucide-react";
 import { CharacterAvatar, FEMALE_VARIANTS, MALE_VARIANTS, SKIN_COLORS, getAvatarStyle, type Gender, type CharacterVariant } from "./CharacterAvatar";
 import type { AppLanguage } from "./LanguageGate";
 import UsageIntroGate from "./UsageIntroGate";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
+import { STUDY_ROOM_CHEER_RECEIVED } from "@/hooks/useStudyRoomActivity";
 import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ function subscribeToStudyStatus(listener: () => void) {
 }
 
 type StudyStatus = "ready" | "studying" | "paused" | "rest";
+const CHEER_REACTION_MS = 900;
 
 function readStudyStatus(userId: string): StudyStatus {
   try {
@@ -55,27 +57,47 @@ function readStudyStatus(userId: string): StudyStatus {
 
 function CharacterStatus({ userId, character, language }: { userId: string; character: ProfileCharacter; language: AppLanguage }) {
   const [open, setOpen] = useState(true);
+  const [cheer, setCheer] = useState(0);
   const messageId = useId();
   const status = useSyncExternalStore(subscribeToStudyStatus, () => readStudyStatus(userId), (): StudyStatus => "ready");
   const t = copy[language];
+
+  useEffect(() => {
+    let reset: number | undefined;
+    const onCheer = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== userId) return;
+      setCheer(previous => previous + 1);
+      window.clearTimeout(reset);
+      reset = window.setTimeout(() => setCheer(0), CHEER_REACTION_MS);
+    };
+    window.addEventListener(STUDY_ROOM_CHEER_RECEIVED, onCheer);
+    return () => {
+      window.removeEventListener(STUDY_ROOM_CHEER_RECEIVED, onCheer);
+      window.clearTimeout(reset);
+    };
+  }, [userId]);
+
   return (
     <aside data-study-status={status} className="student-character pointer-events-none fixed bottom-[calc(var(--nav-safe)+.5rem)] left-[max(.625rem,env(safe-area-inset-left))] z-[34] flex max-w-[75vw] items-end gap-2" dir="ltr">
       <button type="button" onClick={() => setOpen(value => !value)} aria-label={t.toggle} aria-expanded={open} aria-controls={open ? messageId : undefined}
         className="pointer-events-auto relative grid size-12 shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        <span aria-hidden="true" className="student-character__sprite">
-          <CharacterAvatar gender={character.gender} traits={character.traits} size={42} />
-          {status === "studying" && (
-            <span
-              className="student-character__book"
-              data-koki={character.gender === "female" && Number(character.traits?.variant) === 16 ? true : undefined}
-              style={{ "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties}
-            >
-              <span className="student-character__page student-character__page--left" />
-              <span className="student-character__page student-character__page--right" />
-              <span className="student-character__page student-character__page--turning" />
-            </span>
-          )}
+        <span aria-hidden="true" className="student-character__reaction" data-cheering={cheer > 0 || undefined}>
+          <span className="student-character__sprite">
+            <CharacterAvatar gender={character.gender} traits={character.traits} size={42} />
+            {status === "studying" && (
+              <span
+                className="student-character__book"
+                data-koki={character.gender === "female" && Number(character.traits?.variant) === 16 ? true : undefined}
+                style={{ "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties}
+              >
+                <span className="student-character__page student-character__page--left" />
+                <span className="student-character__page student-character__page--right" />
+                <span className="student-character__page student-character__page--turning" />
+              </span>
+            )}
+          </span>
         </span>
+        {cheer > 0 && <span key={cheer} aria-hidden="true" className="student-character__cheer"><Heart fill="currentColor" className="size-2.5" /></span>}
       </button>
       {open && <p id={messageId} role="status" dir={language === "ar" ? "rtl" : "ltr"}
         className="relative mb-2 rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2 text-start text-xs font-semibold leading-5 text-foreground shadow-sm">

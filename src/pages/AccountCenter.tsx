@@ -75,6 +75,8 @@ const uxText = {
   },
 } as const;
 
+const settingsTabStyle = "min-h-12 min-w-0 gap-2 whitespace-normal rounded-xl px-2 text-xs font-semibold leading-tight text-muted-foreground hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-primary/20 motion-reduce:transition-none sm:px-3 sm:text-sm";
+
 const HAIR_LABELS: Record<string, { en: string; ar: string }> = {
   short: { en: "Short", ar: "قصير" },
   buzz: { en: "Buzz", ar: "حلاقة" },
@@ -323,12 +325,12 @@ const AccountCenter = ({
           <h1 className="text-[1.65rem] font-black leading-tight tracking-tight sm:text-4xl">{ux.settings}</h1>
         </header>
 
-        <TabsList aria-label={ux.settings} className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-border bg-muted/60 p-1.5 sm:max-w-[30rem]">
-          <TabsTrigger value="profile" className="min-h-11 min-w-0 gap-2 whitespace-normal rounded-xl px-2 text-xs font-bold sm:text-sm">
+        <TabsList aria-label={ux.settings} className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-border/80 bg-muted/55 p-1.5 sm:max-w-[30rem]">
+          <TabsTrigger value="profile" className={settingsTabStyle}>
             <User aria-hidden="true" className="size-4 shrink-0" />
             {ux.profileTab}
           </TabsTrigger>
-          <TabsTrigger value="general" className="min-h-11 min-w-0 gap-2 whitespace-normal rounded-xl px-2 text-xs font-bold sm:text-sm">
+          <TabsTrigger value="general" className={settingsTabStyle}>
             <Settings aria-hidden="true" className="size-4 shrink-0" />
             {ux.generalTab}
           </TabsTrigger>
