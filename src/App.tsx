@@ -1269,6 +1269,7 @@ const StudentApp = () => {
         <PaperReview
           key={userId ?? "paper-review"}
           language={language}
+          initialChapter={window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH ? new URLSearchParams(window.location.search).get("chapter") : null}
           initialExercise={window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH ? new URLSearchParams(window.location.search).get("exercise") : null}
           onBack={() => {
             if (window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) chooseMenu("basics");

@@ -37,7 +37,8 @@ describe("Paper Review student flow", () => {
     });
     const { container } = render(<PaperReview language="ar" initialExercise="units" onBack={vi.fn()} onUpgrade={vi.fn()} />);
     await screen.findByText("صورة متاحة اليوم");
-    expect(screen.getByLabelText(/تمرين من فصل المتسعات/)).toHaveValue("units");
+    expect(screen.getByLabelText("فصل الفيزياء")).toHaveValue("1");
+    expect(screen.getByLabelText("تمرين من هذا الفصل")).toHaveValue("units");
     await upload(container);
     fireEvent.click(screen.getByRole("button", { name: "حلّل الصورة" }));
     await screen.findByText("الملاحظة على وحدة الناتج.");
@@ -55,6 +56,33 @@ describe("Paper Review student flow", () => {
     const answer = backend.invoke.mock.calls.find(([, options]) => options.body.mode === "answer");
     expect(send?.[1].body).toMatchObject({ exercise: "units", image: photo, requestId: expect.any(String) });
     expect(answer?.[1].body.requestId).toEqual(send?.[1].body.requestId);
+  });
+
+  it("filters exercises by chapter, opens shared selections, and sends a chapter-only review", async () => {
+    backend.invoke.mockImplementation(async (_name, { body }) => ({
+      data: body.mode === "status" ? { access } : { report }, error: null,
+    }));
+    const { container } = render(<PaperReview language="ar" initialChapter="8" initialExercise="ch8-ionization" onBack={vi.fn()} onUpgrade={vi.fn()} />);
+    await screen.findByText("صورة متاحة اليوم");
+    const chapters = screen.getByLabelText("فصل الفيزياء");
+    const exercises = screen.getByLabelText("تمرين من هذا الفصل");
+    const share = screen.getByRole("textbox", { name: "رابط المشاركة للمدرّس", hidden: true });
+    expect(chapters).toHaveValue("8");
+    expect(exercises).toHaveValue("ch8-ionization");
+    expect(share).toHaveValue(window.location.origin + "/paper-review?exercise=ch8-ionization");
+
+    fireEvent.change(chapters, { target: { value: "5" } });
+    expect(exercises).toHaveValue("");
+    expect(exercises).toHaveTextContent("محزّز الحيود");
+    expect(exercises).not.toHaveTextContent("طاقة التأيّن");
+    expect(share).toHaveValue(window.location.origin + "/paper-review?chapter=5");
+
+    await upload(container);
+    fireEvent.click(screen.getByRole("button", { name: "حلّل الصورة" }));
+    await screen.findByText(report.summary);
+    expect(backend.invoke).toHaveBeenCalledWith("paper-review", expect.objectContaining({
+      body: expect.objectContaining({ mode: "review", chapter: 5, exercise: "", language: "ar" }),
+    }));
   });
 
   it("blocks a new upload for an exhausted account and opens the existing Premium screen", async () => {

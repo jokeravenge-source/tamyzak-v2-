@@ -7,7 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { edgeErrorMessage } from "@/lib/edgeError";
 import { PREMIUM_ACCESS_CHANGED_EVENT } from "@/lib/premium";
 import { readPaperPhoto } from "@/lib/paperReviewPhoto";
-import { PAPER_EXERCISES, PAPER_REVIEW_PATH, paperExercise, type PaperReviewAccess, type PaperReviewView } from "../../supabase/functions/_shared/paperReview";
+import { PAPER_REVIEW_PATH, type PaperReviewAccess, type PaperReviewView } from "../../supabase/functions/_shared/paperReview";
+import { PAPER_EXERCISES, paperExercise } from "../../supabase/functions/_shared/paperReviewExercises";
+import { physicsChapter, physicsChapters } from "../../supabase/functions/_shared/physicsChapters";
 
 const copy = {
   ar: {
@@ -20,7 +22,8 @@ const copy = {
     listen: "اسمع التوضيح", pause: "وقف الصوت", resume: "كمّل الصوت", audioError: "تعذّر تشغيل الصوت. التوضيح مكتوب هنا.",
     tryPractice: "جرّب سؤال مشابه", check: "تحقق من إجابتي", checking: "جاري التحقق…", correct: "إجابة صحيحة وانحفظت بتقدّمك",
     incorrect: "راجع التوضيح وحاول مرّة ثانية", practiced: "تمرين انحلّ صح", another: "راجع صورة ثانية",
-    exercise: "تمرين من فصل المتسعات", own: "سؤالي من الورقة", teacher: "رابط المشاركة للمدرّس", copyLink: "انسخ الرابط",
+    chapter: "فصل الفيزياء", anyChapter: "بدون تحديد فصل", exercise: "تمرين من هذا الفصل", own: "سؤالي من الورقة",
+    teacher: "رابط المشاركة للمدرّس", copyLink: "انسخ الرابط",
     copied: "اننسخ الرابط", copyManually: "انسخ الرابط من الحقل", qr: "حمّل QR الميزة",
     invalid_image: "تعذّر فتح الصورة. جرّب صورة JPEG أو PNG واضحة.",
     image_too_large: "الصورة كبيرة. جرّب صورة أصغر أو قصّها على سؤال واحد.",
@@ -29,7 +32,7 @@ const copy = {
     daily_limit: "استعملت صورة اليوم. تكدر ترجع باچر أو تفتح بريميوم.",
     rate_limit: "انتظر شوي قبل المحاولة الجاية.",
     auth_required: "سجّل دخولك حتى تراجع ورقتك.",
-    conflict: "تغيّرت الصورة أو المسألة. اختار الصورة مرة ثانية.",
+    conflict: "تغيّرت الصورة أو تفاصيل السؤال. اختار الصورة مرة ثانية.",
     practice_missing: "تعذّر فتح التمرين هسه.",
   },
   en: {
@@ -42,7 +45,8 @@ const copy = {
     listen: "Listen to the explanation", pause: "Pause audio", resume: "Resume audio", audioError: "Audio is unavailable. You can read the explanation here.",
     tryPractice: "Try a similar question", check: "Check my answer", checking: "Checking…", correct: "Correct. Your progress was saved.",
     incorrect: "Read the explanation and try again", practiced: "practice questions solved", another: "Review another photo",
-    exercise: "A Chapter 1 capacitor exercise", own: "Use the question on my paper", teacher: "Share a link with students", copyLink: "Copy link",
+    chapter: "Physics chapter", anyChapter: "No chapter selected", exercise: "Exercise from this chapter", own: "Use the question on my paper",
+    teacher: "Share a link with students", copyLink: "Copy link",
     copied: "Link copied", copyManually: "Copy the link from the field", qr: "Download the tool QR",
     invalid_image: "Could not open this image. Try a clear JPEG or PNG photo.",
     image_too_large: "This photo is too large. Try a smaller image or crop to one question.",
@@ -51,12 +55,13 @@ const copy = {
     daily_limit: "Today’s free photo was used. Come back tomorrow or open Premium.",
     rate_limit: "Wait a moment before trying again.",
     auth_required: "Sign in to review your paper.",
-    conflict: "The photo or exercise changed. Choose the photo again.",
+    conflict: "The photo or question details changed. Choose the photo again.",
     practice_missing: "Could not open this practice question.",
   },
 } as const;
 
 type Photo = { url: string; id: string };
+type PaperSource = { chapter: number | null; exerciseId: string };
 type PracticeAnswer = { correct: boolean; explanation: string };
 type ReviewResponse = {
   access?: PaperReviewAccess;
@@ -75,8 +80,9 @@ async function paperRequest(body: Record<string, unknown>, signal: AbortSignal) 
 
 const actionError = (value: unknown) => value instanceof Error ? value.message : "review_unavailable";
 
-export default function PaperReview({ language, initialExercise, onBack, onUpgrade }: {
+export default function PaperReview({ language, initialChapter, initialExercise, onBack, onUpgrade }: {
   language: AppLanguage;
+  initialChapter?: string | null;
   initialExercise?: string | null;
   onBack: () => void;
   onUpgrade: () => void;
@@ -85,7 +91,10 @@ export default function PaperReview({ language, initialExercise, onBack, onUpgra
   const text = copy[language];
   const [access, setAccess] = useState<PaperReviewAccess | null>(null);
   const [accessError, setAccessError] = useState(false);
-  const [exerciseId, setExerciseId] = useState(() => paperExercise(initialExercise)?.id ?? "");
+  const [{ chapter, exerciseId }, setSource] = useState<PaperSource>(() => {
+    const exercise = paperExercise(initialExercise);
+    return { chapter: exercise?.chapter ?? physicsChapter(Number(initialChapter))?.n ?? null, exerciseId: exercise?.id ?? "" };
+  });
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [attempted, setAttempted] = useState("");
@@ -180,13 +189,20 @@ export default function PaperReview({ language, initialExercise, onBack, onUpgra
   const quotaAvailable = access?.premium || access?.remaining === 1;
   const canReview = !!photo && !photoBusy && !busy && !!access && (quotaAvailable || attempted === photo.id);
 
+  const changeSource = (next: PaperSource) => {
+    setSource(next);
+    setShareNotice("");
+    setError("");
+    if (photo) setPhoto({ ...photo, id: crypto.randomUUID() });
+  };
+
   const review = async () => {
     if (!photo || !canReview) return;
     const controller = beginAction("review");
     if (!controller) return;
     setAttempted(photo.id);
     try {
-      const data = await paperRequest({ mode: "review", image: photo.url, requestId: photo.id, exercise: exerciseId, language }, controller.signal);
+      const data = await paperRequest({ mode: "review", image: photo.url, requestId: photo.id, chapter, exercise: exerciseId, language }, controller.signal);
       if (controller.signal.aborted) return;
       if (data.access) setAccess(data.access);
       if (!data.report) throw new Error(data.error ?? "review_unavailable");
@@ -254,8 +270,10 @@ export default function PaperReview({ language, initialExercise, onBack, onUpgra
 
   const teacherLink = new URL(PAPER_REVIEW_PATH, window.location.origin);
   if (exerciseId) teacherLink.searchParams.set("exercise", exerciseId);
+  else if (chapter !== null) teacherLink.searchParams.set("chapter", String(chapter));
   const activeFinding = report?.findings[finding];
   const currentExercise = paperExercise(exerciseId);
+  const chapterExercises = PAPER_EXERCISES.filter(exercise => exercise.chapter === chapter);
   const knownError = error === "pending" ? text.pending : error && Object.prototype.hasOwnProperty.call(text, error)
     ? text[error as keyof typeof text] : error ? text.review_unavailable : "";
   const allowance = access?.premium ? text.premium : !access ? text.access
@@ -377,19 +395,27 @@ export default function PaperReview({ language, initialExercise, onBack, onUpgra
             )}
 
             <div className="space-y-2">
-              <label htmlFor="paper-exercise" className="flex items-center gap-2 text-sm font-semibold"><BookOpen aria-hidden="true" className="size-4 text-primary" />{text.exercise}</label>
+              <label htmlFor="paper-chapter" className="flex items-center gap-2 text-sm font-semibold"><BookOpen aria-hidden="true" className="size-4 text-primary" />{text.chapter}</label>
+              <select id="paper-chapter" value={chapter ?? ""} disabled={!!busy}
+                onChange={event => changeSource({ chapter: physicsChapter(Number(event.target.value))?.n ?? null, exerciseId: "" })}
+                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
+                <option value="">{text.anyChapter}</option>
+                {physicsChapters.map(({ n, title, arTitle }) => (
+                  <option key={n} value={n}>{n.toLocaleString(ar ? "ar-IQ" : "en")} · {ar ? arTitle : title}</option>
+                ))}
+              </select>
+            </div>
+
+            {chapterExercises.length > 0 && <div className="space-y-2">
+              <label htmlFor="paper-exercise" className="text-sm font-semibold">{text.exercise}</label>
               <select id="paper-exercise" value={exerciseId} disabled={!!busy}
-                onChange={event => {
-                  setExerciseId(event.target.value);
-                  setShareNotice("");
-                  if (photo) setPhoto({ ...photo, id: crypto.randomUUID() });
-                }}
+                onChange={event => changeSource({ chapter, exerciseId: event.target.value })}
                 className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
                 <option value="">{text.own}</option>
-                {PAPER_EXERCISES.map(exercise => <option key={exercise.id} value={exercise.id}>{exercise.title[language]}</option>)}
+                {chapterExercises.map(exercise => <option key={exercise.id} value={exercise.id}>{exercise.title[language]}</option>)}
               </select>
               {currentExercise && <p className="rounded-xl bg-muted/50 p-3 text-sm leading-7" dir="auto">{currentExercise.question[language]}</p>}
-            </div>
+            </div>}
 
             <Button type="button" disabled={!canReview} onClick={() => void review()} className="min-h-12 w-full rounded-xl font-bold">
               {busy === "review" ? <Loader2 className="animate-spin" /> : <Presentation />}{busy === "review" ? text.reviewing : text.review}

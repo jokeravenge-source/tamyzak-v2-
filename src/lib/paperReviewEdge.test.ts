@@ -1,6 +1,8 @@
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { paperExercise, paperReviewImage, parsePaperReport } from "../../supabase/functions/_shared/paperReview";
+import { paperReviewImage, parsePaperReport } from "../../supabase/functions/_shared/paperReview";
+import { PAPER_EXERCISES, paperExercise } from "../../supabase/functions/_shared/paperReviewExercises";
+import { physicsChapters } from "../../supabase/functions/_shared/physicsChapters";
 
 const backend = vi.hoisted(() => ({
   auth: vi.fn(), guard: vi.fn(), rpc: vi.fn(), premium: vi.fn(), ai: vi.fn(),
@@ -82,8 +84,49 @@ describe("paper review edge function", () => {
     const parts = backend.ai.mock.calls[0][0].messages[1].content;
     expect(parts.filter((part: { type: string }) => part.type === "image_url")).toHaveLength(1);
     expect(parts[0].text).toContain("5 µF");
+    expect(backend.rpc).toHaveBeenCalledWith("reserve_paper_review", expect.objectContaining({
+      _image_digest: createHash("sha256").update(JSON.stringify(["ar", "units", photo])).digest("hex"),
+    }));
     expect(backend.rpc).toHaveBeenCalledWith("settle_paper_review", expect.objectContaining({
       _lease_id: leaseId, _report: expect.objectContaining({ practice: expect.objectContaining({ correctIndex: 1 }) }),
+    }));
+  });
+
+  it("provides five bilingual exercises in each physics chapter with unique share IDs", () => {
+    expect(PAPER_EXERCISES).toHaveLength(40);
+    expect(new Set(PAPER_EXERCISES.map(({ id }) => id)).size).toBe(PAPER_EXERCISES.length);
+    for (const { n } of physicsChapters) {
+      const exercises = PAPER_EXERCISES.filter(exercise => exercise.chapter === n);
+      expect(exercises).toHaveLength(5);
+      for (const exercise of exercises) {
+        for (const language of ["ar", "en"] as const) {
+          expect(exercise.title[language]).toBeTruthy();
+          expect(exercise.question[language]).toBeTruthy();
+          expect(exercise.guide[language]).toBeTruthy();
+          const matched = parsePaperReport(report, { exercise, language });
+          expect(matched?.practice).toEqual(exercise.practice[language]);
+          expect(parsePaperReport(matched)?.practice).toEqual(exercise.practice[language]);
+        }
+      }
+    }
+  });
+
+  it("sends the curated question and key from a later chapter and uses its own follow-up", async () => {
+    const exercise = paperExercise("ch8-hydrogen-series")!;
+    const result = await (await request({ ...review, exercise: exercise.id, chapter: 2, language: "en" })).json();
+    const context = JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text);
+    expect(context).toEqual({ physicsChapter: { number: 8, title: "Atomic Spectra and Laser" }, exercise: exercise.question.en, practiceKey: exercise.guide.en });
+    expect(result.report.practice).toEqual({ question: exercise.practice.en.question, choices: exercise.practice.en.choices });
+  });
+
+  it("uses a chapter hint for the student's own photo and preserves the independent follow-up", async () => {
+    backend.ai.mockResolvedValueOnce(completion({ ...report, matchedExercise: false }));
+    const result = await (await request({ ...review, chapter: 5, exercise: "" })).json();
+    expect(JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text))
+      .toEqual({ physicsChapter: { number: 5, title: "البصريات الفيزيائية" } });
+    expect(result.report.practice.question).toBe(report.practice.question);
+    expect(backend.rpc).toHaveBeenCalledWith("reserve_paper_review", expect.objectContaining({
+      _image_digest: createHash("sha256").update(JSON.stringify(["ar", "physics-chapter-5", photo])).digest("hex"),
     }));
   });
 
