@@ -477,6 +477,13 @@
       "when": 1795795200000,
       "tag": "0067_study_room_cheer_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795798800000,
+      "tag": "0068_community_friends",
+      "breakpoints": true
     }
   ]
 }

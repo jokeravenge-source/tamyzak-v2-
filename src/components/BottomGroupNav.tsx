@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Ellipsis, GraduationCap, Home, UserRound, UsersRound, Zap } from "lucide-react";
+import { Ellipsis, GraduationCap, Home, UserRound, UsersRound, Zap } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import MutamayizMascot from "@/components/MutamayizMascot";
@@ -27,13 +27,12 @@ type OverflowItem =
 
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { key: "basics", labelAr: "الرئيسية", labelEn: "Home", Icon: Home },
-  { key: "subjectsHub", labelAr: "المواد", labelEn: "Subjects", Icon: BookOpen },
   { key: "more", labelAr: "الدراسة", labelEn: "Study", Icon: GraduationCap },
+  { key: "community", labelAr: "المجتمع", labelEn: "Community", Icon: UsersRound },
 ];
 
 const OVERFLOW_ITEMS: OverflowItem[] = [
   { key: "studyRace", labelAr: "سباق تميّزك", labelEn: "Tamayzak Race", Icon: Zap },
-  { key: "sessions", labelAr: "الجلسات", labelEn: "Sessions", Icon: UsersRound },
   { key: "account", labelAr: "حسابي", labelEn: "Account", Icon: UserRound },
   {
     key: "tesla",
@@ -61,7 +60,8 @@ const BottomGroupNav = ({
   const navRef = useRef<HTMLDivElement>(null);
   const navVisible = useNavVisibility();
   const isRtl = language === "ar";
-  const overflowIsActive = active === "sessions" || active === "account" || active === "studyRace";
+  const overflowIsActive = active === "account" || active === "studyRace";
+  const communityIsActive = active === "community" || active === "friends" || active === "sessions";
 
   useEffect(() => {
     setPortalRoot(document.body);
@@ -109,8 +109,9 @@ const BottomGroupNav = ({
 
   const isItemActive = (key: NavItem["key"]) => {
     if (key === "basics") return active === null || active === "basics";
+    if (key === "community") return communityIsActive;
     if (key === "more") {
-      return active === "more" || Boolean(active && !["basics", "subjectsHub", "sessions", "account"].includes(active));
+      return Boolean(active && active !== "basics" && !communityIsActive && !overflowIsActive);
     }
     return active === key;
   };
@@ -204,7 +205,7 @@ const BottomGroupNav = ({
           aria-label={isRtl ? "التنقل الرئيسي" : "Primary navigation"}
         >
           <LayoutGroup id="primary-bottom-navigation">
-            <div className="grid grid-cols-5 items-end gap-1">
+            <div className="grid grid-cols-[1fr_1.2fr_1fr_1.2fr_1fr] items-end gap-1 min-[375px]:grid-cols-5">
               {PRIMARY_NAV_ITEMS.slice(0, 2).map(({ key, labelAr, labelEn, Icon }) => {
                 const selected = isItemActive(key);
                 const label = isRtl ? labelAr : labelEn;
@@ -293,7 +294,7 @@ const NavButton = ({
     onClick={onClick}
     aria-current={selected ? "page" : undefined}
     aria-label={label}
-    className={`relative flex min-h-[3.55rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-[11px] ${
+    className={`relative flex min-h-[3.55rem] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl text-[9px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-[375px]:text-[10px] sm:text-[11px] ${
       selected ? "text-primary" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
     }`}
   >

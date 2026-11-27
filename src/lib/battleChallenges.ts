@@ -1,22 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
-export type BattleStudent = { user_id: string; display_name: string };
+export { searchStudentDirectory as searchBattleStudents, type DirectoryStudent as BattleStudent } from "./studentDirectory";
 export type BattleInvitation = {
   id: string; from_name: string; room_code: string; created_at: string;
   subject: string; chapter: number; language: "ar" | "en"; question_count: number;
 };
 export const BATTLE_INVITE_LIFETIME = 180000;
-
-export async function searchBattleStudents(query: string, signal: AbortSignal): Promise<BattleStudent[]> {
-  const clean = query.trim().replace(/[%_\\]/g, "").slice(0, 60);
-  if (clean.length < 2) return [];
-  const { data: auth } = await supabase.auth.getUser();
-  if (signal.aborted) return [];
-  if (!auth.user) throw new Error("AUTH_REQUIRED");
-  const { data, error } = await supabase.from("profiles").select("user_id,display_name")
-    .neq("user_id", auth.user.id).ilike("display_name", `%${clean}%`).order("display_name").limit(8).abortSignal(signal);
-  if (error) throw error;
-  return data ?? [];
-}
 
 export async function sendBattleChallenge(to: string, settings: { code: string; subject: string; chapter: number; language: "ar" | "en"; count: number }) {
   const { data: auth } = await supabase.auth.getUser();

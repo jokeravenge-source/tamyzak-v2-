@@ -649,6 +649,32 @@ export type Database = {
         }
         Relationships: []
       }
+      community_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       course_chapters: {
         Row: {
           course_id: string

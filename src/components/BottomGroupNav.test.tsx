@@ -1,11 +1,34 @@
-import { act, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import BottomGroupNav from "./BottomGroupNav";
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.documentElement.style.removeProperty("--nav-safe");
+});
+
+it("puts Study second and keeps Community selected while its pages are open", () => {
+  const onSelect = vi.fn();
+  const props = { language: "en" as const, onSelect, onGuide: vi.fn() };
+  const view = render(<BottomGroupNav {...props} active="basics" />);
+  const nav = within(screen.getByRole("navigation", { name: "Primary navigation" }));
+  const study = nav.getByRole("button", { name: "Study" });
+  const community = nav.getByRole("button", { name: "Community" });
+  expect(nav.getAllByRole("button")[1]).toBe(study);
+  expect(nav.getAllByRole("button")[3]).toBe(community);
+  fireEvent.click(study);
+  fireEvent.click(community);
+  expect(onSelect.mock.calls).toEqual([["more"], ["community"]]);
+  for (const active of ["community", "friends", "sessions"] as const) {
+    view.rerender(<BottomGroupNav {...props} active={active} />);
+    expect(community).toHaveAttribute("aria-current", "page");
+    expect(study).not.toHaveAttribute("aria-current");
+  }
+  view.rerender(<BottomGroupNav {...props} active="subjectsHub" />);
+  expect(study).toHaveAttribute("aria-current", "page");
+  expect(community).not.toHaveAttribute("aria-current");
 });
 
 it("reserves the measured navigation height, updates after resizing, and restores the page on unmount", () => {

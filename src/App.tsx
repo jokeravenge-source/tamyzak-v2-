@@ -33,6 +33,8 @@ const Summaries = lazy(() => import("./pages/Summaries"));
 const MalazamLibrary = lazy(() => import("./pages/MalazamLibrary"));
 const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
+const Community = lazy(() => import("./pages/Community"));
+const Friends = lazy(() => import("./pages/Friends"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminMalazamPortal = lazy(() => import("./pages/AdminMalazamPortal"));
 const AdminCouponsTab = lazy(() => import("./components/AdminCouponsTab"));
@@ -57,6 +59,7 @@ import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
 import StudyChallengeInviteWatcher from "./components/StudyChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import type { BasicsChoice } from "./pages/Basics";
+import type { MainMenuChoice } from "./pages/MainMenu";
 const Basics = lazy(() => import("./pages/Basics"));
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
 import { recordToolUse } from "@/lib/recentTools";
@@ -791,7 +794,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(ENGLISH_CATEGORY_STORAGE_KEY) as EnglishCategory | null;
   });
-  type MenuChoice = "studyRace" | "pdfBuilder" | "flashcards" | "missions" | "mcq" | "malazam" | "summaries" | "advices" | "sessions" | "account" | "essay" | "videoNotes" | "podcastTutor" | "basics" | "biologyDrawings" | "biologySketchpad" | "biologySchemes" | "physicsSchemes" | "more" | "leaderboard" | "todo" | "news" | "premium" | "ministerialBank" | "mindmap" | "islamicSurahs" | "hadithChecker" | "poemsChecker" | "englishEssays" | "englishIsqat" | "englishVerbForms" | "englishReadingPractice" | "report" | "notes" | "canvas" | "youtube" | "organicEquations" | "chemicalEquations" | "atomAtlas" | "liveBattle" | "subjectsHub" | "textToVideo" | "psych" | "companion" | "mutamayiz" | "subjectTutor" | "physicsLaws" | "physicsQuickMcq" | "physicsProblemSolver" | "problemGenerator" | "frenchSynonyms" | "frenchAntonyms" | "frenchConjugator" | "toolPlaceholder" | "physicsActivities" | "chemistryExperiments" | "ourCourses" | "examGenerator" | "teachers" | "ourTeachers" | "adminNotes" | "dailyGame" | "whoIsBest" | "challenge" | "joinTamayzak" | "unlocks" | "mcqBank" | "mistakes" | "orgTamayzak" | "org6thDhs" | "orgMafatih" | "orgMasarak" | "orgSamar";
+  type MenuChoice = MainMenuChoice;
   const [menuChoice, setMenuChoice] = useState<MenuChoice | null>(() => {
     if (pendingBattleChannelId()) return "liveBattle";
     if (typeof window === "undefined") return null;
@@ -1073,8 +1076,8 @@ const StudentApp = () => {
       {authed && language && authRole !== "admin" && (
         <BottomGroupNav
           language={language}
-          active={(menuChoice as any) ?? "basics"}
-          onSelect={(k) => chooseMenu(k as MenuChoice)}
+          active={menuChoice}
+          onSelect={chooseMenu}
           onGuide={() => setMutamayizOpen(true)}
         />
       )}
@@ -1203,6 +1206,12 @@ const StudentApp = () => {
         <Advices language={language} onBack={resetMenu} />
       ) : menuChoice === "sessions" ? (
         <Sessions language={language} onBack={resetMenu} />
+      ) : menuChoice === "community" ? (
+        <Community language={language} onOpenSessions={() => chooseMenu("sessions")} onOpenFriends={() => chooseMenu("friends")} />
+      ) : menuChoice === "friends" ? (
+        <Friends key={userId} language={language} userId={userId} onBack={() => {
+          if (!sectionHistory.goBack()) chooseMenu("community");
+        }} />
       ) : menuChoice === "account" ? (
         <AccountCenter language={language} onBack={resetMenu} onNav={chooseMenu} onChangeLanguage={resetLanguage} />
       ) : menuChoice === "essay" ? (
