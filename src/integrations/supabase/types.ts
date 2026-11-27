@@ -3589,6 +3589,7 @@ export type Database = {
           created_at: string
           creator_id: string
           duration_days: number
+          duration_hours: number
           ends_at: string
           id: string
           is_public: boolean
@@ -3610,6 +3611,7 @@ export type Database = {
           created_at?: string
           creator_id: string
           duration_days?: number
+          duration_hours?: number
           ends_at: string
           id?: string
           is_public?: boolean
@@ -3631,6 +3633,7 @@ export type Database = {
           created_at?: string
           creator_id?: string
           duration_days?: number
+          duration_hours?: number
           ends_at?: string
           id?: string
           is_public?: boolean
@@ -4954,6 +4957,16 @@ export type Database = {
       }
       coupon_access_end: {
         Args: { _amount: number; _start: string; _unit: string }
+        Returns: string
+      }
+      create_all_or_nothing_challenge: {
+        Args: {
+          _duration_days: number
+          _duration_hours: number
+          _invitee_ids: string[]
+          _title: string
+          _wager_points: number
+        }
         Returns: string
       }
       create_channel_battle: {
