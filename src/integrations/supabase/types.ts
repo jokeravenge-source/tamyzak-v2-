@@ -3589,7 +3589,6 @@ export type Database = {
           created_at: string
           creator_id: string
           duration_days: number
-          duration_hours: number
           ends_at: string
           id: string
           is_public: boolean
@@ -3611,7 +3610,6 @@ export type Database = {
           created_at?: string
           creator_id: string
           duration_days?: number
-          duration_hours?: number
           ends_at: string
           id?: string
           is_public?: boolean
@@ -3633,7 +3631,6 @@ export type Database = {
           created_at?: string
           creator_id?: string
           duration_days?: number
-          duration_hours?: number
           ends_at?: string
           id?: string
           is_public?: boolean
@@ -4977,16 +4974,6 @@ export type Database = {
           use_limit?: number
         }
         Returns: Json
-      }
-      create_all_or_nothing_challenge: {
-        Args: {
-          _duration_days: number
-          _duration_hours: number
-          _invitee_ids: string[]
-          _title: string
-          _wager_points: number
-        }
-        Returns: string
       }
       create_study_challenge: {
         Args: { _duration_days: number; _invitee_ids: string[]; _title: string }
