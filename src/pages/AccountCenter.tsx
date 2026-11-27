@@ -12,6 +12,7 @@ import { ThemePicker } from "@/components/ThemePicker";
 import { ReferralCard } from "@/components/ReferralCard";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileDetailsCard from "@/components/ProfileDetailsCard";
 import AccountOverview, { type AccountProgress } from "@/components/AccountOverview";
 import KokiCharacterCard, { KOKI_VARIANT } from "@/components/KokiCharacterCard";
@@ -45,12 +46,15 @@ import {
 import "./accountCenter.css";
 
 const t = {
-  en: { title: "My profile", username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", pets: "Pets", cat: "Cat", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
-  ar: { title: "ملفي الشخصي", username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", pets: "الحيوانات", cat: "قطة", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
+  en: { username: "Username", save: "Save", saving: "Saving…", back: "Back", email: "Email", saved: "Profile updated", points: "Your Points", rank: "Rank", nextRank: "to next rank", theme: "Theme", support: "Support", supportDesc: "Contact us on Telegram for help or feedback.", character: "Your Character", male: "Male", female: "Female", pickGender: "Pick your character", skin: "Skin", hairStyle: "Hair style", hairColor: "Hair color", shirt: "Shirt", glasses: "Glasses", crown: "Crown", on: "On", off: "Off", randomize: "Randomize", premiumOnly: "Premium only", upgrade: "Upgrade to unlock", manageSub: "Manage subscription", openingPortal: "Opening…", makeupRoom: "Makeup Room", lipstick: "Lipstick", eyeshadow: "Eyeshadow", musclePack: "Muscle Pack", muscleDesc: "Show off those gains", headband: "Headband", accessories: "Accessories", pets: "Pets", cat: "Cat", necklaceGold: "Gold chain", necklacePearl: "Pearl necklace", none: "None", requestSent: "Name change request submitted — waiting for admin approval", pendingReview: "Pending admin approval", pendingHint: "Your requested name is awaiting admin review.", requestName: "Request name change", noChange: "No change to save", signOut: "Sign out", changeLanguage: "Change language", account: "Account", navBar: "Navigation bar", navBarDesc: "Choose how the bottom nav behaves on every page.", navAlways: "Always visible", navAutoHide: "Hide on scroll down", navSaved: "Navigation preference saved" },
+  ar: { username: "اسم المستخدم", save: "حفظ", saving: "جارٍ الحفظ…", back: "رجوع", email: "البريد الإلكتروني", saved: "تم تحديث الملف", points: "نقاطك", rank: "المرتبة", nextRank: "للمرتبة التالية", theme: "الثيم", support: "الدعم", supportDesc: "تواصل معنا على تيليجرام للمساعدة أو الملاحظات.", character: "شخصيتك", male: "ذكر", female: "أنثى", pickGender: "اختر شخصيتك", skin: "لون البشرة", hairStyle: "تسريحة الشعر", hairColor: "لون الشعر", shirt: "القميص", glasses: "النظارات", crown: "تاج", on: "نعم", off: "لا", randomize: "عشوائي", premiumOnly: "للبريميوم فقط", upgrade: "رقّ لفتح هذه الميزة", manageSub: "إدارة الاشتراك", openingPortal: "جاري الفتح…", makeupRoom: "غرفة المكياج", lipstick: "أحمر الشفاه", eyeshadow: "ظلال العيون", musclePack: "حزمة العضلات", muscleDesc: "أظهر عضلاتك", headband: "عصابة الرأس", accessories: "إكسسوارات", pets: "الحيوانات", cat: "قطة", necklaceGold: "سلسلة ذهبية", necklacePearl: "عقد لؤلؤ", none: "بدون", requestSent: "تم إرسال طلب تغيير الاسم — بانتظار موافقة الإدارة", pendingReview: "بانتظار موافقة الإدارة", pendingHint: "اسمك المطلوب قيد المراجعة من قبل الإدارة.", requestName: "طلب تغيير الاسم", noChange: "لا يوجد تغيير للحفظ", signOut: "تسجيل الخروج", changeLanguage: "تغيير اللغة", account: "الحساب", navBar: "شريط التنقل", navBarDesc: "اختر طريقة ظهور شريط التنقل السفلي في كل الصفحات.", navAlways: "ظاهر دائماً", navAutoHide: "إخفاء عند التمرير للأسفل", navSaved: "تم حفظ تفضيل شريط التنقل" },
 } as const;
 
 const uxText = {
   en: {
+    settings: "Settings",
+    profileTab: "Character & profile",
+    generalTab: "General settings",
     personalInfo: "Personal information",
     personalInfoDesc: "Review your email and update the name shown to other students.",
     customize: "Customize your character",
@@ -59,6 +63,9 @@ const uxText = {
     services: "Notifications, invites & support",
   },
   ar: {
+    settings: "الإعدادات",
+    profileTab: "الشخصية والملف الشخصي",
+    generalTab: "الإعدادات العامة",
     personalInfo: "المعلومات الشخصية",
     personalInfoDesc: "راجع بريدك وحدّث الاسم الذي يظهر للطلاب الآخرين.",
     customize: "تخصيص شخصيتك",
@@ -112,6 +119,8 @@ const AccountCenter = ({
 }) => {
   const text = t[language];
   const ux = uxText[language];
+  const direction = language === "ar" ? "rtl" : "ltr";
+  const [settingsTab, setSettingsTab] = useState("profile");
   const [name, setName] = useState("");
   const hiddenStudyTools = useHiddenStudyTools();
   const [email, setEmail] = useState("");
@@ -300,8 +309,8 @@ const AccountCenter = ({
 
 
   return (
-    <main className="account-profile min-h-screen px-3.5 pb-32 text-foreground sm:px-6" dir={language === "ar" ? "rtl" : "ltr"}>
-      <div className="mx-auto max-w-[67rem] space-y-4 pt-5 sm:space-y-5 sm:pt-8">
+    <main className="account-profile min-h-screen px-3.5 pb-32 text-foreground sm:px-6" dir={direction}>
+      <Tabs dir={direction} value={settingsTab} onValueChange={setSettingsTab} className="mx-auto max-w-[67rem] space-y-4 pt-5 sm:space-y-5 sm:pt-8">
         <header className="flex items-center gap-3.5">
           <button
             type="button"
@@ -311,9 +320,21 @@ const AccountCenter = ({
           >
             <ArrowLeft className={`w-4 h-4 ${language === "ar" ? "rotate-180" : ""}`} />
           </button>
-          <h1 className="text-[1.65rem] font-black leading-tight tracking-tight sm:text-4xl">{text.title}</h1>
+          <h1 className="text-[1.65rem] font-black leading-tight tracking-tight sm:text-4xl">{ux.settings}</h1>
         </header>
 
+        <TabsList aria-label={ux.settings} className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-border bg-muted/60 p-1.5 sm:max-w-[30rem]">
+          <TabsTrigger value="profile" className="min-h-11 min-w-0 gap-2 whitespace-normal rounded-xl px-2 text-xs font-bold sm:text-sm">
+            <User aria-hidden="true" className="size-4 shrink-0" />
+            {ux.profileTab}
+          </TabsTrigger>
+          <TabsTrigger value="general" className="min-h-11 min-w-0 gap-2 whitespace-normal rounded-xl px-2 text-xs font-bold sm:text-sm">
+            <Settings aria-hidden="true" className="size-4 shrink-0" />
+            {ux.generalTab}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile" forceMount hidden={settingsTab !== "profile"} className="space-y-4 sm:space-y-5">
         {!loading && userId && <AccountOverview
           language={language}
           name={savedName}
@@ -664,7 +685,12 @@ const AccountCenter = ({
             )}
           </AccountPanel>
         )}
+          </div>
+        </div>
+        </TabsContent>
 
+        <TabsContent value="general" forceMount hidden={settingsTab !== "general"}>
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-5">
         <AccountPanel icon={Palette} title={ux.preferences}>
             <div className="space-y-3 rounded-2xl border border-border bg-muted/25 p-3.5 sm:p-4">
               <h3 className="text-sm font-semibold">{text.theme}</h3>
@@ -761,6 +787,7 @@ const AccountCenter = ({
             </div>
         </AccountPanel>
 
+          <div className="min-w-0 space-y-4">
         <AccountPanel icon={MessageCircle} title={ux.services}>
             <ReferralCard language={language} />
             <PushNotificationsCard language={language} />
@@ -786,7 +813,8 @@ const AccountCenter = ({
         <TelegramLinkCard language={language} source="profile" />
           </div>
         </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </main>
   );
 };

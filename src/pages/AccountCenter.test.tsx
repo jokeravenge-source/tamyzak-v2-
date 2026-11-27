@@ -36,6 +36,35 @@ it("restores the profile editor in Account Center for a free student", async () 
   expect(api.details).toHaveBeenCalledWith({ userId: "student", language: "en" });
 });
 
+it("keeps profile editing and general settings in separate tabs without losing edits", async () => {
+  const onChangeLanguage = vi.fn();
+  render(<AccountCenter language="en" onBack={() => {}} onChangeLanguage={onChangeLanguage} />);
+  const tabs = within(screen.getByRole("tablist", { name: "Settings" }));
+  const profileTab = tabs.getByRole("tab", { name: "Character & profile" });
+  const generalTab = tabs.getByRole("tab", { name: "General settings" });
+
+  expect(profileTab).toHaveAttribute("aria-selected", "true");
+  const profile = within(screen.getByRole("tabpanel", { name: "Character & profile" }));
+  const input = await profile.findByRole("textbox", { name: "Username" });
+  const editor = profile.getByRole("region", { name: "Profile editor" });
+  expect(profile.getByText("Customize your character")).toBeVisible();
+  expect(screen.queryByRole("tabpanel", { name: "General settings" })).not.toBeInTheDocument();
+  fireEvent.change(input, { target: { value: "Draft name" } });
+
+  fireEvent.mouseDown(generalTab, { button: 0, ctrlKey: false });
+  const general = within(screen.getByRole("tabpanel", { name: "General settings" }));
+  expect(generalTab).toHaveAttribute("aria-selected", "true");
+  expect(screen.queryByRole("textbox", { name: "Username" })).not.toBeInTheDocument();
+  fireEvent.click(general.getByText("App & study settings"));
+  fireEvent.click(general.getByRole("button", { name: /Change language/ }));
+  expect(onChangeLanguage).toHaveBeenCalledOnce();
+
+  fireEvent.mouseDown(profileTab, { button: 0, ctrlKey: false });
+  expect(input).toBeVisible();
+  expect(input).toHaveValue("Draft name");
+  expect(screen.getByRole("region", { name: "Profile editor" })).toBe(editor);
+});
+
 it("shows the student's actual points, streak, and progress to the next rank", async () => {
   api.rpc.mockResolvedValueOnce({ data: { lifetime_points: 3319, current_streak: 6 }, error: null });
   const onNav = vi.fn();
@@ -55,6 +84,8 @@ it("shows the student's actual points, streak, and progress to the next rank", a
 it("keeps bio editing available while a username change awaits approval", async () => {
   api.pending = true;
   render(<AccountCenter language="ar" onBack={() => {}} />);
+  expect(screen.getByRole("tab", { name: "الشخصية والملف الشخصي" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("tab", { name: "الإعدادات العامة" })).toBeVisible();
   expect(await screen.findByRole("button", { name: "Save profile" })).toBeEnabled();
   expect(screen.getByDisplayValue("Student")).toBeDisabled();
   expect(api.details).toHaveBeenCalledWith({ userId: "student", language: "ar" });
