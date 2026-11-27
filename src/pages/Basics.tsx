@@ -484,13 +484,14 @@ const Basics = ({
     return true;
   });
   const [recommendedProfile, setRecommendedProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
-  const [detailScreen, setDetailScreen] = useState<"plan" | "progress" | "streak" | null>(() => {
+  type HomeDetailScreen = "plan" | "progress" | "streak" | "points";
+  const [detailScreen, setDetailScreen] = useState<HomeDetailScreen | null>(() => {
     if (sessionStorage.getItem(RETURN_TO_PROGRESS_KEY) !== "1") return null;
     sessionStorage.removeItem(RETURN_TO_PROGRESS_KEY);
     return "progress";
   });
   const detailOrigin = useRef<{ scroll: number; trigger: string } | null>(null);
-  const openDetail = (screen: "plan" | "progress" | "streak") => {
+  const openDetail = (screen: HomeDetailScreen) => {
     detailOrigin.current = { scroll: window.scrollY, trigger: screen + "-details-trigger" };
     setDetailScreen(screen);
   };
@@ -501,8 +502,10 @@ const Basics = ({
         document.getElementById("study-detail-title")?.focus({ preventScroll: true });
       } else if (detailOrigin.current) {
         const origin = detailOrigin.current;
+        const trigger = document.getElementById(origin.trigger);
         window.scrollTo({ top: origin.scroll, behavior: "auto" });
-        document.getElementById(origin.trigger)?.focus({ preventScroll: true });
+        if (origin.trigger === "points-details-trigger") trigger?.scrollIntoView?.({ block: "nearest", inline: "start" });
+        trigger?.focus({ preventScroll: true });
         detailOrigin.current = null;
       }
     });
@@ -667,6 +670,7 @@ const Basics = ({
   }, []);
 
   const isRTL = language === "ar";
+  const pointsGuideTitle = isRTL ? "شتسوي بالنقاط ؟" : "What can you do with points?";
   const homeNumber = (value: number) => value.toLocaleString(isRTL ? "ar-IQ" : "en");
   const boardPosition = boardRank == null ? "—" : `#${homeNumber(boardRank)}`;
   const HomeChevron = isRTL ? ChevronLeft : ChevronRight;
@@ -870,6 +874,12 @@ const Basics = ({
 
 
   if (detailScreen) {
+    const detailTitles = {
+      plan: isRTL ? "خطة اليوم" : "Today's plan",
+      progress: isRTL ? "تقدمي ورتبتي" : "My progress and rank",
+      streak: isRTL ? "استمراريتي بالدراسة" : "My study streak",
+      points: pointsGuideTitle,
+    };
     return (
       <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
         <div className="mx-auto max-w-4xl">
@@ -879,13 +889,9 @@ const Basics = ({
             {isRTL ? "العودة للرئيسية" : "Back to home"}
           </button>
           <header className="mb-6">
-            <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>
+            {detailScreen !== "points" && <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>}
             <h1 id="study-detail-title" tabIndex={-1} className="text-2xl font-bold leading-relaxed outline-none sm:text-3xl">
-              {detailScreen === "plan"
-                ? (isRTL ? "خطة اليوم" : "Today's plan")
-                : detailScreen === "progress"
-                  ? (isRTL ? "تقدمي ورتبتي" : "My progress and rank")
-                  : (isRTL ? "استمراريتي بالدراسة" : "My study streak")}
+              {detailTitles[detailScreen]}
             </h1>
           </header>
           {detailScreen === "progress" ? (
@@ -961,7 +967,7 @@ const Basics = ({
               <p className="mb-4 text-lg font-bold">{streakDays ?? "—"} {isRTL ? "أيام متواصلة" : "days in a row"}</p>
               <StreakTree language={language} />
             </section>
-          ) : (
+          ) : detailScreen === "plan" ? (
             <section className="mb-0">
             <div className="rounded-[2rem] border border-sky-200 bg-gradient-to-br from-white via-sky-50 to-indigo-50 p-4 text-slate-950 shadow-[0_24px_70px_-36px_rgba(37,99,235,0.65)] sm:p-7">
               <div className="flex items-center gap-3 mb-4">
@@ -1083,7 +1089,7 @@ const Basics = ({
               </div>
             </div>
           </section>
-          )}
+          ) : null}
         </div>
       </main>
     );
@@ -1427,6 +1433,8 @@ const Basics = ({
 
           <HomeHighlights
             language={language}
+            pointsGuideTitle={pointsGuideTitle}
+            onOpenPointsGuide={() => openDetail("points")}
             onOpenChallenge={() => {
               try { sessionStorage.setItem("tmz:sessions-entry", "challenge"); } catch { /* ignore */ }
               navigate("sessions");

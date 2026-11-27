@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import challengeArt from "@/assets/challenge-3d-icon.png";
 import hoodieArt from "@/assets/houdini-hoodie-icon.png";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -34,10 +34,15 @@ function PromoContent({ art, title, description }: { art: string; title: string;
   );
 }
 
-export default function HomeHighlights({ language, onOpenChallenge }: { language: AppLanguage; onOpenChallenge: () => void }) {
+export default function HomeHighlights({ language, onOpenChallenge, pointsGuideTitle, onOpenPointsGuide }: {
+  language: AppLanguage;
+  onOpenChallenge: () => void;
+  pointsGuideTitle: string;
+  onOpenPointsGuide: () => void;
+}) {
   const isRTL = language === "ar";
   const trackRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ index: 0, count: 2 });
+  const [position, setPosition] = useState({ index: 0, count: 3 });
 
   useLayoutEffect(() => {
     const track = trackRef.current;
@@ -122,6 +127,13 @@ export default function HomeHighlights({ language, onOpenChallenge }: { language
       >
         <button type="button" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
           <PromoContent art={challengeArt} title={challengeTitle} description={isRTL ? "اختبر مستواك وتنافس ويّه طلاب تميّزك" : "Test your skills against other Tamayzak students"} />
+        </button>
+        <button type="button" id="points-details-trigger" onClick={onOpenPointsGuide}
+          className="home-illustrated-card flex min-h-[8.5rem] items-center justify-between gap-3 rounded-[1.4rem] border border-sky-400/25 px-3.5 py-3 text-start text-white transition-[filter] hover:brightness-110 focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:px-4">
+          <span className="min-w-0 text-[clamp(1.125rem,4.5vw,1.5rem)] font-black leading-snug tracking-tight">{pointsGuideTitle}</span>
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl border border-cyan-200/30 bg-cyan-100/10 text-cyan-200 shadow-[0_6px_18px_#42dffc24] sm:size-14">
+            <Zap aria-hidden="true" className="size-6 fill-current sm:size-7" />
+          </span>
         </button>
         <a href="https://www.instagram.com/houdini_st0re/" target="_blank" rel="noopener noreferrer" className={promoClass} aria-label={houdiniTitle}>
           <PromoContent art={hoodieArt} title={houdiniTitle} description={isRTL ? "اطلب هودي تميّزك من هوديني على إنستغرام" : "Order your Tamayzak hoodie from Houdini on Instagram"} />

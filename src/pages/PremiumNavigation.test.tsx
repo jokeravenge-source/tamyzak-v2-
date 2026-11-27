@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Basics from "@/pages/Basics";
 import SubjectsHub from "@/pages/SubjectsHub";
@@ -27,7 +27,10 @@ vi.mock("@/components/NewFeatureAnnouncement", () => ({ default: () => null }));
 vi.mock("@/components/ChapterProgressCircles", () => ({ default: () => null }));
 vi.mock("@/components/TelegramLinkCard", () => ({ TelegramLinkCard: () => <section aria-label="Connect Telegram" /> }));
 beforeEach(() => { localStorage.clear(); state.isPremium = false; state.loading = false; state.todos = []; state.openInstagram.mockClear(); });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 describe("locked tool navigation", () => {
   it.each([false, true])("handles a catalog card with Premium = %s", async (premium) => {
     state.isPremium = premium;
@@ -120,7 +123,7 @@ describe("simplified home navigation", () => {
     expect(screen.getByRole("heading", { name: progressHeading })).toBeInTheDocument();
   });
 
-  it("places today's actual planner tasks and the three original cards above study actions", async () => {
+  it("places today's actual planner tasks and the highlight cards above study actions", async () => {
     const week = getStudyWeek();
     const today = week.find((day) => day.isToday)!;
     const other = week.find((day) => !day.isToday)!;
@@ -150,10 +153,23 @@ describe("simplified home navigation", () => {
     expect(onSelect).toHaveBeenCalledWith("sessions");
     expect(within(highlights).getByRole("link", { name: "Buy from Houdini" })).toHaveAttribute("href", "https://www.instagram.com/houdini_st0re/");
     expect(within(highlights).getByRole("region", { name: "Connect Telegram" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show card 1 of 3" })).toHaveAttribute("aria-current", "true");
+    expect(within(highlights).getByRole("button", { name: "What can you do with points?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show card 1 of 4" })).toHaveAttribute("aria-current", "true");
     expect(plan.compareDocumentPosition(highlights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(highlights.compareDocumentPosition(screen.getByRole("button", { name: "Continue studying" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "What will you finish today?" })).not.toBeInTheDocument();
+  });
+
+  it("opens the Arabic points guide with a blank body and returns to its card", async () => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    await act(async () => { render(<Basics language="ar" onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={vi.fn()} />); });
+    fireEvent.click(screen.getByRole("button", { name: "شتسوي بالنقاط ؟" }));
+    const guide = within(screen.getByRole("main"));
+    expect(guide.getByRole("heading", { name: "شتسوي بالنقاط ؟" })).toBeVisible();
+    expect(guide.queryByRole("region")).not.toBeInTheDocument();
+    expect(guide.queryByRole("link")).not.toBeInTheDocument();
+    fireEvent.click(guide.getByRole("button", { name: "العودة للرئيسية" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "شتسوي بالنقاط ؟" })).toHaveFocus());
   });
 
   it("keeps the schedule shortcut visible with no tasks today", async () => {
