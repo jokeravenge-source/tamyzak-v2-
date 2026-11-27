@@ -2,6 +2,7 @@ import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getSignupSource } from "@/lib/analytics";
+import { mergeAccessoryFitEdits, type AccessoryFitEdits, type CharacterAccessoryFits } from "@/lib/characterAccessoryFit";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type CharacterRow = Pick<Profile, "gender" | "character">;
@@ -47,4 +48,27 @@ export async function saveInitialProfileCharacter(userId: string, gender: Gender
   const existing = await loadProfileCharacter(userId);
   if (existing) return existing;
   throw new Error("Character could not be saved");
+}
+
+export async function saveProfileAccessoryFit(userId: string, characterKey: string, edits: AccessoryFitEdits) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: profile, error: readError } = await supabase.from("profiles").select("character").eq("user_id", userId).maybeSingle();
+    if (readError) throw readError;
+    if (!profile) throw new Error("Profile unavailable");
+
+    const previous = profile.character;
+    const current = previous && typeof previous === "object" && !Array.isArray(previous) ? previous : {};
+    const accessoryFits = mergeAccessoryFitEdits(current.accessoryFits as CharacterAccessoryFits | undefined, characterKey, edits);
+    const character = { ...current, accessoryFits };
+    const update = supabase.from("profiles").update({ character }).eq("user_id", userId);
+    // Retry if another device changed the character while this fit was open.
+    const unchanged = previous === null ? update.is("character", null) : update.eq("character", JSON.stringify(previous));
+    const { data, error } = await unchanged.select("character").maybeSingle();
+    if (error) throw error;
+    if (data) {
+      notifyProfileCharacterChanged(userId);
+      return data.character as CharacterTraits;
+    }
+  }
+  throw new Error("Character changed while saving");
 }
