@@ -1,6 +1,7 @@
 # Task Roadmap
 
 ## In Progress
+- Enable and verify study-room cheering and owner-approved microphones.
 - Real-video notes verification awaits a Premium-enabled test account; the available signed-in account is blocked by the Premium screen.
 
 ## Done
