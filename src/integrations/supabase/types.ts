@@ -649,6 +649,114 @@ export type Database = {
         }
         Relationships: []
       }
+      community_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      community_post_reactions: {
+        Row: {
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          photo_paths: string[]
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          photo_paths?: string[]
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          photo_paths?: string[]
+        }
+        Relationships: []
+      }
       course_chapters: {
         Row: {
           course_id: string
@@ -3882,6 +3990,7 @@ export type Database = {
         Row: {
           created_at: string
           recipient_id: string
+          reward_points: number
           room_id: string
           seen_at: string | null
           sender_id: string
@@ -3890,6 +3999,7 @@ export type Database = {
         Insert: {
           created_at?: string
           recipient_id: string
+          reward_points?: number
           room_id: string
           seen_at?: string | null
           sender_id: string
@@ -3898,6 +4008,7 @@ export type Database = {
         Update: {
           created_at?: string
           recipient_id?: string
+          reward_points?: number
           room_id?: string
           seen_at?: string | null
           sender_id?: string
@@ -4955,6 +5066,14 @@ export type Database = {
         Args: { _id: string; _started?: boolean }
         Returns: Json
       }
+      community_chat_reaction_summary: {
+        Args: { _post_id: string }
+        Returns: {
+          dislike_count: number
+          like_count: number
+          viewer_reaction: string
+        }[]
+      }
       coupon_access_end: {
         Args: { _amount: number; _start: string; _unit: string }
         Returns: string
@@ -5091,6 +5210,42 @@ export type Database = {
         Args: { _challenge_id: string }
         Returns: undefined
       }
+      list_community_chat_comments: {
+        Args: { _before_at?: string; _before_id?: string; _post_id: string }
+        Returns: {
+          author_id: string
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+        }[]
+      }
+      list_community_chat_posts: {
+        Args: { _before_at?: string; _before_id?: string }
+        Returns: {
+          author_id: string
+          author_name: string
+          body: string
+          comment_count: number
+          created_at: string
+          id: string
+        }[]
+      }
+      list_community_chat_posts_v2: {
+        Args: { _before_at?: string; _before_id?: string }
+        Returns: {
+          author_id: string
+          author_name: string
+          body: string
+          comment_count: number
+          created_at: string
+          dislike_count: number
+          id: string
+          like_count: number
+          photo_paths: string[]
+          viewer_reaction: string
+        }[]
+      }
       list_literature_mcq_sets: { Args: never; Returns: Json }
       list_subject_chapters: {
         Args: { _subject: string }
@@ -5218,6 +5373,14 @@ export type Database = {
         }
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
+      set_community_chat_reaction: {
+        Args: { _post_id: string; _reaction: string }
+        Returns: {
+          dislike_count: number
+          like_count: number
+          viewer_reaction: string
+        }[]
+      }
       set_site_visits: { Args: { _count: number }; Returns: number }
       set_study_room_mic: {
         Args: {

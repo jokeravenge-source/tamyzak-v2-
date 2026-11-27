@@ -498,6 +498,13 @@
       "when": 1795806000000,
       "tag": "0070_community_chat_photos_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795806000001,
+      "tag": "0071_apply_pending_community_and_cheer_rewards",
+      "breakpoints": true
     }
   ]
 }
