@@ -189,7 +189,10 @@ it("shows the practice props until the last practice view closes, then returns t
   const otherPractice = render(<Practice active />);
   const avatar = screen.getByRole("button", { name: "Your study status" });
   expect(screen.getByRole("status")).toHaveTextContent("Solving questions");
-  expect(avatar.querySelector(".student-character__pen")).toHaveStyle({ left: "60%", top: "75%" });
+  const writing = avatar.querySelector(".student-character__writing");
+  expect(writing).toHaveStyle({ left: "60%", top: "70%" });
+  expect(writing?.querySelector(".student-character__notepad")).toBeInTheDocument();
+  expect(writing?.querySelector(".student-character__pen")).toBeInTheDocument();
   expect(within(avatar).getByText("?")).toBeInTheDocument();
   expect(avatar.querySelector(".student-character__book")).toBeNull();
   practice.unmount();

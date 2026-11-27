@@ -111,7 +111,16 @@ export function getCharacterPenGrip(gender: Gender, requested: CharacterTraits["
   const [, , [x, y, width]] = landmarks[gender][variant - 1];
   // Keep the raised hand closer to the body on taller, narrower sprites.
   const reach = gender === "female" && variant === 16 ? .5 : .65;
-  return { left: `${x + width * reach}%`, top: `${47 + y / 2}%` };
+  return {
+    left: `${x + width * reach}%`,
+    top: `${42 + y / 2}%`,
+    "--student-character-note-width": `${13 + width / 2}px`,
+  };
+}
+
+export function getCharacterSighPosition(gender: Gender, requested: CharacterTraits["variant"]) {
+  const [, [x, y, width]] = landmarks[gender][getCharacterVariant(gender, requested) - 1];
+  return { left: `${x + width * .6}%`, top: `${y + 9}%` };
 }
 
 export function mergeAccessoryFitEdits(saved: CharacterAccessoryFits | undefined, character: string, edits: AccessoryFitEdits): CharacterAccessoryFits {

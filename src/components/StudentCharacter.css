@@ -1,4 +1,5 @@
 .student-character__reaction {
+  position: relative;
   display: grid;
   transform-origin: 50% 87%;
 }
@@ -76,86 +77,195 @@
   transform-origin: left center;
 }
 
+.student-character[data-study-status="solving"] {
+  --student-character-pose: 202 92% 48%;
+}
+
+.student-character[data-study-status="bored"] {
+  --student-character-pose: 225 49% 62%;
+}
+
+.student-character:is([data-study-status="solving"], [data-study-status="bored"]) .student-character__button {
+  border-color: hsl(var(--student-character-pose) / .44);
+  background:
+    radial-gradient(ellipse at 50% 85%, hsl(var(--student-character-pose) / .28), transparent 65%),
+    linear-gradient(155deg, hsl(var(--student-character-pose) / .13), hsl(var(--student-character-pose) / .05)),
+    hsl(var(--card));
+  box-shadow: inset 0 0 0 2px hsl(var(--card) / .72), 0 4px 12px hsl(var(--student-character-pose) / .23);
+}
+
+.student-character:is([data-study-status="solving"], [data-study-status="bored"]) .student-character__button:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+.student-character:is([data-study-status="solving"], [data-study-status="bored"]) .student-character__message {
+  margin-bottom: 4px;
+  padding-block: 5px;
+  border-color: hsl(var(--student-character-pose) / .32);
+  background: linear-gradient(120deg, hsl(var(--student-character-pose) / .08), transparent 65%), hsl(var(--card));
+}
+
 .student-character__thought {
   position: absolute;
   z-index: 7;
-  bottom: calc(100% + 3px);
+  bottom: calc(100% + 2px);
   left: 50%;
   display: grid;
-  min-width: 18px;
-  height: 18px;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 80%);
-  border-radius: 9px;
-  box-shadow: 0 2px 6px rgb(15 47 82 / 22%);
-  font-size: 12px;
+  border: 1px solid;
   font-weight: 800;
   line-height: 1;
   pointer-events: none;
   transform: translateX(-50%);
 }
 
+.student-character__thought--question {
+  width: 23px;
+  height: 23px;
+  border-color: #8be7ff;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 36% 0, #55d9ff, transparent 64%), linear-gradient(153deg, #207bd2, #173b99);
+  color: #fff;
+  box-shadow: 0 2px 7px rgb(17 77 155 / 30%), inset 0 1px 2px rgb(255 255 255 / 50%);
+  text-shadow: 0 1px 2px #17417e;
+  font-size: 15px;
+}
+
+.student-character__thought--question::before {
+  position: absolute;
+  top: 3px;
+  right: -6px;
+  width: 5px;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: #83e8ff;
+  box-shadow: 0 0 5px #5aa9f4;
+  transform: rotate(45deg);
+  content: "";
+}
+
 .student-character__thought::after {
   position: absolute;
-  top: calc(100% + 1px);
+  top: calc(100% + 2px);
   left: 50%;
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: inherit;
+  background: hsl(var(--student-character-pose));
+  box-shadow: -3px 3px 0 -.6px hsl(var(--student-character-pose) / .5);
+  transform: translateX(-50%);
   content: "";
 }
 
-.student-character__thought--question {
-  background: linear-gradient(145deg, #f1fdff, #9ce8fa);
-  color: #133e68;
-}
-
 .student-character__thought--bored {
-  left: 32%;
-  background: linear-gradient(145deg, #f8fafc, #dce3ef);
-  color: #46556d;
+  bottom: calc(100% - 1px);
+  left: 33%;
+  width: 24px;
+  height: 16px;
+  padding-bottom: 3px;
+  border-color: hsl(var(--student-character-pose) / .44);
+  border-radius: 8px;
+  background: linear-gradient(150deg, hsl(var(--student-character-pose) / .15), transparent), hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: 0 2px 6px hsl(var(--student-character-pose) / .24);
+  font-size: 13px;
 }
 
 .student-character[data-study-status="bored"] .student-character__sprite {
-  transform: translateY(1px) rotate(-6deg);
+  transform: translate(-1px, 2px) rotate(-12deg) scale(1.025, .93);
+}
+
+.student-character__sigh {
+  position: absolute;
+  z-index: 6;
+  width: 13px;
+  height: 6px;
+  border-top: 1.5px solid hsl(var(--student-character-pose) / .85);
+  border-radius: 50%;
+  opacity: .72;
+  transform: rotate(-16deg);
+}
+
+.student-character__sigh::after {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 7px;
+  height: 4px;
+  border-top: 1.5px solid hsl(var(--student-character-pose) / .66);
+  border-radius: 50%;
+  content: "";
+}
+
+.student-character__writing {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.student-character__notepad {
+  position: absolute;
+  top: -1px;
+  right: -3px;
+  width: var(--student-character-note-width, 23px);
+  height: 13px;
+  border: 1px solid #73a9dc;
+  border-left: 3px solid #2b5eb0;
+  border-radius: 2px 3px 3px 2px;
+  background: linear-gradient(155deg, #fcfeff, #dfedff);
+  box-shadow: 0 2px 0 -1px #285597, 0 3px 3px rgb(8 33 82 / 25%);
+  transform: rotate(-12deg);
+}
+
+.student-character__notepad::before {
+  position: absolute;
+  inset: 2px 3px 2px 2px;
+  background:
+    linear-gradient(90deg, #597dae, #81a6d1) left 2px / 54% 1px no-repeat,
+    repeating-linear-gradient(transparent 0 2px, #aac8e9 2px 3px);
+  content: "";
+}
+
+.student-character__notepad::after,
+.student-character__grip {
+  position: absolute;
+  width: 6px;
+  height: 5px;
+  border-radius: 45% 55% 52% 48%;
+  background: var(--student-character-hand, #f5d4be);
+  background: linear-gradient(155deg, rgb(255 255 255 / 34%), transparent 45%, rgb(99 44 38 / 24%)), var(--student-character-hand, #f5d4be);
+  box-shadow: 0 1px 2px rgb(37 26 32 / 30%);
+}
+
+.student-character__notepad::after {
+  top: 3px;
+  left: -5px;
+  content: "";
 }
 
 .student-character__pen {
   position: absolute;
-  z-index: 6;
-  width: 4px;
-  height: 13px;
-  border-radius: 2px 2px 1px 1px;
-  background: linear-gradient(#dbf9ff 0 2px, transparent 2px), linear-gradient(90deg, #54daf4, #2277ca 56%, #104f94);
-  box-shadow: 0 0 0 1px rgb(14 43 79 / 30%), 0 1px 2px rgb(14 43 79 / 40%);
-  pointer-events: none;
-  transform: translate(-50%, -72%) rotate(34deg);
+  width: 5px;
+  height: 16px;
+  border-radius: 2.5px 2.5px 1px 1px;
+  background: linear-gradient(180deg, #e5feff 0 2px, transparent 2px 12px, #184283 12px), linear-gradient(90deg, #163875, #40c6f5 49%, #2665be 74%, #1b428c);
+  box-shadow: 0 1px 2px rgb(16 42 92 / 45%);
+  transform: translate(-50%, -72%) rotate(37deg);
   transform-origin: 50% 72%;
 }
 
-.student-character__pen::before,
-.student-character__pen::after {
+.student-character__pen::before {
   position: absolute;
+  inset: auto 0 -3px;
+  height: 4px;
+  background: linear-gradient(100deg, #6594c1, #e2f9ff 47%, #1c4077);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
   content: "";
 }
 
-.student-character__pen::before {
-  bottom: -3px;
-  border-top: 4px solid #f2c479;
-  border-right: 2px solid transparent;
-  border-left: 2px solid transparent;
-}
-
-.student-character__pen::after {
-  right: -2px;
-  bottom: 1px;
-  width: 5px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--student-character-hand, #f5d4be);
-  background: color-mix(in srgb, var(--student-character-hand) 78%, #d0896a);
-  box-shadow: 0 1px 1px rgb(42 24 19 / 30%);
+.student-character__grip {
+  transform: translate(-42%, -25%) rotate(-24deg);
 }
 
 .student-character__cheer {
@@ -185,15 +295,27 @@
   }
 
   .student-character[data-study-status="bored"] .student-character__sprite {
-    animation: student-character-slump 7s ease-in-out infinite;
+    animation: student-character-slump 640ms cubic-bezier(.22, 1, .36, 1) both, student-character-bored-breath 5.4s ease-in-out 640ms infinite;
   }
 
-  .student-character__thought {
-    animation: student-character-think 2.8s ease-in-out infinite;
+  .student-character__sigh {
+    animation: student-character-exhale 5.4s ease-out 640ms infinite backwards;
+  }
+
+  .student-character[data-study-status="solving"] .student-character__sprite {
+    animation: student-character-concentrate 3.8s ease-in-out infinite;
+  }
+
+  .student-character__thought--question {
+    animation: student-character-think 3.8s ease-in-out infinite;
   }
 
   .student-character__pen {
-    animation: student-character-write 3.6s ease-in-out infinite;
+    animation: student-character-write 3.8s ease-in-out infinite;
+  }
+
+  .student-character__notepad::before {
+    animation: student-character-ink 3.8s ease-in-out infinite;
   }
 
   .student-character__book {
@@ -219,20 +341,41 @@
 }
 
 @keyframes student-character-slump {
-  0%, 12%, 100% { transform: translateY(1px) rotate(-6deg); }
-  26%, 81% { transform: translateY(2px) rotate(-8deg) scale(1.02, .96); }
-  92% { transform: translateY(.5px) rotate(-3deg) scale(.99, 1.015); }
+  from { transform: none; }
+  to { transform: translate(-1px, 2px) rotate(-12deg) scale(1.025, .93); }
+}
+
+@keyframes student-character-bored-breath {
+  0%, 100% { transform: translate(-1px, 2px) rotate(-12deg) scale(1.025, .93); }
+  27% { transform: translate(-1px, 0) rotate(-7deg) scale(1, 1.015); }
+  47%, 76% { transform: translate(-1px, 2.5px) rotate(-13deg) scale(1.03, .91); }
+}
+
+@keyframes student-character-exhale {
+  0%, 27% { opacity: 0; transform: translateX(-2px) rotate(-16deg) scale(.65); }
+  38% { opacity: 1; }
+  62%, 100% { opacity: 0; transform: translate(7px, -3px) rotate(-22deg) scale(1.18); }
+}
+
+@keyframes student-character-concentrate {
+  0%, 17%, 83%, 100% { transform: none; }
+  36%, 64% { transform: translateY(1px) rotate(3deg) scale(1.015, .985); }
 }
 
 @keyframes student-character-think {
   0%, 100% { transform: translate(-50%, 0); }
-  52% { transform: translate(-50%, -2px); }
+  52% { transform: translate(-50%, -3px) rotate(-5deg); }
 }
 
 @keyframes student-character-write {
-  0%, 38%, 74%, 100% { transform: translate(-50%, -72%) rotate(34deg); }
-  46%, 62% { transform: translate(-50%, -72%) rotate(44deg); }
-  54%, 70% { transform: translate(-50%, -72%) rotate(27deg); }
+  0%, 20%, 78%, 100% { transform: translate(-50%, -72%) rotate(37deg); }
+  32%, 52% { transform: translate(-50%, -72%) rotate(50deg); }
+  42%, 64% { transform: translate(-50%, -72%) rotate(22deg); }
+}
+
+@keyframes student-character-ink {
+  0%, 23% { background-size: 20% 1px, auto; }
+  68%, 100% { background-size: 62% 1px, auto; }
 }
 
 @keyframes student-character-open-book {

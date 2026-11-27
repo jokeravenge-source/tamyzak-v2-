@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
 import { STUDY_ROOM_CHEER_RECEIVED, type StudyRoomCheerEvent } from "@/hooks/useStudyRoomActivity";
 import { useIsCharacterPracticing } from "@/hooks/useCharacterPractice";
-import { getCharacterPenGrip } from "@/lib/characterAccessoryFit";
+import { getCharacterPenGrip, getCharacterSighPosition } from "@/lib/characterAccessoryFit";
 import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
@@ -117,6 +117,7 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
   const practicing = useIsCharacterPracticing();
   const bored = useBoredCharacter(studyStatus === "ready" && !practicing);
   const status = practicing ? "solving" : bored ? "bored" : studyStatus;
+  const hasPose = status === "solving" || status === "bored";
   const isKoki = character.gender === "female" && Number(character.traits?.variant) === 16;
   const handStyle = { "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties;
   const t = copy[language];
@@ -139,10 +140,10 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
   return (
     <aside data-study-status={status} className="student-character pointer-events-none fixed bottom-[calc(var(--nav-safe)+.5rem)] left-[max(.625rem,env(safe-area-inset-left))] z-[34] flex max-w-[75vw] items-end gap-2" dir="ltr">
       <button type="button" onClick={() => setOpen(value => !value)} aria-label={t.toggle} aria-expanded={open} aria-controls={open ? messageId : undefined}
-        className="pointer-events-auto relative grid size-12 shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        className={cn("student-character__button pointer-events-auto relative grid shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", hasPose ? "size-[3.625rem]" : "size-12")}>
         <span aria-hidden="true" className="student-character__reaction" data-cheering={cheer > 0 || undefined}>
           <span className="student-character__sprite">
-            <CharacterAvatar gender={character.gender} traits={character.traits} size={42} />
+            <CharacterAvatar gender={character.gender} traits={character.traits} size={hasPose ? 52 : 42} />
             {status === "studying" && (
               <span
                 className="student-character__book"
@@ -154,17 +155,22 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
                 <span className="student-character__page student-character__page--turning" />
               </span>
             )}
-            {status === "solving" && <>
-              <span className="student-character__thought student-character__thought--question">{language === "ar" ? "؟" : "?"}</span>
-              <span className="student-character__pen" style={{ ...handStyle, ...getCharacterPenGrip(character.gender, character.traits?.variant) }} />
-            </>}
-            {status === "bored" && <span className="student-character__thought student-character__thought--bored">…</span>}
+            {status === "solving" && (
+              <span className="student-character__writing" style={{ ...handStyle, ...getCharacterPenGrip(character.gender, character.traits?.variant) }}>
+                <span className="student-character__notepad" />
+                <span className="student-character__pen" />
+                <span className="student-character__grip" />
+              </span>
+            )}
+            {status === "bored" && <span className="student-character__sigh" style={getCharacterSighPosition(character.gender, character.traits?.variant)} />}
           </span>
+          {status === "solving" && <span className="student-character__thought student-character__thought--question">{language === "ar" ? "؟" : "?"}</span>}
+          {status === "bored" && <span className="student-character__thought student-character__thought--bored">…</span>}
         </span>
         {cheer > 0 && <span key={cheer} aria-hidden="true" className="student-character__cheer"><Heart fill="currentColor" className="size-2.5" /></span>}
       </button>
       {open && <p id={messageId} role="status" dir={language === "ar" ? "rtl" : "ltr"}
-        className="relative mb-2 rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2 text-start text-xs font-semibold leading-5 text-foreground shadow-sm">
+        className="student-character__message relative mb-2 rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2 text-start text-xs font-semibold leading-5 text-foreground shadow-sm">
         {t[status]}
       </p>}
     </aside>
