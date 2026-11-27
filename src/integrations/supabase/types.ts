@@ -5408,6 +5408,13 @@ export type Database = {
       }
       start_nadawi_admin_test: { Args: { _restart?: boolean }; Returns: Json }
       start_nadawi_contest: { Args: never; Returns: Json }
+      study_challenge_saved_ranges: {
+        Args: { _challenge_id: string }
+        Returns: {
+          studied: unknown
+          user_id: string
+        }[]
+      }
       study_challenge_totals: {
         Args: { _challenge_id: string }
         Returns: {

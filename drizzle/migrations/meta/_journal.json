@@ -512,6 +512,13 @@
       "when": 1795809600000,
       "tag": "0072_all_or_nothing_live_standings",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1795809600001,
+      "tag": "0073_apply_pending_live_standings",
+      "breakpoints": true
     }
   ]
 }
