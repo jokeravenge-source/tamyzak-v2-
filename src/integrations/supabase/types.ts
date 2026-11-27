@@ -649,6 +649,38 @@ export type Database = {
         }
         Relationships: []
       }
+      community_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_friends: {
         Row: {
           created_at: string
@@ -674,6 +706,27 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
       }
       course_chapters: {
         Row: {
@@ -4795,6 +4848,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      list_community_chat_comments: {
+        Args: { _post_id: string; _before_at?: string; _before_id?: string }
+        Returns: {
+          id: string
+          author_id: string
+          author_name: string | null
+          body: string
+          created_at: string
+        }[]
+      }
+      list_community_chat_posts: {
+        Args: { _before_at?: string; _before_id?: string }
+        Returns: {
+          id: string
+          author_id: string
+          author_name: string | null
+          body: string
+          created_at: string
+          comment_count: number
+        }[]
+      }
       _channel_battle_payload: {
         Args: { a: Database["public"]["Tables"]["channel_battles"]["Row"] }
         Returns: Json

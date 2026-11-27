@@ -16,18 +16,22 @@ vi.mock("@/components/StudentProfileDialog", () => ({ default: () => null }));
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 it.each([
-  { language: "en", title: "Community", session: "Sessions", friends: "Friends", website: "Tamayzak website" },
-  { language: "ar", title: "المجتمع", session: "الجلسات", friends: "الأصدقاء", website: "موقع تميّزك" },
-] as const)("opens all three Community destinations in $language", ({ language, title, session, friends, website }) => {
+  { language: "en", title: "Community", session: "Sessions", friends: "Friends", chat: "Chat" },
+  { language: "ar", title: "المجتمع", session: "الجلسات", friends: "الأصدقاء", chat: "الدردشة" },
+] as const)("opens all three Community destinations in $language", ({ language, title, session, friends, chat }) => {
   const openSessions = vi.fn();
   const openFriends = vi.fn();
-  render(<Community language={language} onOpenSessions={openSessions} onOpenFriends={openFriends} />);
+  const openChat = vi.fn();
+  render(<Community language={language} onOpenSessions={openSessions} onOpenFriends={openFriends} onOpenChat={openChat} />);
   expect(screen.getByRole("heading", { name: title })).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: new RegExp(session) }));
   fireEvent.click(screen.getByRole("button", { name: new RegExp(friends) }));
   expect(openSessions).toHaveBeenCalledOnce();
   expect(openFriends).toHaveBeenCalledOnce();
-  expect(screen.getByRole("link", { name: new RegExp(website) })).toHaveAttribute("href", "https://tamyazak.site/?menu=basics");
+  const chatCard = screen.getByRole("button", { name: new RegExp(`^${chat}`) });
+  expect(screen.getAllByRole("button")[2]).toBe(chatCard);
+  fireEvent.click(chatCard);
+  expect(openChat).toHaveBeenCalledOnce();
 });
 
 it("loads the account's friends, adds a name match once, and supports undoing a saved friend", async () => {

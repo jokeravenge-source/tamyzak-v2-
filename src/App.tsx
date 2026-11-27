@@ -35,6 +35,7 @@ const Advices = lazy(() => import("./pages/Advices"));
 const Sessions = lazy(() => import("./pages/Sessions"));
 const Community = lazy(() => import("./pages/Community"));
 const Friends = lazy(() => import("./pages/Friends"));
+const CommunityChat = lazy(() => import("./pages/CommunityChat"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminMalazamPortal = lazy(() => import("./pages/AdminMalazamPortal"));
 const AdminCouponsTab = lazy(() => import("./components/AdminCouponsTab"));
@@ -985,6 +986,9 @@ const StudentApp = () => {
     return () => window.removeEventListener("app:open-personalized-practice", openPersonalized);
   }, []);
   const backToBasics = resetMenu;
+  const backToCommunity = () => {
+    if (!sectionHistory.goBack()) chooseMenu("community");
+  };
   const leaveMinisterialBank = () => {
     if (sectionHistory.goBack()) return;
     if (!isNadiaMinisterialRoute) {
@@ -1207,11 +1211,11 @@ const StudentApp = () => {
       ) : menuChoice === "sessions" ? (
         <Sessions language={language} onBack={resetMenu} />
       ) : menuChoice === "community" ? (
-        <Community language={language} onOpenSessions={() => chooseMenu("sessions")} onOpenFriends={() => chooseMenu("friends")} />
+        <Community language={language} onOpenSessions={() => chooseMenu("sessions")} onOpenFriends={() => chooseMenu("friends")} onOpenChat={() => chooseMenu("communityChat")} />
       ) : menuChoice === "friends" ? (
-        <Friends key={userId} language={language} userId={userId} onBack={() => {
-          if (!sectionHistory.goBack()) chooseMenu("community");
-        }} />
+        <Friends key={userId} language={language} userId={userId} onBack={backToCommunity} />
+      ) : menuChoice === "communityChat" ? (
+        <CommunityChat key={userId} language={language} userId={userId} canModerate={isAdmin} onBack={backToCommunity} />
       ) : menuChoice === "account" ? (
         <AccountCenter language={language} onBack={resetMenu} onNav={chooseMenu} onChangeLanguage={resetLanguage} />
       ) : menuChoice === "essay" ? (

@@ -21,7 +21,7 @@ it("puts Study second and keeps Community selected while its pages are open", ()
   fireEvent.click(study);
   fireEvent.click(community);
   expect(onSelect.mock.calls).toEqual([["more"], ["community"]]);
-  for (const active of ["community", "friends", "sessions"] as const) {
+  for (const active of ["community", "friends", "sessions", "communityChat"] as const) {
     view.rerender(<BottomGroupNav {...props} active={active} />);
     expect(community).toHaveAttribute("aria-current", "page");
     expect(study).not.toHaveAttribute("aria-current");

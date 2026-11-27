@@ -1,7 +1,5 @@
-import { ArrowLeft, ArrowRight, ArrowUpRight, Globe2, Timer, UsersRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, MessagesSquare, Timer, UsersRound } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
-
-const WEBSITE = "https://tamyazak.site/?menu=basics";
 
 const copy = {
   en: {
@@ -10,8 +8,8 @@ const copy = {
     sessionsDescription: "Track your study time and join a room to study together.",
     friends: "Friends",
     friendsDescription: "See your friends and add people by name.",
-    website: "Tamayzak website",
-    websiteDescription: "Open tamyazak.site in a new tab.",
+    chat: "Chat",
+    chatDescription: "Write a post and join the discussion with other students.",
   },
   ar: {
     title: "المجتمع",
@@ -19,15 +17,16 @@ const copy = {
     sessionsDescription: "سجّل وقت دراستك وانضم لغرفة حتى تدرس ويّه غيرك.",
     friends: "الأصدقاء",
     friendsDescription: "شوف أصدقاءك وأضف غيرهم بالاسم.",
-    website: "موقع تميّزك",
-    websiteDescription: "افتح tamyazak.site بتبويب جديد.",
+    chat: "الدردشة",
+    chatDescription: "اكتب منشور وشارك بالنقاش ويّه الطلاب.",
   },
 } as const;
 
-export default function Community({ language, onOpenSessions, onOpenFriends }: {
+export default function Community({ language, onOpenSessions, onOpenFriends, onOpenChat }: {
   language: AppLanguage;
   onOpenSessions: () => void;
   onOpenFriends: () => void;
+  onOpenChat: () => void;
 }) {
   const t = copy[language];
   const ar = language === "ar";
@@ -62,16 +61,16 @@ export default function Community({ language, onOpenSessions, onOpenFriends }: {
           <Arrow className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </button>
 
-        <a href={WEBSITE} target="_blank" rel="noopener noreferrer" className={secondaryCard}>
+        <button type="button" onClick={onOpenChat} className={secondaryCard}>
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300">
-            <Globe2 className="size-5" aria-hidden="true" />
+            <MessagesSquare className="size-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block font-bold">{t.website}</span>
-            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{t.websiteDescription}</span>
+            <span className="block font-bold">{t.chat}</span>
+            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{t.chatDescription}</span>
           </span>
-          <ArrowUpRight className={`mt-1 size-4 shrink-0 text-muted-foreground ${ar ? "-scale-x-100" : ""}`} aria-hidden="true" />
-        </a>
+          <Arrow className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </button>
       </div>
     </main>
   );

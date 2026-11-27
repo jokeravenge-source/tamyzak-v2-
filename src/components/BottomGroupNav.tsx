@@ -61,7 +61,7 @@ const BottomGroupNav = ({
   const navVisible = useNavVisibility();
   const isRtl = language === "ar";
   const overflowIsActive = active === "account" || active === "studyRace";
-  const communityIsActive = active === "community" || active === "friends" || active === "sessions";
+  const communityIsActive = active === "community" || active === "friends" || active === "sessions" || active === "communityChat";
 
   useEffect(() => {
     setPortalRoot(document.body);

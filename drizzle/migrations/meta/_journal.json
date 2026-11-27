@@ -484,6 +484,13 @@
       "when": 1795798800000,
       "tag": "0068_community_friends",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795802400000,
+      "tag": "0069_community_chat",
+      "breakpoints": true
     }
   ]
 }
