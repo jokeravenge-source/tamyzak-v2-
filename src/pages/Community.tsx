@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, MessagesSquare, Timer, UsersRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Timer, UsersRound } from "lucide-react";
+import CommunityChatMark, { chatBannerClass } from "@/components/CommunityChatMark";
 import type { AppLanguage } from "@/components/LanguageGate";
 
 const copy = {
@@ -9,7 +10,7 @@ const copy = {
     friends: "Friends",
     friendsDescription: "See your friends and add people by name.",
     chat: "Chat",
-    chatDescription: "Write a post and join the discussion with other students.",
+    chatDescription: "Share a post or reply to other students.",
   },
   ar: {
     title: "المجتمع",
@@ -18,7 +19,7 @@ const copy = {
     friends: "الأصدقاء",
     friendsDescription: "شوف أصدقاءك وأضف غيرهم بالاسم.",
     chat: "الدردشة",
-    chatDescription: "اكتب منشور وشارك بالنقاش ويّه الطلاب.",
+    chatDescription: "شارك بمنشور أو رد على الطلاب.",
   },
 } as const;
 
@@ -61,15 +62,16 @@ export default function Community({ language, onOpenSessions, onOpenFriends, onO
           <Arrow className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </button>
 
-        <button type="button" onClick={onOpenChat} className={secondaryCard}>
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-teal-500/15 text-teal-700 dark:text-teal-300">
-            <MessagesSquare className="size-5" aria-hidden="true" />
-          </span>
+        <button type="button" onClick={onOpenChat}
+          className={`flex min-h-[7.3rem] items-center gap-4 rounded-[1.4rem] p-4 text-start transition-[filter] hover:brightness-110 sm:p-5 ${chatBannerClass} ${focus}`}>
+          <CommunityChatMark />
           <span className="min-w-0 flex-1">
-            <span className="block font-bold">{t.chat}</span>
-            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{t.chatDescription}</span>
+            <span className="block text-lg font-extrabold">{t.chat}</span>
+            <span className="mt-1 block text-sm leading-relaxed text-teal-50">{t.chatDescription}</span>
           </span>
-          <Arrow className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="grid size-8 shrink-0 place-items-center rounded-full border border-teal-100/25 bg-teal-50/10 text-teal-50">
+            <Arrow className="size-4" aria-hidden="true" />
+          </span>
         </button>
       </div>
     </main>
