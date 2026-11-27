@@ -5,6 +5,14 @@ export type StudyChallengeParticipant = {
   totalSeconds: number;
 };
 
+export const ALL_OR_NOTHING_MIN_PLAYERS = 3;
+export const ALL_OR_NOTHING_MAX_DAYS = 30;
+
+export function isValidAllOrNothingDuration(days: number, hours: number) {
+  return Number.isInteger(days) && Number.isInteger(hours) && days >= 0 && hours >= 0 && hours < 24 &&
+    (days > 0 || hours > 0) && days * 24 + hours <= ALL_OR_NOTHING_MAX_DAYS * 24;
+}
+
 export type StudyChallenge = {
   id: string;
   title: string;
@@ -20,6 +28,7 @@ export type StudyChallenge = {
   roomState?: "lobby" | "running" | "settled" | "cancelled";
   wagerPoints?: number | null;
   durationDays?: number;
+  durationHours?: number;
   lobbyExpiresAt?: string | null;
   winnerId?: string | null;
   settledAt?: string | null;
@@ -75,6 +84,10 @@ export function remainingLabel(endsAt: string, language: "ar" | "en", now = Date
   const totalHours = Math.ceil(remaining / 3_600_000);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
+  return formatChallengeDuration(days, hours, language);
+}
+
+export function formatChallengeDuration(days: number, hours: number, language: "ar" | "en") {
   if (days > 0) return language === "ar" ? `${days} يوم ${hours} ساعة` : `${days}d ${hours}h`;
   return language === "ar" ? `${hours} ساعة` : `${hours}h`;
 }

@@ -6,7 +6,9 @@ const { PGlite } = await import(process.env.PGLITE_MODULE || "@electric-sql/pgli
 const db = new PGlite();
 const migration = (name) => readFile(new URL("../../supabase/migrations/" + name, import.meta.url), "utf8");
 const replacement = await migration("20261125161000_all_or_nothing_recorded_focus.sql");
+const durationMigration = await migration("20261127150000_all_or_nothing_duration_hours.sql");
 assert.equal(replacement, await readFile(new URL("../../drizzle/migrations/0061_all_or_nothing_recorded_focus.sql", import.meta.url), "utf8"));
+assert.equal(durationMigration, await readFile(new URL("../../drizzle/migrations/0065_all_or_nothing_duration_hours.sql", import.meta.url), "utf8"));
 try {
   await db.exec(`
     CREATE SCHEMA auth;
@@ -26,7 +28,7 @@ try {
       created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
     );
     CREATE TABLE public.study_challenge_members (
-      challenge_id uuid, user_id uuid, invited_by uuid, status text, joined_at timestamptz,
+      challenge_id uuid, user_id uuid, invited_by uuid, status text DEFAULT 'pending', joined_at timestamptz,
       PRIMARY KEY (challenge_id, user_id)
     );
     CREATE TABLE public.study_sessions (
@@ -147,6 +149,69 @@ try {
   assert.equal(await scored(105, 2), 600, "the fixed score stays the same after settlement");
   await db.exec("ROLLBACK");
   console.log("All or Nothing focus windows, legacy compatibility, retry safety, and settlement passed.");
+
+  await db.exec(replacement);
+  await db.exec(`
+    CREATE TABLE public.user_progress (user_id uuid PRIMARY KEY, lifetime_points integer DEFAULT 0);
+    INSERT INTO auth.users SELECT test_id(n) FROM generate_series(1, 4) n;
+    INSERT INTO public.profiles SELECT id, 'Student ' || row_number() OVER (ORDER BY id) FROM auth.users;
+    INSERT INTO public.user_progress SELECT id, 1000 FROM auth.users;
+    CREATE FUNCTION public.points_balance() RETURNS integer LANGUAGE sql AS $$
+      SELECT greatest(p.lifetime_points - coalesce(sum(r.points_spent), 0)::int, 0)
+      FROM public.user_progress p LEFT JOIN public.point_redemptions r USING (user_id)
+      WHERE p.user_id = auth.uid() GROUP BY p.lifetime_points
+    $$;
+  `);
+  const asUser = (user, sql, params = []) => db.transaction(async (tx) => {
+    await tx.exec("SET LOCAL ROLE authenticated");
+    await tx.query("SELECT set_config('test.user_id', public.test_id($1)::text, true)", [user]);
+    return tx.query(sql, params);
+  });
+  const { rows: [{ id: legacyRoom }] } = await asUser(1,
+    "SELECT public.create_study_challenge_v3('Legacy lobby', 3, '{}', 'all_or_nothing', 100) AS id");
+  await db.query(`INSERT INTO public.study_challenge_members VALUES ($1, test_id(2), test_id(1), 'accepted', now())`, [legacyRoom]);
+
+  await db.exec(durationMigration);
+  await db.exec(durationMigration);
+  const { rows: [legacy] } = await db.query(`
+    SELECT c.duration_days, c.duration_hours, m.status,
+      (SELECT count(*)::int FROM public.study_challenge_stakes WHERE challenge_id = c.id AND state = 'held') AS held
+    FROM public.study_challenges c JOIN public.study_challenge_members m ON m.challenge_id = c.id
+    WHERE c.id = $1 AND m.user_id = test_id(2)
+  `, [legacyRoom]);
+  assert.deepEqual(legacy, { duration_days: 3, duration_hours: 0, status: "pending", held: 1 },
+    "legacy day-only rooms retain their duration and unfunded public joins must re-confirm");
+
+  const createRoom = (days, hours) => asUser(1,
+    "SELECT public.create_all_or_nothing_challenge('Timed lobby', $1, $2, ARRAY[public.test_id(2)], 100) AS id", [days, hours]);
+  for (const [days, hours] of [[0, 0], [30, 1], [0, 24], [null, 2], [2147483647, 1]]) {
+    await assert.rejects(() => createRoom(days, hours), /between 1 hour and 30 days/);
+  }
+  const { rows: [{ id: roomId }] } = await createRoom(1, 5);
+  const { rows: [{ id: hourlyRoom }] } = await createRoom(0, 4);
+  const { rows: [{ data: rooms }] } = await asUser(1, "SELECT public.get_my_study_challenges() AS data");
+  assert.deepEqual(rooms.filter((room) => room.id === roomId || room.id === hourlyRoom)
+    .map(({ durationDays, durationHours, minimumPlayers }) => [durationDays, durationHours, minimumPlayers])
+    .sort((a, b) => a[0] - b[0]), [[0, 4, 3], [1, 5, 3]]);
+
+  const join = (user) => asUser(user, "SELECT public.respond_study_challenge($1, true)", [roomId]);
+  const start = (user) => asUser(user, "SELECT public.start_all_or_nothing_challenge($1) AS result", [roomId]);
+  await join(2);
+  await assert.rejects(() => start(1), /At least 3 students/);
+  await join(3); // An uninvited member joins the public lobby.
+  await assert.rejects(() => start(2), /Only the room owner/);
+
+  await db.query("UPDATE public.study_challenges SET starts_at = now() - interval '3 hours' WHERE id = $1", [roomId]);
+  const { rows: [{ result }] } = await start(1);
+  assert.equal(result.participants, 3);
+  assert.equal(result.potPoints, 300);
+  const { rows: [round] } = await db.query(`
+    SELECT room_state, extract(epoch FROM ends_at - starts_at)::int AS seconds,
+      (SELECT count(*)::int FROM public.study_challenge_stakes WHERE challenge_id = c.id AND state = 'held') AS held
+    FROM public.study_challenges c WHERE id = $1`, [roomId]);
+  assert.deepEqual(round, { room_state: "running", seconds: 29 * 3600, held: 3 });
+  await assert.rejects(() => start(1), /cannot be started/);
+  console.log("All or Nothing custom durations, legacy lobbies, public stake reservation, and three-player start passed.");
 } finally {
   await db.close();
 }
