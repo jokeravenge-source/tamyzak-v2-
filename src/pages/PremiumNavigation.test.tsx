@@ -153,7 +153,9 @@ describe("simplified home navigation", () => {
     expect(onSelect).toHaveBeenCalledWith("sessions");
     expect(within(highlights).getByRole("link", { name: "Buy from Houdini" })).toHaveAttribute("href", "https://www.instagram.com/houdini_st0re/");
     expect(within(highlights).getByRole("region", { name: "Connect Telegram" })).toBeInTheDocument();
-    expect(within(highlights).getByRole("button", { name: "What can you do with points?" })).toBeInTheDocument();
+    const points = within(highlights).getByRole("button", { name: "What can you do with points?" });
+    expect(highlights.firstElementChild).toBe(points);
+    expect(points.querySelector("img")).toHaveAttribute("src", expect.stringContaining("points-guide-lightning.webp"));
     expect(screen.getByRole("button", { name: "Show card 1 of 4" })).toHaveAttribute("aria-current", "true");
     expect(plan.compareDocumentPosition(highlights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(highlights.compareDocumentPosition(screen.getByRole("button", { name: "Continue studying" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

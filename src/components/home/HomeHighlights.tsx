@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import challengeArt from "@/assets/challenge-3d-icon.png";
 import hoodieArt from "@/assets/houdini-hoodie-icon.png";
+import pointsArt from "@/assets/points-guide-lightning.webp";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import "./homeCards.css";
@@ -22,14 +23,14 @@ function getTrackStart(track: HTMLElement) {
 
 const promoClass = "home-illustrated-card group grid min-h-[8.5rem] grid-cols-[minmax(0,1fr)_37%] items-center gap-2 overflow-hidden rounded-[1.4rem] border border-sky-400/25 px-3.5 py-3 text-start text-white transition-[filter] hover:brightness-110 focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:gap-3 sm:px-5";
 
-function PromoContent({ art, title, description }: { art: string; title: string; description: string }) {
+function PromoContent({ art, title, description, artSize = 816 }: { art: string; title: string; description?: string; artSize?: number }) {
   return (
     <>
       <span className="min-w-0">
         <span className="block text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{title}</span>
-        <span className="mt-1.5 block text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{description}</span>
+        {description && <span className="mt-1.5 block text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{description}</span>}
       </span>
-      <img src={art} alt="" width={816} height={816} className="aspect-square max-h-32 w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105" />
+      <img src={art} alt="" width={artSize} height={artSize} className="aspect-square max-h-32 w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105" />
     </>
   );
 }
@@ -125,15 +126,11 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         role="group"
         aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
       >
+        <button type="button" id="points-details-trigger" onClick={onOpenPointsGuide} className={promoClass}>
+          <PromoContent art={pointsArt} artSize={320} title={pointsGuideTitle} />
+        </button>
         <button type="button" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
           <PromoContent art={challengeArt} title={challengeTitle} description={isRTL ? "اختبر مستواك وتنافس ويّه طلاب تميّزك" : "Test your skills against other Tamayzak students"} />
-        </button>
-        <button type="button" id="points-details-trigger" onClick={onOpenPointsGuide}
-          className="home-illustrated-card flex min-h-[8.5rem] items-center justify-between gap-3 rounded-[1.4rem] border border-sky-400/25 px-3.5 py-3 text-start text-white transition-[filter] hover:brightness-110 focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:px-4">
-          <span className="min-w-0 text-[clamp(1.125rem,4.5vw,1.5rem)] font-black leading-snug tracking-tight">{pointsGuideTitle}</span>
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl border border-cyan-200/30 bg-cyan-100/10 text-cyan-200 shadow-[0_6px_18px_#42dffc24] sm:size-14">
-            <Zap aria-hidden="true" className="size-6 fill-current sm:size-7" />
-          </span>
         </button>
         <a href="https://www.instagram.com/houdini_st0re/" target="_blank" rel="noopener noreferrer" className={promoClass} aria-label={houdiniTitle}>
           <PromoContent art={hoodieArt} title={houdiniTitle} description={isRTL ? "اطلب هودي تميّزك من هوديني على إنستغرام" : "Order your Tamayzak hoodie from Houdini on Instagram"} />
