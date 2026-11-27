@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { useAhmedFlashcardOverrides } from "@/hooks/useAhmedFlashcardOverrides";
 import { applyAhmedFlashcardOverrides } from "@/lib/ahmedFlashcardOverrides";
 import type { StudyTextBlock } from "@/components/TextStudyContent";
@@ -970,6 +971,7 @@ const Index = ({ language, subject }: { language: AppLanguage; subject: AppSubje
   });
 
   const card = cards[index];
+  useCharacterPractice(Boolean(card) && !(useRemote && loading));
   useEffect(() => {
     if (card && !showRating && !showDifficultPicker) seenCards.current.set(keyOf(card), card);
     // eslint-disable-next-line react-hooks/exhaustive-deps

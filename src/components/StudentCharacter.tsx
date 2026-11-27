@@ -7,6 +7,8 @@ import UsageIntroGate from "./UsageIntroGate";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
 import { STUDY_ROOM_CHEER_RECEIVED, type StudyRoomCheerEvent } from "@/hooks/useStudyRoomActivity";
+import { useIsCharacterPracticing } from "@/hooks/useCharacterPractice";
+import { getCharacterPenGrip } from "@/lib/characterAccessoryFit";
 import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
@@ -18,12 +20,14 @@ const copy = {
     male: "ولد", female: "بنية", options: "أشكال الشخصيات", choice: "الشخصية",
     save: "اختار هاي الشخصية", saving: "جاري الحفظ…", later: "لاحقاً", error: "تعذّر حفظ الشخصية. جرّب مرة ثانية.",
     toggle: "حالة دراستك", ready: "جاهز للدراسة", studying: "دا أدرس هسه", paused: "موقّف الدراسة مؤقتاً", rest: "دا آخذ استراحة",
+    bored: "ملّيت شوي…", solving: "دا أحل أسئلة",
   },
   en: {
     title: "Choose your character", description: "This character represents you on Tamayzak. You can customize it in your account.",
     male: "Boy", female: "Girl", options: "Character styles", choice: "Character",
     save: "Use this character", saving: "Saving…", later: "Later", error: "Could not save your character. Please try again.",
     toggle: "Your study status", ready: "Ready to study", studying: "Studying now", paused: "Study paused", rest: "On a break",
+    bored: "Getting a little bored…", solving: "Solving questions",
   },
 } as const;
 
@@ -41,6 +45,8 @@ function subscribeToStudyStatus(listener: () => void) {
 
 type StudyStatus = "ready" | "studying" | "paused" | "rest";
 const CHEER_REACTION_MS = 900;
+const BORED_AFTER_MS = 60_000;
+const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "keydown", "scroll"] as const;
 
 function readStudyStatus(userId: string): StudyStatus {
   try {
@@ -55,11 +61,64 @@ function readStudyStatus(userId: string): StudyStatus {
   }
 }
 
+function useBoredCharacter(enabled: boolean) {
+  const [bored, setBored] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setBored(false);
+      return;
+    }
+
+    let lastActivity = performance.now();
+    let timeout: number | undefined;
+    const checkActivity = () => {
+      const remaining = BORED_AFTER_MS - (performance.now() - lastActivity);
+      if (remaining > 0) {
+        timeout = window.setTimeout(checkActivity, remaining);
+      } else {
+        timeout = undefined;
+        setBored(true);
+      }
+    };
+    const onActivity = () => {
+      if (document.hidden) return;
+      lastActivity = performance.now();
+      if (timeout === undefined) {
+        setBored(false);
+        timeout = window.setTimeout(checkActivity, BORED_AFTER_MS);
+      }
+    };
+    const onVisibilityChange = () => {
+      window.clearTimeout(timeout);
+      timeout = undefined;
+      setBored(false);
+      onActivity();
+    };
+
+    onActivity();
+    for (const event of ACTIVITY_EVENTS) window.addEventListener(event, onActivity, { passive: true, capture: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearTimeout(timeout);
+      for (const event of ACTIVITY_EVENTS) window.removeEventListener(event, onActivity, true);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [enabled]);
+
+  return enabled && bored;
+}
+
 function CharacterStatus({ userId, character, language }: { userId: string; character: ProfileCharacter; language: AppLanguage }) {
   const [open, setOpen] = useState(true);
   const [cheer, setCheer] = useState(0);
   const messageId = useId();
-  const status = useSyncExternalStore(subscribeToStudyStatus, () => readStudyStatus(userId), (): StudyStatus => "ready");
+  const studyStatus = useSyncExternalStore(subscribeToStudyStatus, () => readStudyStatus(userId), (): StudyStatus => "ready");
+  const practicing = useIsCharacterPracticing();
+  const bored = useBoredCharacter(studyStatus === "ready" && !practicing);
+  const status = practicing ? "solving" : bored ? "bored" : studyStatus;
+  const isKoki = character.gender === "female" && Number(character.traits?.variant) === 16;
+  const handStyle = { "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties;
   const t = copy[language];
 
   useEffect(() => {
@@ -87,14 +146,19 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
             {status === "studying" && (
               <span
                 className="student-character__book"
-                data-koki={character.gender === "female" && Number(character.traits?.variant) === 16 ? true : undefined}
-                style={{ "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties}
+                data-koki={isKoki || undefined}
+                style={handStyle}
               >
                 <span className="student-character__page student-character__page--left" />
                 <span className="student-character__page student-character__page--right" />
                 <span className="student-character__page student-character__page--turning" />
               </span>
             )}
+            {status === "solving" && <>
+              <span className="student-character__thought student-character__thought--question">{language === "ar" ? "؟" : "?"}</span>
+              <span className="student-character__pen" style={{ ...handStyle, ...getCharacterPenGrip(character.gender, character.traits?.variant) }} />
+            </>}
+            {status === "bored" && <span className="student-character__thought student-character__thought--bored">…</span>}
           </span>
         </span>
         {cheer > 0 && <span key={cheer} aria-hidden="true" className="student-character__cheer"><Heart fill="currentColor" className="size-2.5" /></span>}
@@ -108,7 +172,7 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
 }
 
 export default function StudentCharacter({ userId, language, visible, onNeedHelp }: {
-  userId: string; language: AppLanguage; visible: boolean; onNeedHelp: () => void;
+  userId: string; language: AppLanguage; visible: boolean; onNeedHelp?: () => void;
 }) {
   const t = copy[language];
   const queryClient = useQueryClient();
@@ -135,7 +199,7 @@ export default function StudentCharacter({ userId, language, visible, onNeedHelp
   if (!visible) return null;
   if (profile.data) return <>
     <CharacterStatus userId={userId} character={profile.data} language={language} />
-    <UsageIntroGate language={language} onNeedHelp={onNeedHelp} />
+    {onNeedHelp && <UsageIntroGate language={language} onNeedHelp={onNeedHelp} />}
   </>;
   if (!profile.isSuccess) return null;
 

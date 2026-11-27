@@ -106,6 +106,14 @@ export function getAccessoryPlacement(gender: Gender, traits: Partial<CharacterT
   };
 }
 
+export function getCharacterPenGrip(gender: Gender, requested: CharacterTraits["variant"]) {
+  const variant = getCharacterVariant(gender, requested);
+  const [, , [x, y, width]] = landmarks[gender][variant - 1];
+  // Keep the raised hand closer to the body on taller, narrower sprites.
+  const reach = gender === "female" && variant === 16 ? .5 : .65;
+  return { left: `${x + width * reach}%`, top: `${47 + y / 2}%` };
+}
+
 export function mergeAccessoryFitEdits(saved: CharacterAccessoryFits | undefined, character: string, edits: AccessoryFitEdits): CharacterAccessoryFits {
   const fits = { ...saved };
   const characterFits = { ...fits[character] };

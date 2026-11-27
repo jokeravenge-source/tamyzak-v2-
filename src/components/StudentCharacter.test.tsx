@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import StudentCharacter from "./StudentCharacter";
 import StudyRoomCheerCelebration from "./StudyRoomCheerCelebration";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { STUDY_ROOM_CHEER_RECEIVED, useStudyRoomActivity, type RoomActivity } from "@/hooks/useStudyRoomActivity";
 import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
@@ -48,6 +49,11 @@ function JoinedRoom() {
   return <StudyRoomCheerCelebration room="room" user="student" language="en" />;
 }
 
+function Practice({ active }: { active: boolean }) {
+  useCharacterPractice(active);
+  return null;
+}
+
 function open(inRoom = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return { client, ...render(<QueryClientProvider client={client}>
@@ -64,7 +70,10 @@ beforeEach(() => {
   backend.roomActivity = null;
   localStorage.clear();
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 it.each([false, true])("saves and skips the dialog next visit (existing profile: %s)", async (hasProfile) => {
   backend.row = hasProfile ? { gender: null, character: null } : null;
@@ -142,6 +151,53 @@ it("does not interpret a failed profile read as a missing character", async () =
   await waitFor(() => expect(client.getQueryState(["profile-character", "student"])?.status).toBe("error"));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(backend.insert).not.toHaveBeenCalled();
+});
+
+it("gets bored after a minute without input and wakes on activity", async () => {
+  backend.row = { gender: "male", character: { variant: 1 } };
+  const practice = render(<Practice active />);
+  open();
+  expect(await screen.findByRole("status")).toHaveTextContent("Solving questions");
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+  practice.rerender(<Practice active={false} />);
+
+  act(() => vi.advanceTimersByTime(59_000));
+  fireEvent.pointerMove(window);
+  act(() => vi.advanceTimersByTime(59_999));
+  expect(screen.getByRole("status")).toHaveTextContent("Ready to study");
+  act(() => vi.advanceTimersByTime(1));
+  expect(screen.getByRole("status")).toHaveTextContent("Getting a little bored");
+  expect(screen.getByRole("complementary")).toHaveAttribute("data-study-status", "bored");
+  expect(screen.getByText("…")).toBeInTheDocument();
+
+  fireEvent.keyDown(window, { key: "Tab" });
+  expect(screen.getByRole("status")).toHaveTextContent("Ready to study");
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(screen.getByRole("status")).toHaveTextContent("Getting a little bored");
+  practice.rerender(<Practice active />);
+  expect(screen.getByRole("status")).toHaveTextContent("Solving questions");
+  practice.rerender(<Practice active={false} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Ready to study");
+});
+
+it("shows the practice props until the last practice view closes, then returns to the running timer", async () => {
+  backend.row = { gender: "female", character: { variant: 16 } };
+  localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({ userId: "student", subject: "physics", started: true, running: true }));
+  open();
+  expect(await screen.findByRole("status")).toHaveTextContent("Studying now");
+  const practice = render(<Practice active />);
+  const otherPractice = render(<Practice active />);
+  const avatar = screen.getByRole("button", { name: "Your study status" });
+  expect(screen.getByRole("status")).toHaveTextContent("Solving questions");
+  expect(avatar.querySelector(".student-character__pen")).toHaveStyle({ left: "60%", top: "75%" });
+  expect(within(avatar).getByText("?")).toBeInTheDocument();
+  expect(avatar.querySelector(".student-character__book")).toBeNull();
+  practice.unmount();
+  expect(screen.getByRole("status")).toHaveTextContent("Solving questions");
+  otherPractice.unmount();
+  expect(screen.getByRole("status")).toHaveTextContent("Studying now");
+  expect(avatar.querySelector(".student-character__pen")).toBeNull();
+  expect(avatar.querySelector(".student-character__book")).toBeInTheDocument();
 });
 
 it("reacts to a new room cheer without replaying older notifications or interrupting study", async () => {

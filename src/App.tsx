@@ -216,15 +216,26 @@ const normalizeNadiaTeacherLink = () => {
 const McqBankDeepLink = () => {
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const language: AppLanguage = (() => { try { return localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "ar"; } catch { return "ar"; } })();
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => { if (active) { setAuthed(!!data.user); setChecking(false); } });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (active) setAuthed(!!session?.user); });
+    const updateUser = (id: string | null) => {
+      if (!active) return;
+      setAuthed(id !== null);
+      setUserId(id);
+    };
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      updateUser(data.user?.id ?? null);
+      setChecking(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => updateUser(session?.user.id ?? null));
     return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
   return <QueryClientProvider client={queryClient}><TooltipProvider><Suspense fallback={null}>
     {checking ? null : authed ? <McqBank language={language} onBack={() => { window.location.href = "/"; }} /> : <Auth onAuthed={() => setAuthed(true)} />}
+    {!checking && authed && userId && <StudentCharacter key={userId} userId={userId} language={language} visible />}
   </Suspense></TooltipProvider></QueryClientProvider>;
 };
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -257,6 +258,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }, [personalizedTarget, chapters, chapter, topicTarget]);
   const baseline = topicTarget ? topicBaseline(topicAttempts, topicTarget) : null;
   const current = quiz[index];
+  const showTopicPicker = topicGroups.length > 0 && topic === null && selectedChapter && subject;
+  const finished = index >= quiz.length - 1 && picked !== null;
+  useCharacterPractice(!loading && !showTopicPicker && Boolean(current) && (reviewing || chapter !== null) && (!finished || submitting));
   const choices = useMemo(
     () => (Array.isArray(current?.choices) ? (current!.choices as unknown[]).map(String) : []),
     [current],
@@ -552,7 +556,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     );
   }
 
-  if (topicGroups.length && topic === null && selectedChapter && subject) {
+  if (showTopicPicker) {
     const sections = new Map<string | null, FahrastTopicGroup[]>();
     for (const entry of topicGroups) {
       const group = sections.get(entry.section) ?? [];
@@ -598,8 +602,6 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }
 
   // ---- Quiz ----
-  const finished = index >= quiz.length - 1 && picked !== null;
-
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-5 pb-32 md:py-8" dir={isAr ? "rtl" : "ltr"}>
       <div aria-hidden="true" className="pointer-events-none absolute -top-32 start-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />

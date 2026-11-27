@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { ArrowLeft, Sparkles, Loader2, Clock, Check, X, RotateCw, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -68,6 +69,7 @@ const PhysicsQuickMcq = ({ language, onBack }: { language: AppLanguage; onBack: 
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<MCQ[]>([]);
   const [current, setCurrent] = useState(0);
+  useCharacterPractice(phase === "quiz" && Boolean(questions[current]));
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [hintShown, setHintShown] = useState(false);

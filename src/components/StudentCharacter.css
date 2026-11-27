@@ -76,6 +76,88 @@
   transform-origin: left center;
 }
 
+.student-character__thought {
+  position: absolute;
+  z-index: 7;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 9px;
+  box-shadow: 0 2px 6px rgb(15 47 82 / 22%);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.student-character__thought::after {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: inherit;
+  content: "";
+}
+
+.student-character__thought--question {
+  background: linear-gradient(145deg, #f1fdff, #9ce8fa);
+  color: #133e68;
+}
+
+.student-character__thought--bored {
+  left: 32%;
+  background: linear-gradient(145deg, #f8fafc, #dce3ef);
+  color: #46556d;
+}
+
+.student-character[data-study-status="bored"] .student-character__sprite {
+  transform: translateY(1px) rotate(-6deg);
+}
+
+.student-character__pen {
+  position: absolute;
+  z-index: 6;
+  width: 4px;
+  height: 13px;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(#dbf9ff 0 2px, transparent 2px), linear-gradient(90deg, #54daf4, #2277ca 56%, #104f94);
+  box-shadow: 0 0 0 1px rgb(14 43 79 / 30%), 0 1px 2px rgb(14 43 79 / 40%);
+  pointer-events: none;
+  transform: translate(-50%, -72%) rotate(34deg);
+  transform-origin: 50% 72%;
+}
+
+.student-character__pen::before,
+.student-character__pen::after {
+  position: absolute;
+  content: "";
+}
+
+.student-character__pen::before {
+  bottom: -3px;
+  border-top: 4px solid #f2c479;
+  border-right: 2px solid transparent;
+  border-left: 2px solid transparent;
+}
+
+.student-character__pen::after {
+  right: -2px;
+  bottom: 1px;
+  width: 5px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--student-character-hand, #f5d4be);
+  background: color-mix(in srgb, var(--student-character-hand) 78%, #d0896a);
+  box-shadow: 0 1px 1px rgb(42 24 19 / 30%);
+}
+
 .student-character__cheer {
   position: absolute;
   z-index: 1;
@@ -102,6 +184,18 @@
     animation: student-character-stretch 920ms ease-in-out;
   }
 
+  .student-character[data-study-status="bored"] .student-character__sprite {
+    animation: student-character-slump 7s ease-in-out infinite;
+  }
+
+  .student-character__thought {
+    animation: student-character-think 2.8s ease-in-out infinite;
+  }
+
+  .student-character__pen {
+    animation: student-character-write 3.6s ease-in-out infinite;
+  }
+
   .student-character__book {
     animation: student-character-open-book 420ms cubic-bezier(.22, 1, .36, 1) both;
   }
@@ -122,6 +216,23 @@
   .student-character__cheer {
     animation: student-character-cheer-badge 880ms cubic-bezier(.22, 1, .36, 1) both;
   }
+}
+
+@keyframes student-character-slump {
+  0%, 12%, 100% { transform: translateY(1px) rotate(-6deg); }
+  26%, 81% { transform: translateY(2px) rotate(-8deg) scale(1.02, .96); }
+  92% { transform: translateY(.5px) rotate(-3deg) scale(.99, 1.015); }
+}
+
+@keyframes student-character-think {
+  0%, 100% { transform: translate(-50%, 0); }
+  52% { transform: translate(-50%, -2px); }
+}
+
+@keyframes student-character-write {
+  0%, 38%, 74%, 100% { transform: translate(-50%, -72%) rotate(34deg); }
+  46%, 62% { transform: translate(-50%, -72%) rotate(44deg); }
+  54%, 70% { transform: translate(-50%, -72%) rotate(27deg); }
 }
 
 @keyframes student-character-open-book {

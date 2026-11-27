@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { ArrowLeft, ArrowRight, Lock, Sparkles, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, ScrollText, ChevronLeft, ChevronRight, Check, X, Moon, Sigma, Loader2, RefreshCw, Printer, Upload, GraduationCap, ImagePlus, Trash2, Eye } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { SUBJECTS_ORDER, getChaptersForSubject, type BankSubject } from "@/data/subjectChapters";
@@ -465,6 +466,9 @@ type AnswerCheckResult = {
   const hasQuestionBank = questions.length > 0;
   const current = questions[qIndex];
   const answerCheck = answerChecks[qIndex];
+  useCharacterPractice(Boolean(subject) && chapterN !== null && (
+    examOpen ? !examLoading && Boolean(examText) && !gradeResult : Boolean(current)
+  ));
 
   const markQuestion = (correct: boolean) => {
     if (!subject || chapterN === null || !current) return;

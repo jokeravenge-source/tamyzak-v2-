@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useFeatureUsed } from "@/hooks/useFeatureUsed";
+import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { ArrowLeft, Upload, Sparkles, Loader2, FileText, Check, X, RotateCw, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -100,6 +101,7 @@ const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<MCQ[]>([]);
   const [current, setCurrent] = useState(0);
+  useCharacterPractice(phase === "quiz" && Boolean(questions[current]));
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [hintShown, setHintShown] = useState(false);
