@@ -7,10 +7,12 @@ export const STUDY_ROOM_CHEER_RECEIVED = "study-room-cheer-received";
 
 type MicState = "pending" | "approved" | "declined" | "live";
 type MicAction = "request" | "approve" | "decline" | "revoke" | "start" | "stop" | "heartbeat";
+export type RoomCheer = { sender_id: string; sender_name: string; created_at: string; reward_points?: number };
+export type StudyRoomCheerEvent = CustomEvent<{ room: string; recipient: string; cheers: RoomCheer[] }>;
 export type RoomSpeaker = { user_id: string; name: string; connection_id: string };
 export type RoomActivity = {
   owner: boolean;
-  inbox: { sender_id: string; sender_name: string; created_at: string }[];
+  inbox: RoomCheer[];
   mic: MicState | null;
   requests: { user_id: string; name: string; state: Exclude<MicState, "declined"> }[];
   speaker: RoomSpeaker | null;
@@ -36,7 +38,7 @@ export async function sendStudyRoomVoice(room: string, target: string, connectio
 export function useStudyRoomActivity(room: string | undefined, user: string | null) {
   const queryClient = useQueryClient();
   const voiceListener = useRef<((signal: VoiceSignal) => void) | null>(null);
-  const lastCheer = useRef<{ room: string; user: string; receivedAt: number } | null>(null);
+  const seenCheers = useRef<{ room: string; user: string; bySender: Map<string, number> } | null>(null);
   const [readyRoom, setReadyRoom] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["study-room-activity", room, user],
@@ -54,21 +56,35 @@ export function useStudyRoomActivity(room: string | undefined, user: string | nu
   const { data, isSuccess } = query;
   useEffect(() => {
     if (!room || !user) {
-      lastCheer.current = null;
+      seenCheers.current = null;
       return;
     }
     if (!isSuccess || !data) return;
 
-    const receivedAt = Date.parse(data.inbox[0]?.created_at ?? "") || 0;
-    const previous = lastCheer.current;
+    const previous = seenCheers.current;
     if (previous?.room !== room || previous.user !== user) {
-      lastCheer.current = { room, user, receivedAt };
+      const bySender = new Map<string, number>();
+      // The first snapshot is history. Track each sender so later commits from
+      // different senders can arrive in any order without losing a cheer.
+      for (const cheer of data.inbox) {
+        if (!bySender.has(cheer.sender_id)) bySender.set(cheer.sender_id, Date.parse(cheer.created_at));
+      }
+      seenCheers.current = { room, user, bySender };
       return;
     }
-    if (receivedAt <= previous.receivedAt) return;
 
-    previous.receivedAt = receivedAt;
-    window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, { detail: user }));
+    const cheers = data.inbox.filter(cheer => {
+      const receivedAt = Date.parse(cheer.created_at);
+      const lastSeen = previous.bySender.get(cheer.sender_id) ?? 0;
+      if (Number.isNaN(receivedAt) || receivedAt <= lastSeen) return false;
+      previous.bySender.set(cheer.sender_id, receivedAt);
+      return true;
+    });
+    if (cheers.length > 0) {
+      window.dispatchEvent(new CustomEvent<StudyRoomCheerEvent["detail"]>(STUDY_ROOM_CHEER_RECEIVED, {
+        detail: { room, recipient: user, cheers },
+      }));
+    }
   }, [room, user, data, isSuccess]);
 
   useEffect(() => {

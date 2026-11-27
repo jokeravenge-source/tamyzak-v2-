@@ -6,6 +6,7 @@ import { setStudyRoomMic, type useStudyRoomActivity } from "@/hooks/useStudyRoom
 import { useStudyRoomVoice } from "@/hooks/useStudyRoomVoice";
 import { studyRoomActivityRpc } from "@/lib/studyRoomActivityRpc";
 import { censorText } from "@/lib/censor";
+import StudyRoomCheerCelebration from "./StudyRoomCheerCelebration";
 
 const copy = {
   ar: {
@@ -102,23 +103,25 @@ export default function StudyRoomActivity({ room, user, members, language, activ
   const otherSpeaker = speaker && speaker.user_id !== user;
   return (
     <div className="mb-4 space-y-2">
-      <div aria-live="polite" aria-relevant="additions">
-        {data.inbox.length > 0 && (
-          <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/10 p-3 text-sm">
-            <HandHeart aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-            <ul className="min-w-0 flex-1 space-y-1">
-              {data.inbox.map(({ sender_id, sender_name, created_at }) => (
-                <li key={`${sender_id}:${created_at}`} className="break-words">
-                  <bdi className="font-semibold">{censorText(sender_name)}</bdi> {t.encouragement}
-                </li>
-              ))}
-            </ul>
-            <Button type="button" variant="ghost" size="icon" className="-m-1 size-8 shrink-0" aria-label={t.dismiss} onClick={() => void dismiss()}>
-              <X aria-hidden className="size-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+      <StudyRoomCheerCelebration room={room} user={user} language={language} />
+      {data.inbox.length > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/10 p-3 text-sm">
+          <HandHeart aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
+          <ul className="min-w-0 flex-1 space-y-1">
+            {data.inbox.map(({ sender_id, sender_name, created_at, reward_points = 0 }) => (
+              <li key={`${sender_id}:${created_at}`} className="break-words">
+                <bdi className="font-semibold">{censorText(sender_name)}</bdi> {t.encouragement}
+                {reward_points > 0 && (
+                  <span className="ms-2 whitespace-nowrap font-bold text-primary"><bdi dir="ltr">+{reward_points}</bdi> {language === "ar" ? "نقاط" : "points"}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <Button type="button" variant="ghost" size="icon" className="-m-1 size-8 shrink-0" aria-label={t.dismiss} onClick={() => void dismiss()}>
+            <X aria-hidden className="size-4" />
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-2 rounded-xl border border-primary/20 bg-background/60 p-3">
         <div className="flex flex-wrap items-center gap-2">

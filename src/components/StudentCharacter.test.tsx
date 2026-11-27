@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import StudentCharacter from "./StudentCharacter";
+import StudyRoomCheerCelebration from "./StudyRoomCheerCelebration";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
 import { STUDY_ROOM_CHEER_RECEIVED, useStudyRoomActivity, type RoomActivity } from "@/hooks/useStudyRoomActivity";
 import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
@@ -44,7 +45,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
 
 function JoinedRoom() {
   useStudyRoomActivity("room", "student");
-  return null;
+  return <StudyRoomCheerCelebration room="room" user="student" language="en" />;
 }
 
 function open(inRoom = false) {
@@ -147,8 +148,10 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   backend.row = { gender: "female", character: { variant: 16, accessory: "crown" } };
   localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({ userId: "student", subject: "physics", started: true, running: true }));
   const oldCheer = { sender_id: "friend", sender_name: "Friend", created_at: "2026-11-27T00:00:00.000Z" };
-  const newCheer = { ...oldCheer, created_at: "2026-11-27T00:01:00.000Z" };
-  const activity = { owner: false, inbox: [oldCheer], mic: null, requests: [], speaker: null } satisfies RoomActivity;
+  const newCheer = { ...oldCheer, created_at: "2026-11-27T00:01:00.000Z", reward_points: 5 };
+  const anotherCheer = { ...newCheer, sender_id: "another", sender_name: "Another friend", created_at: "2026-11-27T00:00:59.999Z" };
+  const oldSender = { ...oldCheer, sender_id: "archived", sender_name: "Earlier friend", reward_points: 5 };
+  const activity = { owner: false, inbox: [oldCheer, oldSender], mic: null, requests: [], speaker: null } satisfies RoomActivity;
   backend.roomActivity = activity;
 
   const { client } = open(true);
@@ -158,17 +161,28 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   const book = avatar.querySelector(".student-character__book");
   expect(book).toBeInTheDocument();
   await waitFor(() => expect(client.getQueryData(activityKey)).toEqual(activity));
-  act(() => window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, { detail: "someone-else" })));
+  act(() => window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, {
+    detail: { room: "room", recipient: "someone-else", cheers: [newCheer] },
+  })));
   expect(badge()).toBeNull();
+  expect(screen.queryByText("+5")).toBeNull();
 
-  act(() => { client.setQueryData(activityKey, { ...activity, inbox: [newCheer, oldCheer] }); });
+  act(() => { client.setQueryData(activityKey, { ...activity, inbox: [newCheer, oldSender] }); });
+  const award = await screen.findByText("+5");
+  expect(award.closest("[role=status]")).toHaveTextContent("Friend cheered you on!");
+  expect(award.closest(".room-cheer")?.parentElement).toBe(document.body);
   await waitFor(() => expect(badge()).toBeInTheDocument());
   expect(badge()).toHaveAttribute("aria-hidden", "true");
   expect(avatar.querySelector(".student-character__book")).toBe(book);
-  expect(screen.getByRole("status")).toHaveTextContent("Studying now");
+  expect(screen.getByText("Studying now")).toBeVisible();
+
+  act(() => { client.setQueryData(activityKey, { ...activity, inbox: [newCheer, anotherCheer, oldSender] }); });
+  expect(await screen.findByText("+10")).toBeVisible();
+  expect(screen.getByText("You got 2 cheers!")).toBeVisible();
   await waitFor(() => expect(badge()).toBeNull(), { timeout: 1500 });
 
-  act(() => { client.setQueryData(activityKey, activity); });
+  act(() => { client.setQueryData(activityKey, { ...activity, inbox: [newCheer, anotherCheer] }); });
   await act(async () => {});
   expect(badge()).toBeNull();
+  expect(screen.getByText("+10")).toBeVisible();
 });

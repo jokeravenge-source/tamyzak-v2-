@@ -1,0 +1,142 @@
+.room-cheer {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.room-cheer__scene {
+  --cheer-origin: clamp(5rem, 23dvh, 15rem);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding: var(--cheer-origin) 1rem 0;
+}
+
+.room-cheer__card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: .45rem;
+  width: min(100%, 20rem);
+  padding: .95rem 1.25rem 1rem;
+  border: 1px solid #83b8fa;
+  border-radius: 1.55rem;
+  background: radial-gradient(ellipse at 50% 0%, #394c86, transparent 73%), linear-gradient(154deg, #182747, #0b142b 76%);
+  color: #f7fbff;
+  box-shadow: inset 0 1px 0 #f0f8ff70, 0 14px 40px #06132965, 0 0 28px #80d9ff45;
+  text-align: center;
+}
+
+.room-cheer__medal {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid #ffefff9e;
+  border-radius: .95rem;
+  background: linear-gradient(145deg, #fbeeff, #bd9bfb 45%, #6953ce);
+  color: #fff6ff;
+  box-shadow: inset 0 1px 1px #ffffffa0, 0 4px 14px #bb8efa73;
+}
+
+.room-cheer__medal svg {
+  filter: drop-shadow(0 2px 1px #5d3bbf80);
+}
+
+.room-cheer__message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: .95rem;
+  font-weight: 700;
+}
+
+.room-cheer__points {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .4rem;
+  color: #d7f7ff;
+  font-size: .875rem;
+  font-weight: 800;
+}
+
+.room-cheer__amount {
+  color: #9decff;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  text-shadow: 0 0 12px #48daff82;
+}
+
+.room-cheer__halo,
+.room-cheer__burst {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .room-cheer__card {
+    animation: room-cheer-card 3200ms cubic-bezier(.2, .75, .24, 1) both;
+  }
+
+  .room-cheer__halo {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: radial-gradient(ellipse at 50% calc(var(--cheer-origin) + 3rem), #5cbfff4d, transparent 55%),
+      radial-gradient(ellipse at center, transparent 40%, #738dfb4a 100%);
+    animation: room-cheer-halo 1300ms ease-out both;
+  }
+
+  .room-cheer__burst {
+    position: absolute;
+    top: calc(var(--cheer-origin) + 3rem);
+    left: 50%;
+    display: block;
+  }
+
+  .room-cheer__particle {
+    position: absolute;
+    width: var(--cheer-size);
+    height: var(--cheer-size);
+    background: var(--cheer-color);
+    box-shadow: 0 0 10px var(--cheer-color);
+    animation: room-cheer-flight 1440ms cubic-bezier(.15, .65, .25, 1) var(--cheer-delay) both;
+  }
+
+  .room-cheer__particle[data-shape="star"] {
+    clip-path: polygon(50% 0, 61% 37%, 100% 50%, 61% 63%, 50% 100%, 39% 63%, 0 50%, 39% 37%);
+  }
+
+  .room-cheer__particle[data-shape="ribbon"] {
+    width: calc(var(--cheer-size) / 2);
+    height: calc(var(--cheer-size) * 1.8);
+    border-radius: 999px;
+  }
+
+  .room-cheer__particle[data-shape="diamond"] {
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+}
+
+@keyframes room-cheer-card {
+  0% { opacity: 0; transform: translateY(16px) scale(.76); }
+  11% { opacity: 1; transform: translateY(-5px) scale(1.035); }
+  21%, 82% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-12px) scale(.98); }
+}
+
+@keyframes room-cheer-halo {
+  0%, 100% { opacity: 0; }
+  17% { opacity: 1; }
+}
+
+@keyframes room-cheer-flight {
+  0% { opacity: 0; transform: scale(.35); }
+  18% { opacity: 1; }
+  62% { opacity: .9; }
+  100% { opacity: 0; transform: translate(var(--cheer-x), var(--cheer-y)) rotate(var(--cheer-spin)) scale(.55); }
+}

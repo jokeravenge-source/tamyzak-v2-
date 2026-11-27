@@ -6,7 +6,7 @@ import type { AppLanguage } from "./LanguageGate";
 import UsageIntroGate from "./UsageIntroGate";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
-import { STUDY_ROOM_CHEER_RECEIVED } from "@/hooks/useStudyRoomActivity";
+import { STUDY_ROOM_CHEER_RECEIVED, type StudyRoomCheerEvent } from "@/hooks/useStudyRoomActivity";
 import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
   useEffect(() => {
     let reset: number | undefined;
     const onCheer = (event: Event) => {
-      if ((event as CustomEvent<string>).detail !== userId) return;
+      if ((event as StudyRoomCheerEvent).detail?.recipient !== userId) return;
       setCheer(previous => previous + 1);
       window.clearTimeout(reset);
       reset = window.setTimeout(() => setCheer(0), CHEER_REACTION_MS);
