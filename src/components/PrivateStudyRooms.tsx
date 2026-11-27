@@ -3,7 +3,7 @@ import { useVisibilityGatedChannel } from "@/lib/realtimeVisibility";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensureSession";
 import { displayedPresenceSeconds } from "@/lib/sessionPresenceClock";
-import { displayedStudyTimerSeconds, formatStudyTimer as fmtClock } from "@/lib/studyTimerDisplay";
+import { displayedStudyTimerSeconds, formatStudyTimer as fmtClock, isStudyTimerFocusing } from "@/lib/studyTimerDisplay";
 import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
 import { useStudyRoomActivity } from "@/hooks/useStudyRoomActivity";
 import { toast } from "sonner";
@@ -733,10 +733,14 @@ export default function PrivateStudyRooms({
             const roomOwner = m.user_id === room.owner_id;
             const memberPresence = presence[m.user_id];
             const roomTimer = roomTimers[m.user_id];
-            const remoteSeconds = memberPresence
-              ? displayedStudyTimerSeconds(roomTimer, now) ?? displayedPresenceSeconds(memberPresence, now)
-              : null;
+            const liveSeconds = memberPresence ? displayedStudyTimerSeconds(roomTimer, now) : null;
+            const remoteSeconds = liveSeconds ?? (memberPresence ? displayedPresenceSeconds(memberPresence, now) : null);
+            const liveTimer = liveSeconds !== null ? roomTimer : undefined;
             const hasLocalTimer = mine && timerStarted !== undefined;
+            const reading = hasLocalTimer ? !!(timerStarted && timerRunning) : remoteSeconds !== null &&
+              isStudyTimerFocusing(liveTimer, memberPresence?.is_running ?? false);
+            const clockRunning = hasLocalTimer ? timerStarted && (timerDisplayRunning ?? timerRunning) :
+              remoteSeconds !== null && (liveTimer?.isRunning ?? memberPresence?.is_running);
             return (
               <div key={m.user_id} className="flex flex-col items-center" style={{ width: 112 }}>
                 <button
@@ -754,7 +758,7 @@ export default function PrivateStudyRooms({
                     </div>
                   )}
                   <div className="relative">
-                    <CharacterAvatar gender={m.gender ?? "male"} traits={m.character ?? undefined} size={76} />
+                    <CharacterAvatar gender={m.gender} traits={m.character} size={76} reading={reading} />
                     {/* Wooden desk */}
                     <div className="w-20 h-3 -mt-2 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />
                     <div className="flex justify-between w-16 mx-auto">
@@ -765,7 +769,7 @@ export default function PrivateStudyRooms({
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
-                  <span dir="ltr" className={`mt-1 flex items-center gap-1 text-sm font-semibold font-mono tabular-nums px-2 py-1 rounded-full border ${(hasLocalTimer ? timerStarted && (timerDisplayRunning ?? timerRunning) : remoteSeconds !== null && (roomTimer?.isRunning ?? memberPresence?.is_running)) ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
+                  <span dir="ltr" className={`mt-1 flex items-center gap-1 text-sm font-semibold font-mono tabular-nums px-2 py-1 rounded-full border ${clockRunning ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-white/10"}`}>
                     <Timer className="w-3 h-3" />
                     {hasLocalTimer
                       ? timerStarted ? fmtClock(timerSeconds ?? 0) : "--:--"

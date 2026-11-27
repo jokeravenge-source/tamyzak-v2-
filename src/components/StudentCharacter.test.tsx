@@ -126,13 +126,13 @@ it.each([
   const avatar = screen.getByRole("button", { name: "Your study status" });
   const widget = avatar.closest("aside");
   const sprite = avatar.querySelector(".student-character__sprite");
-  const book = () => avatar.querySelector<HTMLElement>(".student-character__book");
+  const book = () => avatar.querySelector<HTMLElement>(".character-avatar__book");
   expect(book()).toBeNull();
   setTimer("student", { running: true });
   expect(screen.getByRole("status")).toHaveTextContent("Studying now");
   expect(widget).toHaveAttribute("data-study-status", "studying");
   expect(sprite).toContainElement(book());
-  expect(book()?.querySelector(".student-character__page--turning")).toBeInTheDocument();
+  expect(book()?.querySelector(".character-avatar__page--turning")).toBeInTheDocument();
   expect(avatar.querySelector(".student-character__sprite")).toBe(sprite);
   setTimer("student", { running: false });
   expect(screen.getByRole("status")).toHaveTextContent("Study paused");
@@ -194,13 +194,13 @@ it("shows the practice props until the last practice view closes, then returns t
   expect(writing?.querySelector(".student-character__notepad")).toBeInTheDocument();
   expect(writing?.querySelector(".student-character__pen")).toBeInTheDocument();
   expect(within(avatar).getByText("?")).toBeInTheDocument();
-  expect(avatar.querySelector(".student-character__book")).toBeNull();
+  expect(avatar.querySelector(".character-avatar__book")).toBeNull();
   practice.unmount();
   expect(screen.getByRole("status")).toHaveTextContent("Solving questions");
   otherPractice.unmount();
   expect(screen.getByRole("status")).toHaveTextContent("Studying now");
   expect(avatar.querySelector(".student-character__pen")).toBeNull();
-  expect(avatar.querySelector(".student-character__book")).toBeInTheDocument();
+  expect(avatar.querySelector(".character-avatar__book")).toBeInTheDocument();
 });
 
 it("reacts to a new room cheer without replaying older notifications or interrupting study", async () => {
@@ -217,7 +217,7 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   const activityKey = ["study-room-activity", "room", "student"];
   const avatar = await screen.findByRole("button", { name: "Your study status" });
   const badge = () => avatar.querySelector(".student-character__cheer");
-  const book = avatar.querySelector(".student-character__book");
+  const book = avatar.querySelector(".character-avatar__book");
   expect(book).toBeInTheDocument();
   await waitFor(() => expect(client.getQueryData(activityKey)).toEqual(activity));
   act(() => window.dispatchEvent(new CustomEvent(STUDY_ROOM_CHEER_RECEIVED, {
@@ -232,7 +232,7 @@ it("reacts to a new room cheer without replaying older notifications or interrup
   expect(award.closest(".room-cheer")?.parentElement).toBe(document.body);
   await waitFor(() => expect(badge()).toBeInTheDocument());
   expect(badge()).toHaveAttribute("aria-hidden", "true");
-  expect(avatar.querySelector(".student-character__book")).toBe(book);
+  expect(avatar.querySelector(".character-avatar__book")).toBe(book);
   expect(screen.getByText("Studying now")).toBeVisible();
 
   act(() => { client.setQueryData(activityKey, { ...activity, inbox: [newCheer, anotherCheer, oldSender] }); });

@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STUDY_SESSION_STORAGE_KEY } from "@/lib/studyTimerDisplay";
+import { useStudyStatus } from "@/hooks/useStudyStatus";
 
 const backend = vi.hoisted(() => ({ upsert: vi.fn(async () => ({ data: null, error: null })) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
@@ -17,7 +18,10 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     return query;
   },
 } }));
-vi.mock("@/hooks/useStudyTimerPresence", () => ({ notifyStudyTimerChanged: vi.fn() }));
+vi.mock("@/hooks/useStudyTimerPresence", async (original) => ({
+  ...await original<typeof import("@/hooks/useStudyTimerPresence")>(),
+  notifyStudyTimerChanged: vi.fn(),
+}));
 vi.mock("@/lib/todosSync", () => ({ pushTodos: vi.fn(), pullTodos: async () => [] }));
 vi.mock("@/components/SpotifyPlayerBlock", () => ({ default: () => null }));
 vi.mock("@/components/PrivateStudyRooms", () => ({
@@ -29,6 +33,10 @@ vi.mock("@/components/StudyRoom", () => ({
 }));
 
 import Sessions from "./Sessions";
+
+function StudyStatus() {
+  return <output data-testid="character-status">{useStudyStatus("self")}</output>;
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -45,6 +53,33 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe("the session's one visible timer", () => {
+  it("keeps the character in sync without local writes and ignores a previous account's timer", async () => {
+    localStorage.setItem(STUDY_SESSION_STORAGE_KEY, JSON.stringify({ userId: "previous", subject: "chemistry", started: true, running: true }));
+    const setItem = Storage.prototype.setItem;
+    const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+      if (key === STUDY_SESSION_STORAGE_KEY) throw new Error("Storage unavailable");
+      setItem.call(this, key, value);
+    });
+    try {
+      render(<><StudyStatus /><Sessions language="en" onBack={vi.fn()} /></>);
+      await act(async () => {});
+      fireEvent.click(screen.getByRole("button", { name: /Join study rooms/i }));
+      expect(screen.queryByRole("timer")).toBeNull();
+      expect(screen.getByTestId("character-status")).toHaveTextContent("ready");
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Chemistry" })));
+      fireEvent.click(screen.getByRole("button", { name: "Start" }));
+      expect(screen.getByTestId("character-status")).toHaveTextContent("studying");
+      act(() => vi.advanceTimersByTime(2000));
+      expect(screen.getByRole("timer")).toHaveTextContent("00:00:02");
+      fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+      expect(screen.getByTestId("character-status")).toHaveTextContent("paused");
+      fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+      expect(screen.getByTestId("character-status")).toHaveTextContent("studying");
+    } finally {
+      storage.mockRestore();
+    }
+  });
+
   it("renders one Arabic focus timer, passes that value to both rooms, and keeps real study seconds", async () => {
     const { container } = render(<Sessions language="ar" onBack={vi.fn()} />);
     await act(async () => {});

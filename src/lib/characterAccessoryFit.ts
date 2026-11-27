@@ -118,6 +118,16 @@ export function getCharacterPenGrip(gender: Gender, requested: CharacterTraits["
   };
 }
 
+export function getCharacterBookPlacement(gender: Gender, variant: number) {
+  const [, , [x, y, width]] = landmarks[gender][variant - 1];
+  const koki = gender === "female" && variant === 16;
+  return {
+    left: `${koki ? x - 4 : x}%`,
+    top: `${koki ? 58 : 22 + y * .72}%`,
+    width: `${25 + width * .68}%`,
+  };
+}
+
 export function getCharacterSighPosition(gender: Gender, requested: CharacterTraits["variant"]) {
   const [, [x, y, width]] = landmarks[gender][getCharacterVariant(gender, requested) - 1];
   return { left: `${x + width * .6}%`, top: `${y + 9}%` };

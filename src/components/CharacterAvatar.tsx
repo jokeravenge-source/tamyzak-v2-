@@ -32,7 +32,8 @@ import pixelSunglasses from "@/assets/pixel-sunglasses.png.asset.json";
 import kittyEars from "@/assets/kitty-ears.png.asset.json";
 import goldChain from "@/assets/gold-chain.png.asset.json";
 import type { PetKind } from "@/lib/pets";
-import { getAccessoryPlacement, getCharacterVariant, getWornAccessories, type CharacterAccessoryFits } from "@/lib/characterAccessoryFit";
+import { getAccessoryPlacement, getCharacterBookPlacement, getCharacterVariant, getWornAccessories, type CharacterAccessoryFits } from "@/lib/characterAccessoryFit";
+import "./CharacterAvatar.css";
 
 export type Gender = "male" | "female";
 
@@ -110,12 +111,14 @@ function CharacterAvatarComponent({
   size = 96,
   className = "",
   traits,
+  reading = false,
 }: {
   seed?: string;
   gender: Gender | null | undefined;
   size?: number;
   className?: string;
   traits?: Partial<CharacterTraits> | null;
+  reading?: boolean;
 }) {
   const g: Gender = gender ?? "male";
   const variants = g === "female" ? FEMALE_VARIANTS : MALE_VARIANTS;
@@ -129,6 +132,7 @@ function CharacterAvatarComponent({
   return (
     <div
       className={className}
+      data-character-reading={reading || undefined}
       style={{
         width: size,
         height: size,
@@ -180,6 +184,14 @@ function CharacterAvatarComponent({
           style={{ ...style, zIndex: art.layer, width: `${width}%`, height: "auto", maxWidth: "none", imageRendering: "pixelated",
             filter: `drop-shadow(0 ${size / 100}px ${size / 100}px rgb(0 0 0 / 28%))` }} />;
       })}
+      {reading && (
+        <span aria-hidden="true" className="character-avatar__book"
+          style={{ fontSize: size, ...getCharacterBookPlacement(g, variant), "--character-avatar-hand": skin } as React.CSSProperties}>
+          <span className="character-avatar__page character-avatar__page--left" />
+          <span className="character-avatar__page character-avatar__page--right" />
+          <span className="character-avatar__page character-avatar__page--turning" />
+        </span>
+      )}
     </div>
   );
 }

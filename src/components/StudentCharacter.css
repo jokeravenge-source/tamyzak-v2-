@@ -11,72 +11,6 @@
   transform-origin: 50% 87%;
 }
 
-.student-character__book {
-  position: absolute;
-  z-index: 6;
-  top: 57%;
-  left: 50%;
-  width: 17px;
-  height: 9px;
-  border-radius: 1.5px 1.5px 2px 2px;
-  background: linear-gradient(90deg, #226cc4 47%, #123c78 50%, #2f80d4 55%);
-  box-shadow: 0 1px 1px rgb(12 33 65 / 55%);
-  pointer-events: none;
-  transform: translateX(-50%);
-}
-
-.student-character__book[data-koki] {
-  margin-left: -2px;
-}
-
-.student-character__book::before,
-.student-character__book::after {
-  position: absolute;
-  z-index: 2;
-  top: 4px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #f5d4be;
-  background: color-mix(in srgb, var(--student-character-hand) 72%, #d0896a);
-  box-shadow: 0 1px 1px rgb(42 24 19 / 40%);
-  content: "";
-}
-
-.student-character__book::before {
-  left: -1px;
-}
-
-.student-character__book::after {
-  right: -1px;
-}
-
-.student-character__page {
-  position: absolute;
-  top: 0;
-  width: calc(50% - 1px);
-  height: 7px;
-  border-radius: 1px;
-  background: repeating-linear-gradient(to bottom, #f7fbff 0 2px, #bcd4ee 2px 3px);
-}
-
-.student-character__page--left {
-  right: 50%;
-  transform: skewY(10deg);
-}
-
-.student-character__page--right,
-.student-character__page--turning {
-  left: 50%;
-  transform: skewY(-10deg);
-}
-
-.student-character__page--turning {
-  z-index: 1;
-  opacity: 0;
-  transform-origin: left center;
-}
-
 .student-character[data-study-status="solving"] {
   --student-character-pose: 202 92% 48%;
 }
@@ -286,10 +220,6 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .student-character[data-study-status="studying"] .student-character__sprite {
-    animation: student-character-read 5.8s ease-in-out 420ms infinite;
-  }
-
   .student-character[data-study-status="rest"] .student-character__sprite {
     animation: student-character-stretch 920ms ease-in-out;
   }
@@ -316,19 +246,6 @@
 
   .student-character__notepad::before {
     animation: student-character-ink 3.8s ease-in-out infinite;
-  }
-
-  .student-character__book {
-    animation: student-character-open-book 420ms cubic-bezier(.22, 1, .36, 1) both;
-  }
-
-  .student-character__page--right {
-    transform-origin: left center;
-    animation: student-character-open-pages 420ms cubic-bezier(.22, 1, .36, 1) both;
-  }
-
-  .student-character__page--turning {
-    animation: student-character-turn-page 5.8s ease-in-out 420ms infinite;
   }
 
   .student-character__reaction[data-cheering] {
@@ -378,22 +295,6 @@
   68%, 100% { background-size: 62% 1px, auto; }
 }
 
-@keyframes student-character-open-book {
-  0% { opacity: 0; transform: translate(-50%, 4px) scale(.55, .75) rotate(-8deg); }
-  38% { opacity: 1; transform: translate(-50%, -1px) scale(.74, 1.05) rotate(-4deg); }
-  100% { opacity: 1; transform: translateX(-50%); }
-}
-
-@keyframes student-character-open-pages {
-  0%, 18% { transform: perspective(22px) rotateY(-90deg) skewY(-10deg); }
-  100% { transform: perspective(22px) rotateY(0) skewY(-10deg); }
-}
-
-@keyframes student-character-read {
-  0%, 16%, 54%, 100% { transform: translateY(0) rotate(0); }
-  29%, 37% { transform: translateY(2px) rotate(5deg); }
-}
-
 @keyframes student-character-stretch {
   0%, 100% { transform: none; }
   24% { transform: translateY(1px) scale(1.025, .98); }
@@ -411,11 +312,4 @@
   28% { opacity: 1; transform: translate(1px, -2px) scale(1.07); }
   72% { opacity: 1; transform: translate(2px, -4px); }
   100% { opacity: 0; transform: translate(4px, -8px) scale(.94); }
-}
-
-@keyframes student-character-turn-page {
-  0%, 28% { opacity: 0; transform: perspective(22px) rotateY(0); }
-  32% { opacity: 1; transform: perspective(22px) rotateY(-25deg); }
-  41% { opacity: 1; transform: perspective(22px) rotateY(-155deg); }
-  46%, 100% { opacity: 0; transform: perspective(22px) rotateY(-175deg); }
 }

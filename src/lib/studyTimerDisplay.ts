@@ -115,6 +115,13 @@ export function displayedStudyTimerSeconds(timer: StudyTimerDisplay | undefined,
     Math.floor(timer.seconds) + (timer.direction === "down" ? -extra : extra)));
 }
 
+/** A Pomodoro break can show a ticking clock even though focus has paused. */
+export function isStudyTimerFocusing(timer: StudyTimerDisplay | undefined, presenceRunning: boolean): boolean {
+  if (!timer) return presenceRunning;
+  if (!timer.isRunning || timer.focusEndedAt !== undefined) return false;
+  return timer.direction === "up" || (timer.focus ? timer.focus.run !== null : presenceRunning);
+}
+
 export function formatStudyTimer(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds));
   return [Math.floor(total / 3600), Math.floor(total % 3600 / 60), total % 60]

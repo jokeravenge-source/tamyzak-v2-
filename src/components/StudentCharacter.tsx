@@ -1,15 +1,14 @@
-import { useEffect, useId, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Heart, Loader2 } from "lucide-react";
 import { CharacterAvatar, FEMALE_VARIANTS, MALE_VARIANTS, SKIN_COLORS, getAvatarStyle, type Gender, type CharacterVariant } from "./CharacterAvatar";
 import type { AppLanguage } from "./LanguageGate";
 import UsageIntroGate from "./UsageIntroGate";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { STUDY_TIMER_CHANGED } from "@/hooks/useStudyTimerPresence";
 import { STUDY_ROOM_CHEER_RECEIVED, type StudyRoomCheerEvent } from "@/hooks/useStudyRoomActivity";
 import { useIsCharacterPracticing } from "@/hooks/useCharacterPractice";
+import { useStudyStatus } from "@/hooks/useStudyStatus";
 import { getCharacterPenGrip, getCharacterSighPosition } from "@/lib/characterAccessoryFit";
-import { STUDY_SESSION_STORAGE_KEY, timerDisplayFromPersistedSession } from "@/lib/studyTimerDisplay";
 import { PROFILE_CHARACTER_CHANGED, loadProfileCharacter, saveInitialProfileCharacter, type ProfileCharacter } from "@/lib/profileCharacter";
 import { cn } from "@/lib/utils";
 import "./StudentCharacter.css";
@@ -31,35 +30,9 @@ const copy = {
   },
 } as const;
 
-function subscribeToStudyStatus(listener: () => void) {
-  const onStorage = (event: StorageEvent) => {
-    if (!event.key || event.key === STUDY_SESSION_STORAGE_KEY) listener();
-  };
-  window.addEventListener(STUDY_TIMER_CHANGED, listener);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(STUDY_TIMER_CHANGED, listener);
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
-type StudyStatus = "ready" | "studying" | "paused" | "rest";
 const CHEER_REACTION_MS = 900;
 const BORED_AFTER_MS = 60_000;
 const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "keydown", "scroll"] as const;
-
-function readStudyStatus(userId: string): StudyStatus {
-  try {
-    const session = JSON.parse(localStorage.getItem(STUDY_SESSION_STORAGE_KEY) ?? "null");
-    if (typeof session?.userId === "string" && session.userId !== userId) return "ready";
-    const timer = timerDisplayFromPersistedSession(session);
-    if (!timer) return "ready";
-    if (session.pomodoro === true && session.phase === "rest") return "rest";
-    return timer.isRunning ? "studying" : "paused";
-  } catch {
-    return "ready";
-  }
-}
 
 function useBoredCharacter(enabled: boolean) {
   const [bored, setBored] = useState(false);
@@ -113,12 +86,11 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
   const [open, setOpen] = useState(true);
   const [cheer, setCheer] = useState(0);
   const messageId = useId();
-  const studyStatus = useSyncExternalStore(subscribeToStudyStatus, () => readStudyStatus(userId), (): StudyStatus => "ready");
+  const studyStatus = useStudyStatus(userId);
   const practicing = useIsCharacterPracticing();
   const bored = useBoredCharacter(studyStatus === "ready" && !practicing);
   const status = practicing ? "solving" : bored ? "bored" : studyStatus;
   const hasPose = status === "solving" || status === "bored";
-  const isKoki = character.gender === "female" && Number(character.traits?.variant) === 16;
   const handStyle = { "--student-character-hand": character.traits?.skin ?? SKIN_COLORS[0] } as CSSProperties;
   const t = copy[language];
 
@@ -143,18 +115,7 @@ function CharacterStatus({ userId, character, language }: { userId: string; char
         className={cn("student-character__button pointer-events-auto relative grid shrink-0 place-items-center rounded-full border border-primary/30 bg-card shadow-md transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", hasPose ? "size-[3.625rem]" : "size-12")}>
         <span aria-hidden="true" className="student-character__reaction" data-cheering={cheer > 0 || undefined}>
           <span className="student-character__sprite">
-            <CharacterAvatar gender={character.gender} traits={character.traits} size={hasPose ? 52 : 42} />
-            {status === "studying" && (
-              <span
-                className="student-character__book"
-                data-koki={isKoki || undefined}
-                style={handStyle}
-              >
-                <span className="student-character__page student-character__page--left" />
-                <span className="student-character__page student-character__page--right" />
-                <span className="student-character__page student-character__page--turning" />
-              </span>
-            )}
+            <CharacterAvatar gender={character.gender} traits={character.traits} size={hasPose ? 52 : 42} reading={status === "studying"} />
             {status === "solving" && (
               <span className="student-character__writing" style={{ ...handStyle, ...getCharacterPenGrip(character.gender, character.traits?.variant) }}>
                 <span className="student-character__notepad" />

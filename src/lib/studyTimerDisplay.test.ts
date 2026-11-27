@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   displayedStudyTimerSeconds,
   formatStudyTimer,
+  isStudyTimerFocusing,
   studyTimerDisplay,
   timerDisplayFromPersistedSession,
 } from "./studyTimerDisplay";
@@ -19,6 +20,7 @@ describe("the shared study timer", () => {
     const original = { ...session };
     const timer = timerDisplayFromPersistedSession(session, now)!;
     expect(formatStudyTimer(timer.seconds)).toBe("00:49:40");
+    expect(isStudyTimerFocusing(timer, false)).toBe(true);
     expect(displayedStudyTimerSeconds(timer, now + 10_000)).toBe(49 * 60 + 30);
     expect(session).toEqual(original);
     expect(session.accumulated).toBe(0);
@@ -44,6 +46,7 @@ describe("the shared study timer", () => {
     const timer = timerDisplayFromPersistedSession(resting, now)!;
     expect(timer.isRunning).toBe(true);
     expect(timer.focus?.run).toBeNull();
+    expect(isStudyTimerFocusing(timer, true)).toBe(false);
     expect(timer.seconds).toBe(600);
     expect(displayedStudyTimerSeconds(timer, now + 20_000)).toBe(580);
     expect(timerDisplayFromPersistedSession(resting, now + 20_000)?.seconds).toBe(580);

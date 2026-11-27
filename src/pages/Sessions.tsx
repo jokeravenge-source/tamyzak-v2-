@@ -31,6 +31,7 @@ import { hasSessionRoomLink, SESSION_ROOM_CODE } from "@/lib/sessionRoyale";
 import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
+import { useSessionStudyStatus } from "@/hooks/useStudyStatus";
 import { TripApp } from "@/features/trip/TripApp";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
 import StudyChallengeHub from "@/components/StudyChallengeHub";
@@ -530,7 +531,7 @@ const T = {
   },
 } as const;
 
-const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+const Sessions = ({ language, onBack, currentUserId }: { language: AppLanguage; onBack: () => void; currentUserId?: string | null }) => {
   const L = T[language];
   const dir = language === "ar" ? "rtl" : "ltr";
   const [entryMode, setEntryMode] = useState<"rooms" | "flight" | "challenge" | "all_or_nothing" | null>(() => {
@@ -546,7 +547,8 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const [completed, setCompleted] = useState(false);
   const [board, setBoard] = useState<{ name: string; points: number }[]>([]);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const userId = currentUserId ?? loadedUserId;
   const flightRepository = useMemo(() => userId ? createCloudRepository() : undefined, [userId]);
   const [displayName, setDisplayName] = useState("");
   const [flightCharacter, setFlightCharacter] = useState<Partial<CharacterTraits> | null>(null);
@@ -632,7 +634,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   const missionRef = useRef("");
   const completedRef = useRef(false);
   const startedRef = useRef(false);
-  const restoredTimerUserId = useRef<string | null>();
   useEffect(() => { subjectRef.current = subject; }, [subject]);
   useEffect(() => { missionRef.current = mission; }, [mission]);
   useEffect(() => { completedRef.current = completed; }, [completed]);
@@ -784,14 +785,15 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // in the background and the user stays visible in the room. Presence is only
   // cleared when the user explicitly stops/saves or switches rooms.
 
-  // Restore persisted session on mount
+  // Restore once the session's owner is known.
   useEffect(() => {
+    if (!userId || startedRef.current) return;
     try {
       const raw = localStorage.getItem(PERSIST_KEY);
       if (!raw) return;
       const s = JSON.parse(raw);
-      if (!s?.subject) return;
-      restoredTimerUserId.current = typeof s.userId === "string" ? s.userId : null;
+      if (!s?.subject || s.started === false) return;
+      if (typeof s.userId === "string" && s.userId !== userId) return;
       const now = Date.now();
       const base = Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(s.accumulated)) || 0));
       const savedCheckIn = s.lastCheckInSeconds;
@@ -847,13 +849,14 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       accumulatedRef.current = shouldRun && savedAnchor ? base : total;
       resumeAtRef.current = shouldRun ? savedAnchor || now : 0;
     } catch {}
-  }, []);
+  }, [userId]);
 
   // Restore pomodoro settings on mount
   useEffect(() => {
     try {
       const active = JSON.parse(localStorage.getItem(PERSIST_KEY) || "null");
-      if (active?.subject && typeof active.pomodoro === "boolean") {
+      if (active?.subject && active.started !== false && typeof active.pomodoro === "boolean" &&
+        (typeof active.userId !== "string" || active.userId === userId)) {
         return;
       }
       const raw = localStorage.getItem(POMODORO_KEY);
@@ -866,7 +869,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       }
     } catch {}
     finally { setPomodoroSettingsLoaded(true); }
-  }, []);
+  }, [userId]);
 
   // Persist on relevant state changes
   useEffect(() => {
@@ -875,7 +878,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     // tabs (where setInterval is throttled and `seconds` goes stale) still
     // restore the correct elapsed time on reopen.
     const payload = {
-      userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
+      userId,
       subject, mission, completed, started: true,
       running,
       startedAt: running ? resumeAtRef.current || Date.now() : null,
@@ -889,8 +892,10 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       phaseStartSeconds: phaseStartRef.current,
       restEndsAt: phase === "rest" ? restEndsAtRef.current : 0,
     };
-    localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
-    notifyStudyTimerChanged();
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(payload));
+      notifyStudyTimerChanged();
+    } catch { /* The open timer continues if storage is unavailable. */ }
   }, [userId, started, subject, mission, completed, running, seconds, lastCheckInSeconds, pomodoro, pomodoroWorkMin, pomodoroRestMin, phase]);
 
   // Flush the latest session snapshot whenever the page is about to be hidden
@@ -901,7 +906,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
       if (!startedRef.current || !subjectRef.current) return;
       const isRunning = runningRef.current;
       const payload = {
-        userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
+        userId,
         subject: subjectRef.current,
         mission: missionRef.current,
         completed: completedRef.current,
@@ -938,18 +943,20 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
   // Persist pomodoro settings
   useEffect(() => {
     if (!pomodoroSettingsLoaded) return;
-    localStorage.setItem(POMODORO_KEY, JSON.stringify({
-      enabled: pomodoro,
-      workMin: pomodoroWorkMin,
-      restMin: pomodoroRestMin,
-    }));
+    try {
+      localStorage.setItem(POMODORO_KEY, JSON.stringify({
+        enabled: pomodoro,
+        workMin: pomodoroWorkMin,
+        restMin: pomodoroRestMin,
+      }));
+    } catch { /* Settings remain usable for the current visit. */ }
   }, [pomodoroSettingsLoaded, pomodoro, pomodoroWorkMin, pomodoroRestMin]);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
       if (!u) return;
-      setUserId(u.id);
+      setLoadedUserId(u.id);
       const { data: prof } = await supabase.from("profiles").select("display_name,gender,character").eq("user_id", u.id).maybeSingle();
       setFlightCharacter((prof?.character as Partial<CharacterTraits> | null) ?? null);
       setFlightGender(prof?.gender === "female" ? "female" : "male");
@@ -1035,7 +1042,6 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
   const startSession = () => {
     void unlockTimerAudio();
-    restoredTimerUserId.current = undefined;
     if (pomodoro) {
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
       if (pomodoroRestMin < 1) setPomodoroRestMin(DEFAULT_REST_MIN);
@@ -1202,7 +1208,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     resumeAtRef.current = 0;
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
-        userId: restoredTimerUserId.current === undefined ? userId : restoredTimerUserId.current,
+        userId,
         subject: subjectRef.current,
         mission: missionRef.current,
         completed: completedRef.current,
@@ -1274,6 +1280,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
     phaseStartSeconds: phaseStartRef.current,
     workMinutes: pomodoroWorkMin, restRemaining,
   });
+  useSessionStudyStatus(userId, !started ? "ready" : pomodoro && phase === "rest" ? "rest" : running ? "studying" : "paused");
 
   if (entryMode === null) {
     const choices = language === "ar"
@@ -1629,7 +1636,7 @@ const Sessions = ({ language, onBack }: { language: AppLanguage; onBack: () => v
 
         {!joinedStudyRoom && <section className="mt-8 rounded-[2rem] border border-border/70 bg-card/95 p-4 shadow-sm md:p-5">
           <div className="mb-4 flex items-center gap-2"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="h-4 w-4" /></span><div><h2 className="font-extrabold">{language === "ar" ? "غرفة الدراسة المباشرة" : "Live study room"}</h2><p className="text-xs text-muted-foreground">{language === "ar" ? "شوف الطلاب اللي يدرسون نفس المادة وياك." : "See students focusing on the same subject."}</p></div></div>
-          <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={mainTimer.seconds} timerRunning={mainTimer.isRunning} timerStarted={started} />
+          <StudyRoom language={language} subject={subject} currentUserId={userId} timerSeconds={mainTimer.seconds} timerRunning={running} timerDisplayRunning={mainTimer.isRunning} timerStarted={started} />
         </section>}
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-amber-500/25 bg-card/95">

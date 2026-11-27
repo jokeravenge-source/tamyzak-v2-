@@ -1220,7 +1220,7 @@ const StudentApp = () => {
       ) : menuChoice === "advices" ? (
         <Advices language={language} onBack={resetMenu} />
       ) : menuChoice === "sessions" ? (
-        <Sessions language={language} onBack={resetMenu} />
+        <Sessions key={userId} language={language} onBack={resetMenu} currentUserId={userId} />
       ) : menuChoice === "community" ? (
         <Community language={language} onOpenSessions={() => chooseMenu("sessions")} onOpenFriends={() => chooseMenu("friends")} onOpenChat={() => chooseMenu("communityChat")} />
       ) : menuChoice === "friends" ? (
