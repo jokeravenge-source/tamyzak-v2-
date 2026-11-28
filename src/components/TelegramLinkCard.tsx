@@ -134,7 +134,7 @@ export function TelegramLinkCard({ language, source = "profile", variant = "prof
             <h2 id="telegram-connect-title" className="text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{t.title}</h2>
             <p className="home-card-muted mt-1.5 break-words text-[13px] leading-relaxed sm:text-sm">{pending ? t.opened : t.desc}</p>
           </div>
-          <span className="home-card-tile grid size-12 place-items-center rounded-2xl border sm:size-16"><Send aria-hidden="true" className="size-6 sm:size-8" /></span>
+          <span className="home-card-art grid size-12 place-items-center rounded-2xl sm:size-16"><Send aria-hidden="true" className="size-6 sm:size-8" /></span>
           <div className="home-card-muted col-span-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
             <span className="inline-flex items-center gap-1"><Gift aria-hidden="true" className="size-3" />{t.daily}</span>
             <span className="inline-flex items-center gap-1"><RefreshCw aria-hidden="true" className="size-3" />{t.review}</span>
