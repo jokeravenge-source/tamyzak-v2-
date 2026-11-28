@@ -93,3 +93,34 @@ it("shows the same general and AI catalog for every subject", async () => {
   }
   test.subscription.userId = "test-student";
 });
+
+
+it("groups subject and AI tools in two-column Bento cards without changing availability", () => {
+  rememberStudySubjectFocus("physics");
+  const onSelect = vi.fn();
+  render(<SubjectsHub language="en" onBack={vi.fn()} onSelect={onSelect} />);
+  const subject = screen.getByRole("region", { name: "Subject tools" });
+  expect(within(subject).getByRole("heading", { name: "Essential study tools" })).toBeVisible();
+  expect(within(subject).getByRole("heading", { name: "Explore Physics" })).toBeVisible();
+  const flashcards = within(subject).getByRole("button", { name: "Flashcards" });
+  const mcq = within(subject).getByRole("button", { name: "MCQ Bank" });
+  expect(flashcards.getAttribute("data-study-tone")).not.toBe(mcq.getAttribute("data-study-tone"));
+  expect(flashcards.closest("ul")).toHaveClass("grid-cols-2");
+  expect(within(subject).getByRole("button", { name: "Quick MCQ" })).toBeDisabled();
+  fireEvent.click(flashcards);
+  expect(onSelect).toHaveBeenCalledWith("flashcards", { subject: "physics" });
+
+  fireEvent.click(screen.getByRole("button", { name: "General and AI tools" }));
+  const general = screen.getByRole("region", { name: "General and AI tools" });
+  const assistant = within(general).getByRole("button", { name: "Ask Mutamayiz" });
+  expect(assistant).toHaveAttribute("data-featured", "true");
+  expect(assistant.closest("li")).toHaveClass("col-span-full");
+  expect(within(general).getByRole("heading", { name: "Practice & exams" })).toBeVisible();
+  expect(within(general).getByRole("heading", { name: "Learn & understand" })).toBeVisible();
+  expect(within(general).getByRole("heading", { name: "Personal workspace" })).toBeVisible();
+  expect(within(general).getByRole("heading", { name: "Study resources" })).toBeVisible();
+  const generator = within(general).getByRole("button", { name: "MCQ Generator" });
+  expect(generator).toBeEnabled(); // App still handles opening its Premium gate.
+  fireEvent.click(generator);
+  expect(onSelect).toHaveBeenCalledWith("mcq", { subject: "physics" });
+});
