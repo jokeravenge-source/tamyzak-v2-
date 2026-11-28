@@ -31,6 +31,7 @@ import { hasSessionRoomLink, SESSION_ROOM_CODE } from "@/lib/sessionRoyale";
 import { roomSessionSubject } from "@/lib/pinnedStudyRooms";
 import { pushTodos, pullTodos } from "@/lib/todosSync";
 import { notifyStudyTimerChanged } from "@/hooks/useStudyTimerPresence";
+import { OPEN_FLOATING_STUDY_TIMER } from "@/components/FloatingStudyTimer";
 import { useSessionStudyStatus } from "@/hooks/useStudyStatus";
 import { TripApp } from "@/features/trip/TripApp";
 import type { CharacterTraits, Gender } from "@/components/CharacterAvatar";
@@ -1041,6 +1042,7 @@ const Sessions = ({ language, onBack, currentUserId }: { language: AppLanguage; 
   };
 
   const startSession = () => {
+    window.dispatchEvent(new Event(OPEN_FLOATING_STUDY_TIMER));
     void unlockTimerAudio();
     if (pomodoro) {
       if (pomodoroWorkMin < 1) setPomodoroWorkMin(DEFAULT_WORK_MIN);
