@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import QuickStudy from "./QuickStudy";
-import { loadQuickStudy, recommendQuickStudy } from "@/lib/quickStudy";
+import { loadQuickStudy, QUICK_STUDY_COUNTS, recommendQuickStudy } from "@/lib/quickStudy";
 import { getQuickStudyChapters, QUICK_STUDY_SUBJECTS } from "@/lib/quickStudySources";
 import { recordMistake, resolveMistake } from "@/lib/mistakes";
 import { recordTopicPractice } from "@/lib/topicMastery";
@@ -61,7 +61,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it("waits for a chapter, retains the planned capacitor topic, and grades two scoped bank questions", async () => {
+it("waits for a chapter, retains the planned capacitor topic, and grades scoped bank questions in a twenty-item round", async () => {
   rows.mcq_banks = [parallel, series, { ...parallel, id: "unrelated", chapter: 2, question: "Another chapter's question" }];
   rows.my_mistakes = [{ id: "miss-1", user_id: "student", subject: "physics", chapter: "1", resolved: false,
     question: parallel.question, ref_id: parallel.id, correct_answer: "Voltage" }];
@@ -75,11 +75,11 @@ it("waits for a chapter, retains the planned capacitor topic, and grades two sco
   fireEvent.change(screen.getByLabelText("Chapter or unit"), { target: { value: "1" } });
   await screen.findByText("From your plan");
   fireEvent.click(start);
-  expect(screen.getByText("From the ministerial bank")).toBeVisible();
+  expect(screen.getByText("Card 1 of 20")).toBeVisible();
   expect(screen.getByRole("heading", { name: "What remains constant in a parallel connection?" })).toBeVisible();
 
   fireEvent.click(screen.getByRole("button", { name: "Start questions" }));
-  expect(screen.getByText("Question 1 of 2")).toBeVisible();
+  expect(screen.getByText("Question 1 of 20")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Voltage" }));
   fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
   expect(screen.getByRole("status")).toHaveTextContent("Correct!");
@@ -89,16 +89,21 @@ it("waits for a chapter, retains the planned capacitor topic, and grades two sco
   fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
   expect(screen.getByRole("status")).toHaveTextContent("Correct answer Charge");
   expect(recordMistake).toHaveBeenCalledWith(expect.objectContaining({ refId: "series", correctAnswer: "Charge", userAnswer: "Voltage", subject: "physics", chapter: "1" }));
+  for (let index = 2; index < 20; index++) {
+    fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+    fireEvent.click(screen.getAllByRole("button", { pressed: false })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
+  }
   fireEvent.click(screen.getByRole("button", { name: "See result" }));
-  expect(screen.getByRole("status")).toHaveTextContent("1 of 2 correct");
+  expect(screen.getByRole("status")).toHaveTextContent("of 20 correct");
   expect(within(screen.getByRole("list")).getByText(series.question)).toBeVisible();
-  expect(recordTopicPractice).toHaveBeenCalledTimes(2);
+  expect(recordTopicPractice).toHaveBeenCalledTimes(20);
   expect(filters).toHaveBeenCalledWith("my_mistakes", "user_id", "student");
   fireEvent.click(screen.getByRole("button", { name: "Back to home" }));
   expect(onBack).toHaveBeenCalledOnce();
 });
 
-it("supplies a self-assessed five-minute round when the selected math chapter has no bank", async () => {
+it("provides eight cards with reveal and navigation, then eight automatically graded questions in a sparse chapter", async () => {
   openReview(["Capacitors – series and parallel"]);
   const subject = screen.getByLabelText("Subject");
   const chapter = screen.getByLabelText("Chapter or unit");
@@ -108,20 +113,37 @@ it("supplies a self-assessed five-minute round when the selected math chapter ha
   expect(chapter).toHaveValue("");
   fireEvent.change(chapter, { target: { value: "4" } });
   fireEvent.click(screen.getByRole("button", { name: /^5 minutes/ }));
+  expect(screen.getByText("8 flashcards · 8 MCQs")).toBeVisible();
   const start = screen.getByRole("button", { name: "Start review" });
   await waitFor(() => expect(start).toBeEnabled());
   fireEvent.click(start);
+  expect(screen.getByText("Card 1 of 8")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Evaluate ∫ (3x² − 4) dx." })).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Start questions" }));
-  expect(screen.getByText("Question 1 of 1")).toBeVisible();
-  expect(screen.queryByText(/result is 9/)).toBeNull();
-  expect(recordTopicPractice).not.toHaveBeenCalled();
+  expect(screen.queryByText("x³ − 4x + C.")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Reveal answer" }));
-  expect(screen.getByRole("status")).toHaveTextContent("The result is 9");
-  fireEvent.click(screen.getByRole("button", { name: "I need to review" }));
-  expect(recordTopicPractice).toHaveBeenCalledWith(expect.objectContaining({ subject: "math", chapter: "4", correct: false }));
+  expect(screen.getByText("x³ − 4x + C.")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Next card" }));
+  expect(screen.getByRole("button", { name: "Reveal answer" })).toBeVisible();
+  expect(screen.getByText("Card 2 of 8")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Previous card" }));
+  expect(screen.getByText("Card 1 of 8")).toBeVisible();
+  for (let index = 1; index < 8; index++) fireEvent.click(screen.getByRole("button", { name: "Next card" }));
+  expect(screen.getByText("Card 8 of 8")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Next card" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Start questions" }));
+  expect(screen.getByText("Question 1 of 8")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Reveal answer" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "4" }));
+  fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
+  expect(screen.getByRole("status")).toHaveTextContent("Correct!");
+  expect(recordTopicPractice).toHaveBeenCalledWith(expect.objectContaining({ subject: "math", chapter: "4", correct: true, source: "mcq_bank" }));
+  for (let index = 1; index < 8; index++) {
+    fireEvent.click(screen.getByRole("button", { name: "Next question" }));
+    fireEvent.click(screen.getAllByRole("button", { pressed: false })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Check answer" }));
+  }
   fireEvent.click(screen.getByRole("button", { name: "See result" }));
-  expect(screen.getByText(/use your self-assessment/)).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("of 8 correct");
   fireEvent.click(screen.getByRole("button", { name: "Choose a chapter" }));
   expect(screen.getByLabelText("Chapter or unit")).toHaveValue("4");
 });
@@ -136,18 +158,27 @@ it("distinguishes the two sets of Arabic chapter numbers using the actual topic 
   expect(data.questions.map(question => question.id)).toEqual(["exclamation"]);
 });
 
-it("provides a review and two distinct questions for every chapter with no database content", async () => {
+it("provides distinct flashcards and automatically graded MCQs in both lengths for every chapter", async () => {
   const signal = new AbortController().signal;
+  const gaps: string[] = [];
   for (const language of ["ar", "en"] as const) {
     await Promise.all(QUICK_STUDY_SUBJECTS.flatMap(({ id: subject }) => getQuickStudyChapters(subject).map(async ({ key: chapter }) => {
       const selection = { subject, chapter };
       const data = await loadQuickStudy(selection, language, null, signal);
-      const round = recommendQuickStudy({ selection, data, language, count: 2, plannedTexts: [], profile: null });
-      const label = `${subject}/${chapter}/${language}`;
-      expect(round?.cards.length, label).toBeGreaterThan(0);
-      expect(round?.questions, label).toHaveLength(2);
-      const prompts = [...round!.cards.map(card => card.q), ...round!.questions.map(question => question.question)];
-      expect(new Set(prompts).size, label).toBe(prompts.length);
+      for (const count of Object.values(QUICK_STUDY_COUNTS)) {
+        const round = recommendQuickStudy({ selection, data, language, count, plannedTexts: [], profile: null });
+        const label = `${subject}/${chapter}/${language}/${count}`;
+        if (round?.cards.length !== count || round?.questions.length !== count) {
+          gaps.push(`${label}: ${round?.cards.length ?? 0} cards & ${round?.questions.length ?? 0} MCQs`);
+          continue;
+        }
+        expect(new Set(round.cards.map(card => card.q)).size, label).toBe(count);
+        expect(new Set(round.questions.map(question => question.question)).size, label).toBe(count);
+        expect(round.questions.every(question => question.choices.length >= 2 &&
+          question.choices.length === new Set(question.choices).size &&
+          Boolean(question.choices[question.answer_index])), label).toBe(true);
+      }
     })));
   }
+  expect(gaps.sort()).toEqual([]);
 }, 20_000);

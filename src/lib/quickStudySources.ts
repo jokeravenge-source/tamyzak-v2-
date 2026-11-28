@@ -1,4 +1,5 @@
 import type { AppLanguage } from "@/components/LanguageGate";
+import type { PracticeItem } from "@/lib/quickStudyChoices";
 import { getFlashcardChapters } from "@/data/flashcardChapters";
 import { loadSource, type SourceCard } from "@/features/pdf-builder/bankSources";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,12 @@ import { PAPER_REVIEW_SUBJECTS, type PaperChapter, type PaperSubjectId } from ".
 export { PAPER_REVIEW_SUBJECTS as QUICK_STUDY_SUBJECTS };
 
 export type QuickStudySelection = { subject: PaperSubjectId; chapter: string };
-export type QuickStudyCards = { flashcards: readonly SourceCard[]; ministerial: readonly SourceCard[]; exercises: readonly SourceCard[] };
+export type QuickStudyCards = {
+  flashcards: readonly SourceCard[];
+  ministerial: readonly SourceCard[];
+  exercises: readonly SourceCard[];
+  practice: readonly PracticeItem[];
+};
 
 const englishLiterature = getFlashcardChapters("english", "literature").map(item => ({
   key: `literature-${item.n}`,
@@ -128,18 +134,21 @@ function loadMinisterial({ subject, chapter }: QuickStudySelection, language: Ap
 }
 
 export async function loadQuickStudyCards(selection: QuickStudySelection, language: AppLanguage, signal: AbortSignal) {
-  const [flashcards, ministerial, supplemental] = await Promise.allSettled([
+  const [flashcards, ministerial, supplemental, practice] = await Promise.allSettled([
     loadFlashcards(selection, language, signal),
     loadMinisterial(selection, language),
     import("@/data/quickStudySupplement").then(({ getQuickStudySupplement }) =>
       getQuickStudySupplement(selection.subject, selection.chapter, language)),
+    import("@/data/quickStudyPractice").then(({ getQuickStudyPractice }) =>
+      getQuickStudyPractice(selection.subject, selection.chapter, language)),
   ]);
   const cards: QuickStudyCards = {
     flashcards: flashcards.status === "fulfilled" ? flashcards.value : [],
     ministerial: ministerial.status === "fulfilled" ? ministerial.value : [],
     exercises: supplemental.status === "fulfilled" ? supplemental.value : [],
+    practice: practice.status === "fulfilled" ? practice.value : [],
   };
-  return { ...cards, unavailable: [flashcards, ministerial, supplemental].some(result => result.status === "rejected") };
+  return { ...cards, unavailable: [flashcards, ministerial, supplemental, practice].some(result => result.status === "rejected") };
 }
 
 const builtInMcqs: Record<string, (language: AppLanguage) => Promise<Awaited<ReturnType<typeof import("@/lib/physicsChapter2Mcqs").getBuiltInPhysicsCh2>>>> = {

@@ -3,7 +3,8 @@ import type { SourceCard } from "@/features/pdf-builder/bankSources";
 import { supabase } from "@/integrations/supabase/client";
 import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 import { normalizeStudySearch } from "@/lib/studySearch";
-import { topicForQuestion } from "@/lib/topicMastery";
+import { questionKey, topicForQuestion } from "@/lib/topicMastery";
+import { buildCardChoiceItems, practiceChoices, type PracticeItem } from "@/lib/quickStudyChoices";
 import type { WeeklyLearningProfile } from "@/lib/weeklyLearning";
 import {
   getQuickStudyBankScope,
@@ -14,6 +15,8 @@ import {
   type QuickStudyCards,
   type QuickStudySelection,
 } from "@/lib/quickStudySources";
+
+export const QUICK_STUDY_COUNTS = { 5: 8, 15: 20 } as const;
 
 const QUICK_STUDY_SUBJECT = "physics";
 const QUICK_STUDY_CHAPTER = 1;
@@ -68,13 +71,12 @@ function matchesPlan(topic: Topic, planText: string) {
   return topics[topic].planTerms.some(term => text.includes(normalizeStudySearch(term)));
 }
 
-function recommendCapacitors({ questions, mistakes, plannedTexts, profile, language, count, deck }: {
+function recommendCapacitors({ questions, mistakes, plannedTexts, profile, language, deck }: {
   questions: BankQuestion[];
   mistakes: RecentMistake[];
   plannedTexts: string[];
   profile: WeeklyLearningProfile | null;
   language: AppLanguage;
-  count: number;
   deck: readonly SourceCard[];
 }) {
   const available = topicKeys.flatMap(topic => {
@@ -83,7 +85,7 @@ function recommendCapacitors({ questions, mistakes, plannedTexts, profile, langu
       return (sectionTopics.get(normalizeStudySearch(section)) ?? topicOfQuestion(question.question, section)) === topic;
     });
     const unique = [...new Map(matches.map(question => [normalizeStudySearch(question.question), question])).values()];
-    return unique.length >= count ? [{ topic, questions: unique }] : [];
+    return unique.length ? [{ topic, questions: unique }] : [];
   });
   if (!available.length) return null;
 
@@ -109,15 +111,13 @@ function recommendCapacitors({ questions, mistakes, plannedTexts, profile, langu
     title: config.title[language],
     reason,
     cards: config.cards[language].map(index => deck[index]).filter(Boolean),
-    questions: picked.questions.sort((a, b) => missedFirst(a) - missedFirst(b) || order(a) - order(b)).slice(0, count),
+    questions: picked.questions.sort((a, b) => missedFirst(a) - missedFirst(b) || order(a) - order(b)),
   };
 }
 
 type ReviewSource = "flashcard" | "ministerial" | "exercise" | "mcq";
 export type ReviewCard = SourceCard & { source: ReviewSource };
-export type QuickStudyQuestion =
-  | (BankQuestion & { kind: "mcq" })
-  | (ReviewCard & { kind: "recall"; id: string; question: string });
+export type QuickStudyQuestion = BankQuestion & { source: "bank" | "practice" | "cardPractice" };
 
 type QuickStudyData = QuickStudyCards & { questions: BankQuestion[]; mistakes: RecentMistake[]; unavailable: boolean };
 
@@ -169,51 +169,69 @@ export function recommendQuickStudy({ selection, data, plannedTexts, profile, la
   count: number;
 }) {
   const isCapacitors = selection.subject === QUICK_STUDY_SUBJECT && selection.chapter === String(QUICK_STUDY_CHAPTER);
-  const pilot = isCapacitors ? recommendCapacitors({ ...data, plannedTexts, profile, language, count, deck: data.flashcards }) : null;
+  const pilot = isCapacitors ? recommendCapacitors({ ...data, plannedTexts, profile, language, deck: data.flashcards }) : null;
   const missed = new Set(data.mistakes.flatMap(mistake => [mistake.ref_id, normalizeStudySearch(mistake.question)]));
   const recentMistake = (question: BankQuestion) => missed.has(question.id) || missed.has(normalizeStudySearch(question.question));
-  const bank = pilot?.questions ?? [...data.questions].sort((a, b) => Number(recentMistake(b)) - Number(recentMistake(a)));
+  const bank = [...(pilot?.questions ?? []), ...data.questions].sort((a, b) => Number(recentMistake(b)) - Number(recentMistake(a)));
 
-  const flashcards = withSource(pilot?.cards.length ? pilot.cards : data.flashcards, "flashcard");
+  const flashcards = withSource([...(pilot?.cards ?? []), ...data.flashcards], "flashcard");
   const ministerial = withSource(data.ministerial, "ministerial");
-  const exercises = withSource(data.exercises, "exercise");
-  const questions: QuickStudyQuestion[] = bank.slice(0, count).map(question => ({ ...question, kind: "mcq" }));
-  const used = new Set(questions.map(question => normalizeStudySearch(question.question)));
+  const exercises = withSource([...data.exercises, ...data.practice], "exercise");
+  const studySources = [...flashcards, ...ministerial, ...exercises];
 
-  const cards: ReviewCard[] = [];
-  const addReview = (items: readonly ReviewCard[]) => {
-    const card = items.find(item => !used.has(normalizeStudySearch(item.q)));
-    if (card) {
-      cards.push(card);
-      used.add(normalizeStudySearch(card.q));
+  const questions: QuickStudyQuestion[] = [];
+  const quizPrompts = new Set<string>();
+  const quizSourcePrompts = new Set<string>();
+  const addQuestion = (question: QuickStudyQuestion, sourcePrompt = question.question) => {
+    const key = normalizeStudySearch(question.question);
+    if (questions.length >= count || quizPrompts.has(key)) return;
+    quizPrompts.add(key);
+    quizSourcePrompts.add(normalizeStudySearch(sourcePrompt));
+    questions.push(question);
+  };
+  for (const question of bank) addQuestion({ ...question, source: "bank" });
+
+  const addPractice = (items: readonly PracticeItem[], source: "practice" | "cardPractice") => {
+    for (const item of items) {
+      if (questions.length >= count) break;
+      const options = practiceChoices(item);
+      if (!options) continue;
+      addQuestion({
+        ...options, source, id: `quick-study:${selection.subject}:${selection.chapter}:${questionKey(item.q)}`,
+        question: item.q, explanation: item.explanation ?? null, section: null, sort_order: Number.MAX_SAFE_INTEGER,
+      }, item.sourcePrompt);
     }
   };
-  addReview([...flashcards, ...exercises, ...ministerial]);
-  // Keep a second item in reserve for recall if the chapter has no graded questions.
-  if (questions.length === count) addReview([...ministerial, ...flashcards, ...exercises]);
-  for (const card of [...ministerial, ...flashcards, ...exercises]) {
-    if (questions.length >= count) break;
-    const key = normalizeStudySearch(card.q);
-    if (used.has(key)) continue;
-    used.add(key);
-    questions.push({ ...card, kind: "recall", id: `${card.source}:${key}`, question: card.q });
+  addPractice(data.practice, "practice");
+  if (questions.length < count) {
+    const preferredReview = new Set(pilot?.cards.map(card => normalizeStudySearch(card.q)));
+    const reserved = (item: PracticeItem) => Number(preferredReview.has(normalizeStudySearch(item.sourcePrompt ?? item.q)));
+    addPractice(buildCardChoiceItems(studySources, language).sort((a, b) => reserved(a) - reserved(b)), "cardPractice");
   }
 
-  if (!questions.length && cards.length) {
-    const card = cards[0];
-    questions.push({ ...card, kind: "recall", id: `${card.source}:${card.q}`, question: card.q });
-  }
-  if (!questions.length) return null;
-
-  if (!cards.length && questions[0].kind === "mcq") {
-    const extra = bank.find(question => !used.has(normalizeStudySearch(question.question))) ?? questions[0];
-    const answer = extra.choices[extra.answer_index];
-    cards.push({ q: extra.question, a: extra.explanation ? `${answer}\n${extra.explanation}` : answer, source: "mcq" });
-  }
+  const bankCards = withSource(bank.map(question => ({
+    q: question.question, a: question.explanation ? `${quickStudyAnswer(question)}
+${question.explanation}` : quickStudyAnswer(question),
+  })), "mcq");
+  const cards: ReviewCard[] = [];
+  const reviewPrompts = new Set<string>();
+  const addCards = (items: ReviewCard[], includeQuizPrompts = false) => {
+    for (const card of items) {
+      if (cards.length >= count) break;
+      const key = normalizeStudySearch(card.q);
+      if (reviewPrompts.has(key) || (!includeQuizPrompts && quizSourcePrompts.has(key))) continue;
+      reviewPrompts.add(key);
+      cards.push(card);
+    }
+  };
+  addCards([...studySources, ...bankCards]);
+  // When the chapter has a small deck, use quiz material for revision before testing the same concepts.
+  addCards([...studySources, ...bankCards], true);
+  if (!cards.length || !questions.length) return null;
   const reason = pilot?.reason ?? (bank[0] && recentMistake(bank[0]) ? "mistake" : "chapter");
   return { title: pilot?.title, reason, cards, questions, selection, mistakes: data.mistakes };
 }
 
-export function quickStudyAnswer(question: QuickStudyQuestion) {
-  return question.kind === "mcq" ? question.choices[question.answer_index] : question.a;
+export function quickStudyAnswer(question: Pick<BankQuestion, "choices" | "answer_index">) {
+  return question.choices[question.answer_index];
 }
