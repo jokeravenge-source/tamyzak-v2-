@@ -1,0 +1,44 @@
+/* Scoped, client-rendered study lounge. No global theme or timer changes. */
+.tmz-lounge {
+  position: relative; isolation: isolate; overflow: hidden; border-radius: 1.5rem;
+  border: 1px solid hsl(var(--border)); min-height: 260px;
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--secondary)) 57%, hsl(var(--muted)) 57%, hsl(var(--card)));
+  box-shadow: inset 0 1px 0 #ffffff18, 0 14px 32px -24px #17122c99;
+}
+.tmz-lounge-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.tmz-lounge-wall { position: absolute; inset: 0 0 auto; height: 180px; background: radial-gradient(ellipse at 18% 24%, #ffbf8b30, transparent 66%), radial-gradient(ellipse at 85% 8%, hsl(var(--primary)/.21), transparent 70%); }
+.tmz-lounge-window { position: absolute; top: 18px; inset-inline-start: 6%; width: 34%; max-width: 220px; height: 110px; overflow: hidden; border: 5px solid #69536f; border-radius: 44px 44px 8px 8px; background: linear-gradient(#575f9f,#a385c1 45%,#f2a58f 80%,#ffcf94); box-shadow: 0 3px 12px #17122440, inset 0 0 20px #e6a7c344; }
+.tmz-lounge-window::before { content: ""; position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #ffe0ac; bottom: 28px; inset-inline-end: 22%; box-shadow: 0 0 20px #ffb96a; }
+.tmz-lounge-window::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,transparent 48%,#69536f 48% 52%,transparent 52%), linear-gradient(0deg,transparent 48%,#69536f 48% 52%,transparent 52%); }
+.tmz-lounge-city { position: absolute; inset: auto 0 0; height: 46%; display: flex; align-items: end; gap: 4px; }
+.tmz-lounge-city i { display: block; flex: 1; background: repeating-linear-gradient(90deg,transparent 0 5px,#f4c99188 5px 8px,transparent 8px 12px), linear-gradient(#615982,#3a345b); border-radius: 2px 2px 0 0; }
+.tmz-lounge-sign { position: absolute; top: 28px; inset-inline-end: 7%; display: grid; place-items: center; gap: 3px; width: 43%; color: hsl(var(--foreground)); font-weight: 850; font-size: clamp(10px,2.3vw,17px); letter-spacing: .08em; text-align:center; }
+.tmz-lounge-sign svg { color: hsl(var(--primary)); filter: drop-shadow(0 0 9px hsl(var(--primary)/.6)); }
+.tmz-lounge-sign small { color: hsl(var(--muted-foreground)); font-weight: 600; font-size: 10px; letter-spacing: .1em; }
+.tmz-lounge-shelf { position: absolute; top: 105px; inset-inline-end: 9%; width: 29%; height: 7px; border-radius: 3px; background: linear-gradient(#b68e79,#775766); box-shadow: 0 5px 10px #301b2a33; }
+.tmz-lounge-shelf i { position:absolute; bottom:7px; width: 11%; height: 26px; border-radius: 2px 2px 0 0; box-shadow: inset 2px 0 #ffffff30; }
+.tmz-lounge-shelf i:nth-child(1){inset-inline-start:8%;background:#9d86ca;height:27px}
+.tmz-lounge-shelf i:nth-child(2){inset-inline-start:21%;background:#d5a27e;height:35px}
+.tmz-lounge-shelf i:nth-child(3){inset-inline-start:34%;background:#6fa7a1;height:29px;transform:rotate(-9deg)}
+.tmz-lounge-shelf i:nth-child(4){inset-inline-end:7%;width:23%;height:15px;background:#c68e76;border-radius:2px 2px 7px 7px}
+.tmz-lounge-shelf i:nth-child(4)::before{content:"";position:absolute;bottom:11px;left:0;width:100%;height:29px;background:radial-gradient(ellipse at 25% 35%,#7eae82 0 22%,transparent 24%),radial-gradient(ellipse at 75% 55%,#507b62 0 29%,transparent 31%),radial-gradient(ellipse at 55% 25%,#689b75 0 24%,transparent 26%)}
+.tmz-lounge-floor { position:absolute;inset:145px 0 0;background:linear-gradient(180deg,hsl(var(--muted)/.4),transparent 70%),repeating-linear-gradient(0deg,transparent 0 52px,hsl(var(--border)/.32) 53px 54px);border-top:3px solid hsl(var(--border)/.7); }
+.tmz-lounge .tmz-lounge-people { position:relative; z-index:1; display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:center; gap:16px 12px; padding:145px 10px 20px; }
+.tmz-lounge-empty { position:relative; z-index:1; display:grid; place-items:center; min-height:260px; padding:150px 12px 20px; text-align:center; }
+.tmz-lounge .tmz-seat { width: min(132px, 100%); min-width:0; }
+.tmz-lounge .tmz-desk { position:relative; width:122px; height:118px; max-width:100%; display:flex; align-items:flex-start; justify-content:center; isolation:isolate; }
+.tmz-desk::before { content:""; position:absolute; z-index:-1; left:21%;right:21%;top:24%;bottom:15%;border-radius:22px 22px 9px 9px;background:linear-gradient(145deg,#a18db5,#514667);box-shadow:inset 0 2px 2px #ffffff35, 2px 5px 7px #211a3144; }
+.tmz-desk-avatar { position:relative; z-index:1; filter:drop-shadow(0 3px 3px #2a203744); }
+.tmz-desk-lamp { position:absolute; z-index:0; inset-inline-start:5px; top:20px; width:22px; height:61px; border-inline-start:3px solid #7e6478; border-top:3px solid #7e6478; border-radius:14px 0 0 0; }
+.tmz-desk-lamp::before {content:"";position:absolute;inset-inline-start:8px;top:-4px;width:23px;height:10px;border-radius:9px 9px 3px 3px;background:linear-gradient(#a18690,#f6bc7e);box-shadow:0 5px 16px 5px #ffc47b55}
+.tmz-desk-top { position:absolute;z-index:2;inset-inline:0;top:82px;height:13px;border-radius:5px;background:linear-gradient(180deg,#f3c697,#be8e75 60%,#976978);box-shadow:0 3px 4px #32223d44; }
+.tmz-desk-front { position:absolute;z-index:0;inset-inline:9%;top:94px;height:17px;border-inline:4px solid #8e697a;background:linear-gradient(#775d78,#51465e);border-radius:0 0 5px 5px;box-shadow:0 5px 8px -4px #21152d77; }
+.tmz-desk-books {position:absolute;z-index:3;inset-inline-end:5px;top:73px;width:24px;height:9px;border-radius:2px;background:linear-gradient(#a695d2 0 33%,#f3e3c7 33% 65%,#669b9a 65%);box-shadow:0 1px 2px #51384c55}
+.tmz-desk-cup {position:absolute;z-index:3;inset-inline-end:7px;top:64px;width:12px;height:15px;border-radius:2px 2px 4px 4px;background:linear-gradient(90deg,#f1d7bb,#c79ca2);box-shadow:1px 2px 2px #52394d55}
+.tmz-desk-cup::after {content:"";position:absolute;right:-4px;top:3px;width:5px;height:7px;border:2px solid #d9b8ac;border-radius:50%}
+.tmz-status { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:650; padding:3px 7px; border-radius:999px; background:hsl(var(--background)/.85); color:hsl(var(--foreground)); border:1px solid hsl(var(--border)); white-space:nowrap; }
+.tmz-status::before { content:""; width:6px;height:6px;border-radius:50%;background:#9ca3af; }
+.tmz-status[data-state="focus"]::before { background:#36b981;box-shadow:0 0 7px #36b98180; }
+.tmz-status[data-state="break"]::before { background:#e3a04c; }
+@media(max-width:360px){.tmz-lounge .tmz-seat{width:116px}.tmz-lounge .tmz-lounge-people{gap:12px 6px;padding-inline:5px}.tmz-desk{width:112px}}
+@media(prefers-reduced-motion:no-preference){.tmz-desk[data-state="break"] .tmz-desk-cup{animation:tmz-cup 3.5s ease-in-out infinite}@keyframes tmz-cup{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}}
