@@ -1,42 +1,61 @@
-import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, Clock3, RotateCcw, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { skipToken, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Clock3, Eye, RotateCcw, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
+import { TextStudyContent } from "@/components/TextStudyContent";
 import { Button } from "@/components/ui/button";
 import { useCharacterPractice } from "@/hooks/useCharacterPractice";
 import { recordMistake, resolveMistake } from "@/lib/mistakes";
-import { loadQuickStudy, QUICK_STUDY_CHAPTER, QUICK_STUDY_SUBJECT, recommendQuickStudy } from "@/lib/quickStudy";
-import { recordTopicPractice } from "@/lib/topicMastery";
+import { loadQuickStudy, quickStudyAnswer, recommendQuickStudy, type ReviewCard } from "@/lib/quickStudy";
+import { getQuickStudyChapters, getQuickStudyProgressScope, QUICK_STUDY_SUBJECTS, type QuickStudySelection } from "@/lib/quickStudySources";
+import { questionKey, recordTopicPractice } from "@/lib/topicMastery";
 import { cn } from "@/lib/utils";
 import type { WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 const copy = {
   ar: {
-    chapter: "الفيزياء · الفصل الأول · المتسعات", choose: "شكد عندك وقت؟",
-    minutes: "دقايق", fifteen: "دقيقة", one: "مراجعة وسؤال واحد", two: "مراجعة وسؤالين",
-    loading: "دا نجهّز التدريب…", unavailable: "تعذّر تحميل الأسئلة. جرّب مرة ثانية.", empty: "ماكو أسئلة كافية للمراجعة السريعة هسه.",
-    retry: "جرّب مرة ثانية", start: "ابدأ المراجعة", review: "راجع هالفكرة", sources: "من فلاش كاردات الفصل الأول", quiz: "ابدأ الأسئلة",
+    intro: "اختار المادة والفصل اللي تريد تراجعه هسه",
+    subject: "المادة", subjectPlaceholder: "اختار المادة", chapter: "الفصل أو الوحدة", chapterPlaceholder: "اختار الفصل أو الوحدة",
+    choose: "شكد عندك وقت؟", minutes: "دقايق", fifteen: "دقيقة", one: "مراجعة وسؤال واحد", two: "مراجعة ولحد سؤالين",
+    loading: "دا نجهّز مراجعة الفصل…", unavailable: "تعذّر تحميل مراجعة الفصل. جرّب مرة ثانية.",
+    empty: "ماكو تدريب متوفر لهالفصل حاليًا.",
+    retry: "جرّب مرة ثانية", start: "ابدأ المراجعة", review: "راجع قبل ما تجاوب", quiz: "ابدأ الأسئلة",
     plan: "من خطتك", mistake: "من أخطائك الأخيرة", next: "السؤال الجاي", check: "ثبّت الإجابة", result: "شوف النتيجة",
     right: "صح!", wrong: "تحتاج مراجعة", answer: "الجواب الصحيح",
-    summary: "خلصت المراجعة السريعة", missed: "الأسئلة اللي تحتاج ترجع لها", allRight: "حليت كل أسئلة هالجولة صح.",
-    reviewAgain: "راجع الفكرة مرة ثانية", back: "العودة للرئيسية",
+    reveal: "اكشف الجواب", recall: "جاوب من ذاكرتك أو عالورقة، بعدها قارن جوابك.", knew: "عرفت الجواب", missedIt: "أحتاج أراجعه",
+    summary: "خلصت المراجعة السريعة", missed: "الأسئلة اللي تحتاج ترجع لها",
+    selfAssessed: "أسئلة الاسترجاع حسب تقييمك بعد كشف الجواب.",
+    reviewAgain: "أعيد المراجعة", change: "اختيار فصل", back: "العودة للرئيسية",
+    flashcard: "فلاش كارد", ministerial: "من بنك الوزاريات", exercise: "تمرين مراجعة", mcq: "بنك الاختيار من متعدد",
   },
   en: {
-    chapter: "Physics · Chapter 1 · Capacitors", choose: "How much time do you have?",
-    minutes: "minutes", fifteen: "minutes", one: "Review and one question", two: "Review and two questions",
-    loading: "Preparing your practice…", unavailable: "Could not load the questions. Try again.", empty: "There aren’t enough questions for quick study right now.",
-    retry: "Try again", start: "Start review", review: "Review the topic", sources: "From the Chapter 1 flashcards", quiz: "Start questions",
+    intro: "Choose what to review right now",
+    subject: "Subject", subjectPlaceholder: "Choose a subject", chapter: "Chapter or unit", chapterPlaceholder: "Choose a chapter or unit",
+    choose: "How much time do you have?", minutes: "minutes", fifteen: "minutes", one: "Review and one question", two: "Review and up to two questions",
+    loading: "Preparing this chapter’s review…", unavailable: "Could not load this chapter’s review. Try again.",
+    empty: "Quick practice is currently unavailable for this chapter.",
+    retry: "Try again", start: "Start review", review: "Review before answering", quiz: "Start questions",
     plan: "From your plan", mistake: "From your recent mistakes", next: "Next question", check: "Check answer", result: "See result",
     right: "Correct!", wrong: "Needs review", answer: "Correct answer",
-    summary: "Quick study complete", missed: "Questions to revisit", allRight: "You got every question in this round right.",
-    reviewAgain: "Review the topic again", back: "Back to home",
+    reveal: "Reveal answer", recall: "Answer from memory or on paper, then compare with the answer.", knew: "I knew the answer", missedIt: "I need to review",
+    summary: "Quick study complete", missed: "Questions to revisit",
+    selfAssessed: "Recall questions use your self-assessment after you reveal the answer.",
+    reviewAgain: "Review again", change: "Choose a chapter", back: "Back to home",
+    flashcard: "Flashcard", ministerial: "From the ministerial bank", exercise: "Review exercise", mcq: "Multiple-choice bank",
   },
 } as const;
 
-const panel = "rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6";
-const primary = "min-h-12 w-full gap-2 rounded-xl font-bold";
+const panel = "rounded-3xl border border-border/70 bg-card/90 p-4 shadow-sm sm:p-6";
+const primary = "min-h-12 w-full gap-2 rounded-xl text-base font-bold";
+const selectControl = "w-full appearance-none rounded-xl border border-border bg-background py-3 ps-3 pe-9 text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-55";
 type Phase = "setup" | "review" | "quiz" | "summary";
 type Recommendation = NonNullable<ReturnType<typeof recommendQuickStudy>>;
+
+function CardAnswer({ card }: { card: ReviewCard }) {
+  return card.answerBlocks?.length
+    ? <TextStudyContent blocks={card.answerBlocks} />
+    : <p className="whitespace-pre-line break-words text-sm leading-7" dir="auto">{card.a}</p>;
+}
 
 export default function QuickStudy({ language, userId, plannedTexts, profile, onBack }: {
   language: AppLanguage;
@@ -49,25 +68,37 @@ export default function QuickStudy({ language, userId, plannedTexts, profile, on
   const ar = language === "ar";
   const n = (value: number) => new Intl.NumberFormat(ar ? "ar-IQ" : "en").format(value);
   const Arrow = ar ? ArrowLeft : ArrowRight;
+  const [subject, setSubject] = useState<QuickStudySelection["subject"] | "">("");
+  const [chapter, setChapter] = useState("");
   const [minutes, setMinutes] = useState<5 | 15>(15);
   const [phase, setPhase] = useState<Phase>("setup");
   const [round, setRound] = useState<Recommendation | null>(null);
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [revealed, setRevealed] = useState(false);
+  const [answers, setAnswers] = useState<boolean[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
+  const subjectSelect = useRef<HTMLSelectElement>(null);
+  const subjectId = useId();
+  const chapterId = useId();
+  const chapters = getQuickStudyChapters(subject);
+  const subjectTitle = QUICK_STUDY_SUBJECTS.find(item => item.id === subject)?.[language];
+  const chapterTitle = chapters.find(item => item.key === chapter)?.[language];
+  const selection = subject && chapterTitle ? { subject, chapter } : null;
+  const showChapterNumbers = subject === "physics" || subject === "chemistry" || subject === "biology" || subject === "math";
   const query = useQuery({
-    queryKey: ["quick-study", language, userId],
-    queryFn: () => loadQuickStudy(language, userId),
+    queryKey: ["quick-study", subject, chapter, language, userId],
+    queryFn: selection ? ({ signal }) => loadQuickStudy(selection, language, userId, signal) : skipToken,
+    staleTime: 3 * 60 * 1000,
     retry: false,
   });
-  const recommendation = query.data && recommendQuickStudy({
-    ...query.data, plannedTexts, profile, language, count: minutes === 5 ? 1 : 2,
+  const recommendation = query.data && selection && recommendQuickStudy({
+    selection, data: query.data, plannedTexts, profile, language, count: minutes === 5 ? 1 : 2,
   });
   const topic = round ?? recommendation;
   const question = round?.questions[index];
   const checked = answers[index] !== undefined;
-  const correct = checked && answers[index] === question?.answer_index;
+  const correct = answers[index];
   useCharacterPractice(phase === "quiz" && Boolean(question));
 
   useEffect(() => {
@@ -79,29 +110,37 @@ export default function QuickStudy({ language, userId, plannedTexts, profile, on
   const start = () => {
     if (!recommendation) return;
     setRound(recommendation);
+    setIndex(0);
     setPhase("review");
   };
 
   const startQuiz = () => {
     setAnswers([]);
     setChoice(null);
+    setRevealed(false);
     setIndex(0);
     setPhase("quiz");
   };
 
-  const check = () => {
-    if (!question || choice === null || checked) return;
-    const isCorrect = choice === question.answer_index;
-    setAnswers(previous => [...previous, choice]);
-    void recordTopicPractice({ subject: QUICK_STUDY_SUBJECT, chapter: QUICK_STUDY_CHAPTER,
-      question: question.question, context: question.section ?? "", source: "mcq_bank", correct: isCorrect });
+  const grade = (isCorrect: boolean) => {
+    if (!question || !round || checked) return;
+    setAnswers(previous => [...previous, isCorrect]);
+    if (!userId) return;
+    const scope = getQuickStudyProgressScope(round.selection);
+    const answer = quickStudyAnswer(question);
+    const isMcq = question.kind === "mcq";
+    const ministerial = question.kind === "recall" && question.source === "ministerial";
+    const refId = isMcq ? question.id : `quick-study:${question.source}:${questionKey(question.question)}`;
+    void recordTopicPractice({ ...scope, question: question.question, context: isMcq ? question.section ?? "" : answer,
+      source: isMcq ? "mcq_bank" : ministerial ? "ministerial_bank" : "flashcards", correct: isCorrect });
     if (isCorrect) {
-      const previous = query.data?.mistakes.find(mistake => mistake.ref_id === question.id);
+      const previous = round.mistakes.find(mistake => mistake.ref_id === refId);
       if (previous) void resolveMistake(previous.id, true);
     } else {
-      void recordMistake({ source: "mcq_bank", subject: QUICK_STUDY_SUBJECT, chapter: String(QUICK_STUDY_CHAPTER), language,
-        refId: question.id, question: question.question, choices: question.choices, userAnswer: question.choices[choice],
-        correctAnswer: question.choices[question.answer_index], explanation: question.explanation });
+      void recordMistake({ ...scope, source: isMcq ? "mcq_bank" : ministerial ? "ministerial_questions" : "flashcard", language,
+        refId, question: question.question, choices: isMcq ? question.choices : undefined,
+        userAnswer: isMcq && choice !== null ? question.choices[choice] : undefined,
+        correctAnswer: answer, explanation: isMcq ? question.explanation : undefined });
     }
   };
 
@@ -110,71 +149,136 @@ export default function QuickStudy({ language, userId, plannedTexts, profile, on
     if (index + 1 === round.questions.length) setPhase("summary");
     else {
       setChoice(null);
+      setRevealed(false);
       setIndex(index + 1);
     }
   };
 
-  const missed = round?.questions.filter((item, i) => answers[i] !== item.answer_index) ?? [];
+  const changeChapter = () => {
+    setRound(null);
+    setPhase("setup");
+    requestAnimationFrame(() => subjectSelect.current?.focus());
+  };
+
+  const missed = round?.questions.filter((_, i) => answers[i] === false) ?? [];
+  const seenSelfAssessment = round?.questions.some(item => item.kind === "recall");
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div dir={ar ? "rtl" : "ltr"} className="mx-auto max-w-2xl space-y-4">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#102749] via-[#19447b] to-[#135678] p-5 text-white shadow-[0_18px_38px_-24px_#0d467e] sm:p-7">
-        <div className="flex items-center gap-3 text-sm font-semibold text-sky-100">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15"><Clock3 aria-hidden="true" className="size-5" /></span>
-          <span>{t.chapter}</span>
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15"><Clock3 aria-hidden="true" className="size-5" /></span>
+          {subjectTitle && chapterTitle ? <div>
+            <p className="text-xs font-bold text-sky-100 sm:text-sm">{subjectTitle}</p>
+            <p className="mt-0.5 text-xl font-black leading-snug sm:text-2xl">{chapterTitle}</p>
+          </div> : <p className="text-lg font-black leading-snug sm:text-xl">{t.intro}</p>}
         </div>
-        {topic && <p className="mt-3 text-2xl font-black leading-snug sm:text-3xl">{topic.title}</p>}
+        {topic?.title && <p className="mt-3 text-sm font-bold text-sky-100">{topic.title}</p>}
         {phase === "setup" && topic && topic.reason !== "chapter" && <p className="mt-1.5 text-sm text-sky-100">{t[topic.reason]}</p>}
       </section>
 
       {phase === "setup" && <section className={panel}>
+        <div className="mb-5 grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5 text-sm font-black">
+            <label htmlFor={subjectId} className="block">{t.subject}</label>
+            <span className="relative block">
+              <select id={subjectId} ref={subjectSelect} value={subject} className={selectControl} onChange={event => {
+                const picked = QUICK_STUDY_SUBJECTS.find(item => item.id === event.target.value);
+                setSubject(picked?.id ?? "");
+                setChapter("");
+              }}>
+                <option value="">{t.subjectPlaceholder}</option>
+                {QUICK_STUDY_SUBJECTS.map(item => <option key={item.id} value={item.id}>{item[language]}</option>)}
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            </span>
+          </div>
+          <div className="space-y-1.5 text-sm font-black">
+            <label htmlFor={chapterId} className="block">{t.chapter}</label>
+            <span className="relative block">
+              <select id={chapterId} value={chapter} className={selectControl} disabled={!subject} onChange={event => setChapter(event.target.value)}>
+                <option value="">{t.chapterPlaceholder}</option>
+                {chapters.map(item => <option key={item.key} value={item.key}>
+                  {showChapterNumbers && /^\d+$/.test(item.key) ? `${n(Number(item.key))} · ` : ""}{item[language]}
+                </option>)}
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            </span>
+          </div>
+        </div>
         <fieldset>
-          <legend className="mb-3 font-black">{t.choose}</legend>
+          <legend className="mb-2.5 text-sm font-black">{t.choose}</legend>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {([5, 15] as const).map(duration => <button key={duration} type="button" aria-pressed={minutes === duration} onClick={() => setMinutes(duration)}
-              className="min-h-24 rounded-2xl border border-border bg-background p-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary aria-pressed:border-primary aria-pressed:bg-primary/10">
+              className="min-h-20 rounded-2xl border border-border bg-background p-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary aria-pressed:border-primary aria-pressed:bg-primary/10">
               <span className="block text-lg font-black">{n(duration)} {duration === 5 ? t.minutes : t.fifteen}</span>
               <span className="mt-1 block text-xs font-semibold text-muted-foreground sm:text-sm">{duration === 5 ? t.one : t.two}</span>
             </button>)}
           </div>
         </fieldset>
-        {query.isPending ? <p role="status" className="mt-4 text-sm text-muted-foreground">{t.loading}</p> : query.isError && !query.data ? (
-          <div className="mt-4 space-y-2"><p role="alert" className="text-sm text-muted-foreground">{t.unavailable}</p><Button variant="outline" className={primary} onClick={() => void query.refetch()} disabled={query.isFetching}>{t.retry}</Button></div>
-        ) : recommendation ? <Button className={cn(primary, "mt-4")} onClick={start}>{t.start}<Arrow aria-hidden="true" className="size-4" /></Button>
-          : <p role="status" className="mt-4 text-sm text-muted-foreground">{t.empty}</p>}
+        {selection && (query.isPending ? <p role="status" className="mt-4 text-sm text-muted-foreground">{t.loading}</p> :
+          !recommendation && (query.isError || query.data?.unavailable) ? (
+            <div className="mt-4 space-y-2"><p role="alert" className="text-sm text-muted-foreground">{t.unavailable}</p>
+              <Button variant="outline" className={primary} onClick={() => void query.refetch()} disabled={query.isFetching}>{t.retry}</Button>
+            </div>
+          ) : !recommendation && <p role="status" className="mt-4 text-sm text-muted-foreground">{t.empty}</p>)}
+        <Button className={cn(primary, "mt-4")} onClick={start} disabled={!recommendation}>{t.start}<Arrow aria-hidden="true" className="size-4" /></Button>
       </section>}
 
       {phase === "review" && round && <section className={panel}>
         <h2 ref={heading} tabIndex={-1} className="flex items-center gap-2 text-xl font-black outline-none"><BookOpen aria-hidden="true" className="size-5 text-primary" />{t.review}</h2>
-        <div className="mt-4 divide-y divide-border rounded-2xl border border-border bg-background/70">
-          {round.cards.map(card => <div key={card.q} className="p-3.5 sm:p-4"><h3 className="font-bold" dir="auto">{card.q}</h3><p className="mt-1 whitespace-pre-line text-sm leading-7 text-muted-foreground" dir="auto">{card.a}</p></div>)}
+        <div className="my-4 grid gap-2.5">
+          {round.cards.map(card => <article key={card.q} className="rounded-2xl border border-border bg-background/70 p-3.5 sm:p-4">
+            <p className="mb-1.5 text-xs font-bold text-primary">{t[card.source]}</p>
+            <h3 className="whitespace-pre-line break-words font-bold" dir="auto">{card.q}</h3>
+            <div className="mt-1 text-muted-foreground"><CardAnswer card={card} /></div>
+          </article>)}
         </div>
-        <p className="mb-4 mt-2 text-xs text-muted-foreground">{t.sources}</p>
         <Button className={primary} onClick={startQuiz}>{t.quiz}<Arrow aria-hidden="true" className="size-4" /></Button>
       </section>}
 
       {phase === "quiz" && round && question && <section className={panel}>
-        <p className="mb-2 text-xs font-bold text-primary">{ar ? `السؤال ${n(index + 1)} من ${n(round.questions.length)}` : `Question ${index + 1} of ${round.questions.length}`}</p>
-        <h2 ref={heading} tabIndex={-1} dir="auto" className="text-lg font-black leading-8 outline-none sm:text-xl">{question.question}</h2>
-        <div className="mt-4 grid gap-2">
-          {question.choices.map((option, i) => {
-            const isAnswer = checked && i === question.answer_index;
-            return <button key={i} type="button" aria-pressed={choice === i} disabled={checked} onClick={() => setChoice(i)}
-              className={cn("flex min-h-12 items-center gap-3 rounded-xl border px-3.5 py-2 text-start text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                isAnswer ? "border-emerald-500/60 bg-emerald-500/10" : checked && choice === i ? "border-destructive/55 bg-destructive/10" : choice === i ? "border-primary bg-primary/10" : "border-border bg-background")}>
-              <span className="min-w-0 flex-1" dir="auto">{option}</span>
-              {isAnswer ? <Check aria-hidden="true" className="size-4 shrink-0 text-emerald-600" /> : checked && choice === i ? <X aria-hidden="true" className="size-4 shrink-0 text-destructive" /> : null}
-            </button>;
-          })}
+        <div className="mb-2 flex flex-wrap justify-between gap-2 text-xs font-bold text-primary">
+          <p>{ar ? `السؤال ${n(index + 1)} من ${n(round.questions.length)}` : `Question ${index + 1} of ${round.questions.length}`}</p>
+          <p>{question.kind === "mcq" ? t.mcq : t[question.source]}</p>
         </div>
-        {checked && <div role="status" className="mt-4 rounded-xl bg-secondary/65 p-3 text-sm leading-7">
-          <p className="font-black">{correct ? t.right : t.wrong}</p>
-          {!correct && <p>{t.answer} <bdi className="font-bold">{question.choices[question.answer_index]}</bdi></p>}
-          {question.explanation && <p dir="auto" className="whitespace-pre-line text-muted-foreground">{question.explanation}</p>}
-        </div>}
-        <Button className={cn(primary, "mt-4")} onClick={checked ? advance : check} disabled={choice === null}>
-          {checked ? index + 1 === round.questions.length ? t.result : t.next : t.check}<Arrow aria-hidden="true" className="size-4" />
-        </Button>
+        <h2 ref={heading} tabIndex={-1} dir="auto" className="whitespace-pre-line break-words text-lg font-black leading-8 outline-none sm:text-xl">{question.question}</h2>
+
+        {question.kind === "mcq" ? <>
+          <div className="mt-4 grid gap-2">
+            {question.choices.map((option, i) => {
+              const isAnswer = checked && i === question.answer_index;
+              return <button key={i} type="button" aria-pressed={choice === i} disabled={checked} onClick={() => setChoice(i)}
+                className={cn("flex min-h-12 items-center gap-3 rounded-xl border px-3.5 py-2 text-start text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  isAnswer ? "border-emerald-500/60 bg-emerald-500/10" : checked && choice === i ? "border-destructive/55 bg-destructive/10" : choice === i ? "border-primary bg-primary/10" : "border-border bg-background")}>
+                <span className="min-w-0 flex-1 break-words" dir="auto">{option}</span>
+                {isAnswer ? <Check aria-hidden="true" className="size-4 shrink-0 text-emerald-600" /> : checked && choice === i ? <X aria-hidden="true" className="size-4 shrink-0 text-destructive" /> : null}
+              </button>;
+            })}
+          </div>
+          {checked && <div role="status" className="mt-4 rounded-xl bg-secondary/65 p-3 text-sm leading-7">
+            <p className="font-black">{correct ? t.right : t.wrong}</p>
+            {!correct && <p>{t.answer} <bdi className="font-bold">{quickStudyAnswer(question)}</bdi></p>}
+            {question.explanation && <p dir="auto" className="whitespace-pre-line break-words text-muted-foreground">{question.explanation}</p>}
+          </div>}
+          {!checked && <Button className={cn(primary, "mt-4")} onClick={() => grade(choice === question.answer_index)} disabled={choice === null}>{t.check}</Button>}
+        </> : <>
+          <p className="mt-2 text-sm text-muted-foreground">{t.recall}</p>
+          {revealed ? <>
+            <div role="status" className="mt-4 rounded-xl bg-secondary/65 p-3">
+              <p className="mb-1 text-sm font-black">{t.answer}</p>
+              <CardAnswer card={question} />
+            </div>
+            {!checked && <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button className="min-h-12 whitespace-normal font-bold" onClick={() => grade(true)}>{t.knew}</Button>
+              <Button className="min-h-12 whitespace-normal font-bold" variant="outline" onClick={() => grade(false)}>{t.missedIt}</Button>
+            </div>}
+          </> : <Button variant="outline" className={cn(primary, "mt-4")} onClick={() => setRevealed(true)}><Eye aria-hidden="true" className="size-4" />{t.reveal}</Button>}
+        </>}
+
+        {checked && <Button className={cn(primary, "mt-4")} onClick={advance}>
+          {index + 1 === round.questions.length ? t.result : t.next}<Arrow aria-hidden="true" className="size-4" />
+        </Button>}
       </section>}
 
       {phase === "summary" && round && <section className={panel}>
@@ -182,14 +286,18 @@ export default function QuickStudy({ language, userId, plannedTexts, profile, on
         <p className="mt-3 text-2xl font-black text-primary" role="status">{ar
           ? `${n(round.questions.length - missed.length)} من ${n(round.questions.length)} صحيحة`
           : `${round.questions.length - missed.length} of ${round.questions.length} correct`}</p>
-        {missed.length ? <div className="mt-4"><h3 className="mb-2 text-sm font-bold">{t.missed}</h3>
+        {seenSelfAssessment && <p className="mt-1 text-sm text-muted-foreground">{t.selfAssessed}</p>}
+        {!!missed.length && <div className="mt-4"><h3 className="mb-2 text-sm font-bold">{t.missed}</h3>
           <ul className="space-y-2">{missed.map(item => <li key={item.id} className="rounded-xl border border-border bg-background p-3 text-sm leading-6">
-            <p dir="auto" className="font-bold">{item.question}</p><p className="text-muted-foreground">{t.answer} <bdi>{item.choices[item.answer_index]}</bdi></p>
-          </li>)}</ul></div> : <p className="mt-3 text-sm text-muted-foreground">{t.allRight}</p>}
+            <p dir="auto" className="whitespace-pre-line break-words font-bold">{item.question}</p>
+            <p className="mt-1 text-muted-foreground">{t.answer}</p>
+            {item.kind === "recall" ? <CardAnswer card={item} /> : <p dir="auto" className="break-words">{quickStudyAnswer(item)}</p>}
+          </li>)}</ul></div>}
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button className="min-h-11 flex-1 gap-2 font-bold" onClick={onBack}>{t.back}<ChevronRight aria-hidden="true" className={cn("size-4", ar && "rotate-180")} /></Button>
-          {!!missed.length && <Button variant="outline" className="min-h-11 flex-1 gap-2 font-bold" onClick={() => setPhase("review")}><RotateCcw aria-hidden="true" className="size-4" />{t.reviewAgain}</Button>}
+          <Button className="min-h-11 flex-1 font-bold" onClick={changeChapter}>{t.change}<Arrow aria-hidden="true" className="size-4" /></Button>
+          {!!missed.length && <Button variant="outline" className="min-h-11 flex-1 font-bold" onClick={() => { setIndex(0); setPhase("review"); }}><RotateCcw aria-hidden="true" className="size-4" />{t.reviewAgain}</Button>}
         </div>
+        <Button variant="ghost" className="mt-2 w-full font-bold text-muted-foreground" onClick={onBack}>{t.back}</Button>
       </section>}
     </div>
   );

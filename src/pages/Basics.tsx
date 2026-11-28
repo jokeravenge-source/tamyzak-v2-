@@ -1445,7 +1445,7 @@ const Basics = ({
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-cyan-200/15 text-cyan-100"><Timer aria-hidden="true" className="size-6" /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-lg font-black">{isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes"}</span>
-              <span className="mt-0.5 block text-xs font-semibold text-sky-100 sm:text-sm">{isRTL ? "مراجعة سريعة بفصل المتسعات" : "A quick review of capacitors"}</span>
+              <span className="mt-0.5 block text-xs font-semibold text-sky-100 sm:text-sm">{isRTL ? "اختار المادة والفصل اللي تريد تراجعه" : "Choose a subject and chapter to review"}</span>
             </span>
             <ChevronRight aria-hidden="true" className={`size-5 shrink-0 text-cyan-100 ${isRTL ? "rotate-180" : ""}`} />
           </button>

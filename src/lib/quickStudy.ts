@@ -1,13 +1,22 @@
 import type { AppLanguage } from "@/components/LanguageGate";
-import { flashcardsCh1 } from "@/data/flashcardsCh1";
-import { flashcardsCh1Ar } from "@/data/flashcardsCh1Ar";
+import type { SourceCard } from "@/features/pdf-builder/bankSources";
 import { supabase } from "@/integrations/supabase/client";
+import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 import { normalizeStudySearch } from "@/lib/studySearch";
 import { topicForQuestion } from "@/lib/topicMastery";
 import type { WeeklyLearningProfile } from "@/lib/weeklyLearning";
+import {
+  getQuickStudyBankScope,
+  getQuickStudyProgressScope,
+  loadQuickStudyBuiltInMcqs,
+  loadQuickStudyCards,
+  matchesQuickStudyChapter,
+  type QuickStudyCards,
+  type QuickStudySelection,
+} from "@/lib/quickStudySources";
 
-export const QUICK_STUDY_SUBJECT = "physics";
-export const QUICK_STUDY_CHAPTER = 1;
+const QUICK_STUDY_SUBJECT = "physics";
+const QUICK_STUDY_CHAPTER = 1;
 
 const topics = {
   combinations: {
@@ -39,7 +48,7 @@ type RecentMistake = { id: string; question: string; correct_answer: string | nu
 const topicKeys = Object.keys(topics) as Topic[];
 const sectionTopics = new Map(topicKeys.flatMap(topic => topics[topic].sections.map(section => [normalizeStudySearch(section), topic] as const)));
 
-export type QuickStudyQuestion = {
+type BankQuestion = {
   id: string;
   question: string;
   choices: string[];
@@ -48,29 +57,6 @@ export type QuickStudyQuestion = {
   section: string | null;
   sort_order: number;
 };
-
-export async function loadQuickStudy(language: AppLanguage, userId: string | null) {
-  const [bank, mistakes] = await Promise.all([
-    supabase.from("mcq_banks").select("id,question,choices,answer_index,explanation,section,sort_order")
-      .eq("subject", QUICK_STUDY_SUBJECT).eq("chapter", QUICK_STUDY_CHAPTER).eq("language", language)
-      .order("sort_order").limit(120),
-    userId ? supabase.from("my_mistakes").select("id,question,correct_answer,ref_id")
-      .eq("user_id", userId).eq("subject", QUICK_STUDY_SUBJECT).eq("chapter", String(QUICK_STUDY_CHAPTER))
-      .eq("resolved", false).order("updated_at", { ascending: false }).limit(12) : Promise.resolve({ data: [] }),
-  ]);
-  if (bank.error) throw bank.error;
-
-  const questions: QuickStudyQuestion[] = (bank.data ?? []).flatMap(row => {
-    const { choices, answer_index } = row;
-    if (!row.question.trim() || !Array.isArray(choices) || choices.length < 2 ||
-      !choices.every(choice => typeof choice === "string" && !!choice.trim()) ||
-      !Number.isInteger(answer_index) || answer_index < 0 || answer_index >= choices.length) return [];
-    // The original seed labels a bank source in the explanation field.
-    const explanation = row.explanation?.trim();
-    return [{ ...row, choices: choices as string[], explanation: explanation === "Ministerial-style bank" ? null : explanation || null }];
-  });
-  return { questions, mistakes: mistakes.data ?? [] };
-}
 
 function topicOfQuestion(question: string, context = "") {
   const key = topicForQuestion(QUICK_STUDY_SUBJECT, QUICK_STUDY_CHAPTER, question, context).key.split(":").at(-1);
@@ -82,13 +68,14 @@ function matchesPlan(topic: Topic, planText: string) {
   return topics[topic].planTerms.some(term => text.includes(normalizeStudySearch(term)));
 }
 
-export function recommendQuickStudy({ questions, mistakes, plannedTexts, profile, language, count }: {
-  questions: QuickStudyQuestion[];
+function recommendCapacitors({ questions, mistakes, plannedTexts, profile, language, count, deck }: {
+  questions: BankQuestion[];
   mistakes: RecentMistake[];
   plannedTexts: string[];
   profile: WeeklyLearningProfile | null;
   language: AppLanguage;
   count: number;
+  deck: readonly SourceCard[];
 }) {
   const available = topicKeys.flatMap(topic => {
     const matches = questions.filter(question => {
@@ -113,16 +100,120 @@ export function recommendQuickStudy({ questions, mistakes, plannedTexts, profile
   const reason: Reason = plan ? "plan" : recent ? "mistake" : "chapter";
   const config = topics[picked.topic];
   const missed = new Set(mistakes.map(mistake => mistake.ref_id ?? mistake.question));
-  const missedFirst = (question: QuickStudyQuestion) => missed.has(question.id) || missed.has(question.question) ? 0 : 1;
-  const order = (question: QuickStudyQuestion) => {
+  const missedFirst = (question: BankQuestion) => missed.has(question.id) || missed.has(question.question) ? 0 : 1;
+  const order = (question: BankQuestion) => {
     const index = (config.orders as readonly number[]).indexOf(question.sort_order);
     return index >= 0 ? index : config.orders.length;
   };
-  const deck = language === "ar" ? flashcardsCh1Ar : flashcardsCh1;
   return {
     title: config.title[language],
     reason,
-    cards: config.cards[language].map(index => deck[index]),
+    cards: config.cards[language].map(index => deck[index]).filter(Boolean),
     questions: picked.questions.sort((a, b) => missedFirst(a) - missedFirst(b) || order(a) - order(b)).slice(0, count),
   };
+}
+
+type ReviewSource = "flashcard" | "ministerial" | "exercise" | "mcq";
+export type ReviewCard = SourceCard & { source: ReviewSource };
+export type QuickStudyQuestion =
+  | (BankQuestion & { kind: "mcq" })
+  | (ReviewCard & { kind: "recall"; id: string; question: string });
+
+type QuickStudyData = QuickStudyCards & { questions: BankQuestion[]; mistakes: RecentMistake[]; unavailable: boolean };
+
+export async function loadQuickStudy(selection: QuickStudySelection, language: AppLanguage, userId: string | null, signal: AbortSignal): Promise<QuickStudyData> {
+  const bankScope = getQuickStudyBankScope(selection);
+  const progressScope = getQuickStudyProgressScope(selection);
+  const [cards, bank, builtIn, mistakes] = await Promise.all([
+    loadQuickStudyCards(selection, language, signal),
+    bankScope.chapters.length ? supabase.from("mcq_banks")
+      .select("id,subject,chapter,chapter_title,question,choices,answer_index,explanation,section,sort_order")
+      .eq("subject", bankScope.subject).in("chapter", bankScope.chapters).eq("language", language)
+      .order("sort_order").order("id").limit(120).abortSignal(signal)
+      : Promise.resolve({ data: [], error: null }),
+    loadQuickStudyBuiltInMcqs(selection, language).catch(() => []),
+    userId ? supabase.from("my_mistakes").select("id,question,correct_answer,ref_id")
+      .eq("user_id", userId).eq("subject", progressScope.subject).eq("chapter", progressScope.chapter)
+      .eq("resolved", false).order("updated_at", { ascending: false }).limit(12).abortSignal(signal) : Promise.resolve({ data: [] }),
+  ]);
+
+  const questions: BankQuestion[] = [];
+  const seen = new Set<string>();
+  for (const row of [...(bank.data ?? []), ...builtIn]) {
+    const { choices, answer_index } = row;
+    if (!matchesQuickStudyChapter(selection, row) || !isExamRelevantQuestion(row.question) ||
+      !Array.isArray(choices) || choices.length < 2 ||
+      !choices.every(choice => typeof choice === "string" && !!choice.trim()) ||
+      !Number.isInteger(answer_index) || answer_index < 0 || answer_index >= choices.length) continue;
+    const key = normalizeStudySearch(row.question);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const explanation = row.explanation?.trim();
+    questions.push({ ...row, choices: choices as string[], section: row.section ?? null,
+      sort_order: "sort_order" in row ? row.sort_order : Number.MAX_SAFE_INTEGER,
+      explanation: explanation === "Ministerial-style bank" ? null : explanation || null });
+  }
+  return { ...cards, questions, mistakes: mistakes.data ?? [], unavailable: cards.unavailable || Boolean(bank.error) };
+}
+
+function withSource(cards: readonly SourceCard[], source: ReviewSource): ReviewCard[] {
+  return cards.filter(card => card.q.trim() && (card.a.trim() || card.answerBlocks?.length)).map(card => ({ ...card, source }));
+}
+
+export function recommendQuickStudy({ selection, data, plannedTexts, profile, language, count }: {
+  selection: QuickStudySelection;
+  data: QuickStudyData;
+  plannedTexts: string[];
+  profile: WeeklyLearningProfile | null;
+  language: AppLanguage;
+  count: number;
+}) {
+  const isCapacitors = selection.subject === QUICK_STUDY_SUBJECT && selection.chapter === String(QUICK_STUDY_CHAPTER);
+  const pilot = isCapacitors ? recommendCapacitors({ ...data, plannedTexts, profile, language, count, deck: data.flashcards }) : null;
+  const missed = new Set(data.mistakes.flatMap(mistake => [mistake.ref_id, normalizeStudySearch(mistake.question)]));
+  const recentMistake = (question: BankQuestion) => missed.has(question.id) || missed.has(normalizeStudySearch(question.question));
+  const bank = pilot?.questions ?? [...data.questions].sort((a, b) => Number(recentMistake(b)) - Number(recentMistake(a)));
+
+  const flashcards = withSource(pilot?.cards.length ? pilot.cards : data.flashcards, "flashcard");
+  const ministerial = withSource(data.ministerial, "ministerial");
+  const exercises = withSource(data.exercises, "exercise");
+  const questions: QuickStudyQuestion[] = bank.slice(0, count).map(question => ({ ...question, kind: "mcq" }));
+  const used = new Set(questions.map(question => normalizeStudySearch(question.question)));
+
+  const cards: ReviewCard[] = [];
+  const addReview = (items: readonly ReviewCard[]) => {
+    const card = items.find(item => !used.has(normalizeStudySearch(item.q)));
+    if (card) {
+      cards.push(card);
+      used.add(normalizeStudySearch(card.q));
+    }
+  };
+  addReview([...flashcards, ...exercises, ...ministerial]);
+  // Keep a second item in reserve for recall if the chapter has no graded questions.
+  if (questions.length === count) addReview([...ministerial, ...flashcards, ...exercises]);
+  for (const card of [...ministerial, ...flashcards, ...exercises]) {
+    if (questions.length >= count) break;
+    const key = normalizeStudySearch(card.q);
+    if (used.has(key)) continue;
+    used.add(key);
+    questions.push({ ...card, kind: "recall", id: `${card.source}:${key}`, question: card.q });
+  }
+
+  if (!questions.length && cards.length) {
+    const card = cards[0];
+    questions.push({ ...card, kind: "recall", id: `${card.source}:${card.q}`, question: card.q });
+  }
+  if (!questions.length) return null;
+
+  if (!cards.length && questions[0].kind === "mcq") {
+    const extra = bank.find(question => !used.has(normalizeStudySearch(question.question))) ?? questions[0];
+    const answer = extra.choices[extra.answer_index];
+    cards.push({ q: extra.question, a: extra.explanation ? `${answer}\n${extra.explanation}` : answer, source: "mcq" });
+  }
+  const reason = pilot?.reason ?? (bank[0] && recentMistake(bank[0]) ? "mistake" : "chapter");
+  return { title: pilot?.title, reason, cards, questions, selection, mistakes: data.mistakes };
+}
+
+export function quickStudyAnswer(question: QuickStudyQuestion) {
+  return question.kind === "mcq" ? question.choices[question.answer_index] : question.a;
 }
