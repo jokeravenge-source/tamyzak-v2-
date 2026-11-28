@@ -18,9 +18,11 @@ it("puts Study second and keeps Community selected while its pages are open", ()
   const community = nav.getByRole("button", { name: "Community" });
   expect(nav.getAllByRole("button")[1]).toBe(study);
   expect(nav.getAllByRole("button")[3]).toBe(community);
+  localStorage.setItem("app_subject_focus_v1", "physics");
   fireEvent.click(study);
+  expect(localStorage.getItem("app_subject_focus_v1")).toBeNull();
   fireEvent.click(community);
-  expect(onSelect.mock.calls).toEqual([["more"], ["community"]]);
+  expect(onSelect.mock.calls).toEqual([["subjectsHub"], ["community"]]);
   for (const active of ["community", "friends", "sessions", "communityChat"] as const) {
     view.rerender(<BottomGroupNav {...props} active={active} />);
     expect(community).toHaveAttribute("aria-current", "page");

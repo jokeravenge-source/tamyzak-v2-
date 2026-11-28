@@ -1,3 +1,5 @@
+import type { BankSubject } from "@/data/subjectChapters";
+import { studySubjectVariants } from "@/lib/studySubjectTools";
 import { supabase } from "@/integrations/supabase/client";
 
 export type MistakeSource =
@@ -74,10 +76,20 @@ export async function fetchDueMistakes(): Promise<Mistake[]> {
   return (data ?? []) as Mistake[];
 }
 
-export async function fetchAllMistakes(): Promise<Mistake[]> {
-  const { data } = await (supabase as any)
-    .from("my_mistakes")
-    .select("*")
+export async function hasDueSubjectMistakes(subject: BankSubject): Promise<boolean> {
+  const { count, error } = await supabase.from("my_mistakes")
+    .select("id", { count: "exact", head: true })
+    .in("subject", studySubjectVariants(subject))
+    .eq("resolved", false)
+    .lte("next_review_at", new Date().toISOString());
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
+export async function fetchAllMistakes(subject?: BankSubject): Promise<Mistake[]> {
+  const query = (supabase as any).from("my_mistakes").select("*");
+  if (subject) query.in("subject", studySubjectVariants(subject));
+  const { data } = await query
     .order("resolved", { ascending: true })
     .order("next_review_at", { ascending: true })
     .limit(300);

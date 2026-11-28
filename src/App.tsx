@@ -60,6 +60,11 @@ import ChallengeInviteWatcher from "./components/ChallengeInviteWatcher";
 import StudyChallengeInviteWatcher from "./components/StudyChallengeInviteWatcher";
 import EnglishCategoryPage, { ENGLISH_CATEGORY_STORAGE_KEY, type EnglishCategory } from "./pages/EnglishCategory";
 import type { BasicsChoice } from "./pages/Basics";
+import type { StudyToolScope } from "./pages/SubjectsHub";
+import { rememberStudySubjectFocus } from "@/lib/studySubjectFocus";
+import { scopedMcqSubject } from "@/lib/studySubjectTools";
+import { openMutamayizWithDraft } from "@/lib/mutamayizLaunch";
+import { SUBJECTS_ORDER } from "@/data/subjectChapters";
 import type { MainMenuChoice } from "./pages/MainMenu";
 const Basics = lazy(() => import("./pages/Basics"));
 import { captureAttribution, syncAttribution, logSignupCompleted, logFirstFeatureTouch } from "@/lib/userEvents";
@@ -853,6 +858,7 @@ const StudentApp = () => {
     }
     return localStorage.getItem(MENU_STORAGE_KEY) as MenuChoice | null;
   });
+  const [studyToolScope, setStudyToolScope] = useState<Partial<StudyToolScope> | null>(null);
   const [practiceReturnTarget, setPracticeReturnTarget] = useState<"physicsSchemes" | "biologySchemes" | "basics" | null>(null);
   // Points-unlock state (lifetime points gate the 4 advanced tools)
   const [unlockedKeys, setUnlockedKeys] = useState<FeatureKey[]>([]);
@@ -884,8 +890,9 @@ const StudentApp = () => {
     setAdminPreviewDay(null);
   };
 
-  const sectionHistory = useStudyBackHistory({ menu: menuChoice, subject, category: englishCategory }, (previous) => {
+  const sectionHistory = useStudyBackHistory({ menu: menuChoice, subject, category: englishCategory, studyToolScope }, (previous) => {
     setMenuChoice(previous.menu);
+    setStudyToolScope(previous.studyToolScope);
     setSubject(previous.subject);
     setEnglishCategory(previous.category);
     if (previous.menu) localStorage.setItem(MENU_STORAGE_KEY, previous.menu);
@@ -904,6 +911,7 @@ const StudentApp = () => {
     sectionHistory.clear();
     setSubject(null);
     setMenuChoice(null);
+    setStudyToolScope(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
     setChangingLanguage(true);
     setLanguage(null);
@@ -922,12 +930,14 @@ const StudentApp = () => {
     if (sectionHistory.goBack()) return;
     setSubject(null);
     setMenuChoice(null);
+    setStudyToolScope(null);
     localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
     setEnglishCategory(null);
     localStorage.removeItem(MENU_STORAGE_KEY);
   };
   const { isPremium, loading: subscriptionLoading, userId } = useSubscription();
   const chooseMenu = useCallback((choice: MenuChoice) => {
+    setStudyToolScope(null);
     if (choice !== "paperReview" && window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) {
       window.history.replaceState(window.history.state, "", "/");
     }
@@ -946,6 +956,45 @@ const StudentApp = () => {
     localStorage.setItem(MENU_STORAGE_KEY, choice);
     setMenuChoice(choice);
   }, [unlockedKeys, isPremium]);
+  const openSubjectTool = (choice: MenuChoice, scope?: StudyToolScope) => {
+    if (!scope) { chooseMenu(choice); return; }
+    const code = scope.subject;
+    if (choice === "mutamayiz") {
+      const label = SUBJECTS_ORDER.find(item => item.code === code)?.[language ?? "ar"];
+      if (label) openMutamayizWithDraft(language === "en"
+        ? `Help me study ${label}. Ask which topic I need and suggest the right Tamayzak tool.`
+        : `ساعدني أدرس ${label}. اسألني عن الموضوع ودلّني على الأداة المناسبة بتميّزك.`);
+      return;
+    }
+    if (choice === "flashcards" || choice === "examGenerator") {
+      localStorage.setItem(SUBJECT_STORAGE_KEY, code);
+      setSubject(code);
+      if (choice === "flashcards") {
+        if (code === "chemistry") sessionStorage.removeItem(CHEMISTRY_FLASHCARD_TEACHER_STORAGE_KEY);
+        if (code === "english") {
+          localStorage.removeItem(ENGLISH_CATEGORY_STORAGE_KEY);
+          setEnglishCategory(null);
+        }
+        // A previously opened shared chapter URL cannot override this new tool selection.
+        window.history.replaceState(window.history.state, "", "/");
+      }
+    }
+    if (choice === "ministerialBank") {
+      sessionStorage.setItem("ministerial_subject_focus_v1", code);
+      // Keep Nadia's dedicated biology data source and its existing access behavior.
+      if (code === "biology") {
+        localStorage.setItem(SUBJECT_STORAGE_KEY, code);
+        setSubject(code);
+        window.history.replaceState(window.history.state, "", "/ministerial-questions-for-nadia-al-nuamey");
+      }
+    } else if (choice === "mcqBank") {
+      const bank = scopedMcqSubject(code);
+      if (!bank) return;
+      sessionStorage.setItem("mcq_subject_focus_v1", bank);
+    }
+    chooseMenu(choice);
+    if (["mistakes", "paperReview", "mcq", "videoNotes", "podcastTutor"].includes(choice)) setStudyToolScope(scope);
+  };
   // Deep-link support: ?menu=courses (or any other MenuChoice) opens that section directly.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1014,7 +1063,7 @@ const StudentApp = () => {
       return;
     }
 
-    localStorage.setItem("app_subject_focus_v1", "biology");
+    rememberStudySubjectFocus("biology");
     localStorage.setItem(SUBJECT_STORAGE_KEY, "biology");
     window.history.replaceState({}, "", "/");
     chooseMenu("subjectsHub");
@@ -1224,7 +1273,7 @@ const StudentApp = () => {
           highlight={unlockHighlight}
         />
       ) : menuChoice === "mcq" ? (
-        <MCQ language={language} onBack={resetMenu} />
+        <MCQ language={language} onBack={resetMenu} initialSubject={studyToolScope?.subject} />
       ) : menuChoice === "summaries" ? (
         <Summaries language={language} onBack={resetMenu} />
       ) : menuChoice === "advices" ? (
@@ -1242,9 +1291,9 @@ const StudentApp = () => {
       ) : menuChoice === "essay" ? (
         <Essay language={language} onBack={resetMenu} />
       ) : menuChoice === "videoNotes" ? (
-        <VideoNotes language={language} onBack={resetMenu} />
+        <VideoNotes language={language} onBack={resetMenu} initialSubject={studyToolScope?.subject} />
       ) : menuChoice === "podcastTutor" ? (
-        <PodcastTutor language={language} onBack={resetMenu} />
+        <PodcastTutor language={language} onBack={resetMenu} initialSubject={studyToolScope?.subject} />
       ) : menuChoice === "biologySketchpad" ? (
         <BiologySketchpad language={language} onBack={backToBasics} />
       ) : menuChoice === "biologyDrawings" ? (
@@ -1266,12 +1315,12 @@ const StudentApp = () => {
           else resetMenu();
         }} />
       ) : menuChoice === "mistakes" ? (
-        <MyMistakes language={language} onBack={backToBasics} />
+        <MyMistakes key={`${studyToolScope?.subject ?? "all"}:${Boolean(studyToolScope?.startReview)}`} language={language} onBack={backToBasics} subject={studyToolScope?.subject} startReview={studyToolScope?.startReview} />
       ) : menuChoice === "paperReview" ? (
         <PaperReview
           key={userId ?? "paper-review"}
           language={language}
-          initialSubject={paperReviewParams?.get("subject")}
+          initialSubject={paperReviewParams?.get("subject") ?? studyToolScope?.subject}
           initialChapter={paperReviewParams?.get("chapter")}
           initialExercise={paperReviewParams?.get("exercise")}
           onBack={() => {
@@ -1305,7 +1354,10 @@ const StudentApp = () => {
       ) : menuChoice === "englishReadingPractice" ? (
         <EnglishReadingPractice language={language} onBack={resetMenu} />
       ) : menuChoice === "report" ? (
-        <DailyReport language={language} onBack={resetMenu} onNav={chooseMenu} />
+        <DailyReport language={language} onBack={resetMenu} onNav={chooseMenu} onReviewMistakes={() => {
+          chooseMenu("mistakes");
+          setStudyToolScope({ startReview: true });
+        }} />
       ) : menuChoice === "notes" ? (
         <Notes language={language} onBack={resetMenu} />
       ) : menuChoice === "canvas" ? (
@@ -1321,7 +1373,7 @@ const StudentApp = () => {
       ) : menuChoice === "liveBattle" ? (
         <LiveBattle language={language} onBack={resetMenu} />
       ) : menuChoice === "subjectsHub" ? (
-        <SubjectsHub language={language} onBack={backToBasics} onSelect={chooseMenu} />
+        <SubjectsHub language={language} onBack={backToBasics} onSelect={openSubjectTool} />
       ) : menuChoice === "textToVideo" ? (
         <TextToVideo language={language} onBack={resetMenu} />
       ) : menuChoice === "physicsLaws" ? (

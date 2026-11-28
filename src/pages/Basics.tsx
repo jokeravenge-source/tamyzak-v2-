@@ -29,8 +29,12 @@ import RankStone from "@/components/RankStone";
 import { rankFor, RANKS } from "@/lib/points";
 import { totalDueCount, dueBreakdown, type DueGroup } from "@/lib/srs";
 import GiftMcqButton from "@/components/GiftMcqButton";
+import MutamayizMascot from "@/components/MutamayizMascot";
+import { openMutamayizStudyGuide } from "@/lib/mutamayizLaunch";
+import { resetStudySubjectFocus } from "@/lib/studySubjectFocus";
 import studyBookArt from "@/assets/home-study-book.webp";
 import HomeHighlights from "@/components/home/HomeHighlights";
+import HomeDailyReport from "@/components/home/HomeDailyReport";
 import PointsGuideCards from "@/components/home/PointsGuideCards";
 import QuickStudy from "@/components/home/QuickStudy";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
@@ -717,6 +721,17 @@ const Basics = ({
     if (basicsKeys.has(k)) onSelect(k as BasicsChoice);
     else onNav(k);
   };
+  const openSubjectPicker = () => {
+    resetStudySubjectFocus();
+    navigate("subjectsHub");
+  };
+  const openRecommendedStudy = () => {
+    setShowAllTools(false);
+    setRecommendedProfile(readWeeklyLearningProfile());
+    void totalDueCount().then(setDueCards).catch(() => {});
+    void dueMistakesCount().then(setDueMistakes).catch(() => {});
+    setShowRecommendedStudy(true);
+  };
   const openRecommendedFlashcards = () => {
     try {
       if (dailyRecommendedProfile) {
@@ -1330,6 +1345,11 @@ const Basics = ({
               <p className="text-muted-foreground mt-1 text-sm md:text-base">
                 {language === "ar" ? "كل ما تحتاجه للدراسة في مكان واحد." : "Everything you need to study, in one place."}
               </p>
+              <button type="button" onClick={openRecommendedStudy}
+                className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary hover:underline">
+                <Sparkles aria-hidden="true" className="size-4" />
+                {isRTL ? "افتح توصيات الدراسة" : "Open study recommendations"}
+              </button>
             </header>
             <div className="mb-6 space-y-4">
               <label className="block">
@@ -1443,6 +1463,8 @@ const Basics = ({
             </div>
           </section>
 
+          <div className="mb-4"><HomeDailyReport language={language} userId={userId} authLoading={subscriptionLoading} onOpen={() => navigate("report")} /></div>
+
           <HomeHighlights
             language={language}
             pointsGuideTitle={pointsGuideTitle}
@@ -1457,33 +1479,48 @@ const Basics = ({
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-2.5 sm:gap-3">
             <div data-home-tone="continue" className="home-illustrated-card relative overflow-hidden rounded-[1.4rem] border transition-colors">
-              <button
-                type="button"
-                aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
-                onClick={() => {
-                  setRecommendedProfile(readWeeklyLearningProfile());
-                  void totalDueCount().then(setDueCards).catch(() => {});
-                  void dueMistakesCount().then(setDueMistakes).catch(() => {});
-                  setShowRecommendedStudy(true);
-                }}
-                className="group grid min-h-[6.75rem] w-full grid-cols-[minmax(0,1fr)_35%] items-center gap-2 rounded-[1.4rem] py-2 pe-14 ps-3 text-start focus-visible:!outline-offset-[-3px] sm:min-h-32 sm:grid-cols-[minmax(0,1fr)_28%] sm:gap-4 sm:pe-20 sm:ps-5"
-              >
-                <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                  <span className="home-card-tile hidden size-8 shrink-0 place-items-center rounded-full border min-[380px]:grid"><HomeChevron aria-hidden="true" className="size-5" /></span>
-                  <span className="min-w-0">
-                    <span className="block text-[clamp(1rem,5.1vw,1.625rem)] font-black leading-snug tracking-tight">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
-                    <span className="home-card-muted mt-1 block text-xs leading-relaxed sm:text-sm">{isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}</span>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
+                  onClick={openSubjectPicker}
+                  className="group grid min-h-[6.75rem] w-full grid-cols-[minmax(0,1fr)_35%] items-center gap-2 rounded-[1.4rem] py-2 pe-14 ps-3 text-start focus-visible:!outline-offset-[-3px] sm:min-h-32 sm:grid-cols-[minmax(0,1fr)_28%] sm:gap-4 sm:pe-20 sm:ps-5"
+                >
+                  <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                    <span className="home-card-tile hidden size-8 shrink-0 place-items-center rounded-full border min-[380px]:grid"><HomeChevron aria-hidden="true" className="size-5" /></span>
+                    <span className="min-w-0">
+                      <span className="block text-[clamp(1rem,5.1vw,1.625rem)] font-black leading-snug tracking-tight">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
+                      <span className="home-card-muted mt-1 block text-xs leading-relaxed sm:text-sm">{isRTL ? "اختار مادة وابدأ بالأدوات اللي تحتاجها" : "Choose a subject and open its study tools"}</span>
+                    </span>
                   </span>
-                </span>
-                <img src={studyBookArt} alt="" width={384} height={192} className="mx-auto max-h-24 w-full max-w-44 object-contain drop-shadow-[0_10px_12px_rgba(0,0,0,0.42)] motion-safe:transition-transform motion-safe:group-hover:scale-105" />
-              </button>
-              <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-[color:var(--home-card-edge)] [&>button]:bg-[color:var(--home-card-tile-bg)] [&>button]:bg-none [&>button]:text-inherit [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
+                  <img src={studyBookArt} alt="" width={384} height={192} className="mx-auto max-h-24 w-full max-w-44 object-contain drop-shadow-[0_10px_12px_rgba(0,0,0,0.42)] motion-safe:transition-transform motion-safe:group-hover:scale-105" />
+                </button>
+                <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-[color:var(--home-card-edge)] [&>button]:bg-[color:var(--home-card-tile-bg)] [&>button]:bg-none [&>button]:text-inherit [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
+              </div>
+              <div className="mx-2.5 mb-2.5 sm:mx-4 sm:mb-4">
+                <button
+                  type="button"
+                  onClick={openMutamayizStudyGuide}
+                  aria-labelledby="home-mutamayiz-action"
+                  aria-describedby="home-mutamayiz-title"
+                  className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-1.5 text-start text-card-foreground transition-colors hover:bg-accent sm:min-h-14 sm:gap-3 sm:px-3"
+                >
+                  <MutamayizMascot className="size-8 sm:size-10" />
+                  <span id="home-mutamayiz-title" className="min-w-0 flex-1 text-xs font-bold leading-snug sm:text-sm">
+                    {isRTL ? "محتار منين تبدي؟" : "Not sure where to start?"}
+                  </span>
+                  <span id="home-mutamayiz-action" className="shrink-0 text-xs font-extrabold text-primary sm:text-sm">
+                    {isRTL ? "اسأل متميّز" : "Ask متميّز"}
+                  </span>
+                  <HomeChevron aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
               {[
                 { key: "malazam", Icon: Layers, title: isRTL ? "بنك الملازم" : "Al Malazam", copy: isRTL ? "اقرأ واحفظ ملفات PDF" : "Read and save PDF booklets", action: () => navigate("malazam") },
-                { key: "subjectsHub", Icon: FlaskConical, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: () => navigate("subjectsHub") },
+                { key: "subjectsHub", Icon: FlaskConical, title: isRTL ? "اختَر مادة" : "Choose a subject", copy: isRTL ? "الفصول وأدوات المادة" : "Chapters and subject tools", action: openSubjectPicker },
                 { key: "mistakes", Icon: RefreshCw, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${homeNumber(dueMistakes)} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
                 { key: "more", Icon: Grid2X2, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
               ].map(({ key, Icon, title, copy, action }) => (

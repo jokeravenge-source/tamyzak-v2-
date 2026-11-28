@@ -1,3 +1,4 @@
+import type { BankSubject } from "@/data/subjectChapters";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PREMIUM_INSTAGRAM_URL } from "@/lib/premium";
 import {
@@ -60,7 +61,11 @@ type PodcastSegment = {
   completed_at: string | null;
 };
 
-const SUBJECTS = ["الفيزياء", "الكيمياء", "الأحياء", "الرياضيات", "اللغة العربية", "اللغة الإنجليزية"];
+const SUBJECT_LABELS: Partial<Record<BankSubject, string>> = {
+  physics: "الفيزياء", chemistry: "الكيمياء", biology: "الأحياء",
+  math: "الرياضيات", arabic: "اللغة العربية", english: "اللغة الإنجليزية",
+};
+const SUBJECTS = Object.values(SUBJECT_LABELS);
 
 const verdictCopy: Record<Verdict, { label: string; style: string }> = {
   correct: { label: "ممتاز", style: "border-emerald-400/30 bg-emerald-500/15 text-emerald-200" },
@@ -96,13 +101,15 @@ function GlassCard({ children, className = "" }: { children: React.ReactNode; cl
 export default function PodcastTutor({
   language: _language,
   onBack,
+  initialSubject,
 }: {
   language: AppLanguage;
   onBack: () => void;
+  initialSubject?: BankSubject;
 }) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [breakPlan, setBreakPlan] = useState<PodcastBreakPlan | null>(null);
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(initialSubject ? SUBJECT_LABELS[initialSubject] ?? "" : "");
   const [history, setHistory] = useState<PodcastSession[]>([]);
   const [session, setSession] = useState<PodcastSession | null>(null);
   const [segments, setSegments] = useState<PodcastSegment[]>([]);

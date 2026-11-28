@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowUpRight, Check, Loader2, Paperclip, Plus, Presentation,
 import { supabase } from "@/integrations/supabase/client";
 import type { AppLanguage } from "@/components/LanguageGate";
 import MutamayizMascot from "@/components/MutamayizMascot";
+import { takeMutamayizLaunch } from "@/lib/mutamayizLaunch";
+import { resetStudySubjectFocus } from "@/lib/studySubjectFocus";
 import { attachmentForBoard, readAssistantFile } from "@/lib/mutamayizFile";
 import { readableMath } from "@/lib/readableMath";
 import { getISOWeek, pullTodos, pushTodos, type SyncedTodo } from "@/lib/todosSync";
@@ -23,6 +25,12 @@ const copy = {
     intro: "هلا بيك، آني متميز ✨ اسألني عن درسك، احچيلي عن مشكلة أو ضغط تمر بيه، خلّيني أرتب جدولك، أو كلي شنو تحتاج بالموقع. نكمل كلشي بنفس المحادثة.",
     placeholder: "احچي ويا متميز…", back: "رجوع", send: "إرسال", fresh: "محادثة جديدة", loading: "متميز يفكر…", disclaimer: "متميز ممكن يخطئ. راجع المعلومات المهمة، وللدعم النفسي المتخصص تواصل مع مختص.",
     quick: ["حلي مشكلتي", "أحتاج دعم نفسي", "رتبلي جدول دراسة", "اشرحلي سؤال علمي", "دلّيني على أدوات الموقع"],
+    guideTitle: "خل نختار أول خطوة",
+    guideStart: "ما أعرف شنو أدرس",
+    guideStartDraft: "محتار منين أبدي بالدراسة. اسألني عن المادة والوقت اللي عندي وبعدين اقترح خطوة وحدة أكدر أسويها هسه.",
+    guidePlan: "أريد أرتّب دراستي",
+    guidePlanDraft: "أريد أرتّب دراستي اليوم. ساعدني أختار أول مهمة حسب الوقت والمواد اللي عندي.",
+    guideTools: "شوف أدوات المواد",
     whiteboard: "اشرحلي عالسبورة",
     paperReview: "ورقتك تحچي", paperReviewHint: "صوّر سؤال وحلّك المصحّح",
     approve: "أوافق على الخطة وأضيفها لمهامي", approved: "الخطة انضافت لمهامك", upload: "إرفاق ملف درس", reading: "جاري قراءة الملف…", remove: "حذف الملف", fileError: "تعذّر قراءة الملف. استخدم PDF نصي أو TXT أو MD، بحجم لحد ١٠٠ ميغابايت. إذا الملف صور فقط، يحتاج تحويل إلى نص (OCR).",
@@ -33,6 +41,12 @@ const copy = {
     intro: "Hi, I'm متميز ✨ Ask about your lessons, work through a problem, talk about study pressure, plan your week, or find a tool. We can do all of that in this one conversation.",
     placeholder: "Talk to متميز…", back: "Back", send: "Send", fresh: "New conversation", loading: "متميز is thinking…", disclaimer: "متميز can make mistakes. Check important information. Professional mental-health support is available from qualified specialists.",
     quick: ["Help solve my problem", "I need emotional support", "Plan my study week", "Explain a scientific question", "Help me find a website tool"],
+    guideTitle: "Choose your first step",
+    guideStart: "I don’t know what to study",
+    guideStartDraft: "I don’t know where to start studying. Ask me about my subject and available time, then suggest one step I can do now.",
+    guidePlan: "Help me plan today",
+    guidePlanDraft: "Help me plan my study today. Ask what time and subjects I have, then help me choose my first task.",
+    guideTools: "Browse subject tools",
     whiteboard: "Explain on the whiteboard",
     paperReview: "Paper Review", paperReviewHint: "Photograph a question and your marked solution",
     approve: "Approve this plan and add to my tasks", approved: "Plan added to your tasks", upload: "Attach lesson file", reading: "Reading file…", remove: "Remove file", fileError: "Could not read the file. Use a text-based PDF, TXT or MD, up to 100 MB. Image-only PDFs need OCR before they can be read.",
@@ -48,12 +62,15 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
   const [owner, setOwner] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [input, setInput] = useState("");
+  const [studyGuide, setStudyGuide] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
   const [intake, setIntake] = useState(false);
   const [notice, setNotice] = useState("");
   const [board, setBoard] = useState<OpenBoard | null>(null);
   const boardTrigger = useRef<HTMLButtonElement | null>(null);
   const upload = useRef<HTMLInputElement>(null), scroll = useRef<HTMLDivElement>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
+  const studyGuideTitle = useRef<HTMLParagraphElement>(null);
   const ownerRef = useRef<string | null>(null);
   const scheduleRequested = useRef(false);
   const uploadOperation = useRef(0);
@@ -61,12 +78,13 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
   const messages = active ? conversation.messages : [];
   const busy = active && conversation.busy;
   const approving = active && conversation.approvingPlan !== null;
+  useEffect(() => { if (active && studyGuide) studyGuideTitle.current?.focus(); }, [active, studyGuide]);
   useEffect(() => {
     let live = true, revision = 0;
     const apply = (id: string | null) => {
       if (!live) return;
       if (ownerRef.current !== null && ownerRef.current !== id) {
-        setInput(""); setIntake(false); setNotice(""); setFileBusy(false);
+        setInput(""); setStudyGuide(false); setIntake(false); setNotice(""); setFileBusy(false);
         setBoard(null);
         scheduleRequested.current = false; uploadOperation.current++;
       }
@@ -81,6 +99,19 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { revision++; apply(session?.user.id ?? null); });
     return () => { live = false; uploadOperation.current++; data.subscription.unsubscribe(); };
   }, []);
+  useEffect(() => {
+    if (embedded) return;
+    const applyLaunch = () => {
+      const entry = takeMutamayizLaunch();
+      if (!entry) return;
+      setIntake(false);
+      setStudyGuide(entry.kind === "study-guide");
+      if (entry.kind === "draft") setInput(entry.text);
+    };
+    window.addEventListener("app:open-mutamayiz", applyLaunch);
+    applyLaunch();
+    return () => window.removeEventListener("app:open-mutamayiz", applyLaunch);
+  }, [embedded]);
   useEffect(() => {
     if (board && (board.owner !== conversation.owner || board.epoch !== conversation.epoch)) setBoard(null);
   }, [board, conversation.owner, conversation.epoch]);
@@ -103,7 +134,7 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
     if (!text || !owner || state.owner !== owner || state.busy || fileBusy) return;
     const epoch = state.epoch;
     const next = [...state.messages, { id: crypto.randomUUID(), role: "user" as const, content: text }].slice(-60);
-    updateAssistant(owner, current => ({ ...current, messages: next, busy: true })); setInput(""); setNotice("");
+    updateAssistant(owner, current => ({ ...current, messages: next, busy: true })); setInput(""); setStudyGuide(false); setNotice("");
     try {
       const { data, error } = await supabase.functions.invoke("excellence-companion", { body: {
         mode: "unified", language, messages: next.slice(-16).map(({ role, content }) => ({ role, content: content.slice(0, 6000) })),
@@ -236,11 +267,27 @@ export default function MutamayizChat({ language, onBack, onOpenTool, embedded =
       </>}
     </div>
     <footer className="shrink-0 space-y-2 border-t border-border bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5">
+      {active && studyGuide && !intake && (
+        <section aria-label={t.guideTitle} className="rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-2">
+          <p ref={studyGuideTitle} tabIndex={-1} className="mb-1 text-xs font-black text-foreground">{t.guideTitle}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {[[t.guideStart, t.guideStartDraft], [t.guidePlan, t.guidePlanDraft]].map(([label, draft]) => (
+              <button key={label} type="button" disabled={busy || fileBusy}
+                onClick={() => { setInput(draft); setStudyGuide(false); composer.current?.focus(); }}
+                className="min-h-11 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-card-foreground hover:bg-accent disabled:opacity-50">{label}</button>
+            ))}
+            <button type="button" onClick={() => { resetStudySubjectFocus(); openTool("subjectsHub"); }}
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-primary hover:bg-accent">
+              {t.guideTools}<ArrowUpRight aria-hidden="true" className={`size-3.5 shrink-0 ${ar ? "-scale-x-100" : ""}`} />
+            </button>
+          </div>
+        </section>
+      )}
       {active && conversation.file && <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-2 text-xs"><span className="min-w-0 truncate">{conversation.file.name}</span><button disabled={busy} onClick={() => owner && updateAssistant(owner, state => ({ ...state, file: null }))} aria-label={t.remove} className="grid size-9 shrink-0 place-items-center"><X className="size-4" /></button></div>}
       {notice && <p role="alert" className="text-sm text-destructive">{notice}</p>}
       <div className="flex min-w-0 items-end gap-2"><input ref={upload} type="file" accept=".pdf,.txt,.md" className="hidden" onChange={event => event.target.files?.[0] && void attach(event.target.files[0])} />
         <button disabled={!active || busy || fileBusy} onClick={() => upload.current?.click()} aria-label={t.upload} className="grid size-11 shrink-0 place-items-center rounded-xl border border-border disabled:opacity-40">{fileBusy ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-5" />}</button>
-        <textarea aria-label={t.placeholder} placeholder={t.placeholder} rows={2} maxLength={6000} value={input} disabled={!active || busy || fileBusy} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} className="min-h-12 min-w-0 flex-1 resize-none rounded-xl border border-border bg-card px-3 py-2 text-base leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60" />
+        <textarea ref={composer} aria-label={t.placeholder} placeholder={t.placeholder} rows={2} maxLength={6000} value={input} disabled={!active || busy || fileBusy} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} className="min-h-12 min-w-0 flex-1 resize-none rounded-xl border border-border bg-card px-3 py-2 text-base leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60" />
         <button onClick={() => void send()} disabled={!active || busy || fileBusy || !input.trim()} aria-label={t.send} className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-600 text-white disabled:opacity-40"><Send className={`size-5 ${ar ? "rotate-180" : ""}`} /></button></div>
       {active && !intake && <button disabled={busy} onClick={() => setIntake(true)} className="min-h-9 text-xs font-semibold text-blue-700 dark:text-blue-200">{t.weakness}</button>}
       <p className="text-center text-[11px] leading-5 text-muted-foreground">{t.disclaimer}</p>

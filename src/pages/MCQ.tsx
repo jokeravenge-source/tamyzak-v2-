@@ -14,7 +14,7 @@ import { recordMistake } from "@/lib/mistakes";
 import { awardAction } from "@/lib/unlocks";
 import PointsHint from "@/components/PointsHint";
 import { edgeErrorMessage } from "@/lib/edgeError";
-import { SUBJECTS_ORDER } from "@/data/subjectChapters";
+import { SUBJECTS_ORDER, type BankSubject } from "@/data/subjectChapters";
 import { getFlashcardChapters, type FlashcardSection } from "@/data/flashcardChapters";
 import { validatedGeneratedChapter } from "@/lib/mcqChapters";
 import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
@@ -82,12 +82,12 @@ const copy = {
 type MCQ = { question: string; choices: string[]; answer_index: number; explanation: string; hint?: string; subject: string; chapter: number | null };
 type Phase = "setup" | "chapters" | "quiz" | "result";
 
-const MCQ = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+const MCQ = ({ language, onBack, initialSubject }: { language: AppLanguage; onBack: () => void; initialSubject?: BankSubject }) => {
   useFeatureUsed("mcq");
   const t = copy[language];
   const rtl = language === "ar";
   const [file, setFile] = useState<File | null>(null);
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState<string>(initialSubject ?? "");
   const [section, setSection] = useState<FlashcardSection>("grammar");
   const [chapterN, setChapterN] = useState<number | null>(null);
   const [allQuestions, setAllQuestions] = useState<MCQ[]>([]);

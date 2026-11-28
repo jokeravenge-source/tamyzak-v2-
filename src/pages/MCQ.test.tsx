@@ -79,3 +79,10 @@ describe("MCQ generator chapter organization", () => {
     expect(screen.getByRole("option", { name: "6 · الاستفهام" })).toBeInTheDocument();
   });
 });
+
+it("opens the generator with the selected subject without generating automatically", async () => {
+  render(<MCQ language="en" onBack={vi.fn()} initialSubject="chemistry" />);
+  expect(screen.getByRole("combobox", { name: "Subject" })).toHaveValue("chemistry");
+  expect(screen.getByRole("combobox", { name: "Chapter" })).toBeEnabled();
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});

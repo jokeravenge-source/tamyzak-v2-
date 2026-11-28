@@ -45,6 +45,7 @@ import { getBuiltInEnglishLiteratureSection3 } from "@/lib/englishLiteratureSect
 import { isExamRelevantQuestion } from "@/lib/examRelevantMcq";
 import { getMcqChapterGroups, resolveMcqChapter } from "@/lib/mcqChapters";
 import { getFahrastTopicGroups, type FahrastTopicGroup } from "@/lib/mcqFahrastTopics";
+import { chooseStarterQuestions, parseStudyStart, STUDY_START_KEY } from "@/lib/studyStart";
 import { DAILY_MCQ_TARGET_KEY, dailyRotate, todayKey, type WeeklyLearningProfile } from "@/lib/weeklyLearning";
 
 type Row = {
@@ -115,7 +116,16 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const lang = isAr ? "ar" : "en";
   const Back = isAr ? ArrowRight : ArrowLeft;
 
+  const [starter] = useState(() => {
+    try { return parseStudyStart(sessionStorage.getItem(STUDY_START_KEY)); } catch { return null; }
+  });
+  const startSubject = starter?.subject ?? null;
+  const [useGeneralStarter, setUseGeneralStarter] = useState(false);
+  const [starterReadFailed, setStarterReadFailed] = useState(false);
+  useEffect(() => { if (startSubject) sessionStorage.removeItem(STUDY_START_KEY); }, [startSubject]);
+
   const [topicTarget] = useState<TopicPracticeTarget | null>(() => {
+    if (starter) return null;
     try {
       const raw = sessionStorage.getItem(TOPIC_PRACTICE_TARGET_KEY);
       sessionStorage.removeItem(TOPIC_PRACTICE_TARGET_KEY);
@@ -126,6 +136,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   });
 
   const [personalizedTarget] = useState<WeeklyLearningProfile | null>(() => {
+    if (starter) return null;
     try {
       const parsed = JSON.parse(sessionStorage.getItem(DAILY_MCQ_TARGET_KEY) || "null") as WeeklyLearningProfile | null;
       sessionStorage.removeItem(DAILY_MCQ_TARGET_KEY);
@@ -140,7 +151,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     return focused && SUBJECT_LABELS[focused] ? focused : null;
   });
   useEffect(() => { sessionStorage.removeItem("mcq_subject_focus_v1"); }, []);
-  const [subject, setSubject] = useState<string | null>(topicTarget?.subject ?? personalizedTarget?.subject ?? focusedSubject);
+  const [subject, setSubject] = useState<string | null>(startSubject ?? topicTarget?.subject ?? personalizedTarget?.subject ?? focusedSubject);
   const [chapter, setChapter] = useState<string | null>(null);
   const [topic, setTopic] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
@@ -155,8 +166,11 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
+    let current = true;
     (async () => {
       setLoading(true);
+      setStarterReadFailed(false);
+      const focus = startSubject ?? topicTarget?.subject ?? focusedSubject;
       const [{ data }, dueResult, priorAttempts, focusedRows] = await Promise.all([
         supabase
           .from("mcq_banks")
@@ -168,10 +182,10 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
           .limit(2000),
         supabase.rpc("get_due_mcq_bank_reviews"),
         loadTopicPractice(),
-        topicTarget ? supabase.from("mcq_banks")
+        focus ? supabase.from("mcq_banks")
           .select(BANK_COLUMNS)
-          .eq("language", lang).eq("subject", topicTarget.subject)
-          .order("sort_order", { ascending: true }).limit(2000) : Promise.resolve({ data: [] as Row[] }),
+          .eq("language", lang).eq("subject", focus)
+          .order("sort_order", { ascending: true }).limit(2000) : Promise.resolve({ data: [] as Row[], error: null }),
       ]);
       const databaseRows = [...new Map([...(data ?? []), ...(focusedRows.data ?? [])].map((row) => [row.id, row as Row])).values()]
         .filter((row) => isExamRelevantQuestion(row.question));
@@ -193,12 +207,15 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       const literatureSectionThreeFallback = getBuiltInEnglishLiteratureSection3(lang).filter(
         (row) => !existingQuestions.has(rowKey(row)),
       );
+      if (!current) return;
+      if (startSubject && focusedRows.error) setStarterReadFailed(true);
       setRows([...databaseRows, ...physicsFallback, ...biologyChapterTwoFallback, ...literatureFallback, ...literatureSectionTwoFallback, ...literatureSectionThreeFallback]);
       setTopicAttempts(priorAttempts);
       setDueQuestionIds(((dueResult.data ?? []) as { question_id: string }[]).map((r) => r.question_id));
       setLoading(false);
-    })();
-  }, [lang, topicTarget]);
+    })().catch(() => { if (current) { setStarterReadFailed(Boolean(startSubject)); setLoading(false); } });
+    return () => { current = false; };
+  }, [lang, topicTarget, startSubject, focusedSubject]);
 
   const subjects = useMemo(() => {
     const map = new Map<string, number>();
@@ -216,9 +233,9 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }, [selectedChapter, rows]);
   const isDailyPractice = personalizedTarget?.subject === subject && personalizedTarget?.chapterNumber === selectedChapter?.chapter;
   const topicGroups = useMemo(() => (
-    subject && selectedChapter && !topicTarget && !isDailyPractice && !reviewing
+    subject && selectedChapter && !starter && !topicTarget && !isDailyPractice && !reviewing
       ? getFahrastTopicGroups(subject, selectedChapter, chapterRows, lang) : []
-  ), [subject, selectedChapter, chapterRows, lang, topicTarget, isDailyPractice, reviewing]);
+  ), [subject, selectedChapter, chapterRows, lang, starter, topicTarget, isDailyPractice, reviewing]);
   const selectedTopic = topicGroups.find(item => item.key === topic);
 
   const dueRows = useMemo(
@@ -227,6 +244,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   );
   const quiz = useMemo(
     () => {
+      if (starter) return chooseStarterQuestions(rows, useGeneralStarter ? { ...starter, topicKeys: [] } : starter, lang);
       if (reviewing) return dueRows;
       if (topicTarget) return buildTopicQuiz(chapterRows, topicAttempts, topicTarget);
       if (personalizedTarget && isDailyPractice) {
@@ -243,10 +261,11 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       }
       return chapterRows;
     },
-    [chapterRows, reviewing, dueRows, personalizedTarget, isDailyPractice, topicTarget, topicAttempts, selectedTopic],
+    [starter, rows, useGeneralStarter, lang, chapterRows, reviewing, dueRows, personalizedTarget, isDailyPractice, topicTarget, topicAttempts, selectedTopic],
   );
 
   useEffect(() => {
+    if (starter) return;
     if (topicTarget && !chapter && chapters.length) {
       const match = chapters.find((item) => item.chapter === topicTarget.chapter);
       if (match) setChapter(match.key);
@@ -255,12 +274,12 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
     if (!personalizedTarget || chapter || !chapters.length) return;
     const match = chapters.find((item) => item.chapter === personalizedTarget.chapterNumber && item.count > 0);
     if (match) setChapter(match.key);
-  }, [personalizedTarget, chapters, chapter, topicTarget]);
+  }, [starter, personalizedTarget, chapters, chapter, topicTarget]);
   const baseline = topicTarget ? topicBaseline(topicAttempts, topicTarget) : null;
   const current = quiz[index];
   const showTopicPicker = topicGroups.length > 0 && topic === null && selectedChapter && subject;
   const finished = index >= quiz.length - 1 && picked !== null;
-  useCharacterPractice(!loading && !showTopicPicker && Boolean(current) && (reviewing || chapter !== null) && (!finished || submitting));
+  useCharacterPractice(!loading && !showTopicPicker && Boolean(current) && (Boolean(starter) || reviewing || chapter !== null) && (!finished || submitting));
   const choices = useMemo(
     () => (Array.isArray(current?.choices) ? (current!.choices as unknown[]).map(String) : []),
     [current],
@@ -344,7 +363,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   const next = () => { resetQ(); setIndex((i) => Math.min(i + 1, quiz.length - 1)); };
   const restart = () => { resetQ(); setIndex(0); setScore({ right: 0, wrong: 0 }); setMissedQuestions([]); };
   const leaveQuiz = () => {
-    if (topicTarget) { onBack(); return; }
+    if (starter || topicTarget) { onBack(); return; }
     if (reviewing) setReviewing(false);
     else if (topicGroups.length) setTopic(null);
     else setChapter(null);
@@ -367,6 +386,24 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </main>
     );
+  }
+
+  const requestedStarterTopics = Boolean(starter?.topicKeys.length && !useGeneralStarter);
+  const starterTitle = isAr ? "تدريب البداية" : "Starter practice";
+  if (starter && quiz.length === 0) {
+    return <main className="min-h-screen px-4 py-8" dir={isAr ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-2xl">
+        {header(starterTitle, onBack)}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-sm text-muted-foreground">{starterReadFailed
+            ? (isAr ? "ما گدرنا نحمّل الأسئلة هسه. ارجع وجرّب مرة ثانية." : "Could not load questions. Go back and try again.")
+            : requestedStarterTopics
+              ? (isAr ? "ما لكينا أسئلة متاحة تطابق المواضيع اللي اخترتها. اختياراتك ما راح تتغيّر إذا بديت تدريب عام بالمادة." : "No available questions match these topics. General practice won't change your saved topics.")
+            : (isAr ? "ماكو أسئلة متاحة لهالمادة حالياً. تگدر ترجع لأدوات المادة." : "No questions are available for this subject right now. You can return to its other tools.")}</p>
+          {requestedStarterTopics && !starterReadFailed && <Button className="mt-4" onClick={() => setUseGeneralStarter(true)}>{isAr ? "ابدأ تدريب عام بالمادة" : "Start general subject practice"}</Button>}
+        </div>
+      </div>
+    </main>;
   }
 
   if (topicTarget && (subject === "arabic" || !chapters.some((item) => item.chapter === topicTarget.chapter) || chapter !== null && quiz.length === 0)) {
@@ -511,7 +548,7 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
   }
 
   // ---- Chapter picker ----
-  if (chapter === null && !reviewing) {
+  if (chapter === null && !reviewing && !starter) {
     const usesSections = subject === "english_literature";
     return (
       <main className="relative min-h-screen overflow-hidden px-4 py-6 pb-28 md:py-10" dir={isAr ? "rtl" : "ltr"}>
@@ -607,13 +644,18 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
       <div aria-hidden="true" className="pointer-events-none absolute -top-32 start-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
       <div className="relative mx-auto max-w-2xl">
       {header(
-        reviewing
+        starter ? `${starterTitle} · ${subjectLabel(starter.subject, isAr)}` : reviewing
           ? (isAr ? "أسئلة للمراجعة" : "Questions to review")
           : topicTarget ? `${subjectLabel(subject!, isAr)} · ${categoryLabel(topicTarget.categoryKey, lang)}`
           : `${subjectLabel(subject!, isAr)} · ${selectedTopic?.title ?? selectedChapter?.title ?? ""}`,
         leaveQuiz,
       )}
 
+      {starter && <p className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+        {requestedStarterTopics ? (isAr ? "من المواضيع اللي اخترتها." : "From the topics you chose.")
+          : (isAr ? "تدريب عام من أسئلة المادة." : "General practice from this subject.")}
+        {quiz.length < 5 && (isAr ? ` المتاح هسه: ${quiz.length}.` : ` Available now: ${quiz.length}.`)}
+      </p>}
       {topicTarget && <p className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
         {isAr ? `تدريب قصير على ${categoryLabel(topicTarget.categoryKey, lang)} · ${quiz.length} أسئلة من نفس الموضوع` : `Focused practice: ${categoryLabel(topicTarget.categoryKey, lang)} · ${quiz.length} matching questions`}
       </p>}
@@ -726,7 +768,8 @@ export default function McqBank({ language, onBack }: { language: AppLanguage; o
                           <RotateCcw className="w-4 h-4 me-1" />{isAr ? "إعادة" : "Restart"}
                         </Button>
                         <Button onClick={leaveQuiz}>
-                          {topicTarget ? (isAr ? "العودة للتقدم" : "Back to progress")
+                          {starter ? (isAr ? "العودة لأدوات المادة" : "Back to subject tools")
+                            : topicTarget ? (isAr ? "العودة للتقدم" : "Back to progress")
                             : reviewing ? (isAr ? "العودة للبنك" : "Back to bank")
                             : topicGroups.length ? (isAr ? "مواضيع الفصل" : "Chapter topics")
                             : (isAr ? "فصل آخر" : "Another chapter")}

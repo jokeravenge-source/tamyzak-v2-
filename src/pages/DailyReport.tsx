@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AppLanguage } from "@/components/LanguageGate";
 import ExcellenceCompanion from "@/components/ExcellenceCompanion";
+import DailyReportReview from "@/components/DailyReportReview";
+import { baghdadReportDate } from "../../supabase/functions/_shared/baghdadReportDay";
 import ProgressStats from "@/components/ProgressStats";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
@@ -63,13 +65,19 @@ type Report = {
   todo_today?: { total: number; done: number; pending: string[]; pct: number };
 };
 
-export default function DailyReport({ language, onBack, onNav }: { language: AppLanguage; onBack: () => void; onNav?: (choice: MainMenuChoice) => void }) {
+export default function DailyReport({ language, onBack, onNav, onReviewMistakes }: {
+  language: AppLanguage;
+  onBack: () => void;
+  onNav?: (choice: MainMenuChoice) => void;
+  onReviewMistakes?: () => void;
+}) {
   useFeatureUsed("reports");
   const t = T[language];
   const ar = language === "ar";
   const [report, setReport] = useState<Report | null>(null);
   const [meta, setMeta] = useState<{ days_to_exam: number | null; daily_target_minutes: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reportUnavailable, setReportUnavailable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [accessCode, setAccessCode] = useState<string | null>(null);
@@ -79,14 +87,21 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
 
   const load = async (force = false) => {
     if (force) setRefreshing(true); else setLoading(true);
-    const { data, error } = await supabase.functions.invoke("generate-daily-report", { body: { language, force } });
-    if (error) toast.error(error.message);
-    else if (data?.report) {
+    setReportUnavailable(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-daily-report", { body: { language, force, date: baghdadReportDate() } });
+      if (error || !data?.report) {
+        setReportUnavailable(true);
+        return;
+      }
       setReport(data.report);
       if (data.meta) setMeta(data.meta);
+    } catch {
+      setReportUnavailable(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-    setRefreshing(false);
   };
 
   const loadToken = async () => {
@@ -209,9 +224,16 @@ export default function DailyReport({ language, onBack, onNav }: { language: App
           </div>
         </div>
 
+        <div className="mb-6 md:mb-8">
+          <DailyReportReview language={language} onReview={onReviewMistakes} />
+        </div>
+
+        {reportUnavailable && <p role="status" className="mb-4 rounded-xl border border-border p-3 text-sm text-muted-foreground">
+          {ar ? "ما گدرنا نحدّث تقريرك هسه. جرّب تحديث الملاحظات." : "Could not refresh your report. Try Refresh insights again."}
+        </p>}
         {loading && !report ? (
           <div className="py-24 text-center text-muted-foreground text-sm">…</div>
-        ) : (
+        ) : report && (
           <div className="space-y-6 md:space-y-8">
             <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               <Measure icon={Clock} tone="sky" label={t.minutes} value={`${report?.focused_minutes ?? 0}`} unit={t.min} sub={meta ? `${focusedPct}% ${t.target}` : undefined} />

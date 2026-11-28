@@ -24,7 +24,6 @@ describe("French Conjugator navigation", () => {
     const onSelect = vi.fn();
     render(<SubjectsHub language="en" onBack={vi.fn()} onSelect={onSelect} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Show extra tools" }));
     const tool = screen.getByRole("button", { name: /French Conjugator/ });
     expect(tool).toHaveTextContent("FREE");
     fireEvent.click(tool);

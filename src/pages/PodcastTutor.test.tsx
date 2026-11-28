@@ -273,3 +273,14 @@ it("keeps the same section after a partial answer and returns to the understandi
   ).toHaveLength(1);
   view.unmount();
 });
+
+it.each([["biology", "الأحياء"], ["french", ""]] as const)(
+  "preselects %s only when the existing Audio Tutor supports it",
+  async (initialSubject, expected) => {
+    const page = render(<PodcastTutor language="ar" onBack={vi.fn()} initialSubject={initialSubject} />);
+    expect(screen.getByRole("combobox", { name: "المادة (اختياري)" })).toHaveValue(expected);
+    await waitFor(() => expect(api.invoke).toHaveBeenCalledWith("get-session-status", expect.anything()));
+    expect(api.invoke).not.toHaveBeenCalledWith("create-podcast-session", expect.anything());
+    page.unmount();
+  },
+);

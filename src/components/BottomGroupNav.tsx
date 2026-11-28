@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { AppLanguage } from "@/components/LanguageGate";
 import MutamayizMascot from "@/components/MutamayizMascot";
 import { useNavVisibility } from "@/hooks/useNavVisibility";
+import { resetStudySubjectFocus } from "@/lib/studySubjectFocus";
 import { TESLA_STORE_URL } from "@/lib/storeLinks";
 import type { MainMenuChoice } from "@/pages/MainMenu";
 
@@ -118,6 +119,11 @@ const BottomGroupNav = ({
 
   const selectItem = (key: MainMenuChoice) => {
     setMoreOpen(false);
+    if (key === "more") {
+      resetStudySubjectFocus();
+      onSelect("subjectsHub");
+      return;
+    }
     onSelect(key);
   };
 

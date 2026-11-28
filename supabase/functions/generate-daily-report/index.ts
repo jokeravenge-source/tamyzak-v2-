@@ -1,5 +1,6 @@
 import { protect } from "../_shared/guard.ts";
 import { requireUser } from "../_shared/auth.ts";
+import { baghdadReportBounds, baghdadReportDate } from "../_shared/baghdadReportDay.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -11,12 +12,8 @@ const corsHeaders = {
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const AI_MODEL = "google/gemini-3.8-flash";
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function dateNDaysAgo(n: number): string {
-  const d = new Date();
+function dateNDaysAgo(date: string, n: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
 }
@@ -79,8 +76,29 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const language: "en" | "ar" = body.language === "ar" ? "ar" : "en";
-    const date: string = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : todayIso();
+    const date: string = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : baghdadReportDate();
     const force: boolean = !!body.force;
+
+    // Live counters agree with the Home preview; cache only the AI interpretation.
+    const { start: startToday, end: endToday } = baghdadReportBounds(date);
+    const { data: sessionsToday, error: sessionError } = await admin
+      .from("study_sessions").select("subject, mission, duration_seconds, mission_completed, points, created_at")
+      .eq("user_id", userId).gte("created_at", startToday).lt("created_at", endToday);
+
+    if (sessionError) return json({ error: "study_sessions_unavailable" }, 503);
+    const sessions = sessionsToday ?? [];
+    const focusedMinutes = Math.round(sessions.reduce((s, r: any) => s + (r.duration_seconds || 0), 0) / 60);
+    const missionsCompleted = sessions.filter((s: any) => s.mission_completed).length;
+    const pointsEarned = sessions.reduce((s, r: any) => s + (r.points || 0), 0);
+
+    const bySubjectMap = new Map<string, { minutes: number; missions: number }>();
+    for (const s of sessions as any[]) {
+      const cur = bySubjectMap.get(s.subject) || { minutes: 0, missions: 0 };
+      cur.minutes += Math.round((s.duration_seconds || 0) / 60);
+      if (s.mission_completed) cur.missions += 1;
+      bySubjectMap.set(s.subject, cur);
+    }
+    const subjectsBreakdown = Array.from(bySubjectMap.entries()).map(([subject, v]) => ({ subject, ...v }));
 
     // Cache: return existing report for today unless force
     if (!force) {
@@ -98,39 +116,20 @@ Deno.serve(async (req) => {
         }
         const dtm = prof0?.weekly_goal_hours ? Math.round((prof0.weekly_goal_hours * 60) / 7) : 120;
         return json({
-          report: { ...cached, todo_today: todoSnap },
+          report: { ...cached, focused_minutes: focusedMinutes, sessions_count: sessions.length,
+            missions_completed: missionsCompleted, points_earned: pointsEarned,
+            subjects_breakdown: subjectsBreakdown, todo_today: todoSnap },
           meta: { days_to_exam: dte, daily_target_minutes: dtm },
           cached: true,
         });
       }
     }
 
-    // Pull today's sessions
-    const startToday = `${date}T00:00:00Z`;
-    const endToday = `${date}T23:59:59Z`;
-    const { data: sessionsToday } = await admin
-      .from("study_sessions").select("subject, mission, duration_seconds, mission_completed, points, created_at")
-      .eq("user_id", userId).gte("created_at", startToday).lte("created_at", endToday);
-
-    const sessions = sessionsToday ?? [];
-    const focusedMinutes = Math.round(sessions.reduce((s, r: any) => s + (r.duration_seconds || 0), 0) / 60);
-    const missionsCompleted = sessions.filter((s: any) => s.mission_completed).length;
-    const pointsEarned = sessions.reduce((s, r: any) => s + (r.points || 0), 0);
-
-    const bySubjectMap = new Map<string, { minutes: number; missions: number }>();
-    for (const s of sessions as any[]) {
-      const cur = bySubjectMap.get(s.subject) || { minutes: 0, missions: 0 };
-      cur.minutes += Math.round((s.duration_seconds || 0) / 60);
-      if (s.mission_completed) cur.missions += 1;
-      bySubjectMap.set(s.subject, cur);
-    }
-    const subjectsBreakdown = Array.from(bySubjectMap.entries()).map(([subject, v]) => ({ subject, ...v }));
-
     // 7-day history
-    const start7 = dateNDaysAgo(7);
+    const start7 = dateNDaysAgo(date, 7);
     const { data: sessions7 } = await admin
       .from("study_sessions").select("subject, duration_seconds, mission_completed, created_at")
-      .eq("user_id", userId).gte("created_at", `${start7}T00:00:00Z`);
+      .eq("user_id", userId).gte("created_at", baghdadReportBounds(start7).start).lt("created_at", endToday);
     const last7Minutes = Math.round((sessions7 ?? []).reduce((s, r: any) => s + (r.duration_seconds || 0), 0) / 60);
     const last7BySubject = new Map<string, number>();
     for (const s of (sessions7 ?? []) as any[]) {

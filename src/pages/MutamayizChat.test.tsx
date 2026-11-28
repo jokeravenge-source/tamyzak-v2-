@@ -1,6 +1,7 @@
 import {act,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import MutamayizChat from './MutamayizChat';
+import {openMutamayizStudyGuide,openMutamayizWithDraft,takeMutamayizLaunch} from '@/lib/mutamayizLaunch';
 import {assistantSnapshot,newAssistantConversation,setAssistantOwner,updateAssistant} from '@/lib/mutamayizConversation';
 import {getISOWeek,WEEKLY_LEARNING_KEY} from '@/lib/weeklyLearning';
 import {capacitorLesson} from '../../supabase/functions/_shared/whiteboardCapacitors';
@@ -10,13 +11,30 @@ vi.mock('@/lib/todosSync',()=>({getISOWeek:()=> '2026-W46',pullTodos:backend.pul
 vi.mock('@/components/WeeklyWeaknessIntake',()=>({default:()=> <div>Weakness intake</div>}));
 vi.mock('@/lib/mutamayizFile',async importOriginal=>({ ...await importOriginal<typeof import('@/lib/mutamayizFile')>(), readAssistantFile:backend.readFile }));
 beforeEach(()=>{
- localStorage.clear();sessionStorage.clear();setAssistantOwner(null);backend.invoke.mockReset();backend.readFile.mockReset();backend.getUser.mockResolvedValue({data:{user:{id:'student'}}});backend.pushTodos.mockClear().mockResolvedValue(true);backend.pullTodos.mockReset().mockResolvedValue(null);
+ localStorage.clear();sessionStorage.clear();takeMutamayizLaunch();setAssistantOwner(null);backend.invoke.mockReset();backend.readFile.mockReset();backend.getUser.mockResolvedValue({data:{user:{id:'student'}}});backend.pushTodos.mockClear().mockResolvedValue(true);backend.pullTodos.mockReset().mockResolvedValue(null);
  backend.onAuthStateChange.mockImplementation((cb)=>{backend.authListener=cb;return{data:{subscription:{unsubscribe:backend.unsubscribe}}};});
 
 });
 afterEach(()=>vi.restoreAllMocks());
 const send=async(text:string)=>{const input=await screen.findByRole('textbox');await waitFor(()=>expect(input).toBeEnabled());await act(async()=>{fireEvent.change(input,{target:{value:text}});fireEvent.click(screen.getByRole('button',{name:'إرسال'}));});};
 describe('single Mutamayiz conversation',()=>{
+ it('shows on-request Home guidance, prompts locally, and keeps direct subject tools navigable',async()=>{
+  const open = vi.fn();
+  openMutamayizStudyGuide();
+  const view = render(<MutamayizChat language="ar" onOpenTool={open} />);
+  fireEvent.click(await screen.findByRole('button', {name:'شوف أدوات المواد'}));
+  expect(open).toHaveBeenCalledWith("subjectsHub");
+  fireEvent.click(screen.getByRole('button', {name:'ما أعرف شنو أدرس'}));
+  expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('محتار منين أبدي');
+  expect(backend.invoke).not.toHaveBeenCalled();
+  view.unmount();
+  const next = render(<MutamayizChat language="en" />);
+  expect(screen.queryByRole('region',{name:'Choose your first step'})).not.toBeInTheDocument();
+  act(()=>openMutamayizWithDraft('Help me study chemistry'));
+  expect(screen.getByRole('textbox')).toHaveValue('Help me study chemistry');
+  expect(backend.invoke).not.toHaveBeenCalled();
+  next.unmount();
+ });
  it('offers paper review directly from the signed-in chat',async()=>{
   const open = vi.fn();
   render(<MutamayizChat language="ar" onOpenTool={open} />);

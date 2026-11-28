@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Flashcard } from "@/data/flashcards";
+import type { BankSubject } from "@/data/subjectChapters";
+import { studySubjectVariants } from "@/lib/studySubjectTools";
 
 /**
  * Lightweight SM-2 style spaced repetition for flashcards.
@@ -197,14 +199,15 @@ export async function totalDueCount(): Promise<number> {
 export type DueFlashcard = { card_key: string; subject: string; chapter: string; question: string; answer: string; language: string };
 
 /** Due cards from all studied decks for the combined daily review. */
-export async function fetchDueFlashcards(limit = 20): Promise<DueFlashcard[]> {
+export async function fetchDueFlashcards(limit = 20, subject?: BankSubject): Promise<DueFlashcard[]> {
   const user = await uid();
   if (!user) return [];
-  const { data } = await supabase.from("flashcard_reviews")
+  const query = supabase.from("flashcard_reviews")
     .select("card_key,subject,chapter,question,answer,language")
     .eq("user_id", user)
-    .lte("due_at", new Date().toISOString())
-    .order("due_at", { ascending: true })
+    .lte("due_at", new Date().toISOString());
+  if (subject) query.in("subject", studySubjectVariants(subject));
+  const { data } = await query.order("due_at", { ascending: true })
     .limit(limit);
   return (data ?? []) as DueFlashcard[];
 }

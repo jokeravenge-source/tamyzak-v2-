@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, X, Loader2, AlertTriangle, CalendarClock, Eye, Trophy, Frown } from "lucide-react";
+import { SUBJECTS_ORDER, type BankSubject } from "@/data/subjectChapters";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
 import { fetchAllMistakes, recordMistake, resolveMistake, type Mistake } from "@/lib/mistakes";
@@ -22,9 +23,13 @@ const SOURCE_LABELS: Record<string, { ar: string; en: string }> = {
 const asChoices = (v: unknown): string[] =>
   Array.isArray(v) ? (v as unknown[]).map(String).filter(Boolean) : [];
 
-export default function MyMistakes({ language, onBack }: { language: AppLanguage; onBack: () => void }) {
+export default function MyMistakes({ language, onBack, subject, startReview = false }: {
+  language: AppLanguage; onBack: () => void; subject?: BankSubject; startReview?: boolean;
+}) {
   const isAr = language === "ar";
   const Back = isAr ? ArrowRight : ArrowLeft;
+  const subjectTitle = SUBJECTS_ORDER.find(entry => entry.code === subject)?.[language];
+  const autoStart = useRef(startReview);
 
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Mistake[]>([]);
@@ -41,13 +46,20 @@ export default function MyMistakes({ language, onBack }: { language: AppLanguage
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [list, cards] = await Promise.all([fetchAllMistakes(), fetchDueFlashcards()]);
+    const [list, cards] = await Promise.all(subject
+      ? [fetchAllMistakes(subject), fetchDueFlashcards(20, subject)]
+      : [fetchAllMistakes(), fetchDueFlashcards()]);
     setItems(list);
     setDueCards(cards);
-    const stillDue = list.some((m) => !m.resolved && new Date(m.next_review_at).getTime() <= Date.now());
-    if (!stillDue) liftMistakesPunishment();
+    const ready = list.filter(m => !m.resolved && new Date(m.next_review_at).getTime() <= Date.now());
+    if (!subject && !ready.length) liftMistakesPunishment();
+    if (autoStart.current) {
+      autoStart.current = false;
+      const retry = ready.length ? ready : subject ? [] : list.filter(m => !m.resolved);
+      if (retry.length) { setReviewDeck(retry); setMode("redo"); }
+    }
     setLoading(false);
-  }, []);
+  }, [subject]);
 
   useEffect(() => { markMistakesOpened(); void load(); }, [load]);
 
@@ -135,7 +147,7 @@ export default function MyMistakes({ language, onBack }: { language: AppLanguage
       <Button variant="ghost" size="icon" onClick={() => (mode !== "list" ? (setMode("list"), setIndex(0), setRevealed(false), setPicked(null), void load()) : onBack())} aria-label={isAr ? "رجوع" : "Back"}>
         <Back className="w-5 h-5" />
       </Button>
-      <h1 className="text-xl font-bold">{mode === "daily" ? (isAr ? "مراجعة اليوم" : "Daily review") : (isAr ? "أخطائي" : "My mistakes")}</h1>
+      <h1 className="text-xl font-bold">{mode === "daily" ? (isAr ? "مراجعة اليوم" : "Daily review") : (isAr ? "أخطائي" : "My mistakes")}{subjectTitle ? ` · ${subjectTitle}` : ""}</h1>
     </div>
   );
 
@@ -270,7 +282,9 @@ export default function MyMistakes({ language, onBack }: { language: AppLanguage
     <main className="min-h-screen px-4 py-8 pb-28" dir={isAr ? "rtl" : "ltr"}>
       {header}
       <p className="text-sm text-muted-foreground mb-5 max-w-2xl">
-        {isAr
+        {subject
+          ? (isAr ? "هنا تشوف الأخطاء والبطاقات اللي تخص هالمادة بس." : "Only this subject’s mistakes and flashcards appear here.")
+          : isAr
           ? "كل سؤال تخطئ فيه في الموقع يُحفظ هنا، ويعود لك للمراجعة بعد 3 أيام حتى تتقنه."
           : "Every question you get wrong anywhere in the app is saved here and comes back for review after 3 days until you master it."}
       </p>

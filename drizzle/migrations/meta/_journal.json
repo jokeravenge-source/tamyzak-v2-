@@ -547,6 +547,13 @@
       "when": 1795869000001,
       "tag": "0077_session_telegram_break",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795883400000,
+      "tag": "0078_student_study_focus",
+      "breakpoints": true
     }
   ]
 }

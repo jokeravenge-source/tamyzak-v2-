@@ -149,7 +149,7 @@ type Persisted = {
   mcqs: MCQItem[];
 };
 
-const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () => void }) => {
+const VideoNotes = ({ language, onBack, initialSubject }: { language: AppLanguage; onBack: () => void; initialSubject?: BankSubject }) => {
   useFeatureUsed("video_to_notes");
   const t = copy[language];
   const initial: Persisted = (() => {
@@ -178,7 +178,7 @@ const VideoNotes = ({ language, onBack }: { language: AppLanguage; onBack: () =>
   const [cardsLoading, setCardsLoading] = useState(false);
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
   const [savedIdx, setSavedIdx] = useState<Set<number>>(new Set());
-  const [subject, setSubject] = useState<BankSubject | "">("");
+  const [subject, setSubject] = useState<BankSubject | "">(initialSubject ?? "");
   const [chapter, setChapter] = useState<string>("");
 
   // MCQ

@@ -3648,6 +3648,12 @@ export type Database = {
         }
         Relationships: []
       }
+      student_study_focus: {
+        Row: { user_id: string; subject: string; topic_keys: string[]; updated_at: string }
+        Insert: { user_id: string; subject: string; topic_keys: string[]; updated_at?: string }
+        Update: { user_id?: string; subject?: string; topic_keys?: string[]; updated_at?: string }
+        Relationships: []
+      }
       student_weakness_sessions: {
         Row: {
           detected_areas: Json

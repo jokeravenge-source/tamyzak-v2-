@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Basics from "@/pages/Basics";
 import SubjectsHub from "@/pages/SubjectsHub";
 import { getStudyWeek } from "@/lib/todoSchedule";
+import { takeMutamayizLaunch } from "@/lib/mutamayizLaunch";
 
 const state = vi.hoisted(() => ({
   isPremium: false, loading: false, openInstagram: vi.fn(),
@@ -56,15 +57,14 @@ describe("locked tool navigation", () => {
     localStorage.setItem("app_subject_focus_v1", "physics");
     const onSelect = vi.fn();
     await act(async () => { render(<SubjectsHub language={language} onBack={vi.fn()} onSelect={onSelect} />); });
-    fireEvent.click(screen.getByRole("button", { name: language === "ar" ? "عرض الأدوات الإضافية" : "Show extra tools" }));
+    fireEvent.click(screen.getByRole("button", { name: language === "ar" ? "الأدوات العامة والذكاء الاصطناعي" : "General and AI tools" }));
     fireEvent.click(screen.getByRole("button", { name: new RegExp(language === "ar" ? "توليد امتحان كامل" : "Full Exam Generator") }));
     expect(state.openInstagram).not.toHaveBeenCalled();
-    expect(onSelect).toHaveBeenCalledWith("examGenerator");
+    expect(onSelect).toHaveBeenCalledWith("examGenerator", { subject: "physics" });
   });
   it("does not turn the existing hard lock into a paid unlock", async () => {
     localStorage.setItem("app_subject_focus_v1", "physics");
     await act(async () => { render(<SubjectsHub language="en" onBack={vi.fn()} onSelect={vi.fn()} />); });
-    fireEvent.click(screen.getByRole("button", { name: "Show extra tools" }));
     fireEvent.click(screen.getByRole("button", { name: /Quick MCQ/ }));
     expect(state.openInstagram).not.toHaveBeenCalled();
   });
@@ -78,19 +78,15 @@ describe("simplified home navigation", () => {
 
     const continueButton = screen.getByRole("button", { name: /Continue studying/ });
 
+    localStorage.setItem("app_subject_focus_v1", "chemistry");
     fireEvent.click(continueButton);
     expect(onSelect).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /Recommended flashcards/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Recommended MCQs/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Recommended flashcards/ }));
-    expect(onSelect).toHaveBeenCalledWith("flashcards");
+    expect(onNav).toHaveBeenCalledWith("subjectsHub");
+    expect(localStorage.getItem("app_subject_focus_v1")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Recommended flashcards/ })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Back to home/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Continue studying/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Recommended MCQs/ }));
-    expect(onNav).toHaveBeenCalledWith("mcqBank");
-
-    fireEvent.click(screen.getByRole("button", { name: /Back to home/ }));
+    fireEvent.click(screen.getByRole("button", { name: "My Daily Report" }));
+    expect(onNav).toHaveBeenCalledWith("report");
     fireEvent.click(screen.getByRole("button", { name: /Choose a subject/ }));
     expect(onNav).toHaveBeenCalledWith("subjectsHub");
     fireEvent.click(screen.getByRole("button", { name: /Review mistakes/ }));
@@ -103,6 +99,12 @@ describe("simplified home navigation", () => {
     await act(async () => { render(<Basics language="ar" onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={vi.fn()} />); });
     expect(screen.getByRole("button", { name: /كمّل دراستك/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /اختَر مادة/ })).toBeInTheDocument();
+    const guide = screen.getByRole("button", { name: "اسأل متميّز" });
+    expect(guide).toHaveAccessibleDescription("محتار منين تبدي؟");
+    expect(screen.getByRole("button", { name: "كمّل دراستك" }).closest(".home-illustrated-card")).toContainElement(guide);
+    fireEvent.click(guide);
+    expect(takeMutamayizLaunch()).toEqual({ kind: "study-guide" });
+    expect(screen.getByRole("button", { name: "تقريري اليومي" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /راجع أخطاءك/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /كل الأدوات/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /مسابقة الأستاذ محمد النداوي/ })).not.toBeInTheDocument();
