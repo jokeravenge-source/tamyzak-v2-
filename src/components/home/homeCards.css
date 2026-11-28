@@ -1,86 +1,110 @@
-/* Jewel-tone Home palette: solid card backgrounds, no white or theme-surface blending. */
+/* Soft, analogous three-stop Home gradients. Fully opaque colors, no white or theme-surface blending. */
 [data-home-tone="points"] {
   --home-card-light: #FFD18B;
-  --home-card-swatch: #AD510C;
-  --home-card-base: #823604;
-  --home-card-shadow: #82360466;
+  --home-card-swatch: #A55343;
+  --home-card-base: #88425A;
+  --home-card-shadow: #88425A66;
+  --home-gradient-start: #AE6332;
+  --home-gradient-end: #88425A;
 }
 
 [data-home-tone="quick-study"] {
   --home-card-light: #9AE7BC;
-  --home-card-swatch: #19764D;
-  --home-card-base: #0C5134;
-  --home-card-shadow: #0C513466;
+  --home-card-swatch: #26715F;
+  --home-card-base: #285B68;
+  --home-card-shadow: #285B6866;
+  --home-gradient-start: #287D63;
+  --home-gradient-end: #285B68;
 }
 
 [data-home-tone="challenge"] {
   --home-card-light: #DCC0FF;
-  --home-card-swatch: #7545C4;
-  --home-card-base: #4D2896;
-  --home-card-shadow: #4D289666;
+  --home-card-swatch: #6952B0;
+  --home-card-base: #485BA3;
+  --home-card-shadow: #485BA366;
+  --home-gradient-start: #8355B6;
+  --home-gradient-end: #485BA3;
 }
 
 [data-home-tone="houdini"] {
   --home-card-light: #FFC1DB;
-  --home-card-swatch: #B33C70;
-  --home-card-base: #82234D;
-  --home-card-shadow: #82234D66;
+  --home-card-swatch: #A44C91;
+  --home-card-base: #7D4D9A;
+  --home-card-shadow: #7D4D9A66;
+  --home-gradient-start: #B44E80;
+  --home-gradient-end: #7D4D9A;
 }
 
 [data-home-tone="telegram"] {
   --home-card-light: #C4D8FF;
-  --home-card-swatch: #465AB9;
-  --home-card-base: #303D85;
-  --home-card-shadow: #303D8566;
+  --home-card-swatch: #5260AF;
+  --home-card-base: #6052A0;
+  --home-card-shadow: #6052A066;
+  --home-gradient-start: #506CC0;
+  --home-gradient-end: #6052A0;
 }
 
 [data-home-tone="continue"] {
   --home-card-light: #A8D5FF;
-  --home-card-swatch: #2864D7;
-  --home-card-base: #1945A3;
-  --home-card-shadow: #1945A366;
+  --home-card-swatch: #3E65BC;
+  --home-card-base: #5353AC;
+  --home-card-shadow: #5353AC66;
+  --home-gradient-start: #3376C0;
+  --home-gradient-end: #5353AC;
 }
 
 [data-home-tone="schedule"] {
   --home-card-light: #A2EEE5;
-  --home-card-swatch: #087B80;
-  --home-card-base: #05565B;
-  --home-card-shadow: #05565B66;
+  --home-card-swatch: #286F82;
+  --home-card-base: #365C83;
+  --home-card-shadow: #365C8366;
+  --home-gradient-start: #287F81;
+  --home-gradient-end: #365C83;
 }
 
 [data-home-tone="malazam"] {
   --home-card-light: #FFD18B;
-  --home-card-swatch: #AD510C;
-  --home-card-base: #823604;
-  --home-card-shadow: #82360466;
+  --home-card-swatch: #A45648;
+  --home-card-base: #88465C;
+  --home-card-shadow: #88465C66;
+  --home-gradient-start: #AC6333;
+  --home-gradient-end: #88465C;
 }
 
 [data-home-tone="subjectsHub"] {
   --home-card-light: #A8D5FF;
-  --home-card-swatch: #2864D7;
-  --home-card-base: #1945A3;
-  --home-card-shadow: #1945A366;
+  --home-card-swatch: #4269BB;
+  --home-card-base: #5657A9;
+  --home-card-shadow: #5657A966;
+  --home-gradient-start: #3779BB;
+  --home-gradient-end: #5657A9;
 }
 
 [data-home-tone="mistakes"] {
   --home-card-light: #FFC0CA;
-  --home-card-swatch: #B83D5E;
-  --home-card-base: #85253F;
-  --home-card-shadow: #85253F66;
+  --home-card-swatch: #A34D7D;
+  --home-card-base: #844D91;
+  --home-card-shadow: #844D9166;
+  --home-gradient-start: #B44E68;
+  --home-gradient-end: #844D91;
 }
 
 [data-home-tone="more"] {
   --home-card-light: #D4C1FF;
-  --home-card-swatch: #6650B3;
-  --home-card-base: #49358B;
-  --home-card-shadow: #49358B66;
+  --home-card-swatch: #6758A9;
+  --home-card-base: #4E5FA0;
+  --home-card-shadow: #4E5FA066;
+  --home-gradient-start: #7860B7;
+  --home-gradient-end: #4E5FA0;
 }
 
 [data-home-tone="report"] {
   --home-card-light: #B1E8D6;
-  --home-card-swatch: #26745D;
-  --home-card-base: #164F40;
-  --home-card-shadow: #164F4066;
+  --home-card-swatch: #2E706D;
+  --home-card-base: #365D78;
+  --home-card-shadow: #365D7866;
+  --home-gradient-start: #307D68;
+  --home-gradient-end: #365D78;
 }
 
 .home-illustrated-card,
@@ -94,9 +118,12 @@
   --home-card-meter: #fff;
   color: #fff;
   background-color: var(--home-card-swatch, #2864D7);
-  background-image: none;
+  background-image: linear-gradient(125deg, var(--home-gradient-start, #3376C0) 0%, var(--home-card-swatch, #3E65BC) 48%, var(--home-gradient-end, #5353AC) 100%);
   border-color: var(--home-card-edge);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15), 0 8px 20px -12px var(--home-card-base, #1945A3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 8px 20px -12px var(--home-card-base, #1945A3);
+}
+[dir="rtl"] :is(.home-illustrated-card, .home-surface-card) {
+  background-image: linear-gradient(235deg, var(--home-gradient-start, #3376C0) 0%, var(--home-card-swatch, #3E65BC) 48%, var(--home-gradient-end, #5353AC) 100%);
 }
 .home-card-muted { color: var(--home-card-muted); }
 .home-card-tile {
@@ -132,7 +159,7 @@
 .home-illustrated-card:hover,
 .home-illustrated-card:focus-within,
 .home-surface-card:is(button, a):hover {
-  border-color: var(--home-card-light, #A8D5FF);
+  border-color: var(--home-card-swatch, #3E65BC);
 }
 
 .home-rank-name {
