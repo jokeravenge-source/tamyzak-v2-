@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./homeCards.css";
 import { ChartNoAxesColumnIncreasing, ChevronLeft, ChevronRight } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,14 +55,14 @@ export default function HomeDailyReport({ language, userId, authLoading, onOpen 
     : `${number.format(today.minutes)} ${t.minutes} · ${number.format(today.sessions)} ${today.sessions === 1 ? t.session : t.sessions}`;
 
   return (
-    <button type="button" onClick={onOpen} aria-labelledby="home-daily-report-title" aria-describedby="home-daily-report-summary"
-      className="flex min-h-16 w-full min-w-0 items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5 text-start text-card-foreground shadow-sm transition-colors hover:bg-accent/50 sm:gap-3 sm:px-4">
-      <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+    <button type="button" data-home-tone="report" onClick={onOpen} aria-labelledby="home-daily-report-title" aria-describedby="home-daily-report-summary"
+      className="home-surface-card flex min-h-[4.5rem] w-full min-w-0 items-center gap-3 rounded-[1.35rem] border px-3 py-3 text-start motion-safe:hover:-translate-y-0.5 sm:gap-4 sm:px-4">
+      <span aria-hidden="true" className="home-card-art grid size-11 shrink-0 place-items-center rounded-xl">
         <ChartNoAxesColumnIncreasing className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
         <span id="home-daily-report-title" className="block text-sm font-black sm:text-base">{t.title}</span>
-        <span id="home-daily-report-summary" className="mt-0.5 block text-xs text-muted-foreground">{description}</span>
+        <span id="home-daily-report-summary" className="home-card-muted mt-0.5 block text-xs">{description}</span>
       </span>
       <span className="hidden shrink-0 text-xs font-bold text-primary min-[380px]:inline">{t.cta}</span>
       <Arrow aria-hidden="true" className="size-4 shrink-0 text-primary" />
