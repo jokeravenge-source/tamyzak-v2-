@@ -6,6 +6,7 @@ import { displayedStudyTimerSeconds, formatStudyTimer as formatHMS, isStudyTimer
 import { useStudyTimerPresence } from "@/hooks/useStudyTimerPresence";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
+import { LoungeScenery, LoungeDesk, LoungeStatus, type LoungeState } from "./StudyLounge";
 import { Users } from "lucide-react";
 
 type Occupant = {
@@ -170,46 +171,17 @@ export default function StudyRoom({
         </h2>
       </div>
 
-      {/* 2D Room */}
-      <div
-        className="relative rounded-2xl border border-primary/30 overflow-hidden shadow-xl"
-        style={{
-          background:
-            "linear-gradient(180deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)) 55%, hsl(var(--muted)) 55%, hsl(var(--muted)) 100%)",
-          minHeight: 240,
-          contain: "paint",
-        }}
-      >
-        {/* Wall details */}
-        <div className="absolute inset-x-0 top-0 h-[55%] pointer-events-none">
-          <div className="absolute top-4 left-6 w-16 h-14 rounded-md border-4 border-primary/40 bg-primary/10 grid grid-cols-2 grid-rows-2">
-            <div className="border border-primary/30" />
-            <div className="border border-primary/30" />
-            <div className="border border-primary/30" />
-            <div className="border border-primary/30" />
-          </div>
-          <div className="absolute top-6 right-8 w-10 h-10 rounded-full border-4 border-primary/40 bg-background/40 flex items-center justify-center text-xs">
-            <span className="w-1 h-4 bg-primary/70 absolute" style={{ transformOrigin: "bottom", transform: "translateY(-25%) rotate(40deg)" }} />
-            <span className="w-1 h-3 bg-primary/70 absolute" style={{ transformOrigin: "bottom", transform: "translateY(-20%) rotate(-30deg)" }} />
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-          </div>
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-primary/30 rounded" />
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-1">
-            {["#ef4444","#3b82f6","#10b981","#f59e0b","#a855f7"].map((c, i) => (
-              <div key={i} className="w-2.5 h-5 rounded-sm" style={{ background: c, opacity: 0.85 }} />
-            ))}
-          </div>
-        </div>
-
-        <div className="absolute left-0 right-0 top-[55%] h-px bg-primary/30" />
+      {/* Client-rendered focus lounge */}
+      <div className="tmz-lounge">
+        <LoungeScenery language={language} />
 
         {/* People */}
         {people.length === 0 ? (
-          <div className="relative z-10 flex items-center justify-center" style={{ minHeight: 240 }}>
+          <div className="tmz-lounge-empty">
             <p className="text-sm text-muted-foreground bg-background/60 backdrop-blur px-4 py-2 rounded-full">{empty}</p>
           </div>
         ) : (
-          <div className="relative z-10 pt-6 pb-6 px-4 flex flex-wrap gap-5 justify-center items-end" style={{ minHeight: 280 }}>
+          <div className="tmz-lounge-people">
             {people.map((p) => {
               const isMe = currentUserId && p.user_id === currentUserId;
               const roomTimer = roomTimers[p.user_id];
@@ -221,13 +193,13 @@ export default function StudyRoom({
                 isStudyTimerFocusing(liveTimer, p.is_running);
               const clockRunning = hasLocalTimer ? timerStarted && (timerDisplayRunning ?? timerRunning) :
                 remoteSeconds !== null && (liveTimer?.isRunning ?? p.is_running);
+              const loungeState: LoungeState = reading ? "focus" : clockRunning ? "break" : "idle";
               return (
                 <button
                   key={p.user_id}
                   type="button"
                   onClick={() => setOpenProfile(p.user_id)}
-                  className="flex flex-col items-center transition-transform hover:scale-105"
-                  style={{ width: 120 }}
+                  className="tmz-seat flex flex-col items-center rounded-xl transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary"
                   aria-label={language === "ar" ? `ملف ${p.display_name}` : `${p.display_name} profile`}
                 >
                   <div className={`mb-1 px-2 py-0.5 rounded-full backdrop-blur border text-xs font-medium max-w-[120px] truncate ${isMe ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 border-primary/30"}`}>
@@ -238,14 +210,10 @@ export default function StudyRoom({
                       {p.mission}
                     </div>
                   )}
-                  <div className="relative">
+                  <LoungeDesk state={loungeState}>
                     <CharacterAvatar gender={p.gender} traits={p.character} size={96} reading={reading} />
-                    <div className="w-24 h-3.5 -mt-3 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />
-                    <div className="flex justify-between w-20 mx-auto">
-                      <div className="w-0.5 h-3.5 bg-primary/40" />
-                      <div className="w-0.5 h-3.5 bg-primary/40" />
-                    </div>
-                  </div>
+                  </LoungeDesk>
+                  <LoungeStatus state={loungeState} language={language} />
                   <div dir="ltr" className={`mt-1.5 text-sm font-semibold font-mono tabular-nums px-2 py-1 rounded-full border ${clockRunning ? "bg-primary/15 text-primary border-primary/30" : "bg-background/60 text-muted-foreground border-border"}`}>
                     {hasLocalTimer
                       ? timerStarted ? formatHMS(timerSeconds ?? 0) : "--:--"
