@@ -12,6 +12,7 @@ import { Ban, ChevronDown, ChevronUp, Copy, Crown, DoorOpen, Globe2, Link2, Lock
 import { censorText, findBannedWords } from "@/lib/censor";
 import { CharacterAvatar, type CharacterTraits, type Gender } from "./CharacterAvatar";
 import StudentProfileDialog from "./StudentProfileDialog";
+import { LoungeScenery, LoungeDesk, LoungeStatus, type LoungeState } from "./StudyLounge";
 import StudyRoomActivity, { EncourageStudyRoomMember } from "./StudyRoomActivity";
 import { Button } from "@/components/ui/button";
 import { PINNED_STUDY_ROOMS } from "@/lib/pinnedStudyRooms";
@@ -701,34 +702,10 @@ export default function PrivateStudyRooms({
         <Users className="w-3.5 h-3.5" /> {L.members}: {members.length}
       </div>
 
-      {/* Traditional study hall */}
-      <div
-        className="relative rounded-2xl border border-primary/30 overflow-hidden mb-4"
-        style={{
-          background:
-            "linear-gradient(180deg, hsl(var(--secondary)) 0%, hsl(var(--secondary)) 52%, hsl(var(--muted)) 52%, hsl(var(--muted)) 100%)",
-          minHeight: 220,
-          contain: "paint",
-        }}
-      >
-        {/* Wall: chalkboard, clock, pennants */}
-        <div className="absolute inset-x-0 top-0 h-[52%] pointer-events-none">
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 w-40 h-16 rounded-md border-4 border-primary/40 bg-primary/10 flex items-center justify-center">
-            <span className="text-[10px] tracking-[0.25em] text-primary/80">{L.roomView}</span>
-          </div>
-          <div className="absolute top-4 right-5 w-8 h-8 rounded-full border-4 border-primary/40 bg-background/40 flex items-center justify-center">
-            <span className="w-1 h-3 bg-primary/70 absolute" style={{ transformOrigin: "bottom", transform: "translateY(-25%) rotate(35deg)" }} />
-            <span className="w-1 h-2 bg-primary/70 absolute" style={{ transformOrigin: "bottom", transform: "translateY(-20%) rotate(-40deg)" }} />
-          </div>
-          <div className="absolute top-3 left-5 flex gap-1">
-            {["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#a855f7"].map((c, i) => (
-              <div key={i} className="w-2 h-4 rounded-sm" style={{ background: c, opacity: 0.85 }} />
-            ))}
-          </div>
-        </div>
-        <div className="absolute left-0 right-0 top-[52%] h-px bg-primary/30" />
-
-        <div className="relative z-10 pt-16 pb-5 px-3 flex flex-wrap gap-4 justify-center items-end">
+      {/* Client-rendered focus lounge */}
+      <div className="tmz-lounge mb-4">
+        <LoungeScenery language={language} />
+        <div className="tmz-lounge-people">
           {visibleMembers.map((m) => {
             const mine = m.user_id === userId;
             const roomOwner = m.user_id === room.owner_id;
@@ -742,8 +719,9 @@ export default function PrivateStudyRooms({
               isStudyTimerFocusing(liveTimer, memberPresence?.is_running ?? false);
             const clockRunning = hasLocalTimer ? timerStarted && (timerDisplayRunning ?? timerRunning) :
               remoteSeconds !== null && (liveTimer?.isRunning ?? memberPresence?.is_running);
+            const loungeState: LoungeState = reading ? "focus" : clockRunning ? "break" : "idle";
             return (
-              <div key={m.user_id} className="flex flex-col items-center" style={{ width: 112 }}>
+              <div key={m.user_id} className="tmz-seat flex flex-col items-center">
                 <button
                   type="button"
                   onClick={() => setOpenProfile(m.user_id)}
@@ -758,15 +736,10 @@ export default function PrivateStudyRooms({
                       {memberPresence.mission}
                     </div>
                   )}
-                  <div className="relative">
-                    <CharacterAvatar gender={m.gender} traits={m.character} size={76} reading={reading} />
-                    {/* Wooden desk */}
-                    <div className="w-20 h-3 -mt-2 mx-auto rounded-sm bg-gradient-to-b from-primary/40 to-primary/20 border border-primary/40" />
-                    <div className="flex justify-between w-16 mx-auto">
-                      <div className="w-0.5 h-3 bg-primary/40" />
-                      <div className="w-0.5 h-3 bg-primary/40" />
-                    </div>
-                  </div>
+                  <LoungeDesk state={loungeState}>
+                    <CharacterAvatar gender={m.gender} traits={m.character} size={96} reading={reading} />
+                  </LoungeDesk>
+                  <LoungeStatus state={loungeState} language={language} />
                   {roomOwner && (
                     <span className="mt-1 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">{L.owner}</span>
                   )}
