@@ -128,23 +128,23 @@ export function TelegramLinkCard({ language, source = "profile", variant = "prof
     if (loading) return <div className="h-[8.5rem] animate-pulse rounded-[1.4rem] border border-border bg-card sm:h-40 lg:h-auto" aria-hidden="true" />;
     if (verified) return null;
     return (
-      <section className="home-illustrated-card overflow-hidden rounded-[1.4rem] border border-sky-400/25 p-3.5 text-white sm:p-5" aria-labelledby="telegram-connect-title">
+      <section data-home-tone="telegram" className="home-illustrated-card overflow-hidden rounded-[1.4rem] border p-3.5 sm:p-5" aria-labelledby="telegram-connect-title">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">
           <div className="min-w-0">
             <h2 id="telegram-connect-title" className="text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{t.title}</h2>
-            <p className="mt-1.5 break-words text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{pending ? t.opened : t.desc}</p>
+            <p className="home-card-muted mt-1.5 break-words text-[13px] leading-relaxed sm:text-sm">{pending ? t.opened : t.desc}</p>
           </div>
-          <span className="grid size-12 place-items-center rounded-2xl border border-sky-300/35 bg-sky-400/25 text-sky-100 sm:size-16"><Send aria-hidden="true" className="size-6 sm:size-8" /></span>
-          <div className="col-span-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold text-sky-100/90">
+          <span className="home-card-tile grid size-12 place-items-center rounded-2xl border sm:size-16"><Send aria-hidden="true" className="size-6 sm:size-8" /></span>
+          <div className="home-card-muted col-span-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
             <span className="inline-flex items-center gap-1"><Gift aria-hidden="true" className="size-3" />{t.daily}</span>
             <span className="inline-flex items-center gap-1"><RefreshCw aria-hidden="true" className="size-3" />{t.review}</span>
             <span className="inline-flex items-center gap-1"><BellRing aria-hidden="true" className="size-3" />{t.updates}</span>
           </div>
           <div className="col-span-2 mt-0.5 flex gap-2">
-            <button type="button" onClick={openBot} disabled={busy} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-sky-950 transition-colors hover:bg-white disabled:opacity-60">
+            <button type="button" onClick={openBot} disabled={busy} className="home-card-action inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-black transition-colors hover:brightness-105 disabled:opacity-60">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{t.connect}
             </button>
-            {pending && <button type="button" onClick={() => void recheck(false)} disabled={busy} aria-label={busy ? t.checking : t.check} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-300/35 bg-white/10 px-3 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-60"><CheckCircle2 aria-hidden="true" className="size-4" /><span className="hidden sm:inline">{busy ? t.checking : t.check}</span></button>}
+            {pending && <button type="button" onClick={() => void recheck(false)} disabled={busy} aria-label={busy ? t.checking : t.check} className="home-card-tile inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold hover:brightness-110 disabled:opacity-60"><CheckCircle2 aria-hidden="true" className="size-4" /><span className="hidden sm:inline">{busy ? t.checking : t.check}</span></button>}
           </div>
         </div>
       </section>

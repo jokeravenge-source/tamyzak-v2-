@@ -373,7 +373,7 @@ const HOME_RANK_NAME_COLOR = {
   royal: "#7e22ce",
 } as const;
 
-const HOME_ICON_TILE = "grid size-9 shrink-0 place-items-center rounded-xl bg-cyan-100 text-sky-950 dark:bg-cyan-950 dark:text-cyan-200";
+const HOME_ICON_TILE = "home-card-tile grid size-9 shrink-0 place-items-center rounded-xl";
 
 const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
   All: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
@@ -1408,12 +1408,12 @@ const Basics = ({
           style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
         <div className="mx-auto max-w-6xl">
-          <section aria-labelledby="home-plan-title" className="mb-4 min-w-0 rounded-[1.4rem] border border-border bg-card p-3.5 text-card-foreground shadow-sm sm:p-5">
+          <section data-home-tone="schedule" aria-labelledby="home-plan-title" className="home-surface-card mb-4 min-w-0 rounded-[1.4rem] border p-3.5 shadow-sm sm:p-5">
             <div className="flex items-center gap-2.5">
               <span className={HOME_ICON_TILE}><CalendarCheck aria-hidden="true" className="size-5" /></span>
               <div className="min-w-0">
                 <h2 id="home-plan-title" className="text-lg font-black leading-snug sm:text-2xl">{isRTL ? "خطة اليوم" : "Today's plan"}</h2>
-                <p className="text-xs font-semibold text-muted-foreground sm:text-sm">
+                <p className="home-card-muted text-xs font-semibold sm:text-sm">
                   {isRTL ? `${homeNumber(planDone)} من ${homeNumber(planTasks.length)} مهام منجزة` : `${planDone} of ${planTasks.length} tasks completed`}
                 </p>
               </div>
@@ -1422,22 +1422,22 @@ const Basics = ({
               className="my-3.5 flex gap-1.5 sm:my-4">
               {Array.from({ length: planSegments }, (_, index) => (
                 <span key={index} className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border/40">
-                  <span className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-500" style={{ width: `${Math.max(0, Math.min(1, planRatio * planSegments - index)) * 100}%` }} />
+                  <span className="h-full rounded-full bg-[color:var(--home-card-meter)]" style={{ width: `${Math.max(0, Math.min(1, planRatio * planSegments - index)) * 100}%` }} />
                 </span>
               ))}
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3 sm:gap-4">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-[color:var(--home-card-edge)] pt-3 sm:gap-4">
               {nextPlanTask ? <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <span className={`${HOME_ICON_TILE} hidden min-[380px]:grid`}><ListChecks aria-hidden="true" className="size-4" /></span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-muted-foreground sm:text-xs">{isRTL ? "المهمة التالية" : "Next task"}</p>
+                  <p className="home-card-muted text-[11px] font-semibold sm:text-xs">{isRTL ? "المهمة التالية" : "Next task"}</p>
                   <p dir="auto" title={nextPlanTask.text} className="line-clamp-2 break-words text-start text-sm font-extrabold leading-snug">{nextPlanTask.text}</p>
                 </div>
-              </div> : <p className="text-xs font-semibold text-muted-foreground sm:text-sm">{planTasks.length
+              </div> : <p className="home-card-muted text-xs font-semibold sm:text-sm">{planTasks.length
                 ? (isRTL ? "أنجزت كل مهام اليوم." : "All of today's tasks are complete.")
                 : (isRTL ? "ماكو مهام مجدولة لليوم." : "No tasks scheduled for today.")}</p>}
               <button type="button" onClick={() => navigate("todo")}
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-cyan-300/50 bg-gradient-to-br from-cyan-100 to-cyan-300 px-2.5 text-start text-xs font-black text-sky-950 hover:brightness-105 sm:px-4 sm:text-sm">
+                className="home-card-action inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-start text-xs font-black hover:brightness-105 sm:px-4 sm:text-sm">
                 <CalendarDays aria-hidden="true" className="size-4 shrink-0" />{isRTL ? "افتح جدولي" : "Open my schedule"}
               </button>
             </div>
@@ -1456,7 +1456,7 @@ const Basics = ({
           />
 
           <section aria-label={isRTL ? "الخطوات الرئيسية" : "Main study actions"} className="grid gap-2.5 sm:gap-3">
-            <div className="home-illustrated-card relative overflow-hidden rounded-[1.4rem] border border-sky-400/25 text-white">
+            <div data-home-tone="continue" className="home-illustrated-card relative overflow-hidden rounded-[1.4rem] border transition-colors">
               <button
                 type="button"
                 aria-label={isRTL ? "كمّل دراستك" : "Continue studying"}
@@ -1466,18 +1466,18 @@ const Basics = ({
                   void dueMistakesCount().then(setDueMistakes).catch(() => {});
                   setShowRecommendedStudy(true);
                 }}
-                className="group grid min-h-[6.75rem] w-full grid-cols-[minmax(0,1fr)_35%] items-center gap-2 rounded-[1.4rem] py-2 pe-14 ps-3 text-start hover:bg-white/5 focus-visible:!outline-offset-[-3px] sm:min-h-32 sm:grid-cols-[minmax(0,1fr)_28%] sm:gap-4 sm:pe-20 sm:ps-5"
+                className="group grid min-h-[6.75rem] w-full grid-cols-[minmax(0,1fr)_35%] items-center gap-2 rounded-[1.4rem] py-2 pe-14 ps-3 text-start focus-visible:!outline-offset-[-3px] sm:min-h-32 sm:grid-cols-[minmax(0,1fr)_28%] sm:gap-4 sm:pe-20 sm:ps-5"
               >
                 <span className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                  <span className="hidden size-8 shrink-0 place-items-center rounded-full border border-sky-300/30 bg-sky-300/20 min-[380px]:grid"><HomeChevron aria-hidden="true" className="size-5" /></span>
+                  <span className="home-card-tile hidden size-8 shrink-0 place-items-center rounded-full border min-[380px]:grid"><HomeChevron aria-hidden="true" className="size-5" /></span>
                   <span className="min-w-0">
                     <span className="block text-[clamp(1rem,5.1vw,1.625rem)] font-black leading-snug tracking-tight">{isRTL ? "كمّل دراستك" : "Continue studying"}</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-sky-100/85 sm:text-sm">{isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}</span>
+                    <span className="home-card-muted mt-1 block text-xs leading-relaxed sm:text-sm">{isRTL ? "أخطاؤك وبطاقاتك وأسئلة تناسبك" : "Your mistakes, flashcards and practice questions"}</span>
                   </span>
                 </span>
                 <img src={studyBookArt} alt="" width={384} height={192} className="mx-auto max-h-24 w-full max-w-44 object-contain drop-shadow-[0_10px_12px_rgba(0,0,0,0.42)] motion-safe:transition-transform motion-safe:group-hover:scale-105" />
               </button>
-              <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-sky-300/30 [&>button]:bg-sky-300/20 [&>button]:bg-none [&>button]:text-sky-100 [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
+              <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-[color:var(--home-card-edge)] [&>button]:bg-[color:var(--home-card-tile-bg)] [&>button]:bg-none [&>button]:text-inherit [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
@@ -1487,11 +1487,11 @@ const Basics = ({
                 { key: "mistakes", Icon: RefreshCw, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${homeNumber(dueMistakes)} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
                 { key: "more", Icon: Grid2X2, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
               ].map(({ key, Icon, title, copy, action }) => (
-                <button key={key} type="button" aria-label={title} onClick={action} className="flex min-h-[3.6rem] min-w-0 items-center gap-2 rounded-2xl border border-border bg-card px-2.5 py-2 text-start text-card-foreground shadow-sm transition-colors hover:bg-accent/45 sm:min-h-16 sm:gap-3 sm:px-3">
+                <button key={key} data-home-tone={key} type="button" aria-label={title} onClick={action} className="home-surface-card flex min-h-[3.6rem] min-w-0 items-center gap-2 rounded-2xl border px-2.5 py-2 text-start shadow-sm transition-colors sm:min-h-16 sm:gap-3 sm:px-3">
                   <span className={HOME_ICON_TILE}><Icon aria-hidden="true" className="size-[1.1rem]" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-black leading-snug sm:text-base">{title}</span>
-                    <span className={`mt-0.5 text-[11px] text-muted-foreground sm:text-xs ${key === "mistakes" && dueMistakes > 0 ? "block" : "hidden lg:block"}`}>{copy}</span>
+                    <span className={`home-card-muted mt-0.5 text-[11px] sm:text-xs ${key === "mistakes" && dueMistakes > 0 ? "block" : "hidden lg:block"}`}>{copy}</span>
                   </span>
                 </button>
               ))}

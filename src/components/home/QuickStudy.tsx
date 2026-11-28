@@ -11,6 +11,7 @@ import { getQuickStudyChapters, getQuickStudyProgressScope, QUICK_STUDY_SUBJECTS
 import { recordTopicPractice } from "@/lib/topicMastery";
 import { cn } from "@/lib/utils";
 import type { WeeklyLearningProfile } from "@/lib/weeklyLearning";
+import "./homeCards.css";
 
 const copy = {
   ar: {
@@ -168,16 +169,16 @@ export default function QuickStudy({ language, userId, plannedTexts, profile, on
 
   return (
     <div dir={ar ? "rtl" : "ltr"} className="mx-auto max-w-2xl space-y-4">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#102749] via-[#19447b] to-[#135678] p-5 text-white shadow-[0_18px_38px_-24px_#0d467e] sm:p-7">
+      <section data-home-tone="quick-study" className="home-illustrated-card overflow-hidden rounded-3xl border p-5 sm:p-7">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15"><Clock3 aria-hidden="true" className="size-5" /></span>
+          <span className="home-card-tile grid size-11 shrink-0 place-items-center rounded-xl"><Clock3 aria-hidden="true" className="size-5" /></span>
           {subjectTitle && chapterTitle ? <div>
-            <p className="text-xs font-bold text-sky-100 sm:text-sm">{subjectTitle}</p>
+            <p className="home-card-muted text-xs font-bold sm:text-sm">{subjectTitle}</p>
             <p className="mt-0.5 text-xl font-black leading-snug sm:text-2xl">{chapterTitle}</p>
           </div> : <p className="text-lg font-black leading-snug sm:text-xl">{t.intro}</p>}
         </div>
-        {topic?.title && <p className="mt-3 text-sm font-bold text-sky-100">{topic.title}</p>}
-        {phase === "setup" && topic && topic.reason !== "chapter" && <p className="mt-1.5 text-sm text-sky-100">{t[topic.reason]}</p>}
+        {topic?.title && <p className="home-card-muted mt-3 text-sm font-bold">{topic.title}</p>}
+        {phase === "setup" && topic && topic.reason !== "chapter" && <p className="home-card-muted mt-1.5 text-sm">{t[topic.reason]}</p>}
       </section>
 
       {phase === "setup" && <section className={panel}>

@@ -22,14 +22,14 @@ function getTrackStart(track: HTMLElement) {
   return { start, rtl, style };
 }
 
-const promoClass = "home-illustrated-card group grid min-h-[8.5rem] grid-cols-[minmax(0,1fr)_37%] items-center gap-2 overflow-hidden rounded-[1.4rem] border border-sky-400/25 px-3.5 py-3 text-start text-white transition-[filter] hover:brightness-110 focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:gap-3 sm:px-5";
+const promoClass = "home-illustrated-card group grid min-h-[8.5rem] grid-cols-[minmax(0,1fr)_37%] items-center gap-2 overflow-hidden rounded-[1.4rem] border px-3.5 py-3 text-start transition-colors focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:gap-3 sm:px-5";
 
 function PromoContent({ art, title, description, artSize = 816 }: { art: string | ReactElement; title: string; description?: string; artSize?: number }) {
   return (
     <>
       <span className="min-w-0">
         <span className="block text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{title}</span>
-        {description && <span className="mt-1.5 block text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{description}</span>}
+        {description && <span className="home-card-muted mt-1.5 block text-[13px] leading-relaxed sm:text-sm">{description}</span>}
       </span>
       {typeof art === "string" ? <img src={art} alt="" width={artSize} height={artSize} className="aspect-square max-h-32 w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105" /> : art}
     </>
@@ -129,13 +129,13 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         role="group"
         aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
       >
-        <button type="button" id="points-details-trigger" onClick={onOpenPointsGuide} className={promoClass}>
+        <button type="button" id="points-details-trigger" data-home-tone="points" onClick={onOpenPointsGuide} className={promoClass}>
           <PromoContent art={pointsArt} artSize={320} title={pointsGuideTitle} />
         </button>
-        <button type="button" id="quickStudy-details-trigger" onClick={onOpenQuickStudy} className={promoClass} aria-label={quickStudyTitle}>
+        <button type="button" id="quickStudy-details-trigger" data-home-tone="quick-study" onClick={onOpenQuickStudy} className={promoClass} aria-label={quickStudyTitle}>
           <PromoContent
             art={
-              <span aria-hidden="true" className="mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] border border-cyan-200/40 bg-gradient-to-br from-cyan-200/35 via-sky-400/25 to-blue-900/55 text-cyan-50 shadow-[0_8px_20px_#04172d70,inset_0_1px_0_#caf3ff50] motion-safe:transition-transform motion-safe:group-hover:scale-105">
+              <span aria-hidden="true" className="home-card-tile mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] border shadow-[0_8px_20px_rgba(20,27,44,0.3),inset_0_1px_0_rgba(255,255,255,0.14)] motion-safe:transition-transform motion-safe:group-hover:scale-105">
                 <Timer className="h-auto w-3/5" />
               </span>
             }
@@ -143,10 +143,10 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
             description={isRTL ? "اختار المادة والفصل وابدأ المراجعة" : "Choose a subject and chapter to review"}
           />
         </button>
-        <button type="button" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
+        <button type="button" data-home-tone="challenge" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
           <PromoContent art={challengeArt} title={challengeTitle} description={isRTL ? "اختبر مستواك وتنافس ويّه طلاب تميّزك" : "Test your skills against other Tamayzak students"} />
         </button>
-        <a href={HOUDINI_STORE_URL} target="_blank" rel="noopener noreferrer" className={promoClass} aria-label={houdiniTitle}>
+        <a href={HOUDINI_STORE_URL} target="_blank" rel="noopener noreferrer" data-home-tone="houdini" className={promoClass} aria-label={houdiniTitle}>
           <PromoContent art={hoodieArt} title={houdiniTitle} description={isRTL ? "اطلب هودي تميّزك من هوديني على إنستغرام" : "Order your Tamayzak hoodie from Houdini on Instagram"} />
         </a>
         <TelegramLinkCard language={language} source="home" variant="home" />
