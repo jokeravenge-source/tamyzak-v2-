@@ -526,6 +526,13 @@
       "when": 1795824000000,
       "tag": "0074_paper_review",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1795863600000,
+      "tag": "0075_paper_review_exercise_bank",
+      "breakpoints": true
     }
   ]
 }

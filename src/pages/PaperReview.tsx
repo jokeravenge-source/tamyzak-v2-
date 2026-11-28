@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Camera, CheckCircle2, ChevronDown, CircleHelp, Crown, FileImage, Link2, Loader2, Pause, Presentation, QrCode, RotateCcw, ScanLine, Volume2, X } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,10 @@ import { usePodcastSpeech } from "@/hooks/usePodcastSpeech";
 import { supabase } from "@/integrations/supabase/client";
 import { edgeErrorMessage } from "@/lib/edgeError";
 import { PREMIUM_ACCESS_CHANGED_EVENT } from "@/lib/premium";
+import { readPaperCatalog } from "@/lib/paperReviewCatalog";
 import { readPaperPhoto } from "@/lib/paperReviewPhoto";
-import { PAPER_REVIEW_PATH, type PaperReviewAccess, type PaperReviewView } from "../../supabase/functions/_shared/paperReview";
-import { PAPER_EXERCISES, paperExercise } from "../../supabase/functions/_shared/paperReviewExercises";
-import { physicsChapter, physicsChapters } from "../../supabase/functions/_shared/physicsChapters";
+import { PAPER_REVIEW_PATH, paperExerciseId, type PaperReviewAccess, type PaperReviewView } from "../../supabase/functions/_shared/paperReview";
+import { PAPER_REVIEW_SUBJECTS, paperChapter, paperSubject, type PaperSubjectId } from "../../supabase/functions/_shared/paperReviewCurriculum";
 
 const copy = {
   ar: {
@@ -22,7 +23,10 @@ const copy = {
     listen: "اسمع التوضيح", pause: "وقف الصوت", resume: "كمّل الصوت", audioError: "تعذّر تشغيل الصوت. التوضيح مكتوب هنا.",
     tryPractice: "جرّب سؤال مشابه", check: "تحقق من إجابتي", checking: "جاري التحقق…", correct: "إجابة صحيحة وانحفظت بتقدّمك",
     incorrect: "راجع التوضيح وحاول مرّة ثانية", practiced: "تمرين انحلّ صح", another: "راجع صورة ثانية",
-    chapter: "فصل الفيزياء", anyChapter: "بدون تحديد فصل", exercise: "تمرين من هذا الفصل", own: "سؤالي من الورقة",
+    subject: "المادة", anySubject: "بدون تحديد مادة", chapter: "الفصل أو الموضوع", anyChapter: "بدون تحديد فصل",
+    exercise: "تمرين من هذا الفصل", own: "سؤالي من الورقة", arabic: "المنهج العربي", distinguished: "المتميزين",
+    loadingExercises: "جاري تحميل التمارين…", noExercises: "ماكو تمارين جاهزة بهالفصل حالياً. تگدر تراجع سؤالك من الصورة.",
+    catalog_unavailable: "تعذّر تحميل التمارين.", retryCatalog: "أعد التحميل", exercise_missing: "هذا التمرين غير متاح هسه.",
     teacher: "رابط المشاركة للمدرّس", copyLink: "انسخ الرابط",
     copied: "اننسخ الرابط", copyManually: "انسخ الرابط من الحقل", qr: "حمّل QR الميزة",
     invalid_image: "تعذّر فتح الصورة. جرّب صورة JPEG أو PNG واضحة.",
@@ -45,7 +49,10 @@ const copy = {
     listen: "Listen to the explanation", pause: "Pause audio", resume: "Resume audio", audioError: "Audio is unavailable. You can read the explanation here.",
     tryPractice: "Try a similar question", check: "Check my answer", checking: "Checking…", correct: "Correct. Your progress was saved.",
     incorrect: "Read the explanation and try again", practiced: "practice questions solved", another: "Review another photo",
-    chapter: "Physics chapter", anyChapter: "No chapter selected", exercise: "Exercise from this chapter", own: "Use the question on my paper",
+    subject: "Subject", anySubject: "No subject selected", chapter: "Chapter or topic", anyChapter: "No chapter selected",
+    exercise: "Exercise from this chapter", own: "Use the question on my paper", arabic: "Arabic curriculum", distinguished: "Distinguished curriculum",
+    loadingExercises: "Loading exercises…", noExercises: "This chapter has no prepared exercises yet. You can review a question from your own photo.",
+    catalog_unavailable: "Could not load the exercises.", retryCatalog: "Reload", exercise_missing: "This exercise is currently unavailable.",
     teacher: "Share a link with students", copyLink: "Copy link",
     copied: "Link copied", copyManually: "Copy the link from the field", qr: "Download the tool QR",
     invalid_image: "Could not open this image. Try a clear JPEG or PNG photo.",
@@ -61,7 +68,7 @@ const copy = {
 } as const;
 
 type Photo = { url: string; id: string };
-type PaperSource = { chapter: number | null; exerciseId: string };
+type PaperSource = { subject: PaperSubjectId | null; chapter: string | null; exerciseId: string };
 type PracticeAnswer = { correct: boolean; explanation: string };
 type ReviewResponse = {
   access?: PaperReviewAccess;
@@ -80,8 +87,9 @@ async function paperRequest(body: Record<string, unknown>, signal: AbortSignal) 
 
 const actionError = (value: unknown) => value instanceof Error ? value.message : "review_unavailable";
 
-export default function PaperReview({ language, initialChapter, initialExercise, onBack, onUpgrade }: {
+export default function PaperReview({ language, initialSubject, initialChapter, initialExercise, onBack, onUpgrade }: {
   language: AppLanguage;
+  initialSubject?: string | null;
   initialChapter?: string | null;
   initialExercise?: string | null;
   onBack: () => void;
@@ -91,10 +99,33 @@ export default function PaperReview({ language, initialChapter, initialExercise,
   const text = copy[language];
   const [access, setAccess] = useState<PaperReviewAccess | null>(null);
   const [accessError, setAccessError] = useState(false);
-  const [{ chapter, exerciseId }, setSource] = useState<PaperSource>(() => {
-    const exercise = paperExercise(initialExercise);
-    return { chapter: exercise?.chapter ?? physicsChapter(Number(initialChapter))?.n ?? null, exerciseId: exercise?.id ?? "" };
+  const [selection, setSelection] = useState<PaperSource | null>(null);
+  const linkedId = paperExerciseId(initialExercise) ? initialExercise : "";
+  const linkedCatalog = useQuery({
+    queryKey: ["paper-review-catalog", "exercise", linkedId, language],
+    queryFn: ({ signal }) => readPaperCatalog({ exerciseId: linkedId }, language, signal),
+    enabled: !!linkedId && !selection,
+    retry: false,
   });
+  const linkedExercise = linkedCatalog.data?.find(exercise => exercise.id === linkedId);
+  const routeSubject = paperSubject(initialSubject ?? (initialChapter ? "physics" : null));
+  const { subject, chapter, exerciseId } = selection ?? {
+    subject: linkedExercise?.subject ?? routeSubject?.id ?? null,
+    chapter: linkedExercise?.chapter ?? paperChapter(routeSubject, initialChapter)?.key ?? null,
+    exerciseId: linkedExercise?.id ?? "",
+  };
+  const currentSubject = paperSubject(subject);
+  const openingLink = !selection && !!linkedId && linkedCatalog.isPending;
+  const useLinkedCatalog = !!linkedExercise && linkedExercise.subject === subject && linkedExercise.chapter === chapter;
+  const chapterCatalog = useQuery({
+    queryKey: ["paper-review-catalog", "chapter", subject, chapter, language],
+    queryFn: ({ signal }) => readPaperCatalog({ subject: subject!, chapter: chapter! }, language, signal),
+    enabled: !!subject && !!chapter && !useLinkedCatalog && !openingLink,
+    retry: false,
+  });
+  const activeCatalog = useLinkedCatalog ? linkedCatalog : chapterCatalog;
+  const chapterExercises = activeCatalog.data ?? [];
+  const currentExercise = chapterExercises.find(exercise => exercise.id === exerciseId);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [attempted, setAttempted] = useState("");
@@ -187,10 +218,10 @@ export default function PaperReview({ language, initialChapter, initialExercise,
   };
 
   const quotaAvailable = access?.premium || access?.remaining === 1;
-  const canReview = !!photo && !photoBusy && !busy && !!access && (quotaAvailable || attempted === photo.id);
+  const canReview = !!photo && !photoBusy && !busy && !openingLink && !!access && (quotaAvailable || attempted === photo.id);
 
   const changeSource = (next: PaperSource) => {
-    setSource(next);
+    setSelection(next);
     setShareNotice("");
     setError("");
     if (photo) setPhoto({ ...photo, id: crypto.randomUUID() });
@@ -202,7 +233,7 @@ export default function PaperReview({ language, initialChapter, initialExercise,
     if (!controller) return;
     setAttempted(photo.id);
     try {
-      const data = await paperRequest({ mode: "review", image: photo.url, requestId: photo.id, chapter, exercise: exerciseId, language }, controller.signal);
+      const data = await paperRequest({ mode: "review", image: photo.url, requestId: photo.id, subject, chapter, exercise: exerciseId, language }, controller.signal);
       if (controller.signal.aborted) return;
       if (data.access) setAccess(data.access);
       if (!data.report) throw new Error(data.error ?? "review_unavailable");
@@ -270,10 +301,11 @@ export default function PaperReview({ language, initialChapter, initialExercise,
 
   const teacherLink = new URL(PAPER_REVIEW_PATH, window.location.origin);
   if (exerciseId) teacherLink.searchParams.set("exercise", exerciseId);
-  else if (chapter !== null) teacherLink.searchParams.set("chapter", String(chapter));
+  else {
+    if (subject) teacherLink.searchParams.set("subject", subject);
+    if (chapter) teacherLink.searchParams.set("chapter", chapter);
+  }
   const activeFinding = report?.findings[finding];
-  const currentExercise = paperExercise(exerciseId);
-  const chapterExercises = PAPER_EXERCISES.filter(exercise => exercise.chapter === chapter);
   const knownError = error === "pending" ? text.pending : error && Object.prototype.hasOwnProperty.call(text, error)
     ? text[error as keyof typeof text] : error ? text.review_unavailable : "";
   const allowance = access?.premium ? text.premium : !access ? text.access
@@ -394,27 +426,50 @@ export default function PaperReview({ language, initialChapter, initialExercise,
               </button>
             )}
 
-            <div className="space-y-2">
-              <label htmlFor="paper-chapter" className="flex items-center gap-2 text-sm font-semibold"><BookOpen aria-hidden="true" className="size-4 text-primary" />{text.chapter}</label>
-              <select id="paper-chapter" value={chapter ?? ""} disabled={!!busy}
-                onChange={event => changeSource({ chapter: physicsChapter(Number(event.target.value))?.n ?? null, exerciseId: "" })}
-                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
-                <option value="">{text.anyChapter}</option>
-                {physicsChapters.map(({ n, title, arTitle }) => (
-                  <option key={n} value={n}>{n.toLocaleString(ar ? "ar-IQ" : "en")} · {ar ? arTitle : title}</option>
-                ))}
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
+                <label htmlFor="paper-subject" className="flex items-center gap-2 text-sm font-semibold"><BookOpen aria-hidden="true" className="size-4 text-primary" />{text.subject}</label>
+                <select id="paper-subject" value={subject ?? ""} disabled={!!busy}
+                  onChange={event => changeSource({ subject: paperSubject(event.target.value)?.id ?? null, chapter: null, exerciseId: "" })}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
+                  <option value="">{text.anySubject}</option>
+                  {PAPER_REVIEW_SUBJECTS.map(item => <option key={item.id} value={item.id}>{item[language]}</option>)}
+                </select>
+              </div>
+              {currentSubject && <div className="min-w-0 space-y-2">
+                <label htmlFor="paper-chapter" className="block text-sm font-semibold">{text.chapter}</label>
+                <select id="paper-chapter" value={chapter ?? ""} disabled={!!busy}
+                  onChange={event => changeSource({ subject, chapter: paperChapter(currentSubject, event.target.value)?.key ?? null, exerciseId: "" })}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
+                  <option value="">{text.anyChapter}</option>
+                  {currentSubject.chapters.map(item => <option key={item.key} value={item.key}>{item[language]}</option>)}
+                </select>
+              </div>}
             </div>
+
+            {(openingLink || (chapter && activeCatalog.isPending)) && <p role="status" className="text-sm text-muted-foreground">{text.loadingExercises}</p>}
+            {!selection && linkedId && linkedCatalog.isSuccess && !linkedExercise && <p role="status" className="text-sm text-muted-foreground">{text.exercise_missing}</p>}
+            {((!selection && linkedId && linkedCatalog.isError) || (chapter && activeCatalog.isError)) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <p role="status" className="text-sm text-muted-foreground">{text.catalog_unavailable}</p>
+                <Button type="button" variant="outline" onClick={() => void (!selection && linkedId && linkedCatalog.isError ? linkedCatalog : activeCatalog).refetch()}>{text.retryCatalog}</Button>
+              </div>
+            )}
+            {chapter && activeCatalog.isSuccess && chapterExercises.length === 0 && <p className="text-sm leading-6 text-muted-foreground">{text.noExercises}</p>}
 
             {chapterExercises.length > 0 && <div className="space-y-2">
               <label htmlFor="paper-exercise" className="text-sm font-semibold">{text.exercise}</label>
               <select id="paper-exercise" value={exerciseId} disabled={!!busy}
-                onChange={event => changeSource({ chapter, exerciseId: event.target.value })}
+                onChange={event => changeSource({ subject, chapter, exerciseId: event.target.value })}
                 className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground">
                 <option value="">{text.own}</option>
-                {chapterExercises.map(exercise => <option key={exercise.id} value={exercise.id}>{exercise.title[language]}</option>)}
+                {chapterExercises.map(exercise => (
+                  <option key={exercise.id} value={exercise.id}>
+                    {exercise.title}{exercise.curriculum !== "shared" ? " · " + text[exercise.curriculum] : ""}
+                  </option>
+                ))}
               </select>
-              {currentExercise && <p className="rounded-xl bg-muted/50 p-3 text-sm leading-7" dir="auto">{currentExercise.question[language]}</p>}
+              {currentExercise && <p className="whitespace-pre-wrap break-words rounded-xl bg-muted/50 p-3 text-sm leading-7" dir="auto">{currentExercise.question}</p>}
             </div>}
 
             <Button type="button" disabled={!canReview} onClick={() => void review()} className="min-h-12 w-full rounded-xl font-bold">

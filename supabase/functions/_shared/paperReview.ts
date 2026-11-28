@@ -1,4 +1,5 @@
 import { boardRecord, boardText } from "./whiteboard.ts";
+import { paperChapter, paperCurriculumTrack, paperSubject, type PaperCurriculumTrack, type PaperSubjectId } from "./paperReviewCurriculum.ts";
 
 export const PAPER_REVIEW_PATH = "/paper-review";
 export const PAPER_REVIEW_IMAGE_BYTES = 1_800_000;
@@ -36,15 +37,35 @@ export type PaperReviewAccess = {
 };
 
 type Language = "ar" | "en";
-type Bilingual = Record<Language, string>;
-export type PaperExercise = {
+export type PaperExerciseSummary = {
   id: string;
-  chapter: number;
-  title: Bilingual;
-  question: Bilingual;
-  guide: Bilingual;
-  practice: Record<Language, PaperPractice>;
+  subject: PaperSubjectId;
+  chapter: string;
+  curriculum: PaperCurriculumTrack;
+  title: string;
+  question: string;
 };
+export type PaperExercise = PaperExerciseSummary & {
+  solution: string;
+  rubric: string | null;
+  practice: PaperPractice | null;
+};
+
+export const paperExerciseId = (value: unknown): value is string =>
+  typeof value === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(value);
+
+const exerciseText = (value: unknown) =>
+  typeof value === "string" ? value.normalize("NFC").trim() || null : null;
+
+export function readPaperExerciseSummary(value: unknown): PaperExerciseSummary | null {
+  const row = boardRecord(value);
+  const subject = paperSubject(row?.subject);
+  const chapter = paperChapter(subject, row?.chapter);
+  const title = boardText(row?.title, 100);
+  const question = exerciseText(row?.question);
+  if (!row || !paperExerciseId(row.id) || !subject || !chapter || !paperCurriculumTrack(row.curriculum) || !title || !question) return null;
+  return { id: row.id, subject: subject.id, chapter: chapter.key, curriculum: row.curriculum, title, question };
+}
 
 export function paperReviewImage(value: unknown) {
   const prefix = "data:image/jpeg;base64,";
@@ -74,7 +95,17 @@ function readPractice(value: unknown): PaperPractice | null {
   return { question, choices: choices as PaperPractice["choices"], correctIndex: index, explanation };
 }
 
-export function parsePaperReport(value: unknown, options?: { exercise?: PaperExercise; language: Language }): PaperReport | null {
+export function readPaperExercise(value: unknown, language: Language): PaperExercise | null {
+  const row = boardRecord(value);
+  const content = boardRecord(row?.content);
+  const localized = boardRecord(content?.[language] ?? content?.ar ?? content?.en);
+  const summary = readPaperExerciseSummary({ ...row, title: localized?.title, question: localized?.question });
+  const solution = exerciseText(localized?.solution);
+  if (!summary || !solution) return null;
+  return { ...summary, solution, rubric: exerciseText(localized?.rubric), practice: readPractice(localized?.practice) };
+}
+
+export function parsePaperReport(value: unknown, exercise?: PaperExercise | null): PaperReport | null {
   const row = boardRecord(value);
   const summary = boardText(row?.summary, 360);
   if (!row || !summary || (row.status !== "reviewed" && row.status !== "unclear")) return null;
@@ -91,11 +122,11 @@ export function parsePaperReport(value: unknown, options?: { exercise?: PaperExe
     if (!finding || !excerpt || !explanation || (finding.kind !== "teacher-mark" && finding.kind !== "suggestion")) return null;
     findings.push({ excerpt, explanation, kind: finding.kind, location: readLocation(finding.location) });
   }
-  const matched = row.matchedExercise === true ? options?.exercise : undefined;
+  const matched = row.matchedExercise === true ? exercise : undefined;
   return {
     status: row.status, summary, findings,
-    skill: matched ? matched.title[options!.language] : boardText(row.skill, 100),
-    practice: matched ? matched.practice[options!.language] : readPractice(row.practice),
+    skill: matched?.title ?? boardText(row.skill, 100),
+    practice: matched?.practice ?? readPractice(row.practice),
   };
 }
 

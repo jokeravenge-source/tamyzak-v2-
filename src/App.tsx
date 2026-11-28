@@ -1049,6 +1049,8 @@ const StudentApp = () => {
   const showAuthLoader = authLoading && !canShowWelcomeBeforeAuth;
   const routeStage = canShowWelcomeBeforeAuth ? "welcome" : showAuthLoader ? "loading" : authed ? "in" : "out";
   const routeLanguage = !authed && language ? "authlang" : language ?? "nolang";
+  const paperReviewParams = menuChoice === "paperReview" && window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH
+    ? new URLSearchParams(window.location.search) : null;
 
   return (
   <QueryClientProvider client={queryClient}>
@@ -1269,8 +1271,9 @@ const StudentApp = () => {
         <PaperReview
           key={userId ?? "paper-review"}
           language={language}
-          initialChapter={window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH ? new URLSearchParams(window.location.search).get("chapter") : null}
-          initialExercise={window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH ? new URLSearchParams(window.location.search).get("exercise") : null}
+          initialSubject={paperReviewParams?.get("subject")}
+          initialChapter={paperReviewParams?.get("chapter")}
+          initialExercise={paperReviewParams?.get("exercise")}
           onBack={() => {
             if (window.location.pathname.replace(/\/+$/, "") === PAPER_REVIEW_PATH) chooseMenu("basics");
             else resetMenu();

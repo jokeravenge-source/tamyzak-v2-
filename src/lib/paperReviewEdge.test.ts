@@ -1,8 +1,16 @@
 import { createHash, webcrypto } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { paperReviewImage, parsePaperReport } from "../../supabase/functions/_shared/paperReview";
-import { PAPER_EXERCISES, paperExercise } from "../../supabase/functions/_shared/paperReviewExercises";
-import { physicsChapters } from "../../supabase/functions/_shared/physicsChapters";
+import { paperReviewImage, parsePaperReport, readPaperExercise } from "../../supabase/functions/_shared/paperReview";
+import { PAPER_REVIEW_SUBJECTS } from "../../supabase/functions/_shared/paperReviewCurriculum";
+import migration from "../../supabase/migrations/20261128110000_paper_review_exercise_bank.sql?raw";
+
+const seedRows = JSON.parse(migration.split("$paper_exercise_seed$")[1]) as {
+  id: string; subject: string; chapter_key: string; content: Record<string, unknown>;
+}[];
+const dbExercise = (id: unknown) => {
+  const seed = seedRows.find(row => row.id === id);
+  return seed ? { ...seed, chapter: seed.chapter_key, curriculum: "shared" } : null;
+};
 
 const backend = vi.hoisted(() => ({
   auth: vi.fn(), guard: vi.fn(), rpc: vi.fn(), premium: vi.fn(), ai: vi.fn(),
@@ -46,9 +54,10 @@ beforeEach(() => {
   backend.auth.mockReset().mockResolvedValue({ ok: true, userId: "account-a" });
   backend.guard.mockReset().mockResolvedValue({ ok: true });
   backend.premium.mockReset().mockResolvedValue({ data: false, error: null });
-  backend.rpc.mockReset().mockImplementation(async (name: string) => ({
-    data: name === "reserve_paper_review" ? { status: "reserved", leaseId } : true, error: null,
-  }));
+  backend.rpc.mockReset().mockImplementation(async (name: string, args: Record<string, unknown>) => {
+    if (name === "paper_review_exercise_for_review") return { data: dbExercise(args._exercise_id), error: null };
+    return { data: name === "reserve_paper_review" ? { status: "reserved", leaseId } : true, error: null };
+  });
   backend.ai.mockReset().mockResolvedValue(completion(report));
 });
 
@@ -77,7 +86,7 @@ describe("paper review edge function", () => {
     const response = await (await request(review)).json();
     expect(response.report).toMatchObject({
       summary: report.summary, findings: report.findings,
-      practice: { question: paperExercise("units")!.practice.ar.question },
+      practice: { question: readPaperExercise(dbExercise("units"), "ar")!.practice!.question },
     });
     expect(response.report.practice).not.toHaveProperty("correctIndex");
     expect(response.report.practice).not.toHaveProperty("explanation");
@@ -92,42 +101,68 @@ describe("paper review edge function", () => {
     }));
   });
 
-  it("provides five bilingual exercises in each physics chapter with unique share IDs", () => {
-    expect(PAPER_EXERCISES).toHaveLength(40);
-    expect(new Set(PAPER_EXERCISES.map(({ id }) => id)).size).toBe(PAPER_EXERCISES.length);
-    for (const { n } of physicsChapters) {
-      const exercises = PAPER_EXERCISES.filter(exercise => exercise.chapter === n);
-      expect(exercises).toHaveLength(5);
-      for (const exercise of exercises) {
-        for (const language of ["ar", "en"] as const) {
-          expect(exercise.title[language]).toBeTruthy();
-          expect(exercise.question[language]).toBeTruthy();
-          expect(exercise.guide[language]).toBeTruthy();
-          const matched = parsePaperReport(report, { exercise, language });
-          expect(matched?.practice).toEqual(exercise.practice[language]);
-          expect(parsePaperReport(matched)?.practice).toEqual(exercise.practice[language]);
-        }
+  it("seeds usable bilingual presets for all subjects and keeps the old physics IDs", () => {
+    expect(seedRows).toHaveLength(47);
+    expect(seedRows.filter(row => row.subject === "physics")).toHaveLength(40);
+    expect(new Set(seedRows.map(({ id }) => id)).size).toBe(seedRows.length);
+    expect(new Set(seedRows.map(({ subject }) => subject))).toEqual(new Set(PAPER_REVIEW_SUBJECTS.map(({ id }) => id)));
+    for (const row of seedRows) {
+      for (const language of ["ar", "en"] as const) {
+        const exercise = readPaperExercise(dbExercise(row.id), language);
+        expect(exercise?.solution).toBeTruthy();
+        expect(exercise?.practice).not.toBeNull();
+        const matched = parsePaperReport(report, exercise);
+        expect(parsePaperReport(matched)?.practice).toEqual(exercise?.practice);
       }
     }
   });
 
-  it("sends the curated question and key from a later chapter and uses its own follow-up", async () => {
-    const exercise = paperExercise("ch8-hydrogen-series")!;
-    const result = await (await request({ ...review, exercise: exercise.id, chapter: 2, language: "en" })).json();
+  it("uses the server-side solution and follow-up from the linked exercise's subject", async () => {
+    const exercise = readPaperExercise(dbExercise("french-negation-present"), "en")!;
+    const result = await (await request({ ...review, exercise: exercise.id, subject: "physics", chapter: 2, language: "en" })).json();
     const context = JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text);
-    expect(context).toEqual({ physicsChapter: { number: 8, title: "Atomic Spectra and Laser" }, exercise: exercise.question.en, practiceKey: exercise.guide.en });
-    expect(result.report.practice).toEqual({ question: exercise.practice.en.question, choices: exercise.practice.en.choices });
+    expect(context).toEqual({ subject: "French", chapter: "Negation", exercise: exercise.question, modelSolution: exercise.solution, hasPreparedFollowUp: true });
+    expect(result.report.practice).toEqual({ question: exercise.practice!.question, choices: exercise.practice!.choices });
   });
 
   it("uses a chapter hint for the student's own photo and preserves the independent follow-up", async () => {
     backend.ai.mockResolvedValueOnce(completion({ ...report, matchedExercise: false }));
     const result = await (await request({ ...review, chapter: 5, exercise: "" })).json();
     expect(JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text))
-      .toEqual({ physicsChapter: { number: 5, title: "البصريات الفيزيائية" } });
+      .toEqual({ subject: "الفيزياء", chapter: "البصريات الفيزيائية" });
     expect(result.report.practice.question).toBe(report.practice.question);
     expect(backend.rpc).toHaveBeenCalledWith("reserve_paper_review", expect.objectContaining({
       _image_digest: createHash("sha256").update(JSON.stringify(["ar", "physics-chapter-5", photo])).digest("hex"),
     }));
+  });
+
+  it("passes a different subject without a preset or chapter through its authenticated photo flow", async () => {
+    const result = await request({ ...review, subject: "arabic", chapter: null, exercise: "" });
+    expect(result.status).toBe(200);
+    expect(JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text)).toEqual({ subject: "العربية" });
+    expect(backend.rpc).not.toHaveBeenCalledWith("paper_review_exercise_for_review", expect.anything());
+  });
+
+  it("supports a single original language and an optional grading rubric without requiring a prepared follow-up", async () => {
+    backend.rpc.mockResolvedValueOnce({ data: { status: "reserved", leaseId }, error: null }).mockResolvedValueOnce({
+      data: { id: "local-essay", subject: "arabic", chapter: "ar-adab", curriculum: "arabic", content: {
+        ar: { title: "الأدب", question: "سؤال الكتاب", solution: "جواب الكتاب", rubric: "درجة لكل فكرة" },
+      } },
+      error: null,
+    });
+    const result = await (await request({ ...review, exercise: "local-essay", language: "en" })).json();
+    expect(JSON.parse(backend.ai.mock.calls[0][0].messages[1].content[0].text)).toMatchObject({
+      exercise: "سؤال الكتاب", modelSolution: "جواب الكتاب", rubric: "درجة لكل فكرة", hasPreparedFollowUp: false,
+    });
+    expect(result.report.practice.question).toBe(report.practice.question);
+  });
+
+  it("restores the daily allowance if a shared exercise has been unpublished", async () => {
+    const result = await request({ ...review, exercise: "unpublished-exercise" });
+    expect(result.status).toBe(404);
+    expect(await result.json()).toEqual({ error: "exercise_missing" });
+    expect(backend.ai).not.toHaveBeenCalled();
+    expect(backend.rpc).toHaveBeenCalledWith("settle_paper_review", expect.objectContaining({ _lease_id: leaseId, _report: null }));
   });
 
   it("rejects an over-quota review before calling the model", async () => {
