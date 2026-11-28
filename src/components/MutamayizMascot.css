@@ -1,0 +1,76 @@
+/* The original blue orb remains the artwork in all states. Only the inner
+   image moves, preserving the parent layout and navigation hover transforms. */
+.mutamayiz-mascot {
+  isolation: isolate;
+}
+.mutamayiz-mascot > img {
+  position: relative;
+  z-index: 1;
+  transform-origin: center;
+}
+.mutamayiz-mascot::before,
+.mutamayiz-mascot::after {
+  content: "";
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.mutamayiz-mascot[data-mascot-state="idle"] > img {
+  animation: tmz-mascot-breathe 4.8s ease-in-out infinite;
+}
+.mutamayiz-mascot[data-mascot-state="thinking"] > img {
+  animation: tmz-mascot-think 2.1s ease-in-out infinite;
+}
+.mutamayiz-mascot[data-mascot-state="thinking"]::after {
+  inset: 1%;
+  border: 1.5px solid transparent;
+  border-top-color: #b4e7ff;
+  border-inline-end-color: #3e9bff;
+  animation: tmz-mascot-orbit 1.65s linear infinite;
+  z-index: 2;
+}
+.mutamayiz-mascot[data-mascot-state="listening"] > img {
+  animation: tmz-mascot-attend 1.9s ease-in-out infinite;
+}
+.mutamayiz-mascot[data-mascot-state="listening"]::before,
+.mutamayiz-mascot[data-mascot-state="listening"]::after {
+  border: 1.5px solid #74caff;
+  animation: tmz-mascot-ripple 2.2s ease-out infinite;
+}
+.mutamayiz-mascot[data-mascot-state="listening"]::after {
+  animation-delay: -1.1s;
+}
+@keyframes tmz-mascot-breathe {
+  0%, 100% { transform: translateY(0) scale(.98); }
+  50% { transform: translateY(-2%) scale(1.025); }
+}
+@keyframes tmz-mascot-think {
+  0%, 100% { transform: rotate(-5deg) scale(.96); }
+  50% { transform: rotate(5deg) scale(1.025); }
+}
+@keyframes tmz-mascot-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes tmz-mascot-attend {
+  0%, 100% { transform: scale(.94); }
+  50% { transform: scale(1.035); }
+}
+@keyframes tmz-mascot-ripple {
+  0% { transform: scale(.85); opacity: .7; }
+  85%, 100% { transform: scale(1.23); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mutamayiz-mascot > img,
+  .mutamayiz-mascot::before,
+  .mutamayiz-mascot::after {
+    animation: none !important;
+    transform: none !important;
+  }
+  .mutamayiz-mascot[data-mascot-state="thinking"]::after,
+  .mutamayiz-mascot[data-mascot-state="listening"]::before {
+    border: 1.5px solid #74caff;
+    opacity: .65;
+  }
+  .mutamayiz-mascot[data-mascot-state="listening"]::after { opacity: 0; }
+}
