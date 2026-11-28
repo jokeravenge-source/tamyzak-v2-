@@ -32,6 +32,7 @@ import GiftMcqButton from "@/components/GiftMcqButton";
 import studyBookArt from "@/assets/home-study-book.webp";
 import HomeHighlights from "@/components/home/HomeHighlights";
 import PointsGuideCards from "@/components/home/PointsGuideCards";
+import QuickStudy from "@/components/home/QuickStudy";
 import { getRecentTools, recordToolUse } from "@/lib/recentTools";
 import { useHiddenStudyTools } from "@/lib/studyToolVisibility";
 import { normalizeStudySearch } from "@/lib/studySearch";
@@ -466,7 +467,7 @@ const Basics = ({
 }) => {
   const phrases = MOTIVATIONAL_PHRASES[language];
   const [motivationalPhrase] = useState(() => phrases[Math.floor(Math.random() * phrases.length)]);
-  const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const { isPremium, loading: subscriptionLoading, userId } = useSubscription();
   const fc = FEATURED_COPY[language];
   const [activeKey, setActiveKey] = useState<MainMenuChoice>("flashcards");
   const [activeGroup, setActiveGroup] = useState<string>(NAV_GROUPS[0].titleEn);
@@ -485,7 +486,7 @@ const Basics = ({
     return true;
   });
   const [recommendedProfile, setRecommendedProfile] = useState<WeeklyLearningProfile | null>(() => readWeeklyLearningProfile());
-  type HomeDetailScreen = "plan" | "progress" | "streak" | "points";
+  type HomeDetailScreen = "plan" | "progress" | "streak" | "points" | "quickStudy";
   const [detailScreen, setDetailScreen] = useState<HomeDetailScreen | null>(() => {
     if (sessionStorage.getItem(RETURN_TO_PROGRESS_KEY) !== "1") return null;
     sessionStorage.removeItem(RETURN_TO_PROGRESS_KEY);
@@ -880,22 +881,26 @@ const Basics = ({
       progress: isRTL ? "تقدمي ورتبتي" : "My progress and rank",
       streak: isRTL ? "استمراريتي بالدراسة" : "My study streak",
       points: pointsGuideTitle,
+      quickStudy: isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes",
     };
     return (
       <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
-        <div className="mx-auto max-w-4xl">
+        <div className={detailScreen === "quickStudy" ? "mx-auto max-w-2xl" : "mx-auto max-w-4xl"}>
           <button type="button" onClick={() => setDetailScreen(null)}
             className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 py-2 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <ArrowLeft className={`h-4 w-4 ${isRTL ? "rotate-180" : ""}`} />
             {isRTL ? "العودة للرئيسية" : "Back to home"}
           </button>
           <header className="mb-6">
-            {detailScreen !== "points" && <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>}
+            {detailScreen !== "points" && detailScreen !== "quickStudy" && <p className="mb-2 text-sm text-primary">{isRTL ? "رحلتك مع تميزك" : "Your Tamayzak journey"}</p>}
             <h1 id="study-detail-title" tabIndex={-1} className="text-2xl font-bold leading-relaxed outline-none sm:text-3xl">
               {detailTitles[detailScreen]}
             </h1>
           </header>
-          {detailScreen === "progress" ? (
+          {detailScreen === "quickStudy" ? (
+            <QuickStudy language={language} userId={userId} profile={dailyRecommendedProfile}
+              plannedTexts={planTasks.filter(task => !task.done).map(task => task.text)} onBack={() => setDetailScreen(null)} />
+          ) : detailScreen === "progress" ? (
             <>
             <section aria-label={isRTL ? "تفاصيل الرتبة" : "Rank details"} className="rounded-3xl border border-primary/25 bg-primary/5 p-4 sm:p-6">
                           <div className="pt-4">
@@ -1434,6 +1439,16 @@ const Basics = ({
               </button>
             </div>
           </section>
+
+          <button id="quickStudy-details-trigger" type="button" onClick={() => openDetail("quickStudy")}
+            className="group mb-5 flex w-full items-center gap-3 rounded-[1.4rem] border border-sky-400/30 bg-gradient-to-br from-[#122d53] to-[#175b7c] p-3.5 text-start text-white shadow-sm transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-cyan-200/15 text-cyan-100"><Timer aria-hidden="true" className="size-6" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-black">{isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes"}</span>
+              <span className="mt-0.5 block text-xs font-semibold text-sky-100 sm:text-sm">{isRTL ? "مراجعة سريعة بفصل المتسعات" : "A quick review of capacitors"}</span>
+            </span>
+            <ChevronRight aria-hidden="true" className={`size-5 shrink-0 text-cyan-100 ${isRTL ? "rotate-180" : ""}`} />
+          </button>
 
           <HomeHighlights
             language={language}
