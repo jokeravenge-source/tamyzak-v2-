@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import type { LucideIcon } from "lucide-react";
+import FeatureIcon3D from "@/components/ui/FeatureIcon3D";
+import MutamayizMascot from "@/components/MutamayizMascot";
 import { trackFeature, trackFeatureUnlocked } from "@/lib/analytics";
 import { ArrowLeft, ArrowRight, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, Moon, ScrollText, Microscope, PenLine, MousePointerClick, Layers, BookMarked, Lock, Bot, Calculator, Ruler, Zap, Boxes, GraduationCap, Wand2, SpellCheck2, FileQuestion, Images, ScanLine, RotateCcw, Headphones, Network, Youtube, Podcast, Video, FileText, NotebookPen, Palette, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -17,7 +20,7 @@ type Tool = {
   key: MainMenuChoice | "theoremVisualizer";
   en: string;
   ar: string;
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: LucideIcon;
   free?: boolean;
   disabled?: boolean;
   descEn?: string;
@@ -64,7 +67,7 @@ const GENERAL_TOOLS: Tool[] = [
   { key: "report", en: "Daily Report", ar: "تقريري", Icon: Sparkles },
 ];
 
-const SUBJECTS: { code: BankSubject; en: string; ar: string; Icon: React.ComponentType<{ className?: string }>; tools: Tool[] }[] = [
+const SUBJECTS: { code: BankSubject; en: string; ar: string; Icon: LucideIcon; tools: Tool[] }[] = [
   {
     code: "physics", en: "Physics", ar: "الفيزياء", Icon: Atom,
     tools: [
@@ -182,6 +185,132 @@ function SubjectArtwork({ subject, small = false }: { subject: (typeof SUBJECTS)
   );
 }
 
+// Stable tool colors, independent of the subject header or selected global theme.
+const TOOL_TONES = {
+  blue:   { light: "#A8D5FF", mid: "#315CA1", deep: "#243D72", start: "#31568D" },
+  teal:   { light: "#A2EEE5", mid: "#27675D", deep: "#194B47", start: "#28665C" },
+  violet: { light: "#DCC0FF", mid: "#654993", deep: "#44306D", start: "#684996" },
+  amber:  { light: "#FFE9A6", mid: "#795823", deep: "#573D20", start: "#805B29" },
+  rose:   { light: "#FFC0CA", mid: "#914666", deep: "#65334F", start: "#934963" },
+  indigo: { light: "#C4D8FF", mid: "#4D5199", deep: "#34396F", start: "#50569A" },
+  orange: { light: "#FFD18B", mid: "#8B4F30", deep: "#603C29", start: "#8B5036" },
+  green:  { light: "#A8EDC7", mid: "#336C4D", deep: "#234F3A", start: "#386A4B" },
+  cyan:   { light: "#A9E5F8", mid: "#2C6279", deep: "#214758", start: "#30677A" },
+  olive:  { light: "#E8E6A5", mid: "#66622F", deep: "#484722", start: "#6A642E" },
+} as const;
+type ToolTone = keyof typeof TOOL_TONES;
+
+const TOOL_COLOR: Partial<Record<Tool["key"], ToolTone>> = {
+  flashcards: "violet", mcqBank: "teal", malazam: "orange", mistakes: "rose",
+  mutamayiz: "blue", paperReview: "teal", mcq: "violet", examGenerator: "amber",
+  essay: "rose", podcastTutor: "indigo", videoNotes: "orange", mindmap: "cyan",
+  textToVideo: "violet", physicsProblemSolver: "blue", problemGenerator: "green",
+  notes: "indigo", canvas: "rose", pdfBuilder: "orange", summaries: "teal",
+  adminNotes: "violet", youtube: "rose", report: "cyan", physicsActivities: "blue",
+  physicsQuickMcq: "amber", physicsLaws: "teal", physicsSchemes: "violet",
+  ministerialBank: "amber", atomAtlas: "indigo", chemistryExperiments: "green",
+  organicEquations: "rose", chemicalEquations: "cyan", biologySchemes: "violet",
+  biologyDrawings: "green", biologySketchpad: "orange", theoremVisualizer: "indigo",
+  englishEssays: "rose", englishIsqat: "teal", englishVerbForms: "violet",
+  englishReadingPractice: "blue", frenchSynonyms: "cyan", frenchAntonyms: "orange",
+  frenchConjugator: "violet", poemsChecker: "rose", islamicSurahs: "olive", hadithChecker: "teal",
+};
+const SUBJECT_TONES: Partial<Record<BankSubject, ToolTone>> = {
+  physics: "blue", chemistry: "violet", biology: "green", math: "amber",
+  english: "rose", french: "indigo", arabic: "teal", islamic: "olive",
+};
+function toneStyle(tone: ToolTone): CSSProperties {
+  const { light, mid, deep, start } = TOOL_TONES[tone];
+  return {
+    "--home-card-light": light,
+    "--home-card-swatch": mid,
+    "--home-card-base": deep,
+    "--home-card-shadow": deep + "66",
+    "--home-gradient-start": start,
+    "--home-gradient-end": deep,
+  } as CSSProperties;
+}
+
+type CatalogSection = { id: string; en: string; ar: string; tools: Tool[] };
+const ESSENTIAL_KEYS = new Set<Tool["key"]>(["flashcards", "mcqBank", "malazam", "mistakes"]);
+const GENERAL_SECTIONS: { id: string; en: string; ar: string; keys: Tool["key"][] }[] = [
+  { id: "assistant", en: "AI study assistant", ar: "مساعدك الدراسي الذكي", keys: ["mutamayiz"] },
+  { id: "practice", en: "Practice & exams", ar: "التدريب والامتحانات", keys: ["paperReview", "mcq", "examGenerator", "essay", "physicsProblemSolver", "problemGenerator"] },
+  { id: "learn", en: "Learn & understand", ar: "تعلّم وافهم", keys: ["podcastTutor", "videoNotes", "mindmap", "textToVideo"] },
+  { id: "workspace", en: "Personal workspace", ar: "مساحتك الدراسية", keys: ["notes", "canvas", "pdfBuilder", "report"] },
+  { id: "resources", en: "Study resources", ar: "المصادر الدراسية", keys: ["summaries", "adminNotes", "youtube"] },
+];
+function catalogSections(tools: Tool[], group: ToolGroup, subject: (typeof SUBJECTS)[number]): CatalogSection[] {
+  if (group === "subject") return [
+    { id: "essential", en: "Essential study tools", ar: "أدوات الدراسة الأساسية", tools: tools.filter(tool => ESSENTIAL_KEYS.has(tool.key)) },
+    { id: "explore", en: `Explore ${subject.en}`, ar: `أدوات ${subject.ar}`, tools: tools.filter(tool => !ESSENTIAL_KEYS.has(tool.key)) },
+  ].filter(section => section.tools.length > 0);
+  const sections = GENERAL_SECTIONS.map(({ keys, ...section }) => ({
+    ...section, tools: tools.filter(tool => keys.includes(tool.key)),
+  }));
+  const assigned = new Set(GENERAL_SECTIONS.flatMap(section => section.keys));
+  // Newly added tools remain visible even before a category is assigned.
+  const other = tools.filter(tool => !assigned.has(tool.key));
+  if (other.length) sections.push({ id: "other", en: "More tools", ar: "أدوات أخرى", tools: other });
+  return sections.filter(section => section.tools.length > 0);
+}
+
+const TOOL_HINTS: Partial<Record<Tool["key"], { en: string; ar: string }>> = {
+  mutamayiz: { en: "Your personal AI study assistant", ar: "مساعدك الدراسي الشخصي بالذكاء الاصطناعي" },
+  paperReview: { en: "Scan your answers", ar: "صوّر إجاباتك" },
+  mcq: { en: "Generate questions", ar: "ولّد أسئلة للتدريب" },
+  examGenerator: { en: "Test your knowledge", ar: "اختبر معلوماتك" },
+  essay: { en: "Improve your answers", ar: "حسّن إجاباتك" },
+  podcastTutor: { en: "Learn by listening", ar: "تعلّم بالاستماع" },
+  videoNotes: { en: "Turn lectures into notes", ar: "حوّل المحاضرات إلى ملاحظات" },
+  mindmap: { en: "Visualize concepts", ar: "رتّب المفاهيم بصرياً" },
+  textToVideo: { en: "Watch explanations", ar: "شاهد الشرح" },
+  flashcards: { en: "Remember key concepts", ar: "احفظ الأفكار الأساسية" },
+  malazam: { en: "Read your study booklets", ar: "اقرأ ملازمك الدراسية" },
+  mistakes: { en: "Learn from your errors", ar: "تعلّم من أخطائك" },
+};
+function StudyToolCard({ tool, isRTL, isPremium, subscriptionLoading, onClick }: {
+  tool: Tool; isRTL: boolean; isPremium: boolean; subscriptionLoading: boolean; onClick: () => void;
+}) {
+  const premium = !tool.free && isPremiumTool(tool.key);
+  const locked = tool.disabled || (premium && !isPremium);
+  const name = isRTL ? tool.ar : tool.en;
+  const hint = TOOL_HINTS[tool.key];
+  const description = isRTL ? (tool.descAr ?? hint?.ar) : (tool.descEn ?? hint?.en);
+  const status = tool.disabled ? (isRTL ? "مقفل" : "LOCKED") : locked ? (isRTL ? "بريميوم" : "PREMIUM") : tool.free ? (isRTL ? "مجاني" : "FREE") : null;
+  const featured = tool.key === "mutamayiz";
+  const tone = TOOL_COLOR[tool.key] ?? "blue";
+  const statusId = `study-tool-status-${tool.key}`;
+  const descId = `study-tool-desc-${tool.key}`;
+  return (
+    <li className={`min-w-0 ${featured ? "col-span-full" : ""}`}>
+      <button type="button" aria-label={name}
+        aria-describedby={[description ? descId : "", status ? statusId : ""].filter(Boolean).join(" ") || undefined}
+        data-study-tool={tool.key} data-study-tone={tone} data-featured={featured || undefined}
+        onClick={onClick} disabled={tool.disabled || (premium && subscriptionLoading)}
+        style={toneStyle(tone)}
+        className={`home-illustrated-card group relative flex h-full w-full min-w-0 gap-3 overflow-hidden rounded-[1.4rem] border p-3.5 text-start motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70 sm:p-4 ${featured ? "min-h-32 flex-row items-center justify-between" : "min-h-[9.5rem] flex-col justify-between"}`}>
+        {!featured && <span className="flex w-full items-start justify-between gap-2">
+          <span className="block w-12 shrink-0 p-0.5 sm:w-14"><FeatureIcon3D icon={tool.Icon} /></span>
+          {status ? <span id={statusId} className={`inline-flex min-w-0 items-center gap-1 rounded-full bg-black/25 px-1.5 py-1 text-[10px] font-bold leading-tight ${locked ? "text-amber-100" : "text-emerald-100"}`}>
+            {locked && <Lock className="size-3.5 shrink-0" aria-hidden="true" />}
+            <span className={locked ? "sr-only sm:not-sr-only" : ""}>{status}</span>
+          </span> : <ArrowRight aria-hidden="true" className={`mt-1 size-4 shrink-0 text-white/90 ${isRTL ? "rotate-180" : ""}`} />}
+        </span>}
+        <span className="min-w-0 flex-1">
+          <span className={`block break-words font-black leading-snug ${featured ? "text-xl sm:text-2xl" : "text-sm sm:text-base"}`}>{name}</span>
+          {description && <span id={descId} className="home-card-muted mt-1 block break-words text-xs leading-relaxed">{description}</span>}
+          {featured && <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold">
+            {isRTL ? "ابدأ التعلّم" : "Start learning"}<ArrowRight aria-hidden="true" className={`size-4 ${isRTL ? "rotate-180" : ""}`} />
+          </span>}
+          {featured && status && <span id={statusId} className="sr-only">{status}</span>}
+        </span>
+        {featured && <MutamayizMascot className="size-20 sm:size-24" />}
+      </button>
+    </li>
+  );
+}
+
 const SubjectsHub = ({ language, onBack, onSelect }: {
   language: AppLanguage;
   onBack: () => void;
@@ -264,6 +393,7 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
   };
   const groupCopy = GROUP_COPY[group];
   const tools = groups[group];
+  const sections = current ? catalogSections(tools, group, current) : [];
 
   return (
     <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background pb-28 text-foreground">
@@ -306,9 +436,13 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
           </>
         ) : (
           <>
-            <header style={subjectSurface(current.code)} className="group relative mb-5 flex min-h-28 items-center gap-3 overflow-hidden rounded-[1.75rem] border border-border bg-card p-4 sm:gap-5 sm:p-5">
-              <SubjectArtwork subject={current} />
-              <h1 ref={titleRef} tabIndex={-1} className="min-w-0 flex-1 text-2xl font-black tracking-tight outline-none sm:text-3xl">{isRTL ? current.ar : current.en}</h1>
+            <header style={toneStyle(SUBJECT_TONES[current.code] ?? "blue")} className="home-illustrated-card group mb-5 flex min-h-32 items-center justify-between gap-3 rounded-[1.75rem] border p-4 sm:gap-5 sm:p-5">
+              <div className="min-w-0 flex-1">
+                <p className="home-card-muted text-xs font-bold uppercase tracking-wide">{isRTL ? "مادتك الدراسية" : "Your subject"}</p>
+                <h1 ref={titleRef} tabIndex={-1} className="mt-1 break-words text-2xl font-black tracking-tight outline-none sm:text-3xl">{isRTL ? current.ar : current.en}</h1>
+                <p className="home-card-muted mt-1 text-sm">{isRTL ? "استكشف، افهم، وتميّز" : "Explore. Understand. Master."}</p>
+              </div>
+              <span className="block w-20 shrink-0 p-1 sm:w-24"><FeatureIcon3D icon={current.Icon} /></span>
             </header>
 
             {canReviewDue && <button type="button" onClick={() => handleToolClick(MISTAKES, true)}
@@ -333,33 +467,17 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
               {tools.length === 0 ? (
                 <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{isRTL ? "ماكو أدوات ظاهرة بهالقسم هسه." : "No visible tools in this category."}</p>
               ) : (
-                    <ul className="grid gap-2.5">
-                      {tools.map(tool => {
-                        const Icon = tool.Icon;
-                        const premium = !tool.free && isPremiumTool(tool.key);
-                        const description = isRTL ? tool.descAr : tool.descEn;
-                        return (
-                          <li key={tool.key} className="min-w-0">
-                            <button type="button" onClick={() => handleToolClick(tool)} disabled={tool.disabled || (premium && subscriptionLoading)}
-                              style={subjectSurface(current.code)}
-                              className="group flex min-h-16 w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5 text-start hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-55 sm:gap-3">
-                              <span className="grid size-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: `linear-gradient(145deg, ${subjectPalette(current.code).mid}, ${subjectPalette(current.code).deep})`, boxShadow: "inset 0 1px 1px #ffffff66, 0 3px 0 #00000025" }}><Icon aria-hidden="true" className="size-[1.1rem] drop-shadow-sm" /></span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-bold sm:text-base">{isRTL ? tool.ar : tool.en}</span>
-                                {description && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{description}</span>}
-                              </span>
-                              {tool.free && <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">{isRTL ? "مجاني" : "FREE"}</span>}
-                              {tool.disabled || (premium && !isPremium) ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                                  <Lock aria-hidden="true" className="size-3" />
-                                  {tool.disabled ? (isRTL ? "مقفل" : "LOCKED") : (isRTL ? "بريميوم" : "PREMIUM")}
-                                </span>
-                              ) : <ArrowRight aria-hidden="true" className={`size-4 shrink-0 text-muted-foreground ${isRTL ? "rotate-180" : ""}`} />}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <div className="space-y-6">
+                  {sections.map(section => (
+                    <div key={section.id} className="min-w-0">
+                      <h2 className="mb-2.5 text-base font-black tracking-tight sm:text-lg">{isRTL ? section.ar : section.en}</h2>
+                      <ul data-study-section={section.id} className="grid grid-cols-2 gap-3 sm:gap-4">
+                        {section.tools.map(tool => <StudyToolCard key={tool.key} tool={tool} isRTL={isRTL} isPremium={isPremium}
+                          subscriptionLoading={subscriptionLoading} onClick={() => handleToolClick(tool)} />)}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               )}
             </section>
           </>
