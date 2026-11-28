@@ -199,3 +199,26 @@ describe('single Mutamayiz conversation',()=>{
   expect(backend.invoke).toHaveBeenCalledTimes(2);
  });
 });
+
+
+it("animates the mascot as idle, listening to text input, and thinking during an actual request", async () => {
+  let finish!: (result: unknown) => void;
+  backend.invoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const view = render(<MutamayizChat language="en" />);
+  const input = screen.getByRole("textbox");
+  await waitFor(() => expect(input).toBeEnabled());
+  const mascot = () => view.container.querySelector("header [data-mascot-state]");
+  expect(mascot()).toHaveAttribute("data-mascot-state", "idle");
+  fireEvent.focus(input);
+  expect(mascot()).toHaveAttribute("data-mascot-state", "listening");
+  fireEvent.blur(input);
+  expect(mascot()).toHaveAttribute("data-mascot-state", "idle");
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: "Explain resonance" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  await waitFor(() => expect(mascot()).toHaveAttribute("data-mascot-state", "thinking"));
+  fireEvent.blur(input);
+  await act(async () => finish({ data: { reply: "Resonance explanation." }, error: null }));
+  expect(mascot()).toHaveAttribute("data-mascot-state", "idle");
+  expect(await screen.findByText("Resonance explanation.")).toBeVisible();
+});
