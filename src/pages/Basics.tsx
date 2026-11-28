@@ -32,7 +32,6 @@ import GiftMcqButton from "@/components/GiftMcqButton";
 import MutamayizMascot from "@/components/MutamayizMascot";
 import { openMutamayizStudyGuide } from "@/lib/mutamayizLaunch";
 import { resetStudySubjectFocus } from "@/lib/studySubjectFocus";
-import studyBookArt from "@/assets/home-study-book.webp";
 import HomeHighlights from "@/components/home/HomeHighlights";
 import HomeDailyReport from "@/components/home/HomeDailyReport";
 import PointsGuideCards from "@/components/home/PointsGuideCards";
@@ -1495,7 +1494,9 @@ const Basics = ({
                       <span className="home-card-muted mt-1 block text-xs leading-relaxed sm:text-sm">{isRTL ? "اختار مادة وابدأ بالأدوات اللي تحتاجها" : "Choose a subject and open its study tools"}</span>
                     </span>
                   </span>
-                  <img src={studyBookArt} alt="" width={384} height={192} className="mx-auto max-h-24 w-full max-w-44 object-contain drop-shadow-[0_10px_12px_rgba(0,0,0,0.42)] motion-safe:transition-transform motion-safe:group-hover:scale-105" />
+                  <span aria-hidden="true" className="home-card-art home-plan-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
+                     <BookOpen className="h-auto w-3/5" />
+                   </span>
                 </button>
                 <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-[color:var(--home-card-edge)] [&>button]:bg-[color:var(--home-card-tile-bg)] [&>button]:bg-none [&>button]:text-inherit [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
               </div>
