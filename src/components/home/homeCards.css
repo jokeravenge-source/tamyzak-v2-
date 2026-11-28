@@ -1,102 +1,102 @@
-/* Full-strength Study subject colors on Home cards. No white or theme-surface blending. */
+/* Jewel-tone Home palette: solid card backgrounds, no white or theme-surface blending. */
 [data-home-tone="points"] {
-  --home-card-light: #ffdc9b;
-  --home-card-swatch: #f6a33c;
-  --home-card-base: #b65b19;
-  --home-card-shadow: #f6a33c55;
+  --home-card-light: #FFD18B;
+  --home-card-swatch: #AD510C;
+  --home-card-base: #823604;
+  --home-card-shadow: #82360466;
 }
 
 [data-home-tone="quick-study"] {
-  --home-card-light: #a8edc7;
-  --home-card-swatch: #44ba86;
-  --home-card-base: #15724c;
-  --home-card-shadow: #44ba8655;
+  --home-card-light: #9AE7BC;
+  --home-card-swatch: #19764D;
+  --home-card-base: #0C5134;
+  --home-card-shadow: #0C513466;
 }
 
 [data-home-tone="challenge"] {
-  --home-card-light: #e4c6ff;
-  --home-card-swatch: #ad72ef;
-  --home-card-base: #7042bc;
-  --home-card-shadow: #ad72ef55;
+  --home-card-light: #DCC0FF;
+  --home-card-swatch: #7545C4;
+  --home-card-base: #4D2896;
+  --home-card-shadow: #4D289666;
 }
 
 [data-home-tone="houdini"] {
-  --home-card-light: #ffbcd1;
-  --home-card-swatch: #ed779c;
-  --home-card-base: #ac3869;
-  --home-card-shadow: #ed779c55;
+  --home-card-light: #FFC1DB;
+  --home-card-swatch: #B33C70;
+  --home-card-base: #82234D;
+  --home-card-shadow: #82234D66;
 }
 
 [data-home-tone="telegram"] {
-  --home-card-light: #b5caff;
-  --home-card-swatch: #758eed;
-  --home-card-base: #4147ac;
-  --home-card-shadow: #758eed55;
+  --home-card-light: #C4D8FF;
+  --home-card-swatch: #465AB9;
+  --home-card-base: #303D85;
+  --home-card-shadow: #303D8566;
 }
 
 [data-home-tone="continue"] {
-  --home-card-light: #a5d8ff;
-  --home-card-swatch: #4298f5;
-  --home-card-base: #2653bd;
-  --home-card-shadow: #4298f555;
+  --home-card-light: #A8D5FF;
+  --home-card-swatch: #2864D7;
+  --home-card-base: #1945A3;
+  --home-card-shadow: #1945A366;
 }
 
 [data-home-tone="schedule"] {
-  --home-card-light: #b2efe8;
-  --home-card-swatch: #42b9ae;
-  --home-card-base: #177a80;
-  --home-card-shadow: #42b9ae55;
+  --home-card-light: #A2EEE5;
+  --home-card-swatch: #087B80;
+  --home-card-base: #05565B;
+  --home-card-shadow: #05565B66;
 }
 
 [data-home-tone="malazam"] {
-  --home-card-light: #ffdc9b;
-  --home-card-swatch: #f6a33c;
-  --home-card-base: #b65b19;
-  --home-card-shadow: #f6a33c55;
+  --home-card-light: #FFD18B;
+  --home-card-swatch: #AD510C;
+  --home-card-base: #823604;
+  --home-card-shadow: #82360466;
 }
 
 [data-home-tone="subjectsHub"] {
-  --home-card-light: #a5d8ff;
-  --home-card-swatch: #4298f5;
-  --home-card-base: #2653bd;
-  --home-card-shadow: #4298f555;
+  --home-card-light: #A8D5FF;
+  --home-card-swatch: #2864D7;
+  --home-card-base: #1945A3;
+  --home-card-shadow: #1945A366;
 }
 
 [data-home-tone="mistakes"] {
-  --home-card-light: #ffbcd1;
-  --home-card-swatch: #ed779c;
-  --home-card-base: #ac3869;
-  --home-card-shadow: #ed779c55;
+  --home-card-light: #FFC0CA;
+  --home-card-swatch: #B83D5E;
+  --home-card-base: #85253F;
+  --home-card-shadow: #85253F66;
 }
 
 [data-home-tone="more"] {
-  --home-card-light: #e4c6ff;
-  --home-card-swatch: #ad72ef;
-  --home-card-base: #7042bc;
-  --home-card-shadow: #ad72ef55;
+  --home-card-light: #D4C1FF;
+  --home-card-swatch: #6650B3;
+  --home-card-base: #49358B;
+  --home-card-shadow: #49358B66;
 }
 
 [data-home-tone="report"] {
-  --home-card-light: #a8edc7;
-  --home-card-swatch: #44ba86;
-  --home-card-base: #15724c;
-  --home-card-shadow: #44ba8655;
+  --home-card-light: #B1E8D6;
+  --home-card-swatch: #26745D;
+  --home-card-base: #164F40;
+  --home-card-shadow: #164F4066;
 }
 
 .home-illustrated-card,
 .home-surface-card {
-  --home-card-muted: #172137;
-  --home-card-edge: var(--home-card-base, #2653bd);
-  --home-card-tile-bg: var(--home-card-swatch, #4298f5);
-  --home-card-tile-ink: #101827;
-  --home-card-action-bg: #172137;
+  --home-card-muted: #fff;
+  --home-card-edge: var(--home-card-base, #1945A3);
+  --home-card-tile-bg: var(--home-card-swatch, #2864D7);
+  --home-card-tile-ink: #fff;
+  --home-card-action-bg: var(--home-card-base, #1945A3);
   --home-card-action-ink: #fff;
-  --home-card-meter: #172137;
-  color: #101827;
-  background-color: var(--home-card-swatch, #4298f5);
+  --home-card-meter: #fff;
+  color: #fff;
+  background-color: var(--home-card-swatch, #2864D7);
   background-image: none;
   border-color: var(--home-card-edge);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15), 0 8px 20px -12px var(--home-card-base, #2653bd);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15), 0 8px 20px -12px var(--home-card-base, #1945A3);
 }
 .home-card-muted { color: var(--home-card-muted); }
 .home-card-tile {
@@ -111,28 +111,28 @@
 }
 .home-card-art {
   color: white;
-  background: linear-gradient(145deg, var(--home-card-light, #a5d8ff), var(--home-card-swatch, #4298f5) 46%, var(--home-card-base, #2653bd));
-  box-shadow: 1px 4px 0 var(--home-card-base, #2653bd), 2px 7px 12px var(--home-card-shadow, #4298f555), inset 1px 2px 2px #ffffff9e, inset -2px -3px 5px #00000022;
+  background: linear-gradient(145deg, var(--home-card-light, #A8D5FF), var(--home-card-swatch, #2864D7) 46%, var(--home-card-base, #1945A3));
+  box-shadow: 1px 4px 0 var(--home-card-base, #1945A3), 2px 7px 12px var(--home-card-shadow, #1945A366), inset 1px 2px 2px #ffffff9e, inset -2px -3px 5px #00000022;
   border: 0;
 }
-.home-card-art svg { filter: drop-shadow(1px 2px 1px var(--home-card-base, #2653bd)); }
+.home-card-art svg { filter: drop-shadow(1px 2px 1px var(--home-card-base, #1945A3)); }
 .home-plan-art { transform: perspective(240px) rotateX(13deg) rotateY(-12deg) rotateZ(-7deg); }
-.home-plan-track { background-color: rgb(16 24 39 / 0.16); }
+.home-plan-track { background-color: var(--home-card-base, #05565B); }
 .home-plan-fill {
-  background: #172137;
+  background: #fff;
   box-shadow: inset 0 1px 1px #ffffff33;
 }
-.home-plan-percent { color: #101827; }
+.home-plan-percent { color: #fff; }
 .home-card-inset {
-  background: rgb(16 24 39 / 0.06);
+  background: rgb(0 0 0 / 0.12);
   border-color: var(--home-card-edge);
   color: inherit;
 }
-.home-card-inset:is(button, a):hover { background: rgb(16 24 39 / 0.1); }
+.home-card-inset:is(button, a):hover { background: rgb(0 0 0 / 0.18); }
 .home-illustrated-card:hover,
 .home-illustrated-card:focus-within,
 .home-surface-card:is(button, a):hover {
-  border-color: #172137;
+  border-color: var(--home-card-light, #A8D5FF);
 }
 
 .home-rank-name {
