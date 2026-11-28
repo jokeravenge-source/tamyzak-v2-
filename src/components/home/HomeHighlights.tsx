@@ -1,3 +1,4 @@
+import FeatureIcon3D from "@/components/ui/FeatureIcon3D";
 import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import { ChevronLeft, ChevronRight, Timer, Zap } from "lucide-react";
 import challengeArt from "@/assets/challenge-3d-icon.png";
@@ -131,9 +132,7 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         <button type="button" id="points-details-trigger" data-home-tone="points" onClick={onOpenPointsGuide} className={promoClass} aria-label={pointsGuideTitle}>
           <PromoContent
             art={
-              <span aria-hidden="true" className="home-card-art home-plan-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
-                <Zap className="h-auto w-3/5" />
-              </span>
+              <FeatureIcon3D icon={Zap} />
             }
             title={pointsGuideTitle}
             description={isRTL ? "تعرف على النقاط والمراتب والمكافآت" : "Learn points, ranks and rewards"}
