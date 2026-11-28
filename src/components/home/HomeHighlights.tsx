@@ -1,8 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
-import { ChevronLeft, ChevronRight, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Timer, Zap } from "lucide-react";
 import challengeArt from "@/assets/challenge-3d-icon.png";
 import hoodieArt from "@/assets/houdini-hoodie-icon.png";
-import pointsArt from "@/assets/points-guide-lightning.webp";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { HOUDINI_STORE_URL } from "@/lib/storeLinks";
@@ -129,8 +128,16 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         role="group"
         aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
       >
-        <button type="button" id="points-details-trigger" data-home-tone="points" onClick={onOpenPointsGuide} className={promoClass}>
-          <PromoContent art={pointsArt} artSize={320} title={pointsGuideTitle} />
+        <button type="button" id="points-details-trigger" data-home-tone="points" onClick={onOpenPointsGuide} className={promoClass} aria-label={pointsGuideTitle}>
+          <PromoContent
+            art={
+              <span aria-hidden="true" className="home-card-art home-plan-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
+                <Zap className="h-auto w-3/5" />
+              </span>
+            }
+            title={pointsGuideTitle}
+            description={isRTL ? "تعرف على النقاط والمراتب والمكافآت" : "Learn points, ranks and rewards"}
+          />
         </button>
         <button type="button" id="quickStudy-details-trigger" data-home-tone="quick-study" onClick={onOpenQuickStudy} className={promoClass} aria-label={quickStudyTitle}>
           <PromoContent
