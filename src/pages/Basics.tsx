@@ -1,3 +1,4 @@
+import FeatureIcon3D from "@/components/ui/FeatureIcon3D";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { trackStreakUpdated } from "@/lib/analytics";
 import { ensureDailyLogin, fetchProgress } from "@/lib/unlocks";
@@ -1494,9 +1495,7 @@ const Basics = ({
                       <span className="home-card-muted mt-1 block text-xs leading-relaxed sm:text-sm">{isRTL ? "اختار مادة وابدأ بالأدوات اللي تحتاجها" : "Choose a subject and open its study tools"}</span>
                     </span>
                   </span>
-                  <span aria-hidden="true" className="home-card-art home-plan-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
-                     <BookOpen className="h-auto w-3/5" />
-                   </span>
+                  <FeatureIcon3D icon={BookOpen} />
                 </button>
                 <div className="absolute end-2 top-1/2 -translate-y-1/2 sm:end-5 [&>button]:rounded-full [&>button]:border-[color:var(--home-card-edge)] [&>button]:bg-[color:var(--home-card-tile-bg)] [&>button]:bg-none [&>button]:text-inherit [&>button]:shadow-none [&>button>span]:hidden"><GiftMcqButton language={language} compact /></div>
               </div>
