@@ -506,7 +506,9 @@ const Basics = ({
         const origin = detailOrigin.current;
         const trigger = document.getElementById(origin.trigger);
         window.scrollTo({ top: origin.scroll, behavior: "auto" });
-        if (origin.trigger === "points-details-trigger") trigger?.scrollIntoView?.({ block: "nearest", inline: "start" });
+        if (origin.trigger === "points-details-trigger" || origin.trigger === "quickStudy-details-trigger") {
+          trigger?.scrollIntoView?.({ block: "nearest", inline: "start" });
+        }
         trigger?.focus({ preventScroll: true });
         detailOrigin.current = null;
       }
@@ -672,6 +674,7 @@ const Basics = ({
   }, []);
 
   const isRTL = language === "ar";
+  const quickStudyTitle = isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes";
   const pointsGuideTitle = isRTL ? "شتسوي بالنقاط ؟" : "What can you do with points?";
   const homeNumber = (value: number) => value.toLocaleString(isRTL ? "ar-IQ" : "en");
   const boardPosition = boardRank == null ? "—" : `#${homeNumber(boardRank)}`;
@@ -881,7 +884,7 @@ const Basics = ({
       progress: isRTL ? "تقدمي ورتبتي" : "My progress and rank",
       streak: isRTL ? "استمراريتي بالدراسة" : "My study streak",
       points: pointsGuideTitle,
-      quickStudy: isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes",
+      quickStudy: quickStudyTitle,
     };
     return (
       <main dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-background px-4 py-6 pb-32 text-foreground" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -1440,20 +1443,12 @@ const Basics = ({
             </div>
           </section>
 
-          <button id="quickStudy-details-trigger" type="button" onClick={() => openDetail("quickStudy")}
-            className="group mb-5 flex w-full items-center gap-3 rounded-[1.4rem] border border-sky-400/30 bg-gradient-to-br from-[#122d53] to-[#175b7c] p-3.5 text-start text-white shadow-sm transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-cyan-200/15 text-cyan-100"><Timer aria-hidden="true" className="size-6" /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lg font-black">{isRTL ? "عندي ١٥ دقيقة" : "I have 15 minutes"}</span>
-              <span className="mt-0.5 block text-xs font-semibold text-sky-100 sm:text-sm">{isRTL ? "اختار المادة والفصل اللي تريد تراجعه" : "Choose a subject and chapter to review"}</span>
-            </span>
-            <ChevronRight aria-hidden="true" className={`size-5 shrink-0 text-cyan-100 ${isRTL ? "rotate-180" : ""}`} />
-          </button>
-
           <HomeHighlights
             language={language}
             pointsGuideTitle={pointsGuideTitle}
             onOpenPointsGuide={() => openDetail("points")}
+            quickStudyTitle={quickStudyTitle}
+            onOpenQuickStudy={() => openDetail("quickStudy")}
             onOpenChallenge={() => {
               try { sessionStorage.setItem("tmz:sessions-entry", "challenge"); } catch { /* ignore */ }
               navigate("sessions");

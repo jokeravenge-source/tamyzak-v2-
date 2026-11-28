@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { ChevronLeft, ChevronRight, Timer } from "lucide-react";
 import challengeArt from "@/assets/challenge-3d-icon.png";
 import hoodieArt from "@/assets/houdini-hoodie-icon.png";
 import pointsArt from "@/assets/points-guide-lightning.webp";
@@ -24,27 +24,29 @@ function getTrackStart(track: HTMLElement) {
 
 const promoClass = "home-illustrated-card group grid min-h-[8.5rem] grid-cols-[minmax(0,1fr)_37%] items-center gap-2 overflow-hidden rounded-[1.4rem] border border-sky-400/25 px-3.5 py-3 text-start text-white transition-[filter] hover:brightness-110 focus-visible:!outline-offset-[-3px] sm:min-h-40 sm:gap-3 sm:px-5";
 
-function PromoContent({ art, title, description, artSize = 816 }: { art: string; title: string; description?: string; artSize?: number }) {
+function PromoContent({ art, title, description, artSize = 816 }: { art: string | ReactElement; title: string; description?: string; artSize?: number }) {
   return (
     <>
       <span className="min-w-0">
         <span className="block text-[clamp(1.125rem,5.4vw,1.625rem)] font-black leading-snug tracking-tight">{title}</span>
         {description && <span className="mt-1.5 block text-[13px] leading-relaxed text-sky-100/85 sm:text-sm">{description}</span>}
       </span>
-      <img src={art} alt="" width={artSize} height={artSize} className="aspect-square max-h-32 w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105" />
+      {typeof art === "string" ? <img src={art} alt="" width={artSize} height={artSize} className="aspect-square max-h-32 w-full object-contain drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)] motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105" /> : art}
     </>
   );
 }
 
-export default function HomeHighlights({ language, onOpenChallenge, pointsGuideTitle, onOpenPointsGuide }: {
+export default function HomeHighlights({ language, onOpenChallenge, pointsGuideTitle, onOpenPointsGuide, quickStudyTitle, onOpenQuickStudy }: {
   language: AppLanguage;
   onOpenChallenge: () => void;
   pointsGuideTitle: string;
   onOpenPointsGuide: () => void;
+  quickStudyTitle: string;
+  onOpenQuickStudy: () => void;
 }) {
   const isRTL = language === "ar";
   const trackRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ index: 0, count: 3 });
+  const [position, setPosition] = useState({ index: 0, count: 4 });
 
   useLayoutEffect(() => {
     const track = trackRef.current;
@@ -123,12 +125,23 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
       </div>
       <div
         ref={trackRef}
-        className="-mx-3 flex h-[var(--highlight-height,auto)] min-w-0 snap-x snap-mandatory items-start gap-2.5 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-3 px-3 pb-2 pt-0.5 [scrollbar-width:none] after:shrink-0 after:basis-[calc(12%_-_0.625rem)] after:content-[''] sm:mx-0 sm:h-auto sm:items-stretch sm:scroll-px-0 sm:px-0 sm:after:basis-[calc(50%_-_0.3125rem)] lg:after:hidden [&::-webkit-scrollbar]:hidden [&>*]:min-w-0 [&>*]:shrink-0 [&>*]:basis-[88%] [&>*]:snap-start [&>*]:snap-always sm:[&>*]:basis-[calc(50%_-_0.3125rem)] lg:[&>*]:flex-1"
+        className="-mx-3 flex h-[var(--highlight-height,auto)] min-w-0 snap-x snap-mandatory items-start gap-2.5 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-3 px-3 pb-2 pt-0.5 [scrollbar-width:none] after:shrink-0 after:basis-[calc(12%_-_0.625rem)] after:content-[''] sm:mx-0 sm:h-auto sm:items-stretch sm:scroll-px-0 sm:px-0 sm:after:basis-[calc(50%_-_0.3125rem)] lg:after:basis-[calc(66.666667%_-_0.208333rem)] [&::-webkit-scrollbar]:hidden [&>*]:min-w-0 [&>*]:shrink-0 [&>*]:basis-[88%] [&>*]:snap-start [&>*]:snap-always sm:[&>*]:basis-[calc(50%_-_0.3125rem)] lg:[&>*]:basis-[calc(33.333333%_-_0.416667rem)]"
         role="group"
         aria-label={isRTL ? "عروض تميّزك" : "Tamayzak highlights"}
       >
         <button type="button" id="points-details-trigger" onClick={onOpenPointsGuide} className={promoClass}>
           <PromoContent art={pointsArt} artSize={320} title={pointsGuideTitle} />
+        </button>
+        <button type="button" id="quickStudy-details-trigger" onClick={onOpenQuickStudy} className={promoClass} aria-label={quickStudyTitle}>
+          <PromoContent
+            art={
+              <span aria-hidden="true" className="mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] border border-cyan-200/40 bg-gradient-to-br from-cyan-200/35 via-sky-400/25 to-blue-900/55 text-cyan-50 shadow-[0_8px_20px_#04172d70,inset_0_1px_0_#caf3ff50] motion-safe:transition-transform motion-safe:group-hover:scale-105">
+                <Timer className="h-auto w-3/5" />
+              </span>
+            }
+            title={quickStudyTitle}
+            description={isRTL ? "اختار المادة والفصل وابدأ المراجعة" : "Choose a subject and chapter to review"}
+          />
         </button>
         <button type="button" onClick={onOpenChallenge} className={promoClass} aria-label={challengeTitle}>
           <PromoContent art={challengeArt} title={challengeTitle} description={isRTL ? "اختبر مستواك وتنافس ويّه طلاب تميّزك" : "Test your skills against other Tamayzak students"} />
@@ -138,7 +151,7 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         </a>
         <TelegramLinkCard language={language} source="home" variant="home" />
       </div>
-      <div className="flex justify-center lg:hidden" role="group" aria-label={isRTL ? "اختيار بطاقة" : "Choose a highlight card"}>
+      <div className="flex justify-center" role="group" aria-label={isRTL ? "اختيار بطاقة" : "Choose a highlight card"}>
         {Array.from({ length: position.count }, (_, index) => (
           <button
             type="button"

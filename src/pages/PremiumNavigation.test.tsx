@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Basics from "@/pages/Basics";
 import SubjectsHub from "@/pages/SubjectsHub";
@@ -156,10 +157,33 @@ describe("simplified home navigation", () => {
     const points = within(highlights).getByRole("button", { name: "What can you do with points?" });
     expect(highlights.firstElementChild).toBe(points);
     expect(points.querySelector("img")).toHaveAttribute("src", expect.stringContaining("points-guide-lightning.webp"));
-    expect(screen.getByRole("button", { name: "Show card 1 of 4" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: "Show card 1 of 5" })).toHaveAttribute("aria-current", "true");
     expect(plan.compareDocumentPosition(highlights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(highlights.compareDocumentPosition(screen.getByRole("button", { name: "Continue studying" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "What will you finish today?" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["ar", "عروض تميّزك", "عندي ١٥ دقيقة", "المادة", "العودة للرئيسية"],
+    ["en", "Tamayzak highlights", "I have 15 minutes", "Subject", "Back to home"],
+  ] as const)("opens quick study from the highlight and restores focus in %s", async (language, group, title, subject, back) => {
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const queryClient = new QueryClient();
+    await act(async () => { render(
+      <QueryClientProvider client={queryClient}>
+        <Basics language={language} onChangeLanguage={vi.fn()} onSelect={vi.fn()} onNav={vi.fn()} />
+      </QueryClientProvider>,
+    ); });
+    const highlight = () => within(screen.getByRole("group", { name: group })).getByRole("button", { name: title });
+    expect(screen.getAllByRole("button", { name: title })).toEqual([highlight()]);
+    expect(highlight().previousElementSibling).toHaveAttribute("id", "points-details-trigger");
+
+    fireEvent.click(highlight());
+    const detail = within(screen.getByRole("main"));
+    expect(detail.getByRole("heading", { name: title })).toBeVisible();
+    expect(detail.getByLabelText(subject)).toBeVisible();
+    fireEvent.click(detail.getByRole("button", { name: back }));
+    await waitFor(() => expect(highlight()).toHaveFocus());
   });
 
   it.each(["ar", "en"] as const)("shows all four points cards in %s and returns to the Home card", async (language) => {
