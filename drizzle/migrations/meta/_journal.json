@@ -540,6 +540,13 @@
       "when": 1795869000000,
       "tag": "0076_session_telegram_break",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1795869000001,
+      "tag": "0077_session_telegram_break",
+      "breakpoints": true
     }
   ]
 }

@@ -2410,6 +2410,75 @@ export type Database = {
         }
         Relationships: []
       }
+      paper_review_exercises: {
+        Row: {
+          chapter_key: string
+          content: Json
+          curriculum: string
+          display_order: number
+          id: string
+          published: boolean
+          source_reference: string | null
+          subject: string
+        }
+        Insert: {
+          chapter_key: string
+          content: Json
+          curriculum?: string
+          display_order?: number
+          id: string
+          published?: boolean
+          source_reference?: string | null
+          subject: string
+        }
+        Update: {
+          chapter_key?: string
+          content?: Json
+          curriculum?: string
+          display_order?: number
+          id?: string
+          published?: boolean
+          source_reference?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      paper_reviews: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          free_day: string | null
+          image_digest: string
+          lease_id: string
+          practice_passed_at: string | null
+          report: Json | null
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          free_day?: string | null
+          image_digest: string
+          lease_id?: string
+          practice_passed_at?: string | null
+          report?: Json | null
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          free_day?: string | null
+          image_digest?: string
+          lease_id?: string
+          practice_passed_at?: string | null
+          report?: Json | null
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       parent_follow_links: {
         Row: {
           access_code: string
@@ -4989,6 +5058,10 @@ export type Database = {
         Args: { _choice_index: number; _question_id: string }
         Returns: Json
       }
+      answer_paper_review: {
+        Args: { _choice: number; _request_id: string; _user_id: string }
+        Returns: Json
+      }
       answer_race_question: {
         Args: {
           _attempt_id: string
@@ -5273,6 +5346,23 @@ export type Database = {
         Returns: string
       }
       my_referral_stats: { Args: never; Returns: Json }
+      paper_review_catalog: {
+        Args: {
+          _chapter: string
+          _exercise_id: string
+          _language: string
+          _subject: string
+        }
+        Returns: Json
+      }
+      paper_review_exercise_for_review: {
+        Args: { _exercise_id: string }
+        Returns: Json
+      }
+      paper_review_status: {
+        Args: { _premium: boolean; _user_id: string }
+        Returns: Json
+      }
       points_balance: { Args: never; Returns: number }
       poll_vote_counts: {
         Args: { _poll_id: string }
@@ -5317,6 +5407,15 @@ export type Database = {
       reserve_all_or_nothing_stake: {
         Args: { _challenge_id: string; _points: number; _user_id: string }
         Returns: number
+      }
+      reserve_paper_review: {
+        Args: {
+          _image_digest: string
+          _premium: boolean
+          _request_id: string
+          _user_id: string
+        }
+        Returns: Json
       }
       resolve_mistake: {
         Args: { _correct: boolean; _id: string }
@@ -5373,6 +5472,7 @@ export type Database = {
         }
       }
       session_royale_poll: { Args: { _vote?: Json }; Returns: Json }
+      session_telegram_room_count: { Args: never; Returns: number }
       set_community_chat_reaction: {
         Args: { _post_id: string; _reaction: string }
         Returns: {
@@ -5392,6 +5492,15 @@ export type Database = {
         Returns: undefined
       }
       settle_due_all_or_nothing_challenges: { Args: never; Returns: number }
+      settle_paper_review: {
+        Args: {
+          _lease_id: string
+          _report: Json
+          _request_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       signal_study_room_voice: {
         Args: {
           _attempt: string
