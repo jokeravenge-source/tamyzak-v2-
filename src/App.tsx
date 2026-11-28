@@ -73,6 +73,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { isPremiumTool } from "@/lib/premium";
 import PremiumToolLock from "@/components/PremiumToolLock";
 import StudyRoomActivityProvider from "@/components/StudyRoomActivityProvider";
+import FloatingStudyTimer from "@/components/FloatingStudyTimer";
 import { PAPER_REVIEW_PATH } from "../supabase/functions/_shared/paperReview";
 const BiologyDrawings = lazy(() => import("./pages/BiologyDrawings"));
 const BiologySketchpad = lazy(() => import("./pages/BiologySketchpad"));
@@ -1108,6 +1109,7 @@ const StudentApp = () => {
       <Toaster />
       <Sonner />
       <ZombieGuard />
+      <FloatingStudyTimer user={authed && language ? userId : null} language={language ?? "ar"} inSessions={menuChoice === "sessions"} onReturn={() => { if (menuChoice !== "sessions") chooseMenu("sessions"); }} />
       <SpotifyAuthCallback />
       {menuChoice !== "studyRace" && <PaymentTestModeBanner />}
       <Suspense fallback={null}>
