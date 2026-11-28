@@ -64,8 +64,8 @@ export default function HomeDailyReport({ language, userId, authLoading, onOpen 
         <span id="home-daily-report-title" className="block text-sm font-black sm:text-base">{t.title}</span>
         <span id="home-daily-report-summary" className="home-card-muted mt-0.5 block text-xs">{description}</span>
       </span>
-      <span className="hidden shrink-0 text-xs font-bold text-primary min-[380px]:inline">{t.cta}</span>
-      <Arrow aria-hidden="true" className="size-4 shrink-0 text-primary" />
+      <span className="hidden shrink-0 text-xs font-bold min-[380px]:inline">{t.cta}</span>
+      <Arrow aria-hidden="true" className="size-4 shrink-0" />
     </button>
   );
 }
