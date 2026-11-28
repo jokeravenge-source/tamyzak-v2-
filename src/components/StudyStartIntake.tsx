@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { BookOpen, ChevronDown } from "lucide-react";
+import FeatureIcon3D from "@/components/ui/FeatureIcon3D";
 import { Button } from "@/components/ui/button";
 import type { AppLanguage } from "@/components/LanguageGate";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,9 +65,16 @@ export default function StudyStartIntake({ subject, language, onStart }: Props) 
 
   const search = query.trim().toLocaleLowerCase();
   const matches = options.filter(option => [option.title, option.group].some(text => text.toLocaleLowerCase().includes(search)));
-  return <section className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-    <h2 className="flex items-center gap-2 font-bold"><Sparkles className="size-4 shrink-0 text-primary" aria-hidden="true" />{ar ? "أول مرة تدرس هاي المادة؟" : "New to studying this subject?"}</h2>
-    <p className="mt-1 text-sm text-muted-foreground">{ar ? "ابدأ بتدريب قصير من ٥ أسئلة متاحة، أو اختار المواضيع اللي تحسها صعبة عليك." : "Start with up to five available questions, or choose the topics you find difficult."}</p>
+  return <section className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
+    <div data-home-tone="continue" className="home-illustrated-card group flex items-center justify-between gap-3 border-b p-4">
+      <div className="min-w-0 flex-1">
+        <p className="home-card-muted text-xs font-bold">{ar ? "ابدأ الدراسة" : "Start studying"}</p>
+        <h2 className="mt-1 text-base font-black leading-snug sm:text-lg">{ar ? "أول مرة تدرس هاي المادة؟" : "New to studying this subject?"}</h2>
+        <p className="home-card-muted mt-1 text-xs leading-relaxed sm:text-sm">{ar ? "ابدأ بتدريب قصير من ٥ أسئلة متاحة، أو اختار المواضيع اللي تحسها صعبة عليك." : "Start with up to five available questions, or choose the topics you find difficult."}</p>
+      </div>
+      <span className="block w-16 shrink-0 p-1 sm:w-20"><FeatureIcon3D icon={BookOpen} /></span>
+    </div>
+    <div className="p-4">
     <div className="mt-3 flex flex-wrap gap-2">
       <Button type="button" disabled={saving} onClick={() => void launch([])}>{ar ? "ابدأ بـ٥ أسئلة" : "Start five questions"}</Button>
       {options.length > 0 && <Button type="button" variant="outline" disabled={saving} aria-expanded={expanded} aria-controls={panelId}
@@ -91,5 +99,6 @@ export default function StudyStartIntake({ subject, language, onStart }: Props) 
         {ar ? "احفظ اختياري وابدأ التدريب" : "Save choices and start practice"}
       </Button>
     </fieldset>}
+    </div>
   </section>;
 }
