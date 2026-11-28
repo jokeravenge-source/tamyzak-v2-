@@ -1448,7 +1448,7 @@ const Basics = ({
                 </span>
               ))}
             </div>
-            <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 rounded-2xl border border-[color:var(--home-card-edge)] bg-background/60 p-2.5 sm:gap-4 sm:p-3">
+            <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 home-card-inset rounded-2xl border p-2.5 sm:gap-4 sm:p-3">
               {nextPlanTask ? <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <span className={`${HOME_ICON_TILE} hidden min-[380px]:grid`}><ListChecks aria-hidden="true" className="size-4" /></span>
                 <div className="min-w-0">
@@ -1505,16 +1505,16 @@ const Basics = ({
                   onClick={openMutamayizStudyGuide}
                   aria-labelledby="home-mutamayiz-action"
                   aria-describedby="home-mutamayiz-title"
-                  className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-1.5 text-start text-card-foreground transition-colors hover:bg-accent sm:min-h-14 sm:gap-3 sm:px-3"
+                  className="home-card-inset flex min-h-12 w-full min-w-0 items-center gap-2 rounded-xl border px-2.5 py-1.5 text-start transition-colors sm:min-h-14 sm:gap-3 sm:px-3"
                 >
                   <MutamayizMascot className="size-8 sm:size-10" />
                   <span id="home-mutamayiz-title" className="min-w-0 flex-1 text-xs font-bold leading-snug sm:text-sm">
                     {isRTL ? "محتار منين تبدي؟" : "Not sure where to start?"}
                   </span>
-                  <span id="home-mutamayiz-action" className="shrink-0 text-xs font-extrabold text-primary sm:text-sm">
+                  <span id="home-mutamayiz-action" className="shrink-0 text-xs font-extrabold sm:text-sm">
                     {isRTL ? "اسأل متميّز" : "Ask متميّز"}
                   </span>
-                  <HomeChevron aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                  <HomeChevron aria-hidden="true" className="size-4 shrink-0" />
                 </button>
               </div>
             </div>
