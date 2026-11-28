@@ -377,7 +377,7 @@ const HOME_RANK_NAME_COLOR = {
   royal: "#7e22ce",
 } as const;
 
-const HOME_ICON_TILE = "home-card-tile grid size-9 shrink-0 place-items-center rounded-xl";
+const HOME_ICON_TILE = "home-card-tile home-card-art grid size-10 shrink-0 place-items-center rounded-xl";
 
 const TOOL_CATEGORY_TINTS: Record<string, { active: string; idle: string }> = {
   All: { active: "border-primary bg-primary text-primary-foreground", idle: "border-border bg-background text-foreground hover:bg-secondary" },
@@ -1428,25 +1428,27 @@ const Basics = ({
           style={{ fontFamily: "'Cairo', 'Plus Jakarta Sans', sans-serif" }}
         >
         <div className="mx-auto max-w-6xl">
-          <section data-home-tone="schedule" aria-labelledby="home-plan-title" className="home-surface-card mb-4 min-w-0 rounded-[1.4rem] border p-3.5 shadow-sm sm:p-5">
-            <div className="flex items-center gap-2.5">
-              <span className={HOME_ICON_TILE}><CalendarCheck aria-hidden="true" className="size-5" /></span>
-              <div className="min-w-0">
+          <section data-home-tone="schedule" aria-labelledby="home-plan-title" className="home-surface-card relative isolate mb-4 min-w-0 overflow-hidden rounded-[1.6rem] border p-4 sm:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute -end-8 -top-10 size-36 rounded-full bg-[color:var(--home-card-swatch)] opacity-15 blur-3xl" />
+            <div className="relative flex items-center gap-3 sm:gap-4">
+              <span aria-hidden="true" className="home-card-art home-plan-art grid size-16 shrink-0 place-items-center rounded-[1.2rem] sm:size-20"><CalendarCheck className="size-8 sm:size-10" /></span>
+              <div className="min-w-0 flex-1">
                 <h2 id="home-plan-title" className="text-lg font-black leading-snug sm:text-2xl">{isRTL ? "خطة اليوم" : "Today's plan"}</h2>
-                <p className="home-card-muted text-xs font-semibold sm:text-sm">
+                <p className="home-card-muted mt-1 text-xs font-semibold sm:text-sm">
                   {isRTL ? `${homeNumber(planDone)} من ${homeNumber(planTasks.length)} مهام منجزة` : `${planDone} of ${planTasks.length} tasks completed`}
                 </p>
               </div>
+              <span aria-hidden="true" className="home-plan-percent shrink-0 text-xl font-black tabular-nums sm:text-3xl">{homeNumber(Math.round(planRatio * 100))}%</span>
             </div>
             <div role="progressbar" aria-labelledby="home-plan-title" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(planRatio * 100)}
-              className="my-3.5 flex gap-1.5 sm:my-4">
+              className="relative mb-4 mt-5 flex gap-1.5 sm:mb-5 sm:mt-6">
               {Array.from({ length: planSegments }, (_, index) => (
-                <span key={index} className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border/40">
-                  <span className="h-full rounded-full bg-[color:var(--home-card-meter)]" style={{ width: `${Math.max(0, Math.min(1, planRatio * planSegments - index)) * 100}%` }} />
+                <span key={index} className="home-plan-track flex h-3 flex-1 overflow-hidden rounded-full ring-1 ring-inset ring-border/40">
+                  <span className="home-plan-fill h-full rounded-full motion-safe:transition-[width]" style={{ width: `${Math.max(0, Math.min(1, planRatio * planSegments - index)) * 100}%` }} />
                 </span>
               ))}
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-[color:var(--home-card-edge)] pt-3 sm:gap-4">
+            <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 rounded-2xl border border-[color:var(--home-card-edge)] bg-background/60 p-2.5 sm:gap-4 sm:p-3">
               {nextPlanTask ? <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <span className={`${HOME_ICON_TILE} hidden min-[380px]:grid`}><ListChecks aria-hidden="true" className="size-4" /></span>
                 <div className="min-w-0">
@@ -1457,7 +1459,7 @@ const Basics = ({
                 ? (isRTL ? "أنجزت كل مهام اليوم." : "All of today's tasks are complete.")
                 : (isRTL ? "ماكو مهام مجدولة لليوم." : "No tasks scheduled for today.")}</p>}
               <button type="button" onClick={() => navigate("todo")}
-                className="home-card-action inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-start text-xs font-black hover:brightness-105 sm:px-4 sm:text-sm">
+                className="home-card-action inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-start text-xs font-black shadow-sm hover:brightness-105 sm:px-4 sm:text-sm">
                 <CalendarDays aria-hidden="true" className="size-4 shrink-0" />{isRTL ? "افتح جدولي" : "Open my schedule"}
               </button>
             </div>
@@ -1524,7 +1526,7 @@ const Basics = ({
                 { key: "mistakes", Icon: RefreshCw, title: isRTL ? "راجع أخطاءك" : "Review mistakes", copy: dueMistakes > 0 ? (isRTL ? `${homeNumber(dueMistakes)} عناصر مستحقة` : `${dueMistakes} items due`) : (isRTL ? "الأخطاء والبطاقات المستحقة" : "Mistakes and due flashcards"), action: () => onNav("mistakes") },
                 { key: "more", Icon: Grid2X2, title: isRTL ? "كل الأدوات" : "All tools", copy: isRTL ? "ابحث حسب هدفك" : "Find tools by your goal", action: () => setShowAllTools(true) },
               ].map(({ key, Icon, title, copy, action }) => (
-                <button key={key} data-home-tone={key} type="button" aria-label={title} onClick={action} className="home-surface-card flex min-h-[3.6rem] min-w-0 items-center gap-2 rounded-2xl border px-2.5 py-2 text-start shadow-sm transition-colors sm:min-h-16 sm:gap-3 sm:px-3">
+                <button key={key} data-home-tone={key} type="button" aria-label={title} onClick={action} className="home-surface-card flex min-h-[4.5rem] min-w-0 items-center gap-2.5 rounded-[1.35rem] border px-3 py-3 text-start motion-safe:hover:-translate-y-0.5 sm:min-h-20 sm:gap-3 sm:px-4">
                   <span className={HOME_ICON_TILE}><Icon aria-hidden="true" className="size-[1.1rem]" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-black leading-snug sm:text-base">{title}</span>
