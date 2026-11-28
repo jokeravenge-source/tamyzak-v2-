@@ -1,17 +1,48 @@
-[data-home-tone="points"] { --home-card-swatch: #b7813e; }
-[data-home-tone="quick-study"] { --home-card-swatch: #2b896c; }
-[data-home-tone="challenge"] { --home-card-swatch: #835bc2; }
-[data-home-tone="houdini"] { --home-card-swatch: #b85677; }
-[data-home-tone="telegram"] { --home-card-swatch: #278da8; }
-[data-home-tone="continue"] { --home-card-swatch: #417cb5; }
-[data-home-tone="schedule"] { --home-card-swatch: #379789; }
-[data-home-tone="malazam"] { --home-card-swatch: #ac7435; }
-[data-home-tone="subjectsHub"] { --home-card-swatch: #3f70bd; }
-[data-home-tone="mistakes"] { --home-card-swatch: #b55376; }
-[data-home-tone="more"] { --home-card-swatch: #8256b8; }
+[data-home-tone="points"] {
+  --home-card-base: #a43407;
+  --home-card-swatch: #ffc162;
+}
+
+[data-home-tone="quick-study"] {
+  --home-card-base: #035d4e;
+  --home-card-swatch: #35e2a6;
+}
+
+[data-home-tone="challenge"] {
+  --home-card-base: #5f29b5;
+  --home-card-swatch: #c386ff;
+}
+
+[data-home-tone="houdini"] {
+  --home-card-base: #8f235c;
+  --home-card-swatch: #f878ae;
+}
+
+[data-home-tone="telegram"] {
+  --home-card-base: #075987;
+  --home-card-swatch: #44cef4;
+}
+
+[data-home-tone="continue"] {
+  --home-card-base: #1552a6;
+  --home-card-swatch: #68b6ff;
+  --home-art-glow: 34%;
+}
+
+[data-home-tone="points"],
+[data-home-tone="challenge"],
+[data-home-tone="houdini"] {
+  --home-art-glow: 55%;
+}
+
+[data-home-tone="schedule"] { --home-card-swatch: #12ad94; }
+[data-home-tone="malazam"] { --home-card-swatch: #e49223; }
+[data-home-tone="subjectsHub"] { --home-card-swatch: #3477e5; }
+[data-home-tone="mistakes"] { --home-card-swatch: #e54d86; }
+[data-home-tone="more"] { --home-card-swatch: #9259e7; }
 
 .home-illustrated-card {
-  --home-art-position: 80%;
+  --home-art-position: 82%;
   --home-card-muted: #f0f3fa;
   --home-card-edge: rgb(255 255 255 / 0.28);
   --home-card-tile-bg: rgb(255 255 255 / 0.15);
@@ -19,13 +50,13 @@
   --home-card-action-ink: #172537;
   color: white;
   border-color: var(--home-card-edge);
-  background-color: var(--home-card-swatch, hsl(var(--primary)));
-  background-image: linear-gradient(150deg, rgb(23 30 46 / 0.38), rgb(23 30 46 / 0.62));
+  background-color: var(--home-card-base, #1552a6);
+  background-image: linear-gradient(150deg, transparent, rgb(23 30 46 / 0.28));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.13), 0 12px 24px -18px rgb(18 27 43 / 0.55);
 }
 
 [dir="rtl"] .home-illustrated-card {
-  --home-art-position: 20%;
+  --home-art-position: 18%;
 }
 
 .home-surface-card {
@@ -43,7 +74,7 @@
 .home-card-muted { color: var(--home-card-muted); }
 
 .home-card-tile {
-  color: inherit;
+  color: var(--home-card-tile-ink, inherit);
   background-color: var(--home-card-tile-bg);
   border-color: var(--home-card-edge);
 }
@@ -56,20 +87,22 @@
 
 @supports (color: color-mix(in srgb, white, black)) {
   :is(.home-illustrated-card, .home-surface-card) {
-    /* Read live theme tokens, with a separate hue for each card. */
-    --home-card-tone: color-mix(in srgb, var(--home-card-swatch, hsl(var(--primary))) 72%, hsl(var(--primary)));
+    --home-card-tone: color-mix(in srgb, var(--home-card-swatch, hsl(var(--primary))) 84%, hsl(var(--primary-glow)));
   }
 
   .home-illustrated-card {
-    --home-card-edge: color-mix(in srgb, var(--home-card-tone) 65%, #f3f5fa);
-    --home-card-muted: color-mix(in srgb, white 96%, var(--home-card-tone));
-    --home-card-tile-bg: color-mix(in srgb, var(--home-card-tone) 28%, rgb(255 255 255 / 0.16));
-    --home-card-action-bg: color-mix(in srgb, white 83%, var(--home-card-tone));
-    background-color: color-mix(in srgb, var(--home-card-tone) 45%, #1c2538);
+    /* Keep the strongest light behind the artwork, away from the copy. */
+    --home-card-background: color-mix(in srgb, var(--home-card-base, #1552a6) 88%, hsl(var(--primary)));
+    --home-card-edge: color-mix(in srgb, var(--home-card-tone) 65%, white);
+    --home-card-muted: color-mix(in srgb, white 95%, var(--home-card-tone));
+    --home-card-tile-bg: color-mix(in srgb, var(--home-card-background) 91%, white);
+    --home-card-action-bg: color-mix(in srgb, white 76%, var(--home-card-tone));
+    background-color: color-mix(in srgb, var(--home-card-background) 76%, #191c34);
     background-image:
-      radial-gradient(ellipse 39% 110% at var(--home-art-position) 30%, hsl(var(--primary-glow) / 0.11), transparent),
-      linear-gradient(152deg, color-mix(in srgb, var(--home-card-tone) 58%, #222735), transparent);
-    border-color: color-mix(in srgb, var(--home-card-edge) 47%, transparent);
+      radial-gradient(ellipse 35% 112% at var(--home-art-position) 35%, color-mix(in srgb, var(--home-card-tone) var(--home-art-glow, 22%), transparent), transparent),
+      linear-gradient(152deg, var(--home-card-background), transparent 96%);
+    border-color: color-mix(in srgb, var(--home-card-edge) 58%, transparent);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 12px 24px -17px color-mix(in srgb, var(--home-card-background) 82%, transparent);
   }
 
   .home-illustrated-card:hover,
@@ -78,12 +111,13 @@
   }
 
   .home-surface-card {
-    --home-card-muted: color-mix(in srgb, hsl(var(--card-foreground)) 79%, hsl(var(--card)));
-    --home-card-edge: color-mix(in srgb, var(--home-card-tone) 32%, hsl(var(--border)));
-    --home-card-tile-bg: color-mix(in srgb, var(--home-card-tone) 25%, hsl(var(--card)));
-    --home-card-action-bg: color-mix(in srgb, var(--home-card-tone) 34%, hsl(var(--card)));
-    --home-card-meter: color-mix(in srgb, var(--home-card-tone) 68%, hsl(var(--card-foreground)));
-    background-image: linear-gradient(145deg, color-mix(in srgb, var(--home-card-tone) 17%, hsl(var(--card))), color-mix(in srgb, var(--home-card-tone) 6%, hsl(var(--card))));
+    --home-card-muted: color-mix(in srgb, hsl(var(--card-foreground)) 83%, hsl(var(--card)));
+    --home-card-edge: color-mix(in srgb, var(--home-card-tone) 43%, hsl(var(--border)));
+    --home-card-tile-bg: color-mix(in srgb, var(--home-card-tone) 34%, hsl(var(--card)));
+    --home-card-tile-ink: color-mix(in srgb, hsl(var(--card-foreground)) 80%, var(--home-card-tone));
+    --home-card-action-bg: color-mix(in srgb, var(--home-card-tone) 42%, hsl(var(--card)));
+    --home-card-meter: color-mix(in srgb, var(--home-card-tone) 65%, hsl(var(--card-foreground)));
+    background-image: linear-gradient(145deg, color-mix(in srgb, var(--home-card-tone) 24%, hsl(var(--card))), color-mix(in srgb, var(--home-card-tone) 10%, hsl(var(--card))));
   }
 
   .home-surface-card:is(button, a):hover {
