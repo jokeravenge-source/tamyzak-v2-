@@ -1,11 +1,8 @@
-/* Same light / mid / deep palette and surface treatment as Study subject cards.
-   Card colors stay distinct regardless of the selected app theme. */
+/* Full-strength Study subject colors on Home cards. No white or theme-surface blending. */
 [data-home-tone="points"] {
   --home-card-light: #ffdc9b;
   --home-card-swatch: #f6a33c;
   --home-card-base: #b65b19;
-  --home-card-wash: #f6a33c36;
-  --home-card-fade: #f6a33c10;
   --home-card-shadow: #f6a33c55;
 }
 
@@ -13,8 +10,6 @@
   --home-card-light: #a8edc7;
   --home-card-swatch: #44ba86;
   --home-card-base: #15724c;
-  --home-card-wash: #44ba8636;
-  --home-card-fade: #44ba8610;
   --home-card-shadow: #44ba8655;
 }
 
@@ -22,8 +17,6 @@
   --home-card-light: #e4c6ff;
   --home-card-swatch: #ad72ef;
   --home-card-base: #7042bc;
-  --home-card-wash: #ad72ef36;
-  --home-card-fade: #ad72ef10;
   --home-card-shadow: #ad72ef55;
 }
 
@@ -31,8 +24,6 @@
   --home-card-light: #ffbcd1;
   --home-card-swatch: #ed779c;
   --home-card-base: #ac3869;
-  --home-card-wash: #ed779c36;
-  --home-card-fade: #ed779c10;
   --home-card-shadow: #ed779c55;
 }
 
@@ -40,8 +31,6 @@
   --home-card-light: #b5caff;
   --home-card-swatch: #758eed;
   --home-card-base: #4147ac;
-  --home-card-wash: #758eed36;
-  --home-card-fade: #758eed10;
   --home-card-shadow: #758eed55;
 }
 
@@ -49,8 +38,6 @@
   --home-card-light: #a5d8ff;
   --home-card-swatch: #4298f5;
   --home-card-base: #2653bd;
-  --home-card-wash: #4298f536;
-  --home-card-fade: #4298f510;
   --home-card-shadow: #4298f555;
 }
 
@@ -58,8 +45,6 @@
   --home-card-light: #b2efe8;
   --home-card-swatch: #42b9ae;
   --home-card-base: #177a80;
-  --home-card-wash: #42b9ae36;
-  --home-card-fade: #42b9ae10;
   --home-card-shadow: #42b9ae55;
 }
 
@@ -67,8 +52,6 @@
   --home-card-light: #ffdc9b;
   --home-card-swatch: #f6a33c;
   --home-card-base: #b65b19;
-  --home-card-wash: #f6a33c36;
-  --home-card-fade: #f6a33c10;
   --home-card-shadow: #f6a33c55;
 }
 
@@ -76,8 +59,6 @@
   --home-card-light: #a5d8ff;
   --home-card-swatch: #4298f5;
   --home-card-base: #2653bd;
-  --home-card-wash: #4298f536;
-  --home-card-fade: #4298f510;
   --home-card-shadow: #4298f555;
 }
 
@@ -85,8 +66,6 @@
   --home-card-light: #ffbcd1;
   --home-card-swatch: #ed779c;
   --home-card-base: #ac3869;
-  --home-card-wash: #ed779c36;
-  --home-card-fade: #ed779c10;
   --home-card-shadow: #ed779c55;
 }
 
@@ -94,8 +73,6 @@
   --home-card-light: #e4c6ff;
   --home-card-swatch: #ad72ef;
   --home-card-base: #7042bc;
-  --home-card-wash: #ad72ef36;
-  --home-card-fade: #ad72ef10;
   --home-card-shadow: #ad72ef55;
 }
 
@@ -103,30 +80,24 @@
   --home-card-light: #a8edc7;
   --home-card-swatch: #44ba86;
   --home-card-base: #15724c;
-  --home-card-wash: #44ba8636;
-  --home-card-fade: #44ba8610;
   --home-card-shadow: #44ba8655;
 }
 
 .home-illustrated-card,
 .home-surface-card {
-  --home-art-position: 85%;
-  --home-card-muted: hsl(var(--muted-foreground));
-  --home-card-edge: hsl(var(--border));
-  --home-card-tile-bg: hsl(var(--secondary));
-  --home-card-tile-ink: hsl(var(--card-foreground));
-  --home-card-action-bg: hsl(var(--secondary));
-  --home-card-action-ink: hsl(var(--card-foreground));
-  --home-card-meter: var(--home-card-swatch, hsl(var(--primary)));
-  color: hsl(var(--card-foreground));
-  background-color: hsl(var(--card));
-  background-image: radial-gradient(ellipse at var(--home-art-position) 0%, var(--home-card-wash, transparent), transparent 67%),
-    linear-gradient(150deg, var(--home-card-fade, transparent), transparent 80%);
+  --home-card-muted: #172137;
+  --home-card-edge: var(--home-card-base, #2653bd);
+  --home-card-tile-bg: var(--home-card-swatch, #4298f5);
+  --home-card-tile-ink: #101827;
+  --home-card-action-bg: #172137;
+  --home-card-action-ink: #fff;
+  --home-card-meter: #172137;
+  color: #101827;
+  background-color: var(--home-card-swatch, #4298f5);
+  background-image: none;
   border-color: var(--home-card-edge);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.11), 0 7px 19px -13px var(--home-card-swatch, hsl(var(--primary)));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15), 0 8px 20px -12px var(--home-card-base, #2653bd);
 }
-[dir="rtl"] :is(.home-illustrated-card, .home-surface-card) { --home-art-position: 15%; }
-
 .home-card-muted { color: var(--home-card-muted); }
 .home-card-tile {
   color: var(--home-card-tile-ink, inherit);
@@ -146,30 +117,22 @@
 }
 .home-card-art svg { filter: drop-shadow(1px 2px 1px var(--home-card-base, #2653bd)); }
 .home-plan-art { transform: perspective(240px) rotateX(13deg) rotateY(-12deg) rotateZ(-7deg); }
-.home-plan-track { background-color: hsl(var(--muted)); }
+.home-plan-track { background-color: rgb(16 24 39 / 0.16); }
 .home-plan-fill {
-  background: linear-gradient(90deg, var(--home-card-base), var(--home-card-swatch));
-  box-shadow: inset 0 1px 1px #ffffff55;
+  background: #172137;
+  box-shadow: inset 0 1px 1px #ffffff33;
 }
-.home-plan-percent { color: var(--home-card-base); }
-.dark .home-plan-percent { color: var(--home-card-light); }
-
-@supports (color: color-mix(in srgb, white, black)) {
-  :is(.home-illustrated-card, .home-surface-card) {
-    --home-card-edge: color-mix(in srgb, var(--home-card-swatch) 30%, hsl(var(--border)));
-    --home-card-tile-bg: color-mix(in srgb, var(--home-card-swatch) 18%, hsl(var(--card)));
-    --home-card-action-bg: color-mix(in srgb, var(--home-card-swatch) 23%, hsl(var(--card)));
-  }
-  .home-illustrated-card {
-    background-image: radial-gradient(ellipse at var(--home-art-position) 10%, color-mix(in srgb, var(--home-card-swatch) 34%, transparent), transparent 72%),
-      linear-gradient(150deg, var(--home-card-wash), transparent 85%);
-  }
-  .home-illustrated-card:hover,
-  .home-illustrated-card:focus-within,
-  .home-surface-card:is(button, a):hover {
-    border-color: color-mix(in srgb, var(--home-card-swatch) 70%, hsl(var(--border)));
-  }
-  .home-plan-track { background-color: color-mix(in srgb, var(--home-card-swatch) 14%, hsl(var(--muted))); }
+.home-plan-percent { color: #101827; }
+.home-card-inset {
+  background: rgb(16 24 39 / 0.06);
+  border-color: var(--home-card-edge);
+  color: inherit;
+}
+.home-card-inset:is(button, a):hover { background: rgb(16 24 39 / 0.1); }
+.home-illustrated-card:hover,
+.home-illustrated-card:focus-within,
+.home-surface-card:is(button, a):hover {
+  border-color: #172137;
 }
 
 .home-rank-name {
