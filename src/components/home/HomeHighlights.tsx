@@ -142,7 +142,7 @@ export default function HomeHighlights({ language, onOpenChallenge, pointsGuideT
         <button type="button" id="quickStudy-details-trigger" data-home-tone="quick-study" onClick={onOpenQuickStudy} className={promoClass} aria-label={quickStudyTitle}>
           <PromoContent
             art={
-              <span aria-hidden="true" className="home-card-art home-plan-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
+              <span aria-hidden="true" className="home-card-art mx-auto grid aspect-square w-full max-w-[5.25rem] place-items-center rounded-[1.3rem] motion-safe:transition-transform motion-safe:group-hover:scale-105">
                 <Timer className="h-auto w-3/5" />
               </span>
             }
