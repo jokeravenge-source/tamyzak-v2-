@@ -1,11 +1,11 @@
 /* Soft, analogous three-stop Home gradients. Fully opaque colors, no white or theme-surface blending. */
 [data-home-tone="points"] {
-  --home-card-light: #FFD18B;
-  --home-card-swatch: #A55343;
-  --home-card-base: #88425A;
-  --home-card-shadow: #88425A66;
-  --home-gradient-start: #AE6332;
-  --home-gradient-end: #88425A;
+  --home-card-light: #FFE9A6;
+  --home-card-swatch: #91701E;
+  --home-card-base: #725221;
+  --home-card-shadow: #72522166;
+  --home-gradient-start: #8C701F;
+  --home-gradient-end: #725221;
 }
 
 [data-home-tone="quick-study"] {
