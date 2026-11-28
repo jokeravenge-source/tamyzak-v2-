@@ -1,24 +1,30 @@
 # Scheduled sessions and Battle Royale
 
-The existing challenge group destination is used for both posts. It is set under
-**لوحة الأدمن → كروب التحدّيات** (currently `@tamayzak`). The room button goes to
-`https://tamyazak.site/room?code=37ECJK`. The worker verifies that the configured
-`@sovforcejoin_bot` can post there before reserving a delivery. This does not change
-the bot webhook, subscription checks, or the current Telegram battle workflow.
+The session and break use `SESSION_TELEGRAM_CHAT_ID` when configured in the
+Edge Function environment. Set it to the sessions channel’s public username,
+public Telegram URL, or negative numeric chat ID. The default destination and the
+Battle Royale destination come from **لوحة الأدمن → كروب التحدّيات**
+(seed value `@tamayzak`). The room button opens
+`https://tamyazak.site/room?code=37ECJK`. The worker verifies that
+`@sovforcejoin_bot` can post to the selected chat before reserving a delivery.
 
 ## Deploy
 
-1. Apply `20261123090000_session_royale.sql` in the Supabase project.
-2. Deploy the `session-telegram` Edge Function (its handler checks the service-role
-   bearer independently of gateway JWT verification).
-3. Apply `20261123090100_session_telegram_schedule.sql`. It reuses the existing
-   `pg_cron`, `pg_net` and service-role configuration used by study reminders.
-4. Publish the frontend. Confirm the next scheduled post and its room button in
-   the existing group. Verify the vote and challenge with two signed-in students.
+1. On new installations apply `20261123090000_session_royale.sql` and
+   `20261123090100_session_telegram_schedule.sql` to set up the existing worker
+   and its `pg_cron` job.
+2. Apply `20261128123000_session_telegram_break.sql`.
+3. Deploy the `session-telegram` Edge Function. The checked-in job uses the
+   configured service-role bearer. Platform-managed schedules can use the cron secret.
+4. Confirm both posts in the sessions destination at the next Baghdad boundary.
 
 Cron runs every minute. A start post is due at 03:00, 06:00, 09:00, 12:00,
-15:00, 18:00, 21:00, and 00:00 Baghdad time. The next session's start and the
-previous session's vote start at the same boundary. Students in the main study
+15:00, 18:00, 21:00, and 00:00 Baghdad time. The five-minute break notice is
+due at that same boundary and gives the return time in Baghdad. Both notices
+show a snapshot of the main room’s member count, using the room’s 15-minute
+membership and timer activity window. Paused students with a recent heartbeat
+count during the break. The previous session’s vote opens at the same boundary.
+Students in the main study
 room can vote during the first three minutes. The server tallies whole
 combinations of subject, chapter and curriculum, with the earliest ballot for
 that combination breaking a tie. Scheduled topics come from the published SQL

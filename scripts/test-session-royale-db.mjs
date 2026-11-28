@@ -14,8 +14,10 @@ await db.exec(`
   $$;
   GRANT USAGE ON SCHEMA auth TO authenticated;
   CREATE TABLE profiles(user_id uuid PRIMARY KEY, display_name text);
-  CREATE TABLE study_rooms(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),code text,is_active boolean);
-  CREATE TABLE study_room_members(room_id uuid,user_id uuid);
+  CREATE TABLE study_rooms(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),code text,is_active boolean,subject text);
+  CREATE TABLE study_room_members(room_id uuid,user_id uuid,last_seen_at timestamptz NOT NULL DEFAULT now(),UNIQUE(room_id,user_id));
+  CREATE TABLE active_sessions(user_id uuid PRIMARY KEY,subject text,last_seen_at timestamptz,is_running boolean);
+  GRANT SELECT ON study_rooms,study_room_members,active_sessions TO service_role;
   CREATE TABLE mcq_banks(subject text,chapter integer,language text,question text,choices jsonb,answer_index integer);
   CREATE TABLE battle_invites(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),from_user_id uuid,to_user_id uuid,
     from_name text,room_code text,subject text,chapter int,language text,question_count int,status text);
@@ -28,6 +30,7 @@ await db.exec(`
     ('biology',7,'ar','Broken','{}',1);
 `);
 await db.exec(await migration("20261123090000_session_royale"));
+await db.exec(await migration("20261128123000_session_telegram_break"));
 const ids = Array.from({length: 13}, (_, i) => `00000000-0000-4000-8000-${String(i+1).padStart(12, "0")}`);
 for (const [i, id] of ids.entries()) await db.query("INSERT INTO profiles VALUES($1,$2)", [id, `Student ${i+1}`]);
 const user = (id) => db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [id]);
@@ -75,7 +78,7 @@ await db.exec("RESET ROLE");
 await db.exec(`CREATE OR REPLACE FUNCTION _royale_slot(_at timestamptz) RETURNS timestamptz LANGUAGE sql IMMUTABLE AS $$
   SELECT '2099-11-23 00:00:00+03'::timestamptz
 $$;`);
-for(const idOfStudent of ids.slice(0,3)) await db.query("INSERT INTO study_room_members SELECT id,$1 FROM study_rooms",[idOfStudent]);
+for(const idOfStudent of ids.slice(0,3)) await db.query("INSERT INTO study_room_members(room_id,user_id) SELECT id,$1 FROM study_rooms",[idOfStudent]);
 const vote = (selected) => value("SELECT session_royale_poll($1) result",[selected ? JSON.stringify(selected) : null]);
 const poll = await vote(topic);
 assert.equal(poll.topics.length,2);
@@ -97,5 +100,25 @@ await user(ids[1]);
 assert.equal((await value("SELECT study_royale($1,'join') result",[poll.id])).players.length,1);
 assert.equal((await db.query("INSERT INTO session_telegram_posts(slot,kind) VALUES($1,'battle') ON CONFLICT DO NOTHING RETURNING *",[slot])).rows.length,1);
 assert.equal((await db.query("INSERT INTO session_telegram_posts(slot,kind) VALUES($1,'battle') ON CONFLICT DO NOTHING RETURNING *",[slot])).rows.length,0);
+// The count includes newly joined students and fresh clocks even when paused.
+await db.query("UPDATE study_room_members SET last_seen_at=now()-interval '16 minutes' WHERE user_id IN ($1,$2)", [ids[1],ids[2]]);
+await db.query("INSERT INTO active_sessions VALUES ($1,'general',now(),false),($2,'physics',now(),true),($3,'general',now(),true)", [ids[1],ids[2],ids[3]]);
+await db.exec("SET ROLE authenticated");
+await assert.rejects(() => db.query("SELECT session_telegram_room_count()"),/permission denied/);
+await db.exec("SET ROLE service_role");
+assert.equal(await value("SELECT session_telegram_room_count() result"),2);
+await db.exec("RESET ROLE");
+await db.query("UPDATE active_sessions SET last_seen_at=now()-interval '16 minutes' WHERE user_id=$1", [ids[1]]);
+assert.equal(await value("SELECT session_telegram_room_count() result"),1);
+await db.query("DELETE FROM study_room_members");
+assert.equal(await value("SELECT session_telegram_room_count() result"),0);
+await db.query("UPDATE study_rooms SET is_active=false WHERE code='37ECJK'");
+assert.equal(await value("SELECT session_telegram_room_count() result"),null);
+for (const kind of ["session","break"]) {
+  const insertPost = () => db.query("INSERT INTO session_telegram_posts(slot,kind) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING *",[slot,kind]);
+  assert.equal((await insertPost()).rows.length,1);
+  assert.equal((await insertPost()).rows.length,0);
+}
+await assert.rejects(() => db.query("INSERT INTO session_telegram_posts(slot,kind) VALUES($1,'other')",[slot]),/check constraint/);
 await db.close();
-console.log("Session Royale DB checks passed");
+console.log("Session Royale and Telegram break DB checks passed");

@@ -533,6 +533,13 @@
       "when": 1795863600000,
       "tag": "0075_paper_review_exercise_bank",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1795869000000,
+      "tag": "0076_session_telegram_break",
+      "breakpoints": true
     }
   ]
 }
