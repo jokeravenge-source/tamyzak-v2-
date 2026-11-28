@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { trackFeature, trackFeatureUnlocked } from "@/lib/analytics";
 import { ArrowLeft, ArrowRight, Atom, FlaskConical, Leaf, BookOpen, Languages as LangIcon, Moon, ScrollText, Microscope, PenLine, MousePointerClick, Layers, BookMarked, Lock, Bot, Calculator, Ruler, Zap, Boxes, GraduationCap, Wand2, SpellCheck2, FileQuestion, Images, ScanLine, RotateCcw, Headphones, Network, Youtube, Podcast, Video, FileText, NotebookPen, Palette, Sparkles } from "lucide-react";
 import type { AppLanguage } from "@/components/LanguageGate";
@@ -139,6 +140,47 @@ const SUBJECTS: { code: BankSubject; en: string; ar: string; Icon: React.Compone
   },
 ];
 
+type SubjectPalette = { light: string; mid: string; deep: string };
+const SUBJECT_PALETTES: Record<string, SubjectPalette> = {
+  physics: { light: "#a5d8ff", mid: "#4298f5", deep: "#2653bd" },
+  chemistry: { light: "#e4c6ff", mid: "#ad72ef", deep: "#7042bc" },
+  biology: { light: "#a8edc7", mid: "#44ba86", deep: "#15724c" },
+  math: { light: "#ffdc9b", mid: "#f6a33c", deep: "#b65b19" },
+  english: { light: "#ffbcd1", mid: "#ed779c", deep: "#ac3869" },
+  french: { light: "#b5caff", mid: "#758eed", deep: "#4147ac" },
+  arabic: { light: "#b2efe8", mid: "#42b9ae", deep: "#177a80" },
+  islamic: { light: "#e8e6a5", mid: "#b5b65b", deep: "#77752e" },
+};
+const subjectPalette = (code: BankSubject) => SUBJECT_PALETTES[code] ?? SUBJECT_PALETTES.physics;
+const subjectSurface = (code: BankSubject): CSSProperties => {
+  const { mid } = subjectPalette(code);
+  return {
+    backgroundImage: `radial-gradient(ellipse at 85% 0%, ${mid}36, transparent 67%), linear-gradient(150deg, ${mid}10, transparent 80%)`,
+    boxShadow: `inset 0 1px 0 rgb(255 255 255 / 0.11), 0 7px 19px -13px ${mid}`,
+  };
+};
+
+function SubjectArtwork({ subject, small = false }: { subject: (typeof SUBJECTS)[number]; small?: boolean }) {
+  const { light, mid, deep } = subjectPalette(subject.code);
+  const Icon = subject.Icon;
+  return (
+    <span aria-hidden="true" className={`pointer-events-none relative isolate grid shrink-0 place-items-center ${small ? "size-16" : "size-[4.75rem] sm:size-24"}`}>
+      <span className="absolute inset-x-[12%] bottom-[5%] h-[16%] rounded-[50%] blur-[5px]" style={{ background: deep, opacity: .30 }} />
+      <span className="relative grid size-[80%] place-items-center overflow-hidden rounded-[28%] motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:-translate-y-1"
+        style={{
+          transform: "perspective(240px) rotateX(13deg) rotateY(-12deg) rotateZ(-7deg)",
+          background: `linear-gradient(140deg, ${light} 0%, ${mid} 45%, ${deep} 100%)`,
+          boxShadow: `2px 5px 0 ${deep}, 4px 9px 12px ${deep}55, inset 1px 2px 2px #ffffff9e, inset -2px -3px 5px #00000022`,
+        }}>
+        <span className="absolute inset-x-1 top-0 h-1/2 rounded-[50%] bg-gradient-to-b from-white/40 to-transparent" />
+        <span className="relative grid size-[66%] place-items-center text-white" style={{ filter: `drop-shadow(1px 2px 0 ${deep}) drop-shadow(2px 3px 2px ${deep}88)` }}>
+          <Icon className="size-full" />
+        </span>
+      </span>
+      <span className="absolute end-0 top-[5%] size-[15%] rounded-full" style={{ background: `radial-gradient(circle at 30% 25%, white, ${light} 45%, ${mid})`, boxShadow: `1px 2px 5px ${deep}55` }} />
+    </span>
+  );
+}
 
 const SubjectsHub = ({ language, onBack, onSelect }: {
   language: AppLanguage;
@@ -243,14 +285,20 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
                 {isRTL ? "اختَر المادة حتى تشوف بس الأدوات اللي تخصّها." : "Choose a subject to see just the tools you need for it."}
               </p>
             </header>
-            <ul className="grid grid-cols-2 gap-2.5 sm:gap-3">
+            <ul className="grid grid-cols-2 gap-3 sm:gap-4">
               {SUBJECTS.map(subject => (
                 <li key={subject.code} className="min-w-0">
                   <button type="button" onClick={() => selectSubject(subject.code)}
-                    className="group flex min-h-[4.25rem] w-full items-center gap-2.5 rounded-2xl border border-border bg-card p-2.5 text-start transition-colors hover:border-primary/45 hover:bg-accent/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:gap-3 sm:p-3">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary sm:size-10"><subject.Icon aria-hidden="true" className="size-[1.15rem]" /></span>
-                    <span className="min-w-0 flex-1 text-sm font-bold leading-snug sm:text-base">{isRTL ? subject.ar : subject.en}</span>
-                    <ArrowRight aria-hidden="true" className={`hidden size-4 shrink-0 text-muted-foreground sm:block ${isRTL ? "rotate-180" : ""}`} />
+                    style={subjectSurface(subject.code)}
+                    className="group relative isolate flex min-h-[9rem] w-full flex-col items-start justify-between gap-3 overflow-hidden rounded-[1.6rem] border border-border bg-card p-3.5 text-start motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-[10.75rem] sm:p-4">
+                    <span className="pointer-events-none absolute -end-6 -top-7 size-28 rounded-full opacity-20 blur-2xl" style={{ background: subjectPalette(subject.code).mid }} aria-hidden="true" />
+                    <SubjectArtwork subject={subject} />
+                    <span className="relative flex w-full items-center justify-between gap-1">
+                      <span className="min-w-0 text-sm font-black leading-snug sm:text-lg">{isRTL ? subject.ar : subject.en}</span>
+                      <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-full border border-border bg-background/65 text-foreground">
+                        <ArrowRight className={`size-3.5 ${isRTL ? "rotate-180" : ""}`} />
+                      </span>
+                    </span>
                   </button>
                 </li>
               ))}
@@ -258,9 +306,9 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
           </>
         ) : (
           <>
-            <header className="mb-5 flex items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"><current.Icon aria-hidden="true" className="size-5" /></span>
-              <h1 ref={titleRef} tabIndex={-1} className="text-2xl font-black tracking-tight outline-none sm:text-3xl">{isRTL ? current.ar : current.en}</h1>
+            <header style={subjectSurface(current.code)} className="group relative mb-5 flex min-h-28 items-center gap-3 overflow-hidden rounded-[1.75rem] border border-border bg-card p-4 sm:gap-5 sm:p-5">
+              <SubjectArtwork subject={current} />
+              <h1 ref={titleRef} tabIndex={-1} className="min-w-0 flex-1 text-2xl font-black tracking-tight outline-none sm:text-3xl">{isRTL ? current.ar : current.en}</h1>
             </header>
 
             {canReviewDue && <button type="button" onClick={() => handleToolClick(MISTAKES, true)}
@@ -285,16 +333,17 @@ const SubjectsHub = ({ language, onBack, onSelect }: {
               {tools.length === 0 ? (
                 <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{isRTL ? "ماكو أدوات ظاهرة بهالقسم هسه." : "No visible tools in this category."}</p>
               ) : (
-                    <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+                    <ul className="grid gap-2.5">
                       {tools.map(tool => {
                         const Icon = tool.Icon;
                         const premium = !tool.free && isPremiumTool(tool.key);
                         const description = isRTL ? tool.descAr : tool.descEn;
                         return (
-                          <li key={tool.key}>
+                          <li key={tool.key} className="min-w-0">
                             <button type="button" onClick={() => handleToolClick(tool)} disabled={tool.disabled || (premium && subscriptionLoading)}
-                              className="group flex min-h-14 w-full items-center gap-2.5 px-3 py-2.5 text-start hover:bg-accent/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-55 sm:gap-3">
-                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon aria-hidden="true" className="size-[1.1rem]" /></span>
+                              style={subjectSurface(current.code)}
+                              className="group flex min-h-16 w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-2.5 text-start hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-55 sm:gap-3">
+                              <span className="grid size-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: `linear-gradient(145deg, ${subjectPalette(current.code).mid}, ${subjectPalette(current.code).deep})`, boxShadow: "inset 0 1px 1px #ffffff66, 0 3px 0 #00000025" }}><Icon aria-hidden="true" className="size-[1.1rem] drop-shadow-sm" /></span>
                               <span className="min-w-0 flex-1">
                                 <span className="block text-sm font-bold sm:text-base">{isRTL ? tool.ar : tool.en}</span>
                                 {description && <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{description}</span>}
